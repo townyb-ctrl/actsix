@@ -7,17 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Archive,
   CalendarDays,
-  CheckSquare,
+  CheckCircle2,
   Clock,
   Edit3,
   FileText,
-  MapPin,
   Plus,
   Save,
   Tags,
   Trash2,
-  UserRound,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -101,6 +100,7 @@ const Tasks = () => {
       .update({
         complete: nextComplete,
         completed_at: nextComplete ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", task.id);
 
@@ -135,14 +135,11 @@ const Tasks = () => {
         title: editingTask.title || "",
         notes: editingTask.notes || "",
         project: editingTask.project || "",
-        due: editingTask.due || null,
-        start_time: editingTask.start_time || null,
-        person: editingTask.person || "",
-        location: editingTask.location || "",
         context: editingTask.context || "General",
-        energy: editingTask.energy || "Medium",
         priority: editingTask.priority || "Medium",
+        energy: editingTask.energy || "Medium",
         minutes: Number(editingTask.minutes) || 15,
+        due: editingTask.due || null,
         tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
         complete: Boolean(editingTask.complete),
         completed_at: editingTask.complete
@@ -180,10 +177,11 @@ const Tasks = () => {
           <form onSubmit={add} className="flex gap-2">
             <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(event) => setTitle(event.target.value)}
               placeholder="Capture a task…"
               className="border-transparent bg-muted/40 focus-visible:bg-background"
             />
+
             <Button
               type="submit"
               className="bg-brand-teal hover:bg-brand-teal/90 text-white rounded-full px-5"
@@ -248,12 +246,13 @@ const Tasks = () => {
                 </div>
 
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full opacity-0 group-hover:opacity-100"
                   onClick={() => setEditingTask({ ...task })}
                 >
-                  <Edit3 className="h-4 w-4" />
+                  <Edit3 className="h-3.5 w-3.5 mr-1.5" />
+                  Edit
                 </Button>
 
                 <Button
@@ -280,17 +279,19 @@ const Tasks = () => {
               {done.map((task) => (
                 <div key={task.id} className="flex items-center gap-3 p-4 group">
                   <Checkbox checked onCheckedChange={() => toggle(task)} />
+
                   <div className="flex-1 truncate line-through text-muted-foreground">
                     {task.title}
                   </div>
 
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full opacity-0 group-hover:opacity-100"
                     onClick={() => setEditingTask({ ...task })}
                   >
-                    <Edit3 className="h-4 w-4" />
+                    <Edit3 className="h-3.5 w-3.5 mr-1.5" />
+                    Edit
                   </Button>
 
                   <Button
@@ -310,15 +311,15 @@ const Tasks = () => {
 
       {editingTask && (
         <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-4xl shadow-card border-border/70 bg-card max-h-[92vh] overflow-hidden">
+          <Card className="w-full max-w-4xl shadow-card border-border/70 bg-card h-[88vh] flex flex-col overflow-hidden">
             <div className="flex items-start justify-between gap-4 p-6 border-b border-border/70">
               <div>
-                <p className="label-eyebrow">Edit Task</p>
+                <p className="label-eyebrow">Edit Next Action</p>
                 <h2 className="text-2xl font-extrabold tracking-tight mt-1">
                   Task details
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Update the properties that help this action move forward.
+                  This uses the same editor structure as Inbox when an item is clarified as a Next Action.
                 </p>
               </div>
 
@@ -332,7 +333,29 @@ const Tasks = () => {
               </Button>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-[calc(92vh-155px)] space-y-5">
+            <div className="flex-1 p-6 overflow-y-auto space-y-5">
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Archive className="h-4 w-4 text-brand-teal" />
+                  <h3 className="font-extrabold tracking-tight">Destination</h3>
+                </div>
+
+                <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/5 p-4 shadow-soft">
+                  <label className="label-eyebrow">Where does this belong?</label>
+                  <select
+                    value="task"
+                    disabled
+                    className="mt-2 h-11 w-full rounded-md border border-border/70 bg-background px-3 text-sm opacity-80"
+                  >
+                    <option value="task">Next Action</option>
+                  </select>
+
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This task is already in Next Actions. To move it elsewhere, we can add a Move feature next.
+                  </p>
+                </div>
+              </section>
+
               <section className="grid gap-3">
                 <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                   <label className="label-eyebrow">Title</label>
@@ -364,8 +387,8 @@ const Tasks = () => {
 
               <section>
                 <div className="flex items-center gap-2 mb-3">
-                  <CheckSquare className="h-4 w-4 text-brand-teal" />
-                  <h3 className="font-extrabold tracking-tight">Planning</h3>
+                  <CheckCircle2 className="h-4 w-4 text-brand-teal" />
+                  <h3 className="font-extrabold tracking-tight">Next Action details</h3>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-3">
@@ -394,24 +417,22 @@ const Tasks = () => {
                   </div>
 
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                    <label className="label-eyebrow">Status</label>
-                    <select
-                      value={editingTask.complete ? "Complete" : "Open"}
+                    <label className="label-eyebrow flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5" />
+                      Duration
+                    </label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={editingTask.minutes ?? 15}
                       onChange={(event) =>
                         setEditingTask({
                           ...editingTask,
-                          complete: event.target.value === "Complete",
-                          completed_at:
-                            event.target.value === "Complete"
-                              ? new Date().toISOString()
-                              : null,
+                          minutes: Number(event.target.value) || 15,
                         })
                       }
-                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                    >
-                      <option>Open</option>
-                      <option>Complete</option>
-                    </select>
+                      className="mt-2 border-border/70 bg-background"
+                    />
                   </div>
 
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
@@ -446,35 +467,6 @@ const Tasks = () => {
                   </div>
 
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                    <label className="label-eyebrow flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5" />
-                      Duration
-                    </label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={editingTask.minutes ?? 15}
-                      onChange={(event) =>
-                        setEditingTask({
-                          ...editingTask,
-                          minutes: Number(event.target.value) || 15,
-                        })
-                      }
-                      className="mt-2 border-border/70 bg-background"
-                      placeholder="Minutes"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <CalendarDays className="h-4 w-4 text-brand-teal" />
-                  <h3 className="font-extrabold tracking-tight">Scheduling</h3>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                     <label className="label-eyebrow">Due date</label>
                     <Input
                       type="date"
@@ -486,57 +478,6 @@ const Tasks = () => {
                         })
                       }
                       className="mt-2 border-border/70 bg-background"
-                    />
-                  </div>
-
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                    <label className="label-eyebrow">Start time</label>
-                    <Input
-                      type="time"
-                      value={editingTask.start_time ?? ""}
-                      onChange={(event) =>
-                        setEditingTask({
-                          ...editingTask,
-                          start_time: event.target.value || null,
-                        })
-                      }
-                      className="mt-2 border-border/70 bg-background"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <UserRound className="h-4 w-4 text-brand-teal" />
-                  <h3 className="font-extrabold tracking-tight">People & place</h3>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                    <label className="label-eyebrow">Person</label>
-                    <Input
-                      value={editingTask.person ?? ""}
-                      onChange={(event) =>
-                        setEditingTask({ ...editingTask, person: event.target.value })
-                      }
-                      className="mt-2 border-border/70 bg-background"
-                      placeholder="Who this relates to"
-                    />
-                  </div>
-
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                    <label className="label-eyebrow flex items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5" />
-                      Location
-                    </label>
-                    <Input
-                      value={editingTask.location ?? ""}
-                      onChange={(event) =>
-                        setEditingTask({ ...editingTask, location: event.target.value })
-                      }
-                      className="mt-2 border-border/70 bg-background"
-                      placeholder="Where this happens"
                     />
                   </div>
                 </div>
@@ -601,9 +542,9 @@ const Tasks = () => {
               </section>
             </div>
 
-            <div className="flex items-center justify-between gap-3 p-4 border-t border-border/70 bg-card/95">
+            <div className="shrink-0 flex items-center justify-between gap-3 p-4 border-t border-border/70 bg-card/95">
               <p className="text-xs text-muted-foreground">
-                Save changes to update this task across ACTSIX.
+                Save changes to update this Next Action.
               </p>
 
               <div className="flex items-center gap-2">
@@ -617,7 +558,8 @@ const Tasks = () => {
 
                 <Button
                   disabled={saving}
-                  className="rounded-xl bg-brand-teal hover:bg-brand-teal/90 text-white"
+                  variant="outline"
+                  className="rounded-xl border-brand-teal/50 bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal font-bold"
                   onClick={saveTask}
                 >
                   <Save className="h-4 w-4 mr-2" />
