@@ -13,7 +13,6 @@ import {
   Clock3,
   FolderKanban,
   ListChecks,
-  Plus,
   Search,
   SlidersHorizontal,
   UserRound,
@@ -125,7 +124,6 @@ const Projects = () => {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [newProjectName, setNewProjectName] = useState("");
   const [newActionTitle, setNewActionTitle] = useState("");
   const [newActionDue, setNewActionDue] = useState("");
   const [search, setSearch] = useState("");
@@ -251,42 +249,6 @@ const Projects = () => {
   useEffect(() => {
     if (user) load();
   }, [user]);
-
-  const addProject = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!newProjectName.trim() || !user) return;
-
-    const { data, error } = await supabase
-      .from("projects")
-      .insert({
-        id: crypto.randomUUID(),
-        name: newProjectName.trim(),
-        user_id: user.id,
-        area: "General",
-        status: "In Progress",
-        progress: 0,
-        open_tasks: 0,
-        next_action: "",
-        notes: "",
-      })
-      .select("*")
-      .single();
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    setNewProjectName("");
-    toast.success("Project added");
-
-    if (data) {
-      setSelectedProjectId(data.id);
-    }
-
-    load();
-  };
 
   const addProjectAction = async (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -452,26 +414,6 @@ const Projects = () => {
       />
 
       <div className="px-8 pb-12 space-y-6">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <form onSubmit={addProject} className="flex items-center gap-2 max-w-2xl w-full">
-            <div className="relative flex-1">
-              <Plus className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-teal" />
-              <Input
-                value={newProjectName}
-                onChange={(event) => setNewProjectName(event.target.value)}
-                placeholder="Add a new project..."
-                className="pl-10 border-border/70 bg-card h-10 shadow-soft"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="h-10 actsix-btn-primary rounded-xl px-4 text-sm shrink-0"
-            >
-              Add Project
-            </Button>
-          </form>
-        </div>
 
         <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
           <Card className="p-5 border-border/70 bg-card shadow-card">
