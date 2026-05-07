@@ -74,9 +74,6 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   );
 };
 
-export const Inbox = () => (
-  <SimpleListPage cfg={{ table: "inbox_items", titleCol: "title", eyebrow: "Workflow", title: "Inbox", subtitle: "Everything you've captured, awaiting a decision." }} />
-);
 export const Waiting = () => (
   <SimpleListPage cfg={{ table: "waiting_items", titleCol: "item", eyebrow: "Workflow", title: "Waiting For", subtitle: "What you're waiting on, and from whom." }} />
 );
