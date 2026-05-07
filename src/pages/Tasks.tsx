@@ -19,6 +19,8 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import ProjectSelect from "@/components/ProjectSelect";
+import ContextSelect from "@/components/ContextSelect";
 
 type ProjectOption = {
   id: string;
@@ -439,37 +441,24 @@ const Tasks = () => {
                 <div className="grid md:grid-cols-3 gap-3">
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                     <label className="label-eyebrow">Project</label>
-                    <select
+                                        <ProjectSelect
                       value={editingTask.project ?? ""}
-                      onChange={(event) =>
-                        setEditingTask({ ...editingTask, project: event.target.value })
+                      onChange={(project) =>
+                        setEditingTask({ ...editingTask, project })
                       }
-                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                    >
-                      <option value="">No project</option>
-                      {projects.map((project) => (
-                        <option key={project.id} value={project.name}>
-                          {project.name}
-                        </option>
-                      ))}
-                    </select>
+                      onCreated={load}
+                    />
                   </div>
 
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                     <label className="label-eyebrow">Context</label>
-                    <select
+                                        <ContextSelect
                       value={editingTask.context ?? "General"}
-                      onChange={(event) =>
-                        setEditingTask({ ...editingTask, context: event.target.value })
+                      onChange={(context) =>
+                        setEditingTask({ ...editingTask, context })
                       }
-                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                    >
-                      {contextNames.map((context) => (
-                        <option key={context} value={context}>
-                          {context}
-                        </option>
-                      ))}
-                    </select>
+                      onCreated={load}
+                    />
                   </div>
 
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
