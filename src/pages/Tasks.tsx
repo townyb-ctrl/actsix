@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Archive,
-  CalendarDays,
   CheckCircle2,
   Clock,
   Edit3,
@@ -67,9 +66,7 @@ const Tasks = () => {
 
   const contextNames = useMemo(() => {
     const fromDb = contexts.map((context) => context.name).filter(Boolean);
-    const merged = [...fallbackContexts, ...fromDb];
-
-    return Array.from(new Set(merged));
+    return Array.from(new Set([...fallbackContexts, ...fromDb]));
   }, [contexts]);
 
   const load = async () => {
@@ -367,7 +364,7 @@ const Tasks = () => {
                   Task details
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Choose the project and context from your existing ACTSIX lists.
+                  Select a project and context from your ACTSIX lists.
                 </p>
               </div>
 
@@ -399,7 +396,7 @@ const Tasks = () => {
                   </select>
 
                   <p className="text-xs text-muted-foreground mt-2">
-                    This task is already in Next Actions.
+                    This item is already in Next Actions.
                   </p>
                 </div>
               </section>
@@ -551,11 +548,7 @@ const Tasks = () => {
                 <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                   <label className="label-eyebrow">Tags</label>
                   <Input
-                    value={
-                      Array.isArray(editingTask.tags)
-                        ? editingTask.tags.join(", ")
-                        : ""
-                    }
+                    value={Array.isArray(editingTask.tags) ? editingTask.tags.join(", ") : ""}
                     onChange={(event) =>
                       setEditingTask({
                         ...editingTask,
