@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ACTSIX-inspired: cream content + deep navy sidebar + teal accent */
+    --background: 40 33% 96%;
+    --foreground: 215 35% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 35% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 35% 12%;
+
+    --primary: 215 40% 14%;
+    --primary-foreground: 40 33% 96%;
+
+    --secondary: 40 25% 90%;
+    --secondary-foreground: 215 35% 12%;
+
+    --muted: 40 22% 92%;
+    --muted-foreground: 215 12% 38%;
+
+    --accent: 174 60% 38%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 18% 84%;
+    --input: 40 18% 84%;
+    --ring: 174 60% 38%;
+
+    --radius: 0.875rem;
+
+    /* Brand semantic */
+    --brand-teal: 174 60% 38%;
+    --brand-teal-bright: 174 70% 48%;
+    --brand-coral: 8 78% 60%;
+    --brand-amber: 32 90% 58%;
+    --brand-cream: 40 33% 96%;
+    --brand-ink: 215 45% 9%;
+
+    /* Sidebar — deep navy */
+    --sidebar-background: 215 45% 9%;
+    --sidebar-foreground: 40 25% 88%;
+    --sidebar-primary: 174 60% 38%;
+    --sidebar-primary-foreground: 215 45% 9%;
+    --sidebar-accent: 215 35% 14%;
+    --sidebar-accent-foreground: 40 33% 96%;
+    --sidebar-border: 215 35% 16%;
+    --sidebar-ring: 174 60% 38%;
+
+    --gradient-content: linear-gradient(135deg, hsl(40 33% 97%) 0%, hsl(170 30% 94%) 100%);
+    --gradient-sidebar: linear-gradient(180deg, hsl(215 45% 9%) 0%, hsl(215 50% 7%) 100%);
+    --shadow-card: 0 1px 0 0 hsl(40 18% 86%), 0 12px 32px -16px hsl(215 45% 9% / 0.08);
+    --shadow-soft: 0 1px 2px hsl(215 45% 9% / 0.04), 0 4px 16px -8px hsl(215 45% 9% / 0.06);
+  }
+
+  .dark {
+    --background: 215 45% 7%;
+    --foreground: 40 25% 92%;
+    --card: 215 40% 10%;
+    --card-foreground: 40 25% 92%;
+    --popover: 215 40% 10%;
+    --popover-foreground: 40 25% 92%;
+    --primary: 40 25% 92%;
+    --primary-foreground: 215 45% 7%;
+    --secondary: 215 30% 14%;
+    --secondary-foreground: 40 25% 92%;
+    --muted: 215 30% 12%;
+    --muted-foreground: 40 10% 62%;
+    --accent: 174 65% 45%;
+    --accent-foreground: 215 45% 7%;
+    --border: 215 30% 16%;
+    --input: 215 30% 16%;
+    --ring: 174 65% 45%;
+    --sidebar-background: 215 50% 5%;
+    --sidebar-foreground: 40 25% 88%;
+    --sidebar-primary: 174 65% 45%;
+    --sidebar-primary-foreground: 215 50% 5%;
+    --sidebar-accent: 215 35% 12%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 215 35% 14%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  html { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; }
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide;
+  }
+  .label-eyebrow {
+    @apply text-[11px] uppercase tracking-[0.2em] font-semibold text-muted-foreground;
+  }
+}
