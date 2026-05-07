@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# ACTSIX
 
 TODO: Document your project here
