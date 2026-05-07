@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { syncProjectStats } from "@/lib/syncProjectStats";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
 
@@ -262,6 +263,8 @@ const Inbox = () => {
         });
 
         if (error) throw error;
+
+        await syncProjectStats(editingItem.project, user.id);
       }
 
       if (processTarget === "project") {

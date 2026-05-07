@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
 
@@ -156,10 +157,12 @@ const Tasks = () => {
       return;
     }
 
+    await syncProjectStats(task.project, user?.id);
     load();
   };
 
   const remove = async (id: string) => {
+    const targetTask = tasks.find((task) => task.id === id);
     const { error } = await supabase.from("tasks").delete().eq("id", id);
 
     if (error) {
@@ -167,12 +170,15 @@ const Tasks = () => {
       return;
     }
 
+    await syncProjectStats(targetTask?.project, user?.id);
     toast.success("Task deleted");
     load();
   };
 
   const saveTask = async () => {
     if (!editingTask) return;
+
+    const previousProject = tasks.find((task) => task.id === editingTask.id)?.project || "";
 
     setSaving(true);
 
@@ -203,6 +209,7 @@ const Tasks = () => {
       return;
     }
 
+    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
     toast.success("Task updated");
     setEditingTask(null);
     load();

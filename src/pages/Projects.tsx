@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { syncProjectStats } from "@/lib/syncProjectStats";
 
 type Project = {
   id: string;
@@ -297,6 +298,7 @@ const Projects = () => {
       return;
     }
 
+    await syncProjectStats(selectedProject.name, user.id);
     setNewActionTitle("");
     toast.success("Next action added");
     load();
@@ -326,6 +328,7 @@ const Projects = () => {
       return;
     }
 
+    await syncProjectStats(selectedProject.name, user.id);
     setQuickCapture("");
     toast.success("Captured to project");
     load();
@@ -348,10 +351,12 @@ const Projects = () => {
       return;
     }
 
+    await syncProjectStats(task.project, user?.id);
     load();
   };
 
   const removeTask = async (id: string) => {
+    const targetTask = tasks.find((task) => task.id === id);
     const { error } = await supabase.from("tasks").delete().eq("id", id);
 
     if (error) {
@@ -359,6 +364,7 @@ const Projects = () => {
       return;
     }
 
+    await syncProjectStats(targetTask?.project, user?.id);
     toast.success("Action deleted");
     load();
   };
