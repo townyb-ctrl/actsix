@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { syncProjectStats } from "@/lib/syncProjectStats";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
+import CompactTaskRow from "@/components/CompactTaskRow";
 
 type InboxItem = {
   id: string;
@@ -361,49 +362,13 @@ const Inbox = () => {
           )}
 
           {items.map((item) => (
-            <div key={item.id} className="action-row flex items-center gap-3 p-4 group">
-              <div className="h-1.5 w-1.5 rounded-full bg-brand-teal" />
-
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{item.title}</div>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="chip bg-brand-teal/10 text-brand-teal border-brand-teal/20">
-                    {item.context || "General"}
-                  </span>
-                  <span className="chip bg-secondary text-secondary-foreground">
-                    {item.priority || "Medium"}
-                  </span>
-                  <span className="chip bg-secondary text-secondary-foreground font-mono">
-                    {item.minutes || 15}m
-                  </span>
-                </div>
-
-                {item.notes && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                    {item.notes}
-                  </p>
-                )}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-                onClick={() => openEditor(item)}
-              >
-                <Edit3 className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="opacity-70 hover:opacity-100"
-                onClick={() => quickDelete(item)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+            <CompactTaskRow
+              key={item.id}
+              task={item}
+              showCheckbox={false}
+              onEdit={() => openEditor(item)}
+              onDelete={() => quickDelete(item)}
+            />
           ))}
         </Card>
       </div>
