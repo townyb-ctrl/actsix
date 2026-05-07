@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,7 +9,6 @@ import {
   ChevronDown,
   ChevronRight,
   Edit3,
-  Inbox as InboxIcon,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -146,19 +144,7 @@ const Tasks = () => {
         subtitle="The next thing to do, in any context."
       />
 
-      <div className="px-8 pb-4 max-w-5xl flex justify-end">
-        <Button
-          asChild
-          className="rounded-xl actsix-btn-primary"
-        >
-          <Link to="/inbox">
-            <InboxIcon className="h-4 w-4 mr-2" />
-            Quick Capture
-          </Link>
-        </Button>
-      </div>
-
-      <div className="px-8 pb-12 max-w-5xl space-y-6">
+      <div className="px-8 -mt-2 pb-12 max-w-5xl space-y-6">
         <section>
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-xl font-extrabold tracking-tight">

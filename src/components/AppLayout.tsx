@@ -1,4 +1,4 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, Link } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,8 +23,16 @@ export default function AppLayout() {
           <header className="h-14 flex items-center gap-3 border-b border-border bg-background/80 backdrop-blur px-4 sticky top-0 z-10">
             <SidebarTrigger />
             <div className="ml-auto flex items-center gap-2">
-              <Button size="sm" className="gap-1.5 bg-brand-teal hover:bg-brand-teal/90 text-white rounded-full px-4">
-                <Zap className="h-3.5 w-3.5" /> Quick Capture
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="gap-1.5 rounded-full border-brand-teal/35 bg-brand-teal/10 px-4 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal"
+              >
+                <Link to="/inbox">
+                  <Zap className="h-3.5 w-3.5" />
+                  Quick Capture
+                </Link>
               </Button>
               <Button size="sm" variant="outline" className="gap-1.5 rounded-full">
                 <RotateCw className="h-3.5 w-3.5" /> Undo
