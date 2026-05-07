@@ -11,15 +11,18 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Edit3,
   FolderKanban,
   ListChecks,
   Search,
   SlidersHorizontal,
+  Trash2,
   UserRound,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
+import ProjectEditorModal from "@/components/ProjectEditorModal";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
 
@@ -132,6 +135,8 @@ const Projects = () => {
   const [notesDraft, setNotesDraft] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [savingTask, setSavingTask] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [savingProject, setSavingProject] = useState(false);
 
   const projectStats = useMemo(() => {
     return projects.reduce<Record<string, ReturnType<typeof getProjectStats>>>(
@@ -398,6 +403,65 @@ const Projects = () => {
     load();
   };
 
+  const saveProject = async () => {
+    if (!editingProject || !user) return;
+
+    const previousProject = projects.find(
+      (project) => project.id === editingProject.id
+    );
+
+    const previousName = previousProject?.name || "";
+    const nextName = editingProject.name?.trim() || "";
+
+    if (!nextName) {
+      toast.error("Project name is required");
+      return;
+    }
+
+    setSavingProject(true);
+
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({
+          name: nextName,
+          area: editingProject.area || "General",
+          status: editingProject.status || "In Progress",
+          notes: editingProject.notes || "",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editingProject.id);
+
+      if (error) throw error;
+
+      if (previousName && previousName !== nextName) {
+        const { error: taskError } = await supabase
+          .from("tasks")
+          .update({
+            project: nextName,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("project", previousName)
+          .eq("user_id", user.id);
+
+        if (taskError) throw taskError;
+      }
+
+      await syncProjectStats(nextName, user.id);
+
+      toast.success("Project updated");
+      setSelectedProjectId(editingProject.id);
+      setEditingProject(null);
+      await load();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not update project";
+      toast.error(message);
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
   const projectViews = [
     { value: "all", label: "All", count: totalProjects },
     { value: "active", label: "Active", count: activeProjects },
@@ -661,13 +725,28 @@ const Projects = () => {
                     </div>
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeProject(selectedProject)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Edit project"
+                      aria-label="Edit project"
+                      onClick={() => setEditingProject({ ...selectedProject })}
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Delete project"
+                      aria-label="Delete project"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => removeProject(selectedProject)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
@@ -785,6 +864,22 @@ const Projects = () => {
           )}
         </div>
       </div>
+
+      <ProjectEditorModal
+        project={editingProject}
+        saving={savingProject}
+        onChange={setEditingProject}
+        onClose={() => setEditingProject(null)}
+        onSave={saveProject}
+        onDelete={
+          editingProject
+            ? () => {
+                removeProject(editingProject);
+                setEditingProject(null);
+              }
+            : undefined
+        }
+      />
 
       <TaskEditorModal
         task={editingTask}
