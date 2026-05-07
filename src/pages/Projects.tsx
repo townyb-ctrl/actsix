@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Activity,
+  Archive,
+  Clock,
+  Edit3,
+  FileText,
+  Save,
+  Tags,
   ArrowRight,
   BarChart3,
   CalendarDays,
@@ -25,7 +31,9 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { syncProjectStats } from "@/lib/syncProjectStats";
+import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
+import ProjectSelect from "@/components/ProjectSelect";
+import ContextSelect from "@/components/ContextSelect";
 
 type Project = {
   id: string;
@@ -140,6 +148,8 @@ const Projects = () => {
   const [view, setView] = useState("All Projects");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
+  const [editingTask, setEditingTask] = useState<any | null>(null);
+  const [savingTask, setSavingTask] = useState(false);
 
   const projectStats = useMemo(() => {
     return projects.reduce<Record<string, ReturnType<typeof getProjectStats>>>(
@@ -406,6 +416,46 @@ const Projects = () => {
     load();
   };
 
+  const saveTask = async () => {
+    if (!editingTask) return;
+
+    const previousProject = tasks.find((task) => task.id === editingTask.id)?.project || "";
+
+    setSavingTask(true);
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: editingTask.title || "",
+        notes: editingTask.notes || "",
+        project: editingTask.project || "",
+        context: editingTask.context || "General",
+        priority: editingTask.priority || "Medium",
+        energy: editingTask.energy || "Medium",
+        minutes: Number(editingTask.minutes) || 15,
+        due: editingTask.due || null,
+        tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
+        complete: Boolean(editingTask.complete),
+        completed_at: editingTask.complete
+          ? editingTask.completed_at || new Date().toISOString()
+          : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", editingTask.id);
+
+    setSavingTask(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    toast.success("Task updated");
+    setEditingTask(null);
+    load();
+  };
+
   return (
     <div>
       <PageHeader
@@ -556,7 +606,47 @@ const Projects = () => {
                     const isSelected = selectedProject?.id === project.id;
                     const ownerInitials = getInitials(project.name);
 
-                    return (
+                    const saveTask = async () => {
+    if (!editingTask) return;
+
+    const previousProject = tasks.find((task) => task.id === editingTask.id)?.project || "";
+
+    setSavingTask(true);
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: editingTask.title || "",
+        notes: editingTask.notes || "",
+        project: editingTask.project || "",
+        context: editingTask.context || "General",
+        priority: editingTask.priority || "Medium",
+        energy: editingTask.energy || "Medium",
+        minutes: Number(editingTask.minutes) || 15,
+        due: editingTask.due || null,
+        tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
+        complete: Boolean(editingTask.complete),
+        completed_at: editingTask.complete
+          ? editingTask.completed_at || new Date().toISOString()
+          : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", editingTask.id);
+
+    setSavingTask(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    toast.success("Task updated");
+    setEditingTask(null);
+    load();
+  };
+
+  return (
                       <tr
                         key={project.id}
                         className={`border-b border-border/60 cursor-pointer transition-colors ${
@@ -752,6 +842,15 @@ const Projects = () => {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
+                        onClick={() => setEditingTask({ ...task })}
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
                         onClick={() => removeTask(task.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -836,6 +935,262 @@ const Projects = () => {
           )}
         </div>
       </div>
+      {editingTask && (
+        <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-4xl shadow-card border-border/70 bg-card h-[88vh] flex flex-col overflow-hidden">
+            <div className="flex items-start justify-between gap-4 p-6 border-b border-border/70">
+              <div>
+                <p className="label-eyebrow">Edit Project Action</p>
+                <h2 className="text-2xl font-extrabold tracking-tight mt-1">
+                  Task details
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Edit this project action using the same Next Action editor.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setEditingTask(null)}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Close
+              </Button>
+            </div>
+
+            <div className="flex-1 p-6 overflow-y-auto space-y-5">
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Archive className="h-4 w-4 text-brand-teal" />
+                  <h3 className="font-extrabold tracking-tight">Destination</h3>
+                </div>
+
+                <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/5 p-4 shadow-soft">
+                  <label className="label-eyebrow">Where does this belong?</label>
+                  <select
+                    value="task"
+                    disabled
+                    className="mt-2 h-11 w-full rounded-md border border-border/70 bg-background px-3 text-sm opacity-80"
+                  >
+                    <option value="task">Next Action</option>
+                  </select>
+
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This item is already a Next Action attached to a project.
+                  </p>
+                </div>
+              </section>
+
+              <section className="grid gap-3">
+                <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                  <label className="label-eyebrow">Title</label>
+                  <Input
+                    value={editingTask.title ?? ""}
+                    onChange={(event) =>
+                      setEditingTask({ ...editingTask, title: event.target.value })
+                    }
+                    className="mt-2 border-border/70 bg-background"
+                    placeholder="What needs to be done?"
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                  <label className="label-eyebrow flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5" />
+                    Notes
+                  </label>
+                  <textarea
+                    value={editingTask.notes ?? ""}
+                    onChange={(event) =>
+                      setEditingTask({ ...editingTask, notes: event.target.value })
+                    }
+                    className="mt-2 min-h-28 w-full rounded-md border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Add details, links, thoughts, or next-step context..."
+                  />
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle2 className="h-4 w-4 text-brand-teal" />
+                  <h3 className="font-extrabold tracking-tight">Next Action details</h3>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow">Project</label>
+                    <ProjectSelect
+                      value={editingTask.project ?? ""}
+                      onChange={(project) =>
+                        setEditingTask({ ...editingTask, project })
+                      }
+                      onCreated={load}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow">Context</label>
+                    <ContextSelect
+                      value={editingTask.context ?? "General"}
+                      onChange={(context) =>
+                        setEditingTask({ ...editingTask, context })
+                      }
+                      onCreated={load}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5" />
+                      Duration
+                    </label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={editingTask.minutes ?? 15}
+                      onChange={(event) =>
+                        setEditingTask({
+                          ...editingTask,
+                          minutes: Number(event.target.value) || 15,
+                        })
+                      }
+                      className="mt-2 border-border/70 bg-background"
+                    />
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow">Priority</label>
+                    <select
+                      value={editingTask.priority ?? "Medium"}
+                      onChange={(event) =>
+                        setEditingTask({ ...editingTask, priority: event.target.value })
+                      }
+                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                    >
+                      <option>Low</option>
+                      <option>Medium</option>
+                      <option>High</option>
+                      <option>Urgent</option>
+                    </select>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow">Energy</label>
+                    <select
+                      value={editingTask.energy ?? "Medium"}
+                      onChange={(event) =>
+                        setEditingTask({ ...editingTask, energy: event.target.value })
+                      }
+                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                    >
+                      <option>Low</option>
+                      <option>Medium</option>
+                      <option>High</option>
+                    </select>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow">Due date</label>
+                    <Input
+                      type="date"
+                      value={editingTask.due ?? ""}
+                      onChange={(event) =>
+                        setEditingTask({
+                          ...editingTask,
+                          due: event.target.value || null,
+                        })
+                      }
+                      className="mt-2 border-border/70 bg-background"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Tags className="h-4 w-4 text-brand-teal" />
+                  <h3 className="font-extrabold tracking-tight">Organization</h3>
+                </div>
+
+                <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                  <label className="label-eyebrow">Tags</label>
+                  <Input
+                    value={Array.isArray(editingTask.tags) ? editingTask.tags.join(", ") : ""}
+                    onChange={(event) =>
+                      setEditingTask({
+                        ...editingTask,
+                        tags: event.target.value
+                          .split(",")
+                          .map((tag) => tag.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    className="mt-2 border-border/70 bg-background"
+                    placeholder="Worship, Admin, Follow-up"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Separate tags with commas.
+                  </p>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-border/70 bg-muted/30 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-extrabold tracking-tight">Advanced</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Created:{" "}
+                      {editingTask.created_at
+                        ? new Date(editingTask.created_at).toLocaleDateString()
+                        : "Unknown"}
+                    </p>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => {
+                      removeTask(editingTask.id);
+                      setEditingTask(null);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete task
+                  </Button>
+                </div>
+              </section>
+            </div>
+
+            <div className="shrink-0 flex items-center justify-between gap-3 p-4 border-t border-border/70 bg-card/95">
+              <p className="text-xs text-muted-foreground">
+                Save changes to update this project action.
+              </p>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setEditingTask(null)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  disabled={savingTask}
+                  variant="outline"
+                  className="rounded-xl border-brand-teal/50 bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal font-bold"
+                  onClick={saveTask}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {savingTask ? "Saving..." : "Save changes"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
     </div>
   );
 };
