@@ -346,14 +346,14 @@ const Inbox = () => {
 
             <Button
               type="submit"
-              className="bg-brand-teal hover:bg-brand-teal/90 text-white rounded-full px-5"
+              className="actsix-btn-primary rounded-full px-5"
             >
               <Plus className="h-4 w-4" />
             </Button>
           </form>
         </Card>
 
-        <Card className="divide-y divide-border shadow-card border-border/70 bg-card">
+        <Card className="p-2 space-y-2 shadow-card border-border/70 bg-card">
           {items.length === 0 && (
             <div className="p-6 text-sm text-muted-foreground">
               Inbox clear. Capture something when it has your attention.
@@ -361,14 +361,21 @@ const Inbox = () => {
           )}
 
           {items.map((item) => (
-            <div key={item.id} className="flex items-center gap-3 p-4 group hover:bg-muted/30">
+            <div key={item.id} className="action-row flex items-center gap-3 p-4 group">
               <div className="h-1.5 w-1.5 rounded-full bg-brand-teal" />
 
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{item.title}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {item.context || "General"} · {item.priority || "Medium"} ·{" "}
-                  {item.minutes || 15}m
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="chip bg-brand-teal/10 text-brand-teal border-brand-teal/20">
+                    {item.context || "General"}
+                  </span>
+                  <span className="chip bg-secondary text-secondary-foreground">
+                    {item.priority || "Medium"}
+                  </span>
+                  <span className="chip bg-secondary text-secondary-foreground font-mono">
+                    {item.minutes || 15}m
+                  </span>
                 </div>
 
                 {item.notes && (
@@ -391,7 +398,7 @@ const Inbox = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-0 group-hover:opacity-100"
+                className="opacity-70 hover:opacity-100"
                 onClick={() => quickDelete(item)}
               >
                 <Trash2 className="h-4 w-4" />
@@ -822,7 +829,7 @@ const Inbox = () => {
                 <Button
                   disabled={!canProcess}
                   variant="outline"
-                  className="rounded-xl border-brand-teal/50 bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal font-bold"
+                  className="rounded-xl actsix-btn-soft font-bold"
                   onClick={processItem}
                 >
                   Process

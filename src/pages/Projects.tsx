@@ -467,7 +467,7 @@ const Projects = () => {
 
             <Button
               type="submit"
-              className="h-12 bg-brand-teal hover:bg-brand-teal/90 text-white rounded-xl px-6"
+              className="h-12 actsix-btn-primary rounded-xl px-6"
             >
               Add Project
             </Button>
@@ -754,7 +754,7 @@ const Projects = () => {
                   </span>
                 </div>
 
-                <div className="rounded-2xl border border-border/70 overflow-hidden">
+                <div className="rounded-2xl border border-border/70 bg-muted/10 p-2">
                   {selectedStats.projectTasks.length === 0 && (
                     <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
                       <ListChecks className="h-4 w-4" />
@@ -765,7 +765,7 @@ const Projects = () => {
                   {selectedStats.projectTasks.slice(0, 5).map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center gap-3 p-3 border-b border-border/60 last:border-b-0 hover:bg-muted/30"
+                      className="action-row flex items-center gap-3 p-3 mb-2 last:mb-0"
                     >
                       <Checkbox
                         checked={Boolean(task.complete)}
@@ -782,7 +782,7 @@ const Projects = () => {
                         </div>
                       </div>
 
-                      <span className="text-xs text-brand-coral font-bold whitespace-nowrap">
+                      <span className="chip bg-brand-coral/10 text-brand-coral border-brand-coral/20 whitespace-nowrap normal-case tracking-normal">
                         {task.due ? formatDate(task.due).replace(",", "") : ""}
                       </span>
 
@@ -817,7 +817,7 @@ const Projects = () => {
 
                   <Button
                     type="submit"
-                    className="bg-brand-teal hover:bg-brand-teal/90 text-white rounded-xl"
+                    className="actsix-btn-primary rounded-xl"
                   >
                     Add
                   </Button>
@@ -854,7 +854,7 @@ const Projects = () => {
                   <Button
                     type="submit"
                     size="icon"
-                    className="bg-brand-teal hover:bg-brand-teal/90 text-white rounded-xl"
+                    className="actsix-btn-primary rounded-xl"
                   >
                     <Send className="h-4 w-4" />
                   </Button>

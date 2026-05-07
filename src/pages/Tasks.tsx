@@ -146,10 +146,10 @@ const Tasks = () => {
         subtitle="The next thing to do, in any context."
       />
 
-      <div className="px-8 -mt-2 pb-4 max-w-5xl flex justify-end">
+      <div className="px-8 pb-4 max-w-5xl flex justify-end">
         <Button
           asChild
-          className="rounded-xl bg-brand-teal hover:bg-brand-teal/90 text-white"
+          className="rounded-xl actsix-btn-primary"
         >
           <Link to="/inbox">
             <InboxIcon className="h-4 w-4 mr-2" />
@@ -216,7 +216,7 @@ const Tasks = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-full opacity-0 group-hover:opacity-100"
+                  className="rounded-full opacity-70 hover:opacity-100"
                   onClick={() => setEditingTask({ ...task })}
                 >
                   <Edit3 className="h-3.5 w-3.5 mr-1.5" />
@@ -226,7 +226,7 @@ const Tasks = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="opacity-0 group-hover:opacity-100"
+                  className="opacity-70 hover:opacity-100"
                   onClick={() => remove(task.id)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -277,7 +277,7 @@ const Tasks = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-full opacity-0 group-hover:opacity-100"
+                      className="rounded-full opacity-70 hover:opacity-100"
                       onClick={() => setEditingTask({ ...task })}
                     >
                       <Edit3 className="h-3.5 w-3.5 mr-1.5" />
@@ -287,7 +287,7 @@ const Tasks = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="opacity-0 group-hover:opacity-100"
+                      className="opacity-70 hover:opacity-100"
                       onClick={() => remove(task.id)}
                     >
                       <Trash2 className="h-4 w-4" />

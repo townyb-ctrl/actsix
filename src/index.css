@@ -102,8 +102,47 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide;
+    @apply inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide shadow-soft;
   }
+  .action-row {
+    @apply rounded-2xl border border-transparent bg-background/45 transition-all;
+  }
+
+  .action-row:hover {
+    border-color: hsl(var(--brand-teal) / 0.3);
+    background-color: hsl(var(--brand-teal) / 0.05);
+    box-shadow: var(--shadow-soft, 0 10px 30px hsl(var(--foreground) / 0.06));
+  }
+
+  .actsix-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: hsl(var(--brand-teal));
+    color: white;
+    border: 1px solid hsl(var(--brand-teal));
+    box-shadow: 0 10px 22px hsl(var(--brand-teal) / 0.18);
+  }
+
+  .actsix-btn-primary:hover {
+    background-color: hsl(var(--brand-teal) / 0.9);
+    color: white;
+  }
+
+  .actsix-btn-soft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: hsl(var(--brand-teal) / 0.1);
+    color: hsl(var(--brand-teal));
+    border: 1px solid hsl(var(--brand-teal) / 0.35);
+  }
+
+  .actsix-btn-soft:hover {
+    background-color: hsl(var(--brand-teal) / 0.16);
+    color: hsl(var(--brand-teal));
+  }
+
   .label-eyebrow {
     @apply text-[11px] uppercase tracking-[0.2em] font-semibold text-muted-foreground;
   }
