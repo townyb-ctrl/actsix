@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -21,6 +21,26 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+type ProjectOption = {
+  id: string;
+  name: string;
+};
+
+type ContextOption = {
+  id: string;
+  name: string;
+};
+
+const fallbackContexts = [
+  "General",
+  "Calls",
+  "Computer",
+  "Church",
+  "Errands",
+  "Home",
+  "Waiting",
+];
+
 const PriorityChip = ({ p }: { p?: string | null }) => {
   const priority = p || "Medium";
 
@@ -36,33 +56,61 @@ const PriorityChip = ({ p }: { p?: string | null }) => {
 
 const Tasks = () => {
   const { user } = useAuth();
+
   const [tasks, setTasks] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [contexts, setContexts] = useState<ContextOption[]>([]);
+
   const [title, setTitle] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const contextNames = useMemo(() => {
+    const fromDb = contexts.map((context) => context.name).filter(Boolean);
+    const merged = [...fallbackContexts, ...fromDb];
+
+    return Array.from(new Set(merged));
+  }, [contexts]);
+
   const load = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [
+      { data: taskData, error: taskError },
+      { data: projectData, error: projectError },
+      { data: contextData, error: contextError },
+    ] = await Promise.all([
+      supabase.from("tasks").select("*").order("created_at", { ascending: false }),
+      supabase.from("projects").select("id, name").order("name", { ascending: true }),
+      supabase.from("contexts").select("id, name").order("position", { ascending: true }),
+    ]);
 
-    if (error) {
-      toast.error(error.message);
+    if (taskError) {
+      toast.error(taskError.message);
       return;
     }
 
-    setTasks(data ?? []);
+    if (projectError) {
+      toast.error(projectError.message);
+      return;
+    }
+
+    if (contextError) {
+      toast.error(contextError.message);
+      return;
+    }
+
+    setTasks(taskData ?? []);
+    setProjects(projectData ?? []);
+    setContexts(contextData ?? []);
   };
 
   useEffect(() => {
     if (user) load();
   }, [user]);
 
-  const add = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const add = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     if (!title.trim() || !user) return;
 
@@ -319,7 +367,7 @@ const Tasks = () => {
                   Task details
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  This uses the same editor structure as Inbox when an item is clarified as a Next Action.
+                  Choose the project and context from your existing ACTSIX lists.
                 </p>
               </div>
 
@@ -351,7 +399,7 @@ const Tasks = () => {
                   </select>
 
                   <p className="text-xs text-muted-foreground mt-2">
-                    This task is already in Next Actions. To move it elsewhere, we can add a Move feature next.
+                    This task is already in Next Actions.
                   </p>
                 </div>
               </section>
@@ -394,26 +442,37 @@ const Tasks = () => {
                 <div className="grid md:grid-cols-3 gap-3">
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                     <label className="label-eyebrow">Project</label>
-                    <Input
+                    <select
                       value={editingTask.project ?? ""}
                       onChange={(event) =>
                         setEditingTask({ ...editingTask, project: event.target.value })
                       }
-                      className="mt-2 border-border/70 bg-background"
-                      placeholder="Linked project"
-                    />
+                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                    >
+                      <option value="">No project</option>
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.name}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                     <label className="label-eyebrow">Context</label>
-                    <Input
-                      value={editingTask.context ?? ""}
+                    <select
+                      value={editingTask.context ?? "General"}
                       onChange={(event) =>
                         setEditingTask({ ...editingTask, context: event.target.value })
                       }
-                      className="mt-2 border-border/70 bg-background"
-                      placeholder="Calls, Computer, Church..."
-                    />
+                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                    >
+                      {contextNames.map((context) => (
+                        <option key={context} value={context}>
+                          {context}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
