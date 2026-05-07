@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -42,6 +42,26 @@ type InboxItem = {
   created_at?: string | null;
 };
 
+type ProjectOption = {
+  id: string;
+  name: string;
+};
+
+type ContextOption = {
+  id: string;
+  name: string;
+};
+
+const fallbackContexts = [
+  "General",
+  "Calls",
+  "Computer",
+  "Church",
+  "Errands",
+  "Home",
+  "Waiting",
+];
+
 type ProcessTarget = "" | "task" | "project" | "waiting" | "someday" | "meeting";
 
 const targetLabels: Record<Exclude<ProcessTarget, "">, string> = {
@@ -55,26 +75,59 @@ const targetLabels: Record<Exclude<ProcessTarget, "">, string> = {
 const Inbox = () => {
   const { user } = useAuth();
   const [items, setItems] = useState<InboxItem[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [contexts, setContexts] = useState<ContextOption[]>([]);
   const [title, setTitle] = useState("");
   const [editingItem, setEditingItem] = useState<InboxItem | null>(null);
   const [processTarget, setProcessTarget] = useState<ProcessTarget>("");
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
 
+  const contextNames = useMemo(() => {
+    const fromDb = contexts.map((context) => context.name).filter(Boolean);
+    return Array.from(new Set([...fallbackContexts, ...fromDb]));
+  }, [contexts]);
+
   const load = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("inbox_items")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [
+      { data: inboxData, error: inboxError },
+      { data: projectData, error: projectError },
+      { data: contextData, error: contextError },
+    ] = await Promise.all([
+      supabase
+        .from("inbox_items")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("projects")
+        .select("id, name")
+        .order("name", { ascending: true }),
+      supabase
+        .from("contexts")
+        .select("id, name")
+        .order("position", { ascending: true }),
+    ]);
 
-    if (error) {
-      toast.error(error.message);
+    if (inboxError) {
+      toast.error(inboxError.message);
       return;
     }
 
-    setItems(data ?? []);
+    if (projectError) {
+      toast.error(projectError.message);
+      return;
+    }
+
+    if (contextError) {
+      toast.error(contextError.message);
+      return;
+    }
+
+    setItems(inboxData ?? []);
+    setProjects(projectData ?? []);
+    setContexts(contextData ?? []);
   };
 
   useEffect(() => {
@@ -445,26 +498,41 @@ const Inbox = () => {
                     <div className="grid md:grid-cols-3 gap-3">
                       <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                         <label className="label-eyebrow">Project</label>
-                        <Input
+                        <select
                           value={editingItem.project ?? ""}
                           onChange={(event) =>
                             setEditingItem({ ...editingItem, project: event.target.value })
                           }
-                          className="mt-2 border-border/70 bg-background"
-                          placeholder="Linked project"
-                        />
+                          className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                        >
+                          <option value="">No project</option>
+                          {editingItem.project &&
+                            !projects.some((project) => project.name === editingItem.project) && (
+                              <option value={editingItem.project}>{editingItem.project}</option>
+                            )}
+                          {projects.map((project) => (
+                            <option key={project.id} value={project.name}>
+                              {project.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                         <label className="label-eyebrow">Context</label>
-                        <Input
-                          value={editingItem.context ?? ""}
+                        <select
+                          value={editingItem.context ?? "General"}
                           onChange={(event) =>
                             setEditingItem({ ...editingItem, context: event.target.value })
                           }
-                          className="mt-2 border-border/70 bg-background"
-                          placeholder="Calls, Computer, Church..."
-                        />
+                          className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                        >
+                          {contextNames.map((context) => (
+                            <option key={context} value={context}>
+                              {context}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
