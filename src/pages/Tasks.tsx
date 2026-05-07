@@ -25,6 +25,48 @@ const priorityWeight: Record<string, number> = {
   Low: 1,
 };
 
+const startOfToday = () => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const parseLocalDate = (value?: string | null) => {
+  if (!value) return null;
+
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day);
+};
+
+const isToday = (value?: string | null) => {
+  const due = parseLocalDate(value);
+  if (!due) return false;
+
+  const today = startOfToday();
+  return due.getTime() === today.getTime();
+};
+
+const isThisWeek = (value?: string | null) => {
+  const due = parseLocalDate(value);
+  if (!due) return false;
+
+  const today = startOfToday();
+  const end = new Date(today);
+  end.setDate(today.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+
+  return due >= today && due <= end;
+};
+
+const isOverdue = (value?: string | null) => {
+  const due = parseLocalDate(value);
+  if (!due) return false;
+
+  return due < startOfToday();
+};
+
 const Tasks = () => {
   const { user } = useAuth();
 
@@ -35,6 +77,7 @@ const Tasks = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const [search, setSearch] = useState("");
+  const [dateView, setDateView] = useState("all");
   const [projectFilter, setProjectFilter] = useState("All");
   const [contextFilter, setContextFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
@@ -86,7 +129,8 @@ const Tasks = () => {
   }, [tasks]);
 
   const hasActiveFilters =
-    search.trim() ||
+    Boolean(search.trim()) ||
+    dateView !== "all" ||
     projectFilter !== "All" ||
     contextFilter !== "All" ||
     priorityFilter !== "All" ||
@@ -95,11 +139,20 @@ const Tasks = () => {
 
   const clearFilters = () => {
     setSearch("");
+    setDateView("all");
     setProjectFilter("All");
     setContextFilter("All");
     setPriorityFilter("All");
     setEnergyFilter("All");
     setSortBy("due");
+  };
+
+  const matchesDateView = (task: any) => {
+    if (dateView === "today") return isToday(task.due);
+    if (dateView === "week") return isThisWeek(task.due);
+    if (dateView === "nodate") return !task.due;
+    if (dateView === "overdue") return isOverdue(task.due);
+    return true;
   };
 
   const applyFiltersAndSort = (source: any[]) => {
@@ -127,6 +180,7 @@ const Tasks = () => {
 
       return (
         matchesSearch &&
+        matchesDateView(task) &&
         matchesProject &&
         matchesContext &&
         matchesPriority &&
@@ -160,9 +214,14 @@ const Tasks = () => {
         return (a.minutes || 15) - (b.minutes || 15);
       }
 
-      // due date default: dated tasks first, earliest due first, undated last
-      const aDue = a.due ? new Date(a.due).getTime() : Number.POSITIVE_INFINITY;
-      const bDue = b.due ? new Date(b.due).getTime() : Number.POSITIVE_INFINITY;
+      const aDue = a.due
+        ? parseLocalDate(a.due)?.getTime() ?? Number.POSITIVE_INFINITY
+        : Number.POSITIVE_INFINITY;
+
+      const bDue = b.due
+        ? parseLocalDate(b.due)?.getTime() ?? Number.POSITIVE_INFINITY
+        : Number.POSITIVE_INFINITY;
+
       return aDue - bDue;
     });
   };
@@ -251,6 +310,14 @@ const Tasks = () => {
   const filteredOpen = applyFiltersAndSort(open);
   const filteredDone = applyFiltersAndSort(done);
 
+  const dateViews = [
+    { value: "all", label: "All", count: open.length },
+    { value: "today", label: "Today", count: open.filter((task) => isToday(task.due)).length },
+    { value: "week", label: "This Week", count: open.filter((task) => isThisWeek(task.due)).length },
+    { value: "nodate", label: "No Date", count: open.filter((task) => !task.due).length },
+    { value: "overdue", label: "Overdue", count: open.filter((task) => isOverdue(task.due)).length },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -310,85 +377,113 @@ const Tasks = () => {
               className="h-11 pl-10 border-border/70 bg-card shadow-soft"
             />
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {dateViews.map((view) => {
+              const active = dateView === view.value;
+
+              return (
+                <button
+                  key={view.value}
+                  type="button"
+                  onClick={() => setDateView(view.value)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+                    active
+                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                      : "border-border/70 bg-card text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                  }`}
+                >
+                  {view.label}
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                      active
+                        ? "bg-brand-teal/15 text-brand-teal"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {view.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {showFilters && (
           <Card className="p-4 shadow-card border-border/70 bg-card">
-            <div className="flex flex-col gap-3">
-              <div className="grid md:grid-cols-5 gap-2">
-                <div>
-                  <label className="label-eyebrow flex h-4 items-center">Project</label>
-                  <select
-                    value={projectFilter}
-                    onChange={(event) => setProjectFilter(event.target.value)}
-                    className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option>All</option>
-                    {uniqueProjects.map((project) => (
-                      <option key={project}>{project}</option>
-                    ))}
-                  </select>
-                </div>
+            <div className="grid md:grid-cols-5 gap-2">
+              <div>
+                <label className="label-eyebrow flex h-4 items-center">Project</label>
+                <select
+                  value={projectFilter}
+                  onChange={(event) => setProjectFilter(event.target.value)}
+                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option>All</option>
+                  {uniqueProjects.map((project) => (
+                    <option key={project}>{project}</option>
+                  ))}
+                </select>
+              </div>
 
-                <div>
-                  <label className="label-eyebrow flex h-4 items-center">Context</label>
-                  <select
-                    value={contextFilter}
-                    onChange={(event) => setContextFilter(event.target.value)}
-                    className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option>All</option>
-                    {uniqueContexts.map((context) => (
-                      <option key={context}>{context}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="label-eyebrow flex h-4 items-center">Context</label>
+                <select
+                  value={contextFilter}
+                  onChange={(event) => setContextFilter(event.target.value)}
+                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option>All</option>
+                  {uniqueContexts.map((context) => (
+                    <option key={context}>{context}</option>
+                  ))}
+                </select>
+              </div>
 
-                <div>
-                  <label className="label-eyebrow flex h-4 items-center">Priority</label>
-                  <select
-                    value={priorityFilter}
-                    onChange={(event) => setPriorityFilter(event.target.value)}
-                    className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option>All</option>
-                    {uniquePriorities.map((priority) => (
-                      <option key={priority}>{priority}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="label-eyebrow flex h-4 items-center">Priority</label>
+                <select
+                  value={priorityFilter}
+                  onChange={(event) => setPriorityFilter(event.target.value)}
+                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option>All</option>
+                  {uniquePriorities.map((priority) => (
+                    <option key={priority}>{priority}</option>
+                  ))}
+                </select>
+              </div>
 
-                <div>
-                  <label className="label-eyebrow flex h-4 items-center">Energy</label>
-                  <select
-                    value={energyFilter}
-                    onChange={(event) => setEnergyFilter(event.target.value)}
-                    className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option>All</option>
-                    {uniqueEnergies.map((energy) => (
-                      <option key={energy}>{energy}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="label-eyebrow flex h-4 items-center">Energy</label>
+                <select
+                  value={energyFilter}
+                  onChange={(event) => setEnergyFilter(event.target.value)}
+                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option>All</option>
+                  {uniqueEnergies.map((energy) => (
+                    <option key={energy}>{energy}</option>
+                  ))}
+                </select>
+              </div>
 
-                <div>
-                  <label className="label-eyebrow flex h-4 items-center gap-1">
-                    <ArrowUpDown className="h-3 w-3" />
-                    Sort
-                  </label>
-                  <select
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value)}
-                    className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option value="due">Due date</option>
-                    <option value="priority">Priority</option>
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="duration">Shortest duration</option>
-                  </select>
-                </div>
+              <div>
+                <label className="label-eyebrow flex h-4 items-center gap-1">
+                  <ArrowUpDown className="h-3 w-3" />
+                  Sort
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option value="due">Due date</option>
+                  <option value="priority">Priority</option>
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="duration">Shortest duration</option>
+                </select>
               </div>
             </div>
           </Card>
