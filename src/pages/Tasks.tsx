@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit3, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Edit3,
+  Inbox as InboxIcon,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
@@ -28,9 +34,9 @@ const Tasks = () => {
   const { user } = useAuth();
 
   const [tasks, setTasks] = useState<any[]>([]);
-  const [title, setTitle] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -51,37 +57,6 @@ const Tasks = () => {
   useEffect(() => {
     if (user) load();
   }, [user]);
-
-  const add = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!title.trim() || !user) return;
-
-    const { error } = await supabase.from("tasks").insert({
-      id: crypto.randomUUID(),
-      title: title.trim(),
-      user_id: user.id,
-      context: "General",
-      priority: "Medium",
-      energy: "Medium",
-      minutes: 15,
-      complete: false,
-      notes: "",
-      project: "",
-      person: "",
-      location: "",
-      tags: [],
-    });
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    setTitle("");
-    toast.success("Task added");
-    load();
-  };
 
   const toggle = async (task: any) => {
     const nextComplete = !task.complete;
@@ -168,28 +143,22 @@ const Tasks = () => {
       <PageHeader
         eyebrow="Workflow"
         title="Next Actions"
-        subtitle="Capture, attend, complete. The next thing to do, in any context."
+        subtitle="The next thing to do, in any context."
       />
 
+      <div className="px-8 -mt-2 pb-4 max-w-5xl flex justify-end">
+        <Button
+          asChild
+          className="rounded-xl bg-brand-teal hover:bg-brand-teal/90 text-white"
+        >
+          <Link to="/inbox">
+            <InboxIcon className="h-4 w-4 mr-2" />
+            Quick Capture
+          </Link>
+        </Button>
+      </div>
+
       <div className="px-8 pb-12 max-w-5xl space-y-6">
-        <Card className="p-3 shadow-card border-border/70 bg-card">
-          <form onSubmit={add} className="flex gap-2">
-            <Input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Capture a task…"
-              className="border-transparent bg-muted/40 focus-visible:bg-background"
-            />
-
-            <Button
-              type="submit"
-              className="bg-brand-teal hover:bg-brand-teal/90 text-white rounded-full px-5"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </form>
-        </Card>
-
         <section>
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-xl font-extrabold tracking-tight">
@@ -200,7 +169,7 @@ const Tasks = () => {
             </h2>
           </div>
 
-          <Card className="divide-y divide-border shadow-card border-border/70 bg-card">
+          <Card className="p-2 space-y-2 shadow-card border-border/70 bg-card">
             {open.length === 0 && (
               <div className="p-6 text-sm text-muted-foreground">All clear.</div>
             )}
@@ -208,7 +177,7 @@ const Tasks = () => {
             {open.map((task) => (
               <div
                 key={task.id}
-                className="flex items-start gap-3 p-4 group hover:bg-muted/30"
+                className="action-row flex items-start gap-3 p-4 group"
               >
                 <Checkbox
                   checked={task.complete}
@@ -225,8 +194,8 @@ const Tasks = () => {
                     </p>
                   )}
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span className="chip bg-brand-teal/15 text-brand-teal">
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="chip bg-brand-teal/10 text-brand-teal border-brand-teal/20">
                       {task.context || "General"}
                     </span>
                     <PriorityChip p={task.priority} />
@@ -269,41 +238,64 @@ const Tasks = () => {
 
         {done.length > 0 && (
           <section>
-            <h2 className="text-xl font-extrabold tracking-tight text-muted-foreground mb-3">
-              Completed{" "}
-              <span className="font-normal text-base">· {done.length}</span>
-            </h2>
+            <button
+              type="button"
+              onClick={() => setShowCompleted((value) => !value)}
+              className="w-full flex items-center justify-between mb-3 rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-soft hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                {showCompleted ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
 
-            <Card className="divide-y divide-border shadow-card border-border/70 bg-card opacity-70">
-              {done.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 p-4 group">
-                  <Checkbox checked onCheckedChange={() => toggle(task)} />
+                <h2 className="text-xl font-extrabold tracking-tight text-muted-foreground">
+                  Completed{" "}
+                  <span className="font-normal text-base">· {done.length}</span>
+                </h2>
+              </div>
 
-                  <div className="flex-1 truncate line-through text-muted-foreground">
-                    {task.title}
+              <span className="text-xs font-bold text-muted-foreground">
+                {showCompleted ? "Collapse" : "Expand"}
+              </span>
+            </button>
+
+            {showCompleted && (
+              <Card className="p-2 space-y-2 shadow-card border-border/70 bg-card opacity-70">
+                {done.map((task) => (
+                  <div
+                    key={task.id}
+                    className="action-row flex items-center gap-3 p-4 group"
+                  >
+                    <Checkbox checked onCheckedChange={() => toggle(task)} />
+
+                    <div className="flex-1 truncate line-through text-muted-foreground">
+                      {task.title}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full opacity-0 group-hover:opacity-100"
+                      onClick={() => setEditingTask({ ...task })}
+                    >
+                      <Edit3 className="h-3.5 w-3.5 mr-1.5" />
+                      Edit
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100"
+                      onClick={() => remove(task.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full opacity-0 group-hover:opacity-100"
-                    onClick={() => setEditingTask({ ...task })}
-                  >
-                    <Edit3 className="h-3.5 w-3.5 mr-1.5" />
-                    Edit
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100"
-                    onClick={() => remove(task.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </Card>
+                ))}
+              </Card>
+            )}
           </section>
         )}
       </div>

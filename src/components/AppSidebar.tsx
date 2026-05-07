@@ -63,17 +63,22 @@ export function AppSidebar() {
 
   const renderBadge = (item: Item) => {
     if (collapsed) return null;
+
     if (item.title === "Review") {
       return (
-        <span className="ml-auto chip bg-sidebar-accent text-sidebar-foreground/70 font-mono">
+        <span className="ml-auto text-[11px] font-bold font-mono text-brand-teal-bright tabular-nums">
           {reviewProgress.done}/{reviewProgress.total}
         </span>
       );
     }
+
     const c = item.badgeKey ? counts[item.badgeKey] : undefined;
     if (!c) return null;
+
     return (
-      <span className="ml-auto chip bg-brand-teal/15 text-brand-teal-bright">{c}</span>
+      <span className="ml-auto text-[11px] font-bold font-mono text-brand-teal-bright tabular-nums">
+        {c}
+      </span>
     );
   };
 
