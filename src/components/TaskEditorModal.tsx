@@ -1,18 +1,14 @@
 import {
   Archive,
-  CheckCircle2,
-  Clock,
   FileText,
   Save,
-  Tags,
   Trash2,
   X,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import ProjectSelect from "@/components/ProjectSelect";
-import ContextSelect from "@/components/ContextSelect";
+import NextActionFields from "@/components/NextActionFields";
 
 type TaskEditorModalProps = {
   task: any;
@@ -115,122 +111,11 @@ const TaskEditorModal = ({
             </div>
           </section>
 
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle2 className="h-4 w-4 text-brand-teal" />
-              <h3 className="font-extrabold tracking-tight">Next Action details</h3>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                <label className="label-eyebrow">Project</label>
-                <ProjectSelect
-                  value={task.project ?? ""}
-                  onChange={(project) => onChange({ ...task, project })}
-                  onCreated={onRefreshOptions}
-                />
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                <label className="label-eyebrow">Context</label>
-                <ContextSelect
-                  value={task.context ?? "General"}
-                  onChange={(context) => onChange({ ...task, context })}
-                  onCreated={onRefreshOptions}
-                />
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                <label className="label-eyebrow flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5" />
-                  Duration
-                </label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={task.minutes ?? 15}
-                  onChange={(event) =>
-                    onChange({
-                      ...task,
-                      minutes: Number(event.target.value) || 15,
-                    })
-                  }
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                <label className="label-eyebrow">Priority</label>
-                <select
-                  value={task.priority ?? "Medium"}
-                  onChange={(event) =>
-                    onChange({ ...task, priority: event.target.value })
-                  }
-                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                >
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
-                  <option>Urgent</option>
-                </select>
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                <label className="label-eyebrow">Energy</label>
-                <select
-                  value={task.energy ?? "Medium"}
-                  onChange={(event) =>
-                    onChange({ ...task, energy: event.target.value })
-                  }
-                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                >
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
-                </select>
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                <label className="label-eyebrow">Due date</label>
-                <Input
-                  type="date"
-                  value={task.due ?? ""}
-                  onChange={(event) =>
-                    onChange({ ...task, due: event.target.value || null })
-                  }
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <Tags className="h-4 w-4 text-brand-teal" />
-              <h3 className="font-extrabold tracking-tight">Organization</h3>
-            </div>
-
-            <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-              <label className="label-eyebrow">Tags</label>
-              <Input
-                value={Array.isArray(task.tags) ? task.tags.join(", ") : ""}
-                onChange={(event) =>
-                  onChange({
-                    ...task,
-                    tags: event.target.value
-                      .split(",")
-                      .map((tag) => tag.trim())
-                      .filter(Boolean),
-                  })
-                }
-                className="mt-2 border-border/70 bg-background"
-                placeholder="Worship, Admin, Follow-up"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Separate tags with commas.
-              </p>
-            </div>
-          </section>
+          <NextActionFields
+            item={task}
+            onChange={onChange}
+            onRefreshOptions={onRefreshOptions}
+          />
 
           <section className="rounded-2xl border border-border/70 bg-muted/30 p-4">
             <div className="flex items-center justify-between gap-4">
