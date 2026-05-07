@@ -200,13 +200,14 @@ const Tasks = () => {
                 </div>
 
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full opacity-70 hover:opacity-100"
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-70 hover:opacity-100"
+                  title="Edit task"
+                  aria-label="Edit task"
                   onClick={() => setEditingTask({ ...task })}
                 >
-                  <Edit3 className="h-3.5 w-3.5 mr-1.5" />
-                  Edit
+                  <Edit3 className="h-4 w-4" />
                 </Button>
 
                 <Button
