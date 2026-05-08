@@ -1,11 +1,24 @@
-import logo from "@/assets/actsix-logo.png";
+import logoFullWhite from "@/assets/branding/actsix-logo-white.png";
+import logoIconWhite from "@/assets/branding/actsix-icon-white.png";
 
 export const Logo = ({ compact = false }: { compact?: boolean }) => (
-  <div className="flex items-center gap-2.5">
+  <div
+    className={`flex items-center ${
+      compact ? "justify-center w-full" : "justify-start"
+    }`}
+  >
     {compact ? (
-      <img src={logo} alt="ACTSIX" className="h-12 w-12 object-contain shrink-0" />
+      <img
+        src={logoIconWhite}
+        alt="ACTSIX"
+        className="h-20 w-24 object-contain shrink-0"
+      />
     ) : (
-      <img src={logo} alt="ACTSIX" className="h-16 w-auto object-contain" />
+      <img
+        src={logoFullWhite}
+        alt="ACTSIX"
+        className="h-20 w-auto max-w-[340px] object-contain"
+      />
     )}
   </div>
 );
