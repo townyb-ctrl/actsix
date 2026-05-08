@@ -2,7 +2,12 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -14,26 +19,29 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        heading: [
+          "Satoshi",
+          "Inter Tight",
+          "General Sans",
+          "Manrope",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
+        body: ["Manrope", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Manrope", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       backgroundImage: {
-        'gradient-content': 'var(--gradient-content)',
-        'gradient-sidebar': 'var(--gradient-sidebar)',
+        "gradient-content": "var(--gradient-content)",
+        "gradient-sidebar": "var(--gradient-sidebar)",
       },
       boxShadow: {
-        card: 'var(--shadow-card)',
-        soft: 'var(--shadow-soft)',
-      },
-      colors: {
-        brand: {
-          teal: 'hsl(var(--brand-teal))',
-          'teal-bright': 'hsl(var(--brand-teal-bright))',
-          coral: 'hsl(var(--brand-coral))',
-          amber: 'hsl(var(--brand-amber))',
-          cream: 'hsl(var(--brand-cream))',
-          ink: 'hsl(var(--brand-ink))',
-        },
+        card: "var(--shadow-card)",
+        soft: "var(--shadow-soft)",
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
       },
       colors: {
         border: "hsl(var(--border))",
@@ -79,11 +87,35 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        brand: {
+          charcoal: "hsl(var(--brand-charcoal))",
+          "warm-white": "hsl(var(--brand-warm-white))",
+          teal: "hsl(var(--brand-teal))",
+          "teal-dark": "hsl(var(--brand-teal-dark))",
+          "teal-soft": "hsl(var(--brand-teal-soft))",
+          sage: "hsl(var(--brand-sage))",
+          "sage-soft": "hsl(var(--brand-sage-soft))",
+          sand: "hsl(var(--brand-sand))",
+          bronze: "hsl(var(--brand-bronze))",
+          success: "hsl(var(--brand-success))",
+          warning: "hsl(var(--brand-warning))",
+          danger: "hsl(var(--brand-danger))",
+
+          /* Existing aliases used in components */
+          cream: "hsl(var(--brand-cream))",
+          ink: "hsl(var(--brand-ink))",
+          "teal-bright": "hsl(var(--brand-teal-bright))",
+          amber: "hsl(var(--brand-amber))",
+          coral: "hsl(var(--brand-coral))",
+        },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-xl)",
+        full: "var(--radius-pill)",
       },
       keyframes: {
         "accordion-down": {
@@ -104,8 +136,8 @@ export default {
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-down": "accordion-down 0.16s ease-out",
+        "accordion-up": "accordion-up 0.16s ease-out",
       },
     },
   },

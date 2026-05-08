@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Activity,
   BarChart3,
@@ -12,17 +13,18 @@ import {
   CheckCircle2,
   Clock3,
   Edit3,
+  Filter,
   FolderKanban,
   ListChecks,
+  Plus,
   Search,
-  SlidersHorizontal,
+  Send,
   Trash2,
   UserRound,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
-import ProjectEditorModal from "@/components/ProjectEditorModal";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
 
@@ -127,16 +129,15 @@ const Projects = () => {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [newProjectName, setNewProjectName] = useState("");
   const [newActionTitle, setNewActionTitle] = useState("");
-  const [newActionDue, setNewActionDue] = useState("");
+  const [quickCapture, setQuickCapture] = useState("");
   const [search, setSearch] = useState("");
-  const [projectView, setProjectView] = useState("all");
+  const [view, setView] = useState("All Projects");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [savingTask, setSavingTask] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [savingProject, setSavingProject] = useState(false);
 
   const projectStats = useMemo(() => {
     return projects.reduce<Record<string, ReturnType<typeof getProjectStats>>>(
@@ -155,7 +156,7 @@ const Projects = () => {
     return stats?.progress === 100 || project.status?.toLowerCase().includes("complete");
   }).length;
 
-  const needsActionProjects = projects.filter((project) => {
+  const stalledProjects = projects.filter((project) => {
     const stats = projectStats[project.id];
     return stats && stats.openTasks.length === 0 && stats.progress < 100;
   }).length;
@@ -166,55 +167,33 @@ const Projects = () => {
     totalProjects === 0
       ? 0
       : Math.round(
-          projects.reduce(
-            (sum, project) => sum + (projectStats[project.id]?.progress ?? 0),
-            0
-          ) / totalProjects
+          projects.reduce((sum, project) => sum + (projectStats[project.id]?.progress ?? 0), 0) /
+            totalProjects
         );
 
   const filteredProjects = useMemo(() => {
-    const q = search.trim().toLowerCase();
-
-    const filtered = projects.filter((project) => {
+    return projects.filter((project) => {
       const stats = projectStats[project.id];
+      const q = search.trim().toLowerCase();
 
       const matchesSearch =
         !q ||
         project.name.toLowerCase().includes(q) ||
         (project.area || "").toLowerCase().includes(q) ||
-        (project.status || "").toLowerCase().includes(q) ||
-        (project.notes || "").toLowerCase().includes(q) ||
         (stats?.nextAction || "").toLowerCase().includes(q);
 
-      const matchesView =
-        projectView === "all" ||
-        (projectView === "active" && (stats?.progress ?? 0) < 100) ||
-        (projectView === "needs-action" &&
-          Boolean(stats && stats.openTasks.length === 0 && stats.progress < 100)) ||
-        (projectView === "completed" && (stats?.progress ?? 0) === 100);
+      if (!matchesSearch) return false;
 
-      return matchesSearch && matchesView;
+      if (view === "Active") return (stats?.progress ?? 0) < 100;
+      if (view === "Stalled") return Boolean(stats && stats.openTasks.length === 0 && stats.progress < 100);
+      if (view === "Completed") return (stats?.progress ?? 0) === 100;
+
+      return true;
     });
-
-    return [...filtered].sort((a, b) => {
-      return (
-        new Date(b.updated_at || b.created_at || 0).getTime() -
-        new Date(a.updated_at || a.created_at || 0).getTime()
-      );
-    });
-  }, [projects, projectStats, search, projectView]);
-
-  const hasActiveFilters = Boolean(search.trim()) || projectView !== "all";
-
-  const clearFilters = () => {
-    setSearch("");
-    setProjectView("all");
-  };
+  }, [projects, projectStats, search, view]);
 
   const selectedProject =
-    filteredProjects.find((project) => project.id === selectedProjectId) ??
-    filteredProjects[0] ??
-    projects[0];
+    projects.find((project) => project.id === selectedProjectId) ?? filteredProjects[0] ?? projects[0];
 
   const selectedStats = selectedProject ? projectStats[selectedProject.id] : null;
 
@@ -255,6 +234,42 @@ const Projects = () => {
     if (user) load();
   }, [user]);
 
+  const addProject = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!newProjectName.trim() || !user) return;
+
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({
+        id: crypto.randomUUID(),
+        name: newProjectName.trim(),
+        user_id: user.id,
+        area: "General",
+        status: "In Progress",
+        progress: 0,
+        open_tasks: 0,
+        next_action: "",
+        notes: "",
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setNewProjectName("");
+    toast.success("Project added");
+
+    if (data) {
+      setSelectedProjectId(data.id);
+    }
+
+    load();
+  };
+
   const addProjectAction = async (event?: React.FormEvent) => {
     event?.preventDefault();
 
@@ -274,7 +289,6 @@ const Projects = () => {
       person: "",
       location: "",
       tags: [],
-      due: newActionDue || null,
     });
 
     if (error) {
@@ -284,8 +298,37 @@ const Projects = () => {
 
     await syncProjectStats(selectedProject.name, user.id);
     setNewActionTitle("");
-    setNewActionDue("");
     toast.success("Next action added");
+    load();
+  };
+
+  const addQuickCapture = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!quickCapture.trim() || !selectedProject || !user) return;
+
+    const { error } = await supabase.from("tasks").insert({
+      id: crypto.randomUUID(),
+      title: quickCapture.trim(),
+      user_id: user.id,
+      project: selectedProject.name,
+      context: "General",
+      priority: "Medium",
+      energy: "Medium",
+      minutes: 15,
+      complete: false,
+      notes: "",
+      tags: [],
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await syncProjectStats(selectedProject.name, user.id);
+    setQuickCapture("");
+    toast.success("Captured to project");
     load();
   };
 
@@ -310,8 +353,7 @@ const Projects = () => {
     load();
   };
 
-  const removeTask = async (taskOrId: any) => {
-    const id = typeof taskOrId === "string" ? taskOrId : taskOrId.id;
+  const removeTask = async (id: string) => {
     const targetTask = tasks.find((task) => task.id === id);
 
     const { error } = await supabase.from("tasks").delete().eq("id", id);
@@ -403,72 +445,6 @@ const Projects = () => {
     load();
   };
 
-  const saveProject = async () => {
-    if (!editingProject || !user) return;
-
-    const previousProject = projects.find(
-      (project) => project.id === editingProject.id
-    );
-
-    const previousName = previousProject?.name || "";
-    const nextName = editingProject.name?.trim() || "";
-
-    if (!nextName) {
-      toast.error("Project name is required");
-      return;
-    }
-
-    setSavingProject(true);
-
-    try {
-      const { error } = await supabase
-        .from("projects")
-        .update({
-          name: nextName,
-          area: editingProject.area || "General",
-          status: editingProject.status || "In Progress",
-          notes: editingProject.notes || "",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editingProject.id);
-
-      if (error) throw error;
-
-      if (previousName && previousName !== nextName) {
-        const { error: taskError } = await supabase
-          .from("tasks")
-          .update({
-            project: nextName,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("project", previousName)
-          .eq("user_id", user.id);
-
-        if (taskError) throw taskError;
-      }
-
-      await syncProjectStats(nextName, user.id);
-
-      toast.success("Project updated");
-      setSelectedProjectId(editingProject.id);
-      setEditingProject(null);
-      await load();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Could not update project";
-      toast.error(message);
-    } finally {
-      setSavingProject(false);
-    }
-  };
-
-  const projectViews = [
-    { value: "all", label: "All", count: totalProjects },
-    { value: "active", label: "Active", count: activeProjects },
-    { value: "needs-action", label: "Needs Action", count: needsActionProjects },
-    { value: "completed", label: "Completed", count: completedProjects },
-  ];
-
   return (
     <div>
       <PageHeader
@@ -478,6 +454,43 @@ const Projects = () => {
       />
 
       <div className="px-8 pb-12 space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <form onSubmit={addProject} className="flex gap-2 max-w-2xl w-full">
+            <div className="relative flex-1">
+              <Plus className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-teal" />
+              <Input
+                value={newProjectName}
+                onChange={(event) => setNewProjectName(event.target.value)}
+                placeholder="Add a new project..."
+                className="pl-10 border-border/70 bg-card h-12 shadow-soft"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="h-12 actsix-btn-primary rounded-xl px-6"
+            >
+              Add Project
+            </Button>
+          </form>
+
+          <div className="flex items-center gap-2">
+            <div className="relative w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search projects..."
+                className="pl-10 border-border/70 bg-card h-11"
+              />
+            </div>
+
+            <Button variant="outline" className="h-11 rounded-xl">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
+          </div>
+        </div>
 
         <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
           <Card className="p-5 border-border/70 bg-card shadow-card">
@@ -512,9 +525,9 @@ const Projects = () => {
                 <Clock3 className="h-6 w-6" />
               </div>
               <div>
-                <p className="label-eyebrow">Needs Action</p>
-                <div className="text-3xl font-extrabold tracking-tight mt-1">{needsActionProjects}</div>
-                <p className="text-sm text-muted-foreground">No next action</p>
+                <p className="label-eyebrow">Stalled Projects</p>
+                <div className="text-3xl font-extrabold tracking-tight mt-1">{stalledProjects}</div>
+                <p className="text-sm text-muted-foreground">Need next action</p>
               </div>
             </div>
           </Card>
@@ -527,76 +540,34 @@ const Projects = () => {
               <div>
                 <p className="label-eyebrow">Completion Rate</p>
                 <div className="text-3xl font-extrabold tracking-tight mt-1">{averageProgress}%</div>
-                <p className="text-sm text-muted-foreground">Avg. completion</p>
+                <p className="text-sm text-muted-foreground">Avg. project completion</p>
               </div>
             </div>
           </Card>
         </div>
 
-        <div className="space-y-3 max-w-7xl">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Showing {filteredProjects.length} of {projects.length} projects
-              {hasActiveFilters ? " with filters applied" : ""}
-            </div>
-
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 rounded-xl text-muted-foreground hover:text-foreground"
-                onClick={clearFilters}
-              >
-                <X className="h-3.5 w-3.5 mr-1.5" />
-                Clear
-              </Button>
-            )}
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search projects..."
-              className="h-11 pl-10 border-border/70 bg-card shadow-soft"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {projectViews.map((view) => {
-              const active = projectView === view.value;
-
-              return (
-                <button
-                  key={view.value}
-                  type="button"
-                  onClick={() => setProjectView(view.value)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
-                    active
-                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                      : "border-border/70 bg-card text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                  }`}
-                >
-                  {view.label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      active
-                        ? "bg-brand-teal/15 text-brand-teal"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {view.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <div className="grid 2xl:grid-cols-[minmax(0,1fr)_430px] gap-6 items-start">
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
+            <div className="p-4 border-b border-border/70 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">View</span>
+                <select
+                  value={view}
+                  onChange={(event) => setView(event.target.value)}
+                  className="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option>All Projects</option>
+                  <option>Active</option>
+                  <option>Stalled</option>
+                  <option>Completed</option>
+                </select>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredProjects.length} of {projects.length} projects
+              </p>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -646,7 +617,7 @@ const Projects = () => {
 
                             <div>
                               <div className="font-extrabold tracking-tight">{project.name}</div>
-                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                              <p className="text-xs text-muted-foreground mt-0.5">
                                 {project.notes || "No description yet"}
                               </p>
                             </div>
@@ -666,7 +637,7 @@ const Projects = () => {
                         <td className="px-4 py-4 min-w-[220px]">
                           {stats?.nextAction ? (
                             <div>
-                              <div className="font-semibold line-clamp-1">{stats.nextAction}</div>
+                              <div className="font-semibold">{stats.nextAction}</div>
                               <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                 <CalendarDays className="h-3.5 w-3.5" />
                                 {formatDate(stats.openTasks[0]?.due)}
@@ -725,28 +696,13 @@ const Projects = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Edit project"
-                      aria-label="Edit project"
-                      onClick={() => setEditingProject({ ...selectedProject })}
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Delete project"
-                      aria-label="Delete project"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => removeProject(selectedProject)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeProject(selectedProject)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
 
                 <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
@@ -799,7 +755,7 @@ const Projects = () => {
                   </span>
                 </div>
 
-                <div className="rounded-2xl border border-border/70 bg-muted/10 p-2 space-y-1.5">
+                <div className="rounded-2xl border border-border/70 bg-muted/10 p-2">
                   {selectedStats.projectTasks.length === 0 && (
                     <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
                       <ListChecks className="h-4 w-4" />
@@ -818,10 +774,7 @@ const Projects = () => {
                   ))}
                 </div>
 
-                <form
-                  onSubmit={addProjectAction}
-                  className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto] mt-4"
-                >
+                <form onSubmit={addProjectAction} className="flex gap-2 mt-4">
                   <Input
                     value={newActionTitle}
                     onChange={(event) => setNewActionTitle(event.target.value)}
@@ -829,16 +782,9 @@ const Projects = () => {
                     className="border-border/70 bg-background"
                   />
 
-                  <Input
-                    type="date"
-                    value={newActionDue}
-                    onChange={(event) => setNewActionDue(event.target.value)}
-                    className="border-border/70 bg-background"
-                  />
-
                   <Button
                     type="submit"
-                    className="actsix-btn-primary rounded-xl px-4"
+                    className="actsix-btn-primary rounded-xl"
                   >
                     Add
                   </Button>
@@ -860,26 +806,50 @@ const Projects = () => {
                   placeholder="Add project notes..."
                 />
               </div>
+
+              <div className="p-5">
+                <h3 className="font-extrabold tracking-tight mb-3">Quick Capture</h3>
+
+                <form onSubmit={addQuickCapture} className="flex gap-2">
+                  <Input
+                    value={quickCapture}
+                    onChange={(event) => setQuickCapture(event.target.value)}
+                    placeholder="Add a note, idea, or action..."
+                    className="border-border/70 bg-background"
+                  />
+
+                  <Button
+                    type="submit"
+                    size="icon"
+                    className="actsix-btn-primary rounded-xl"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+
+                <div className="mt-5">
+                  <p className="label-eyebrow mb-2">Project Team</p>
+                  <div className="flex items-center gap-2">
+                    {[selectedProject.name, selectedProject.area || "General", "ACTSIX"].map(
+                      (item) => (
+                        <div
+                          key={item}
+                          className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold"
+                        >
+                          {getInitials(item)}
+                        </div>
+                      )
+                    )}
+                    <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </Card>
           )}
         </div>
       </div>
-
-      <ProjectEditorModal
-        project={editingProject}
-        saving={savingProject}
-        onChange={setEditingProject}
-        onClose={() => setEditingProject(null)}
-        onSave={saveProject}
-        onDelete={
-          editingProject
-            ? () => {
-                removeProject(editingProject);
-                setEditingProject(null);
-              }
-            : undefined
-        }
-      />
 
       <TaskEditorModal
         task={editingTask}
