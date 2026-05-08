@@ -326,8 +326,8 @@ const Tasks = () => {
         subtitle="The next thing to do, in any context."
       />
 
-      <div className="px-8 -mt-2 pb-12 max-w-5xl space-y-5">
-        <div className="space-y-3">
+      <div className="px-8 -mt-1 pb-12 max-w-5xl space-y-4">
+        <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -374,7 +374,7 @@ const Tasks = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search next actions..."
-              className="h-11 pl-10 border-border/70 bg-card shadow-soft"
+              className="h-10 pl-10 border-border/70 bg-card shadow-soft"
             />
           </div>
 
@@ -387,7 +387,7 @@ const Tasks = () => {
                   key={view.value}
                   type="button"
                   onClick={() => setDateView(view.value)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-bold transition-colors ${
                     active
                       ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
                       : "border-border/70 bg-card text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -490,8 +490,8 @@ const Tasks = () => {
         )}
 
         <section>
-          <div className="flex items-baseline justify-between mb-2">
-            <h2 className="text-xl font-extrabold tracking-tight">
+          <div className="flex items-baseline justify-between mb-1">
+            <h2 className="text-lg font-extrabold tracking-tight">
               Open{" "}
               <span className="text-muted-foreground font-normal text-base">
                 · {filteredOpen.length}
