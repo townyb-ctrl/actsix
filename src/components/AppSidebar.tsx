@@ -1,12 +1,30 @@
 import {
-  LayoutGrid, Inbox, ListChecks, FolderKanban, Clock, Sparkles,
-  RotateCcw, ClipboardCheck, Calendar, Users, Settings as SettingsIcon
+  LayoutGrid,
+  Inbox,
+  ListChecks,
+  FolderKanban,
+  Clock,
+  Sparkles,
+  RotateCcw,
+  ClipboardCheck,
+  Calendar,
+  Users,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -15,17 +33,22 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Item = { title: string; url: string; icon: any; badgeKey?: string };
 
-const items: Item[] = [
-  { title: "Dashboard", url: "/", icon: LayoutGrid },
-  { title: "Inbox", url: "/inbox", icon: Inbox, badgeKey: "inbox_items" },
-  { title: "Next Actions", url: "/tasks", icon: ListChecks, badgeKey: "tasks_open" },
-  { title: "Projects", url: "/projects", icon: FolderKanban, badgeKey: "projects" },
-  { title: "Waiting For", url: "/waiting", icon: Clock, badgeKey: "waiting_items" },
-  { title: "Someday / Maybe", url: "/someday", icon: Sparkles, badgeKey: "someday_items" },
-  { title: "Recurring", url: "/recurring", icon: RotateCcw },
-  { title: "Review", url: "/review", icon: ClipboardCheck, badgeKey: "review" },
-  { title: "Calendar", url: "/calendar", icon: Calendar },
-  { title: "Meetups", url: "/meetups", icon: Users },
+const homebaseItems: Item[] = [
+  { title: "Homebase", url: "/", icon: LayoutGrid },
+  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, badgeKey: "tasks_open" },
+];
+
+const taskItems: Item[] = [
+  { title: "Tasks Dashboard", url: "/tasks", icon: LayoutGrid },
+  { title: "Inbox", url: "/tasks/inbox", icon: Inbox, badgeKey: "inbox_items" },
+  { title: "Next Actions", url: "/tasks/next", icon: ListChecks, badgeKey: "tasks_open" },
+  { title: "Projects", url: "/tasks/projects", icon: FolderKanban, badgeKey: "projects" },
+  { title: "Waiting For", url: "/tasks/waiting", icon: Clock, badgeKey: "waiting_items" },
+  { title: "Someday / Maybe", url: "/tasks/someday", icon: Sparkles, badgeKey: "someday_items" },
+  { title: "Recurring", url: "/tasks/recurring", icon: RotateCcw },
+  { title: "Review", url: "/tasks/review", icon: ClipboardCheck, badgeKey: "review" },
+  { title: "Calendar", url: "/tasks/calendar", icon: Calendar },
+  { title: "Meetups", url: "/tasks/meetups", icon: Users },
 ];
 
 export function AppSidebar() {
@@ -33,23 +56,40 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const { user, signOut } = useAuth();
+
+  const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
+  const items = inTasksModule ? taskItems : homebaseItems;
+
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
 
-  const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
+  const isActive = (p: string) => {
+    if (p === "/") return pathname === "/";
+    if (p === "/tasks") return pathname === "/tasks";
+    return pathname.startsWith(p);
+  };
 
   useEffect(() => {
     if (!user) return;
+
     (async () => {
-      const [inbox, tasksOpen, projects, waiting, someday, reviewAll, reviewDone] = await Promise.all([
-        supabase.from("inbox_items").select("id", { count: "exact", head: true }),
-        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("complete", false),
-        supabase.from("projects").select("id", { count: "exact", head: true }),
-        supabase.from("waiting_items").select("id", { count: "exact", head: true }),
-        supabase.from("someday_items").select("id", { count: "exact", head: true }),
-        supabase.from("review_items").select("id", { count: "exact", head: true }),
-        supabase.from("review_items").select("id", { count: "exact", head: true }).eq("done", true),
-      ]);
+      const [inbox, tasksOpen, projects, waiting, someday, reviewAll, reviewDone] =
+        await Promise.all([
+          supabase.from("inbox_items").select("id", { count: "exact", head: true }),
+          supabase
+            .from("tasks")
+            .select("id", { count: "exact", head: true })
+            .eq("complete", false),
+          supabase.from("projects").select("id", { count: "exact", head: true }),
+          supabase.from("waiting_items").select("id", { count: "exact", head: true }),
+          supabase.from("someday_items").select("id", { count: "exact", head: true }),
+          supabase.from("review_items").select("id", { count: "exact", head: true }),
+          supabase
+            .from("review_items")
+            .select("id", { count: "exact", head: true })
+            .eq("done", true),
+        ]);
+
       setCounts({
         inbox_items: inbox.count ?? 0,
         tasks_open: tasksOpen.count ?? 0,
@@ -57,7 +97,11 @@ export function AppSidebar() {
         waiting_items: waiting.count ?? 0,
         someday_items: someday.count ?? 0,
       });
-      setReviewProgress({ done: reviewDone.count ?? 0, total: reviewAll.count ?? 0 });
+
+      setReviewProgress({
+        done: reviewDone.count ?? 0,
+        total: reviewAll.count ?? 0,
+      });
     })();
   }, [user, pathname]);
 
@@ -89,17 +133,20 @@ export function AppSidebar() {
           <Logo compact={collapsed} />
         </div>
       </SidebarHeader>
+
       <SidebarContent className="bg-transparent">
         <SidebarGroup>
           {!collapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/40 font-semibold tracking-[0.2em] uppercase text-[10px] px-3 mt-2">
-              Workflow
+              {inTasksModule ? "ACTSIX: Tasks" : "ACTSIX Family"}
             </SidebarGroupLabel>
           )}
+
           <SidebarGroupContent>
             <SidebarMenu className="gap-1 px-1.5">
               {items.map((item) => {
                 const active = isActive(item.url);
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -111,9 +158,16 @@ export function AppSidebar() {
                       }`}
                     >
                       <NavLink to={item.url} className="flex items-center gap-3">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded-md ${active ? "bg-brand-teal/20 text-brand-teal-bright" : "bg-sidebar-accent/40 text-sidebar-foreground/60"}`}>
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded-md ${
+                            active
+                              ? "bg-brand-teal/20 text-brand-teal-bright"
+                              : "bg-sidebar-accent/40 text-sidebar-foreground/60"
+                          }`}
+                        >
                           <item.icon className="h-3.5 w-3.5" />
                         </span>
+
                         {!collapsed && <span className="text-sm">{item.title}</span>}
                         {renderBadge(item)}
                       </NavLink>
@@ -129,7 +183,14 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1 px-1.5">
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={`h-10 rounded-lg ${isActive("/settings") ? "bg-sidebar-accent text-sidebar-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60"}`}>
+                <SidebarMenuButton
+                  asChild
+                  className={`h-10 rounded-lg ${
+                    isActive("/settings")
+                      ? "bg-sidebar-accent text-sidebar-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60"
+                  }`}
+                >
                   <NavLink to="/settings" className="flex items-center gap-3">
                     <span className="flex h-7 w-7 items-center justify-center rounded-md bg-sidebar-accent/40">
                       <SettingsIcon className="h-3.5 w-3.5" />
@@ -142,6 +203,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter className="border-t border-sidebar-border bg-transparent">
         {!collapsed ? (
           <div className="px-3 py-3 space-y-2">
@@ -150,10 +212,21 @@ export function AppSidebar() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-teal-bright opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-teal-bright" />
               </span>
-              <span className="text-xs font-semibold text-sidebar-foreground">Online ready</span>
+              <span className="text-xs font-semibold text-sidebar-foreground">
+                Online ready
+              </span>
             </div>
-            <div className="text-[11px] text-sidebar-foreground/50 truncate">{user?.email}</div>
-            <Button variant="outline" size="sm" className="w-full bg-transparent border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" onClick={signOut}>
+
+            <div className="text-[11px] text-sidebar-foreground/50 truncate">
+              {user?.email}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full bg-transparent border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              onClick={signOut}
+            >
               Sign out
             </Button>
           </div>
