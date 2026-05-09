@@ -11,7 +11,7 @@ import {
   Users,
   Settings as SettingsIcon,
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Sidebar,
@@ -34,7 +34,6 @@ import { supabase } from "@/integrations/supabase/client";
 type Item = { title: string; url: string; icon: any; badgeKey?: string };
 
 const homebaseItems: Item[] = [
-  { title: "Homebase", url: "/", icon: LayoutGrid },
   { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, badgeKey: "tasks_open" },
 ];
 
@@ -55,10 +54,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
   const items = inTasksModule ? taskItems : homebaseItems;
+
+  const moduleValue = inTasksModule ? "/tasks" : "/";
 
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
@@ -136,13 +138,47 @@ export function AppSidebar() {
 
       <SidebarContent className="bg-transparent">
         <SidebarGroup>
-          {!collapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/40 font-semibold tracking-[0.2em] uppercase text-[10px] px-3 mt-2">
-              {inTasksModule ? "ACTSIX: Tasks" : "ACTSIX Family"}
-            </SidebarGroupLabel>
-          )}
 
           <SidebarGroupContent>
+            <div className="px-1.5 mb-3">
+              {!collapsed ? (
+                <div className="px-1.5">
+                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/40">
+                    Workspace
+                  </label>
+
+                  <select
+                    value={moduleValue}
+                    onChange={(event) => navigate(event.target.value)}
+                    className="h-10 w-full rounded-lg border border-sidebar-border bg-sidebar px-2 text-sm font-semibold text-sidebar-foreground outline-none focus:ring-2 focus:ring-sidebar-ring"
+                  >
+                    <option value="/">Home</option>
+                    <option value="/tasks">ACTSIX: Tasks</option>
+                    <option value="/meetings" disabled>Meetings — Coming Soon</option>
+                    <option value="/service-planning" disabled>Service Planning — Coming Soon</option>
+                    <option value="/sermon-prep" disabled>Sermon Prep — Coming Soon</option>
+                    <option value="/scripture" disabled>Scripture Tools — Coming Soon</option>
+                    <option value="/media" disabled>Media Tools — Coming Soon</option>
+                    <option value="/people-care" disabled>People Care — Coming Soon</option>
+                  </select>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  title="Go to Homebase"
+                  aria-label="Go to Homebase"
+                  className="flex h-10 w-full items-center justify-center rounded-lg bg-sidebar-accent/60 text-sidebar-foreground hover:bg-sidebar-accent"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {!collapsed && (
+              <div className="mx-3 mb-3 border-t border-sidebar-border/70" />
+            )}
+
             <SidebarMenu className="gap-1 px-1.5">
               {items.map((item) => {
                 const active = isActive(item.url);
