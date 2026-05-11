@@ -14,6 +14,8 @@ import Inbox from "./pages/Inbox";
 import { Waiting, Someday } from "./pages/SimpleList";
 import Meetings from "./pages/Meetings";
 import MeetingDetail from "./pages/MeetingDetail";
+import RecurringMeetings from "./pages/RecurringMeetings";
+import RecurringMeetingDetail from "./pages/RecurringMeetingDetail";
 import Settings from "./pages/Settings";
 import { Recurring, Review, Calendar, Meetups } from "./pages/Placeholder";
 import Auth from "./pages/Auth";
@@ -54,6 +56,8 @@ const App = () => (
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/meetups" element={<Meetups />} />
               <Route path="/meetings" element={<Meetings />} />
+              <Route path="/meetings/recurring" element={<RecurringMeetings />} />
+              <Route path="/meetings/recurring/:seriesId" element={<RecurringMeetingDetail />} />
               <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

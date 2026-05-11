@@ -9,6 +9,9 @@ import {
   ClipboardCheck,
   Calendar,
   Users,
+  BarChart3,
+  CalendarDays,
+  Repeat,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -37,6 +40,11 @@ const homebaseItems: Item[] = [
   { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, badgeKey: "tasks_open" },
 ];
 
+const meetingItems: Item[] = [
+  { title: "Meeting Dashboard", url: "/meetings", icon: LayoutGrid },
+  { title: "Recurring Meetings", url: "/meetings/recurring", icon: RotateCcw },
+];
+
 const taskItems: Item[] = [
   { title: "Tasks Dashboard", url: "/tasks", icon: LayoutGrid },
   { title: "Inbox", url: "/tasks/inbox", icon: Inbox, badgeKey: "inbox_items" },
@@ -58,9 +66,10 @@ export function AppSidebar() {
   const { user, signOut } = useAuth();
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
-  const items = inTasksModule ? taskItems : homebaseItems;
+  const inMeetingsModule = pathname === "/meetings" || pathname.startsWith("/meetings/");
+  const items = inMeetingsModule ? meetingItems : inTasksModule ? taskItems : homebaseItems;
 
-  const moduleValue = pathname.startsWith("/meetings") ? "/meetings" : inTasksModule ? "/tasks" : "/";
+  const moduleValue = inMeetingsModule ? "/meetings" : inTasksModule ? "/tasks" : "/";
 
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
@@ -68,6 +77,7 @@ export function AppSidebar() {
   const isActive = (p: string) => {
     if (p === "/") return pathname === "/";
     if (p === "/tasks") return pathname === "/tasks";
+    if (p === "/meetings") return pathname === "/meetings";
     return pathname.startsWith(p);
   };
 

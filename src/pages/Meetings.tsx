@@ -32,6 +32,8 @@ const Meetings = () => {
 
   const [meetings, setMeetings] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+
   const [title, setTitle] = useState("");
   const [meetingDate, setMeetingDate] = useState("");
   const [meetingTime, setMeetingTime] = useState("");
@@ -134,55 +136,45 @@ const Meetings = () => {
           </Card>
         </div>
 
-        <Card className="p-4 border-border/70 bg-card shadow-card">
-          <form
-            onSubmit={createMeeting}
-            className="grid gap-2 md:grid-cols-[minmax(0,1fr)_150px_130px_minmax(0,220px)_auto]"
-          >
-            <Input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Meeting title..."
-              className="border-border/70 bg-background"
-            />
+<div className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
 
-            <Input
-              type="date"
-              value={meetingDate}
-              onChange={(event) => setMeetingDate(event.target.value)}
-              className="border-border/70 bg-background"
-            />
+            <div className="relative max-w-2xl flex-1">
 
-            <Input
-              type="time"
-              value={meetingTime}
-              onChange={(event) => setMeetingTime(event.target.value)}
-              className="border-border/70 bg-background"
-            />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 
-            <Input
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="Location"
-              className="border-border/70 bg-background"
-            />
+              <Input
 
-            <Button type="submit" className="actsix-btn-primary rounded-xl px-4">
+                value={search}
+
+                onChange={(event) => setSearch(event.target.value)}
+
+                placeholder="Search meetings..."
+
+                className="h-10 pl-10 border-border/70 bg-card shadow-soft"
+
+              />
+
+            </div>
+
+          
+
+            <Button
+
+              type="button"
+
+              className="actsix-btn-primary rounded-xl shrink-0"
+
+              onClick={() => setAddOpen(true)}
+
+            >
+
               <Plus className="h-4 w-4" />
-              Add
-            </Button>
-          </form>
-        </Card>
 
-        <div className="space-y-3">
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search meetings..."
-              className="h-10 pl-10 border-border/70 bg-card shadow-soft"
-            />
+              Add Meeting
+
+            </Button>
+
           </div>
 
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
@@ -238,6 +230,113 @@ const Meetings = () => {
           </Card>
         </div>
       </div>
+      {addOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-3xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Meeting</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Add Meeting
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create a meeting, then add agenda, minutes, attendees, and action points.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setAddOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <form onSubmit={createMeeting} className="mt-6 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label-eyebrow">Meeting Title</label>
+                  <Input
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    placeholder="Executive Meeting"
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Type</label>
+                  <Input
+                    value={type}
+                    onChange={(event) => setType(event.target.value)}
+                    placeholder="General"
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Date</label>
+                  <Input
+                    type="date"
+                    value={meetingDate}
+                    onChange={(event) => setMeetingDate(event.target.value)}
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Time</label>
+                  <Input
+                    type="time"
+                    value={meetingTime}
+                    onChange={(event) => setMeetingTime(event.target.value)}
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Location</label>
+                  <Input
+                    value={location}
+                    onChange={(event) => setLocation(event.target.value)}
+                    placeholder="Location"
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Attendees</label>
+                  <Input
+                    value={attendees}
+                    onChange={(event) => setAttendees(event.target.value)}
+                    placeholder="Brandon, Michelle, Barbara"
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setAddOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  Create Meeting
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
     </div>
   );
 };
