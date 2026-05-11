@@ -100,6 +100,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
 
     if (cfg.table === "someday_items") {
       payload.category = editingItem.category || "General";
+      payload.notes = editingItem.notes || "";
     }
 
     const { error } = await supabase
@@ -200,10 +201,16 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                 )}
 
                 {cfg.table === "someday_items" && (
-                  <div className="mt-1">
+                  <div className="mt-1 space-y-1">
                     <span className="chip bg-secondary text-secondary-foreground">
                       {it.category || "General"}
                     </span>
+
+                    {it.notes && (
+                      <p className="line-clamp-1 text-xs text-muted-foreground">
+                        {it.notes}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -330,20 +337,37 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               )}
 
               {cfg.table === "someday_items" && (
-                <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                  <label className="label-eyebrow">Category</label>
-                  <Input
-                    value={editingItem.category || ""}
-                    onChange={(event) =>
-                      setEditingItem({
-                        ...editingItem,
-                        category: event.target.value,
-                      })
-                    }
-                    className="mt-2 border-border/70 bg-background"
-                    placeholder="General, Idea, Future Project..."
-                  />
-                </div>
+                <>
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow">Category</label>
+                    <Input
+                      value={editingItem.category || ""}
+                      onChange={(event) =>
+                        setEditingItem({
+                          ...editingItem,
+                          category: event.target.value,
+                        })
+                      }
+                      className="mt-2 border-border/70 bg-background"
+                      placeholder="General, Idea, Future Project..."
+                    />
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <label className="label-eyebrow">Notes</label>
+                    <textarea
+                      value={editingItem.notes || ""}
+                      onChange={(event) =>
+                        setEditingItem({
+                          ...editingItem,
+                          notes: event.target.value,
+                        })
+                      }
+                      className="mt-2 min-h-28 w-full rounded-md border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Add thoughts, references, or future possibilities..."
+                    />
+                  </div>
+                </>
               )}
             </div>
 
