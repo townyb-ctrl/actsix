@@ -7,7 +7,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
+import TasksDashboard from "./pages/TasksDashboard";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import Inbox from "./pages/Inbox";
 import { Waiting, Someday } from "./pages/SimpleList";
 import Settings from "./pages/Settings";
@@ -28,7 +30,19 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/tasks" element={<Tasks />} />
+
+              <Route path="/tasks" element={<TasksDashboard />} />
+              <Route path="/tasks/next" element={<Tasks />} />
+              <Route path="/tasks/projects" element={<Projects />} />
+              <Route path="/tasks/projects/:projectId" element={<ProjectDetail />} />
+              <Route path="/tasks/inbox" element={<Inbox />} />
+              <Route path="/tasks/waiting" element={<Waiting />} />
+              <Route path="/tasks/someday" element={<Someday />} />
+              <Route path="/tasks/recurring" element={<Recurring />} />
+              <Route path="/tasks/review" element={<Review />} />
+              <Route path="/tasks/calendar" element={<Calendar />} />
+              <Route path="/tasks/meetups" element={<Meetups />} />
+
               <Route path="/projects" element={<Projects />} />
               <Route path="/inbox" element={<Inbox />} />
               <Route path="/waiting" element={<Waiting />} />

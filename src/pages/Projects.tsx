@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -124,6 +125,7 @@ const getProjectStats = (project: Project, tasks: Task[]) => {
 
 const Projects = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -595,7 +597,7 @@ const Projects = () => {
           </div>
         </div>
 
-        <div className="grid 2xl:grid-cols-[minmax(0,1fr)_430px] gap-6 items-start">
+        <div className="max-w-7xl">
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -632,7 +634,7 @@ const Projects = () => {
                             ? "bg-brand-teal/5 shadow-[inset_3px_0_0_hsl(var(--brand-teal))]"
                             : "hover:bg-muted/30"
                         }`}
-                        onClick={() => setSelectedProjectId(project.id)}
+                        onClick={() => navigate(`/tasks/projects/${project.id}`)}
                       >
                         <td className="px-4 py-4 min-w-[260px]">
                           <div className="flex items-center gap-3">
@@ -703,165 +705,6 @@ const Projects = () => {
               </table>
             </div>
           </Card>
-
-          {selectedProject && selectedStats && (
-            <Card className="border-border/70 bg-card shadow-card overflow-hidden sticky top-6">
-              <div className="p-6 border-b border-border/70">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <UserRound className="h-4 w-4" />
-                      {selectedProject.area || "General"}
-                    </div>
-
-                    <h2 className="text-3xl font-extrabold tracking-tight mt-3 leading-tight">
-                      {selectedProject.name}
-                    </h2>
-
-                    <div className="mt-3">
-                      <span className={`chip ${statusClass(selectedProject.status)}`}>
-                        {selectedProject.status || "In Progress"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Edit project"
-                      aria-label="Edit project"
-                      onClick={() => setEditingProject({ ...selectedProject })}
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Delete project"
-                      aria-label="Delete project"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => removeProject(selectedProject)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
-                  {selectedProject.notes ||
-                    "Add notes to describe this project, its goal, and what success looks like."}
-                </p>
-
-                <div className="mt-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-extrabold tracking-tight">Progress</p>
-                    <p className="font-extrabold tracking-tight">{selectedStats.progress}%</p>
-                  </div>
-
-                  <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-brand-teal rounded-full"
-                      style={{ width: `${selectedStats.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 mt-5">
-                  <div className="rounded-2xl border border-border/70 p-3 text-center">
-                    <CheckCircle2 className="h-5 w-5 text-brand-teal mx-auto mb-1" />
-                    <div className="text-xl font-extrabold">{selectedStats.openTasks.length}</div>
-                    <p className="text-[11px] text-muted-foreground">Open Actions</p>
-                  </div>
-
-                  <div className="rounded-2xl border border-border/70 p-3 text-center">
-                    <CheckCircle2 className="h-5 w-5 text-brand-sage mx-auto mb-1" />
-                    <div className="text-xl font-extrabold">
-                      {selectedStats.completedTasks.length}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">Completed</p>
-                  </div>
-
-                  <div className="rounded-2xl border border-border/70 p-3 text-center">
-                    <Clock3 className="h-5 w-5 text-brand-amber mx-auto mb-1" />
-                    <div className="text-xl font-extrabold">{selectedStats.dueSoon}</div>
-                    <p className="text-[11px] text-muted-foreground">Due Soon</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 border-b border-border/70">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-extrabold tracking-tight">Next Actions</h3>
-                  <span className="text-xs text-brand-teal font-bold">
-                    {selectedStats.openTasks.length} open
-                  </span>
-                </div>
-
-                <div className="rounded-2xl border border-border/70 bg-muted/10 p-2 space-y-1.5">
-                  {selectedStats.projectTasks.length === 0 && (
-                    <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-                      <ListChecks className="h-4 w-4" />
-                      No actions attached yet.
-                    </div>
-                  )}
-
-                  {selectedStats.projectTasks.slice(0, 5).map((task) => (
-                    <CompactTaskRow
-                      key={task.id}
-                      task={task}
-                      onToggle={toggleTask}
-                      onEdit={(task) => setEditingTask({ ...task })}
-                      onDelete={(task) => removeTask(task.id)}
-                    />
-                  ))}
-                </div>
-
-                <form
-                  onSubmit={addProjectAction}
-                  className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto] mt-4"
-                >
-                  <Input
-                    value={newActionTitle}
-                    onChange={(event) => setNewActionTitle(event.target.value)}
-                    placeholder="What needs to be done?"
-                    className="border-border/70 bg-background"
-                  />
-
-                  <Input
-                    type="date"
-                    value={newActionDue}
-                    onChange={(event) => setNewActionDue(event.target.value)}
-                    className="border-border/70 bg-background"
-                  />
-
-                  <Button
-                    type="submit"
-                    className="actsix-btn-primary rounded-xl px-4"
-                  >
-                    Add
-                  </Button>
-                </form>
-              </div>
-
-              <div className="p-5 border-b border-border/70">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-extrabold tracking-tight">Notes</h3>
-                  <Button variant="ghost" size="sm" className="text-brand-teal" onClick={saveNotes}>
-                    Save
-                  </Button>
-                </div>
-
-                <textarea
-                  value={notesDraft}
-                  onChange={(event) => setNotesDraft(event.target.value)}
-                  className="min-h-28 w-full rounded-2xl border border-border/70 bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Add project notes..."
-                />
-              </div>
-            </Card>
-          )}
         </div>
       </div>
 
