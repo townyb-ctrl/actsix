@@ -1,7 +1,5 @@
 # ACTSIX
 
-# ACTSIX
-
 **Organize the work. Serve the Word.**
 
 ACTSIX is a modular ministry operations platform built to help churches and ministry leaders manage practical ministry work with clarity, focus, and stewardship.
