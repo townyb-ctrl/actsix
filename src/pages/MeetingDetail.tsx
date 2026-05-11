@@ -267,6 +267,10 @@ const getRecurringSeriesIdFromAgenda = (agenda?: string | null) => {
 const MeetingDetail = () => {
   const minutesRef = useRef<HTMLDivElement | null>(null);
   const { meetingId } = useParams();
+  const [transcriptText, setTranscriptText] = useState("");
+  const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -332,6 +336,14 @@ const MeetingDetail = () => {
     setActions(actionData ?? []);
   };
 
+
+  useEffect(() => {
+    if (!meetingId) return;
+
+    const savedTranscript = localStorage.getItem(`actsix_meeting_transcript_${meetingId}`) || "";
+    setTranscriptText(savedTranscript);
+  }, [meetingId]);
+
   useEffect(() => {
     load();
   }, [user, meetingId]);
@@ -359,6 +371,64 @@ const MeetingDetail = () => {
     toast.success("Meeting details updated");
     setEditOpen(false);
     load();
+  };
+
+
+  const saveTranscript = (value: string) => {
+    setTranscriptText(value);
+
+    if (meetingId) {
+      localStorage.setItem(`actsix_meeting_transcript_${meetingId}`, value);
+    }
+  };
+
+  const transcribeAudio = async () => {
+    if (!transcriptFile) {
+      toast.error("Please choose an audio file first.");
+      return;
+    }
+
+    setTranscribing(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", transcriptFile);
+
+      const response = await fetch("http://localhost:5055/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Transcription server did not respond successfully.");
+      }
+
+      const result = await response.json();
+      saveTranscript(result.text || "");
+      toast.success("Transcript created");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not transcribe audio. Make sure the local transcriber server is running.");
+    } finally {
+      setTranscribing(false);
+    }
+  };
+
+  const copyTranscriptToMinutes = () => {
+    if (!meeting || !transcriptText.trim()) return;
+
+    const transcriptMinutes = `TRANSCRIPT NOTES
+
+${transcriptText.trim()}`;
+
+    setMeeting({
+      ...meeting,
+      notes: meeting.notes?.trim()
+        ? `${meeting.notes.trim()}\n\n${transcriptMinutes}`
+        : transcriptMinutes,
+    });
+
+    toast.success("Transcript copied into minutes");
   };
 
   const saveMinutes = async () => {
@@ -670,7 +740,128 @@ const MeetingDetail = () => {
           </Button>
         </div>
 
+
+
+        {showActionPoints && transcriptOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+            <Card className="w-full max-w-5xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="label-eyebrow">Meeting Transcription</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    Upload Recording
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Upload an audio recording and transcribe it locally using the ACTSIX transcriber server.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => setTranscriptOpen(false)}
+                  >
+                    Close
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={copyTranscriptToMinutes}
+                    disabled={!transcriptText.trim()}
+                  >
+                    Copy to Minutes
+                  </Button>
+
+                  <Button
+                    type="button"
+                    className="actsix-btn-primary rounded-xl"
+                    onClick={transcribeAudio}
+                    disabled={!transcriptFile || transcribing}
+                  >
+                    {transcribing ? "Transcribing..." : "Transcribe"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+                <div className="rounded-xl border border-border/70 bg-background p-4">
+                  <label className="label-eyebrow">Audio File</label>
+
+                  <input
+                    type="file"
+                    accept="audio/*,video/*"
+                    onChange={(event) => setTranscriptFile(event.target.files?.[0] || null)}
+                    className="mt-3 block w-full text-sm text-muted-foreground file:mr-4 file:rounded-lg file:border-0 file:bg-brand-teal/10 file:px-3 file:py-2 file:text-sm file:font-bold file:text-brand-teal hover:file:bg-brand-teal/15"
+                  />
+
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                    Supported files depend on your local ffmpeg setup. MP3, WAV, M4A, and MP4 are good starting points.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border/70 bg-background p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="label-eyebrow">Transcript</label>
+
+                    {transcriptText.trim() && (
+                      <button
+                        type="button"
+                        className="text-xs font-bold text-muted-foreground hover:text-brand-teal"
+                        onClick={() => saveTranscript("")}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  <textarea
+                    value={transcriptText}
+                    onChange={(event) => saveTranscript(event.target.value)}
+                    placeholder="Transcript will appear here..."
+                    className="mt-3 min-h-[260px] w-full resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
         <Card className="p-5 border-border/70 bg-card shadow-card">
+
+          <div className="mb-5 rounded-xl border border-border/70 bg-background/70 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Meeting Day Tools</p>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Transcription and action points are available from the day of the meeting.
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setTranscriptOpen(true)}
+              >
+                Open Transcription
+              </Button>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <span className="rounded-full border border-border bg-card px-2.5 py-1 font-bold">
+                {transcriptText.trim() ? "Transcript saved" : "No transcript yet"}
+              </span>
+
+              <span className="rounded-full border border-border bg-card px-2.5 py-1 font-bold">
+                {meeting.action_points?.length || 0} action points
+              </span>
+            </div>
+          </div>
+
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <p className="label-eyebrow">Minutes</p>
@@ -773,7 +964,7 @@ const MeetingDetail = () => {
           <Card className="p-4 border-border/70 bg-muted/20 shadow-soft">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle2 className="h-4 w-4 text-brand-teal" />
-              Action Points will appear on the day of the meeting.
+              Transcription and Action Points will appear on the day of the meeting.
             </div>
           </Card>
         )}
