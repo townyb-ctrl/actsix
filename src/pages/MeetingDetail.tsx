@@ -252,6 +252,18 @@ const cleanAgendaSections = (sections: AgendaSection[]) => {
   return cleaned.length ? cleaned : [makeAgendaSection()];
 };
 
+
+const getRecurringSeriesIdFromAgenda = (agenda?: string | null) => {
+  if (!agenda) return null;
+
+  try {
+    const parsed = JSON.parse(agenda);
+    return typeof parsed?.recurringSeriesId === "string" ? parsed.recurringSeriesId : null;
+  } catch {
+    return null;
+  }
+};
+
 const MeetingDetail = () => {
   const minutesRef = useRef<HTMLDivElement | null>(null);
   const { meetingId } = useParams();
@@ -434,7 +446,7 @@ const MeetingDetail = () => {
     }
 
     toast.success("Meeting deleted");
-    navigate("/meetings");
+    navigate(getRecurringSeriesIdFromAgenda(meeting?.agenda) ? `/meetings/recurring/${getRecurringSeriesIdFromAgenda(meeting?.agenda)}` : "/meetings");
   };
 
   const loadActions = async () => {
@@ -511,7 +523,9 @@ const MeetingDetail = () => {
   };
 
   if (!meeting) {
-    return (
+
+
+  return (
       <div>
         <PageHeader eyebrow="ACTSIX: Meetings" title="Meeting" subtitle="Loading meeting..." />
       </div>
@@ -563,7 +577,7 @@ const MeetingDetail = () => {
 
       <div className="px-8 pb-12 max-w-7xl space-y-5">
         <Button asChild variant="ghost" className="rounded-xl text-muted-foreground">
-          <Link to="/meetings">
+          <Link to={getRecurringSeriesIdFromAgenda(meeting?.agenda) ? `/meetings/recurring/${getRecurringSeriesIdFromAgenda(meeting?.agenda)}` : "/meetings"}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Meetings
           </Link>
