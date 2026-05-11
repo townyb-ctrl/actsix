@@ -1,13 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
+  CheckCircle2,
   Clock3,
+  FileText,
+  ListChecks,
   MapPin,
+  Pencil,
   Plus,
   Save,
   Trash2,
+  UserRoundX,
   UsersRound,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +21,26 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
+
+const EMPTY_MEETING = {
+  title: "",
+  meeting_date: null as string | null,
+  meeting_time: null as string | null,
+  location: "",
+  type: "General",
+  notes: "",
+};
 
 type AgendaPoint = {
   id: string;
@@ -27,6 +51,12 @@ type AgendaSection = {
   id: string;
   heading: string;
   points: AgendaPoint[];
+};
+
+type AgendaPayload = {
+  type: "actsix-agenda-v1";
+  sections: AgendaSection[];
+  apologies?: string[];
 };
 
 const makeAgendaPoint = (): AgendaPoint => ({
@@ -40,8 +70,13 @@ const makeAgendaSection = (): AgendaSection => ({
   points: [makeAgendaPoint()],
 });
 
-const parseAgenda = (value?: string | null): AgendaSection[] => {
-  if (!value) return [makeAgendaSection()];
+const cleanNameList = (items: string[]) =>
+  items.map((item) => item.trim()).filter(Boolean);
+
+const parseAgendaPayload = (value?: string | null): AgendaPayload => {
+  if (!value) {
+    return { type: "actsix-agenda-v1", sections: [makeAgendaSection()], apologies: [] };
+  }
 
   try {
     const parsed = JSON.parse(value);
@@ -51,19 +86,23 @@ const parseAgenda = (value?: string | null): AgendaSection[] => {
       parsed.type === "actsix-agenda-v1" &&
       Array.isArray(parsed.sections)
     ) {
-      return parsed.sections.length > 0
-        ? parsed.sections.map((section: any) => ({
-            id: section.id || crypto.randomUUID(),
-            heading: section.heading || "",
-            points:
-              Array.isArray(section.points) && section.points.length > 0
-                ? section.points.map((point: any) => ({
-                    id: point.id || crypto.randomUUID(),
-                    text: point.text || "",
-                  }))
-                : [makeAgendaPoint()],
-          }))
-        : [makeAgendaSection()];
+      return {
+        type: "actsix-agenda-v1",
+        sections: parsed.sections.length
+          ? parsed.sections.map((section: any) => ({
+              id: section.id || crypto.randomUUID(),
+              heading: section.heading || "",
+              points:
+                Array.isArray(section.points) && section.points.length
+                  ? section.points.map((point: any) => ({
+                      id: point.id || crypto.randomUUID(),
+                      text: typeof point === "string" ? point : point.text || "",
+                    }))
+                  : [makeAgendaPoint()],
+            }))
+          : [makeAgendaSection()],
+        apologies: Array.isArray(parsed.apologies) ? cleanNameList(parsed.apologies) : [],
+      };
     }
   } catch {
     // Existing plain-text agendas are converted below.
@@ -74,18 +113,22 @@ const parseAgenda = (value?: string | null): AgendaSection[] => {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  return [
-    {
-      id: crypto.randomUUID(),
-      heading: "Agenda",
-      points: lines.length
-        ? lines.map((line) => ({ id: crypto.randomUUID(), text: line }))
-        : [makeAgendaPoint()],
-    },
-  ];
+  return {
+    type: "actsix-agenda-v1",
+    sections: [
+      {
+        id: crypto.randomUUID(),
+        heading: "Agenda",
+        points: lines.length
+          ? lines.map((line) => ({ id: crypto.randomUUID(), text: line }))
+          : [makeAgendaPoint()],
+      },
+    ],
+    apologies: [],
+  };
 };
 
-const serializeAgenda = (sections: AgendaSection[]) =>
+const serializeAgenda = (sections: AgendaSection[], apologies: string[]) =>
   JSON.stringify({
     type: "actsix-agenda-v1",
     sections: sections.map((section) => ({
@@ -93,6 +136,7 @@ const serializeAgenda = (sections: AgendaSection[]) =>
       heading: section.heading,
       points: section.points,
     })),
+    apologies: cleanNameList(apologies),
   });
 
 const parseAttendees = (value: string) =>
@@ -101,20 +145,141 @@ const parseAttendees = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const formatDate = (date?: string | null) => {
+  if (!date) return "No date";
+
+  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const isMeetingDayOrAfter = (date?: string | null) => {
+  if (!date) return false;
+
+  const today = new Date();
+  const meetingDate = new Date(`${date}T00:00:00`);
+
+  today.setHours(0, 0, 0, 0);
+  meetingDate.setHours(0, 0, 0, 0);
+
+  return today >= meetingDate;
+};
+
+const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
+  const cleanSections = sections
+    .map((section) => ({
+      ...section,
+      heading: section.heading.trim(),
+      points: section.points.map((point) => ({ ...point, text: point.text.trim() })).filter((point) => point.text),
+    }))
+    .filter((section) => section.heading || section.points.length);
+
+  if (!cleanSections.length) return "";
+
+  return cleanSections
+    .map((section, sectionIndex) => {
+      const sectionNumber = sectionIndex + 1;
+      const title = (section.heading || "Untitled Section").toUpperCase();
+
+      const points = section.points
+        .map((point, pointIndex) => `${sectionNumber}.${pointIndex + 1} ${point.text}\n\nNotes:\nDecisions:\n`)
+        .join("\n");
+
+      return `${sectionNumber}. ${title}\n\n${points}`;
+    })
+    .join("\n\n");
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+const renderMinutesHtml = (notes?: string | null) => {
+  if (!notes) return "";
+
+  return notes
+    .split("\n")
+    .map((line) => {
+      const escaped = escapeHtml(line);
+
+      if (/^\d+\.\s+/.test(line)) {
+        return `<div class="minutes-section-heading">${escaped.toUpperCase()}</div>`;
+      }
+
+      if (/^\d+\.\d+\s+/.test(line)) {
+        return `<div class="minutes-agenda-point">${escaped}</div>`;
+      }
+
+      if (line.trim() === "") {
+        return `<div class="minutes-blank-line"><br /></div>`;
+      }
+
+      return `<div>${escaped}</div>`;
+    })
+    .join("");
+};
+
+const getMinutesDocumentText = (element: HTMLDivElement | null) => {
+  if (!element) return "";
+
+  const lines = Array.from(element.childNodes).map((node) => {
+    const value = node.textContent ?? "";
+    return value.replace(/\u00a0/g, " ").trimEnd();
+  });
+
+  return lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd();
+};
+
+
+const cleanAgendaSections = (sections: AgendaSection[]) => {
+  const cleaned = sections
+    .map((section) => ({
+      ...section,
+      heading: section.heading.trim(),
+      points: section.points
+        .map((point) => ({ ...point, text: point.text.trim() }))
+        .filter((point) => point.text),
+    }))
+    .filter((section) => section.heading || section.points.length);
+
+  return cleaned.length ? cleaned : [makeAgendaSection()];
+};
+
 const MeetingDetail = () => {
+  const minutesRef = useRef<HTMLDivElement | null>(null);
   const { meetingId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [meeting, setMeeting] = useState<any | null>(null);
+  const [editDraft, setEditDraft] = useState<any>(EMPTY_MEETING);
   const [actions, setActions] = useState<any[]>([]);
   const [attendeesText, setAttendeesText] = useState("");
+  const [apologies, setApologies] = useState<string[]>([]);
   const [agendaSections, setAgendaSections] = useState<AgendaSection[]>([
     makeAgendaSection(),
   ]);
+  const [agendaDraft, setAgendaDraft] = useState<AgendaSection[]>([
+    makeAgendaSection(),
+  ]);
+  const [attendeesDraft, setAttendeesDraft] = useState("");
+  const [apologiesDraft, setApologiesDraft] = useState("");
   const [actionTitle, setActionTitle] = useState("");
   const [assignee, setAssignee] = useState("");
   const [due, setDue] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [agendaOpen, setAgendaOpen] = useState(false);
+  const [peopleOpen, setPeopleOpen] = useState(false);
+
+  const attendeeList = useMemo(() => parseAttendees(attendeesText), [attendeesText]);
+  const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
 
   const load = async () => {
     if (!user || !meetingId) return;
@@ -141,13 +306,17 @@ const MeetingDetail = () => {
       return;
     }
 
+    const agendaPayload = parseAgendaPayload(meetingData.agenda);
+
     setMeeting(meetingData);
+    setEditDraft(meetingData);
     setAttendeesText(
       Array.isArray(meetingData.attendees)
         ? meetingData.attendees.join(", ")
         : ""
     );
-    setAgendaSections(parseAgenda(meetingData.agenda));
+    setApologies(agendaPayload.apologies ?? []);
+    setAgendaSections(agendaPayload.sections);
     setActions(actionData ?? []);
   };
 
@@ -155,21 +324,17 @@ const MeetingDetail = () => {
     load();
   }, [user, meetingId]);
 
-  const saveMeeting = async () => {
+  const saveMeetingDetails = async () => {
     if (!meeting) return;
 
     const { error } = await supabase
       .from("meetings")
       .update({
-        title: meeting.title || "",
-        meeting_date: meeting.meeting_date || null,
-        meeting_time: meeting.meeting_time || null,
-        location: meeting.location || "",
-        type: meeting.type || "General",
-        status: meeting.status || "Planned",
-        attendees: parseAttendees(attendeesText),
-        agenda: serializeAgenda(agendaSections),
-        notes: meeting.notes || "",
+        title: editDraft.title || "",
+        meeting_date: editDraft.meeting_date || null,
+        meeting_time: editDraft.meeting_time || null,
+        location: editDraft.location || "",
+        type: editDraft.type || "General",
         updated_at: new Date().toISOString(),
       })
       .eq("id", meeting.id);
@@ -179,8 +344,83 @@ const MeetingDetail = () => {
       return;
     }
 
-    toast.success("Meeting saved");
+    toast.success("Meeting details updated");
+    setEditOpen(false);
     load();
+  };
+
+  const saveMinutes = async () => {
+    if (!meeting) return;
+
+    const latestMinutes = getMinutesDocumentText(minutesRef.current) || meeting.notes || "";
+
+    const { error } = await supabase
+      .from("meetings")
+      .update({
+        notes: latestMinutes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", meeting.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setMeeting({ ...meeting, notes: latestMinutes });
+    toast.success("Minutes saved");
+  };
+
+  const saveAgenda = async () => {
+    if (!meeting) return;
+
+    const cleaned = cleanAgendaSections(agendaDraft);
+    const generatedMinutes = generateMinutesFromAgenda(cleaned);
+
+    const { error } = await supabase
+      .from("meetings")
+      .update({
+        agenda: serializeAgenda(cleaned, apologies),
+        notes: generatedMinutes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", meeting.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setAgendaSections(cleaned);
+    setMeeting({ ...meeting, agenda: serializeAgenda(cleaned, apologies), notes: generatedMinutes });
+    toast.success("Agenda saved and minutes filled");
+    setAgendaOpen(false);
+  };
+
+  const savePeople = async () => {
+    if (!meeting) return;
+
+    const attendees = parseAttendees(attendeesDraft);
+    const apologiesList = parseAttendees(apologiesDraft);
+
+    const { error } = await supabase
+      .from("meetings")
+      .update({
+        attendees,
+        agenda: serializeAgenda(agendaSections, apologiesList),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", meeting.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setAttendeesText(attendees.join(", "));
+    setApologies(apologiesList);
+    toast.success("Attendees and apologies updated");
+    setPeopleOpen(false);
   };
 
   const deleteMeeting = async () => {
@@ -254,6 +494,22 @@ const MeetingDetail = () => {
     loadActions();
   };
 
+  const openEditModal = () => {
+    setEditDraft(meeting ?? EMPTY_MEETING);
+    setEditOpen(true);
+  };
+
+  const openAgendaModal = () => {
+    setAgendaDraft(agendaSections.length ? agendaSections : [makeAgendaSection()]);
+    setAgendaOpen(true);
+  };
+
+  const openPeopleModal = () => {
+    setAttendeesDraft(attendeesText);
+    setApologiesDraft(apologies.join(", "));
+    setPeopleOpen(true);
+  };
+
   if (!meeting) {
     return (
       <div>
@@ -267,10 +523,45 @@ const MeetingDetail = () => {
       <PageHeader
         eyebrow="ACTSIX: Meetings"
         title={meeting.title || "Meeting"}
-        subtitle="Agenda, notes, attendees, and action points."
+        subtitle="Agenda, minutes, attendees, apologies, and action points."
       />
 
-      <div className="px-8 pb-12 max-w-7xl space-y-6">
+      <style>{`
+        .minutes-document:empty::before {
+          content: attr(data-placeholder);
+          color: hsl(var(--muted-foreground));
+        }
+
+        .minutes-section-heading {
+          margin-top: 1rem;
+          margin-bottom: 0.35rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          color: hsl(var(--foreground));
+        }
+
+        .minutes-section-heading:first-child {
+          margin-top: 0;
+        }
+
+        .minutes-agenda-point {
+          margin-top: 0.75rem;
+          font-weight: 700;
+          color: hsl(var(--foreground));
+        }
+
+        .minutes-blank-line {
+          min-height: 0.35rem;
+          line-height: 0.35rem;
+        }
+
+        .minutes-document div {
+          min-height: 1.4em;
+        }
+      `}</style>
+
+      <div className="px-8 pb-12 max-w-7xl space-y-5">
         <Button asChild variant="ghost" className="rounded-xl text-muted-foreground">
           <Link to="/meetings">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -278,135 +569,400 @@ const MeetingDetail = () => {
           </Link>
         </Button>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_380px] items-start">
-          <Card className="p-6 border-border/70 bg-card shadow-card space-y-5">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="label-eyebrow">Meeting title</label>
-                <Input
-                  value={meeting.title || ""}
-                  onChange={(event) => setMeeting({ ...meeting, title: event.target.value })}
-                  className="mt-2 border-border/70 bg-background"
-                />
+        <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-2xl font-extrabold tracking-tight truncate">
+                  {meeting.title || "Untitled Meeting"}
+                </h2>
               </div>
 
-              <div>
-                <label className="label-eyebrow">Status</label>
-                <select
-                  value={meeting.status || "Planned"}
-                  onChange={(event) => setMeeting({ ...meeting, status: event.target.value })}
-                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                >
-                  <option>Planned</option>
-                  <option>In Progress</option>
-                  <option>Completed</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="label-eyebrow">Date</label>
-                <Input
-                  type="date"
-                  value={meeting.meeting_date || ""}
-                  onChange={(event) =>
-                    setMeeting({ ...meeting, meeting_date: event.target.value || null })
-                  }
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              <div>
-                <label className="label-eyebrow">Time</label>
-                <Input
-                  type="time"
-                  value={meeting.meeting_time || ""}
-                  onChange={(event) =>
-                    setMeeting({ ...meeting, meeting_time: event.target.value || null })
-                  }
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              <div>
-                <label className="label-eyebrow">Location</label>
-                <Input
-                  value={meeting.location || ""}
-                  onChange={(event) => setMeeting({ ...meeting, location: event.target.value })}
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              <div>
-                <label className="label-eyebrow">Type</label>
-                <Input
-                  value={meeting.type || "General"}
-                  onChange={(event) => setMeeting({ ...meeting, type: event.target.value })}
-                  className="mt-2 border-border/70 bg-background"
-                />
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4" />
+                  {formatDate(meeting.meeting_date)}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock3 className="h-4 w-4" />
+                  {meeting.meeting_time ? meeting.meeting_time.slice(0, 5) : "No time"}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" />
+                  {meeting.location || "No location"}
+                </span>
+                <span className="chip bg-background/70">
+                  {meeting.type || "General"}
+                </span>
               </div>
             </div>
 
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <Button variant="outline" className="rounded-xl" onClick={openPeopleModal}>
+                <UsersRound className="h-4 w-4 mr-2" />
+                Attendees / Apologies
+              </Button>
+              <Button variant="outline" className="rounded-xl" onClick={openEditModal}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Meeting
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <UsersRound className="h-4 w-4" />
+                <span className="label-eyebrow">Attendees</span>
+              </div>
+              <div className="mt-2 text-2xl font-extrabold">{attendeeList.length}</div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <UserRoundX className="h-4 w-4" />
+                <span className="label-eyebrow">Apologies</span>
+              </div>
+              <div className="mt-2 text-2xl font-extrabold">{apologies.length}</div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <FileText className="h-4 w-4" />
+                <span className="label-eyebrow">Agenda</span>
+              </div>
+              <div className="mt-2 text-2xl font-extrabold">{agendaSections.length}</div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <ListChecks className="h-4 w-4" />
+                <span className="label-eyebrow">Actions</span>
+              </div>
+              <div className="mt-2 text-2xl font-extrabold">{actions.length}</div>
+            </div>
+          </div>
+        </Card>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button className="actsix-btn-soft rounded-xl" onClick={openAgendaModal}>
+            <FileText className="h-4 w-4" />
+            Manage Agenda
+          </Button>
+
+          <Button variant="outline" className="rounded-xl" onClick={saveMinutes}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Minutes
+          </Button>
+        </div>
+
+        <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <label className="label-eyebrow">Attendees</label>
+              <p className="label-eyebrow">Minutes</p>
+              <h2 className="mt-1 text-xl font-extrabold tracking-tight">Meeting Minutes</h2>
+            </div>
+            <Badge variant="outline" className="rounded-full text-muted-foreground">
+              Auto-filled from agenda
+            </Badge>
+          </div>
+
+          <div
+            ref={minutesRef}
+            contentEditable
+            suppressContentEditableWarning
+            className="minutes-document min-h-[360px] rounded-xl border border-border/70 bg-background px-4 py-4 text-sm leading-7 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            data-placeholder="Meeting notes, decisions, and minutes..."
+            dangerouslySetInnerHTML={{ __html: renderMinutesHtml(meeting.notes || "") }}
+            onBlur={(event) => {
+              setMeeting({
+                ...meeting,
+                notes: getMinutesDocumentText(event.currentTarget),
+              });
+            }}
+          />
+        </Card>
+
+        {showActionPoints ? (
+          <Card className="p-5 border-border/70 bg-card shadow-card">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="label-eyebrow">Action Points</p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight">Follow-up Tasks</h2>
+              </div>
+              <Badge variant="secondary" className="rounded-full">
+                {actions.length}
+              </Badge>
+            </div>
+
+            <form onSubmit={addAction} className="mb-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_180px_150px_auto]">
               <Input
-                value={attendeesText}
-                onChange={(event) => setAttendeesText(event.target.value)}
-                placeholder="Separate names with commas"
+                value={actionTitle}
+                onChange={(event) => setActionTitle(event.target.value)}
+                placeholder="Action point..."
+                className="border-border/70 bg-background"
+              />
+
+              <Input
+                value={assignee}
+                onChange={(event) => setAssignee(event.target.value)}
+                placeholder="Assignee"
+                className="border-border/70 bg-background"
+              />
+
+              <Input
+                type="date"
+                value={due}
+                onChange={(event) => setDue(event.target.value)}
+                className="border-border/70 bg-background"
+              />
+
+              <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Plus className="h-4 w-4" />
+                Add
+              </Button>
+            </form>
+
+            <div className="space-y-2">
+              {actions.length === 0 && (
+                <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No action points yet. Add follow-up tasks during or after the meeting.
+                </div>
+              )}
+
+              {actions.map((action) => (
+                <div
+                  key={action.id}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-3"
+                >
+                  <div>
+                    <div className="text-sm font-semibold">{action.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {action.assignee || "Unassigned"}
+                      {action.due ? ` · Due ${action.due}` : ""}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeAction(action.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-4 border-border/70 bg-muted/20 shadow-soft">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-brand-teal" />
+              Action Points will appear on the day of the meeting.
+            </div>
+          </Card>
+        )}
+
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={deleteMeeting}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Meeting
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl rounded-2xl border-border/70 bg-card">
+          <DialogHeader>
+            <DialogTitle>Edit Meeting</DialogTitle>
+            <DialogDescription>
+              Change the core meeting information without crowding the main page.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="label-eyebrow">Meeting title</label>
+              <Input
+                value={editDraft.title || ""}
+                onChange={(event) => setEditDraft({ ...editDraft, title: event.target.value })}
                 className="mt-2 border-border/70 bg-background"
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div>
-                  <label className="label-eyebrow">Agenda</label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Create numbered sections and agenda points.
-                  </p>
-                </div>
+              <label className="label-eyebrow">Date</label>
+              <Input
+                type="date"
+                value={editDraft.meeting_date || ""}
+                onChange={(event) => setEditDraft({ ...editDraft, meeting_date: event.target.value || null })}
+                className="mt-2 border-border/70 bg-background"
+              />
+            </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() =>
-                    setAgendaSections((sections) => [
-                      ...sections,
-                      makeAgendaSection(),
-                    ])
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Section
-                </Button>
-              </div>
+            <div>
+              <label className="label-eyebrow">Time</label>
+              <Input
+                type="time"
+                value={editDraft.meeting_time || ""}
+                onChange={(event) => setEditDraft({ ...editDraft, meeting_time: event.target.value || null })}
+                className="mt-2 border-border/70 bg-background"
+              />
+            </div>
 
-              <div className="space-y-3">
-                {agendaSections.map((section, sectionIndex) => (
-                  <Card
-                    key={section.id}
-                    className="p-4 border-border/70 bg-muted/10 shadow-soft"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
-                        {sectionIndex + 1}
-                      </div>
+            <div>
+              <label className="label-eyebrow">Location</label>
+              <Input
+                value={editDraft.location || ""}
+                onChange={(event) => setEditDraft({ ...editDraft, location: event.target.value })}
+                className="mt-2 border-border/70 bg-background"
+              />
+            </div>
 
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-2">
+            <div>
+              <label className="label-eyebrow">Type</label>
+              <Input
+                value={editDraft.type || "General"}
+                onChange={(event) => setEditDraft({ ...editDraft, type: event.target.value })}
+                className="mt-2 border-border/70 bg-background"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="actsix-btn-primary rounded-xl" onClick={saveMeetingDetails}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={peopleOpen} onOpenChange={setPeopleOpen}>
+        <DialogContent className="max-w-2xl rounded-2xl border-border/70 bg-card">
+          <DialogHeader>
+            <DialogTitle>Attendees / Apologies</DialogTitle>
+            <DialogDescription>
+              Separate names with commas or place each name on a new line.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="label-eyebrow">Attendees</label>
+              <Textarea
+                value={attendeesDraft}
+                onChange={(event) => setAttendeesDraft(event.target.value)}
+                className="mt-2 min-h-36 border-border/70 bg-background"
+                placeholder="Brandon, Michelle, Barbara"
+              />
+            </div>
+
+            <div>
+              <label className="label-eyebrow">Apologies</label>
+              <Textarea
+                value={apologiesDraft}
+                onChange={(event) => setApologiesDraft(event.target.value)}
+                className="mt-2 min-h-36 border-border/70 bg-background"
+                placeholder="Names of those who sent apologies"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setPeopleOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="actsix-btn-primary rounded-xl" onClick={savePeople}>
+              Save People
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={agendaOpen} onOpenChange={setAgendaOpen}>
+        <DialogContent className="max-h-[86vh] max-w-3xl overflow-y-auto rounded-2xl border-border/70 bg-card">
+          <DialogHeader>
+            <DialogTitle>Manage Agenda</DialogTitle>
+            <DialogDescription>
+              Build the agenda here. Saving will auto-fill the Minutes section.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {agendaDraft.map((section, sectionIndex) => (
+              <Card key={section.id} className="p-4 border-border/70 bg-muted/10 shadow-soft">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
+                    {sectionIndex + 1}
+                  </div>
+
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={section.heading}
+                        onChange={(event) =>
+                          setAgendaDraft((sections) =>
+                            sections.map((item) =>
+                              item.id === section.id ? { ...item, heading: event.target.value } : item
+                            )
+                          )
+                        }
+                        placeholder="Section heading..."
+                        className="border-border/70 bg-background font-semibold"
+                      />
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          setAgendaDraft((sections) =>
+                            sections.length > 1
+                              ? sections.filter((item) => item.id !== section.id)
+                              : [makeAgendaSection()]
+                          )
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {section.points.map((point, pointIndex) => (
+                        <div key={point.id} className="flex items-center gap-2">
+                          <div className="w-10 shrink-0 text-xs font-bold text-muted-foreground">
+                            {sectionIndex + 1}.{pointIndex + 1}
+                          </div>
+
                           <Input
-                            value={section.heading}
+                            value={point.text}
                             onChange={(event) =>
-                              setAgendaSections((sections) =>
+                              setAgendaDraft((sections) =>
                                 sections.map((item) =>
                                   item.id === section.id
-                                    ? { ...item, heading: event.target.value }
+                                    ? {
+                                        ...item,
+                                        points: item.points.map((agendaPoint) =>
+                                          agendaPoint.id === point.id
+                                            ? { ...agendaPoint, text: event.target.value }
+                                            : agendaPoint
+                                        ),
+                                      }
                                     : item
                                 )
                               )
                             }
-                            placeholder="Section heading..."
-                            className="border-border/70 bg-background font-semibold"
+                            placeholder="Agenda point..."
+                            className="border-border/70 bg-background"
                           />
 
                           <Button
@@ -414,241 +970,68 @@ const MeetingDetail = () => {
                             variant="ghost"
                             size="icon"
                             className="text-muted-foreground hover:text-destructive"
-                            title="Delete section"
-                            aria-label="Delete section"
                             onClick={() =>
-                              setAgendaSections((sections) =>
-                                sections.length > 1
-                                  ? sections.filter((item) => item.id !== section.id)
-                                  : [makeAgendaSection()]
+                              setAgendaDraft((sections) =>
+                                sections.map((item) =>
+                                  item.id === section.id
+                                    ? {
+                                        ...item,
+                                        points:
+                                          item.points.length > 1
+                                            ? item.points.filter((agendaPoint) => agendaPoint.id !== point.id)
+                                            : [makeAgendaPoint()],
+                                      }
+                                    : item
+                                )
                               )
                             }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-
-                        <div className="space-y-2">
-                          {section.points.map((point, pointIndex) => (
-                            <div key={point.id} className="flex items-center gap-2">
-                              <div className="w-10 shrink-0 text-xs font-bold text-muted-foreground">
-                                {sectionIndex + 1}.{pointIndex + 1}
-                              </div>
-
-                              <Input
-                                value={point.text}
-                                onChange={(event) =>
-                                  setAgendaSections((sections) =>
-                                    sections.map((item) =>
-                                      item.id === section.id
-                                        ? {
-                                            ...item,
-                                            points: item.points.map((agendaPoint) =>
-                                              agendaPoint.id === point.id
-                                                ? {
-                                                    ...agendaPoint,
-                                                    text: event.target.value,
-                                                  }
-                                                : agendaPoint
-                                            ),
-                                          }
-                                        : item
-                                    )
-                                  )
-                                }
-                                placeholder="Agenda point..."
-                                className="border-border/70 bg-background"
-                              />
-
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:text-destructive"
-                                title="Delete point"
-                                aria-label="Delete point"
-                                onClick={() =>
-                                  setAgendaSections((sections) =>
-                                    sections.map((item) =>
-                                      item.id === section.id
-                                        ? {
-                                            ...item,
-                                            points:
-                                              item.points.length > 1
-                                                ? item.points.filter(
-                                                    (agendaPoint) =>
-                                                      agendaPoint.id !== point.id
-                                                  )
-                                                : [makeAgendaPoint()],
-                                          }
-                                        : item
-                                    )
-                                  )
-                                }
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="rounded-xl text-brand-teal hover:text-brand-teal"
-                          onClick={() =>
-                            setAgendaSections((sections) =>
-                              sections.map((item) =>
-                                item.id === section.id
-                                  ? {
-                                      ...item,
-                                      points: [...item.points, makeAgendaPoint()],
-                                    }
-                                  : item
-                              )
-                            )
-                          }
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add agenda point
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
 
-            <div>
-              <label className="label-eyebrow">Notes / Minutes</label>
-              <textarea
-                value={meeting.notes || ""}
-                onChange={(event) => setMeeting({ ...meeting, notes: event.target.value })}
-                className="mt-2 min-h-48 w-full rounded-md border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Meeting notes, decisions, and minutes..."
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-3 pt-2">
-              <Button
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                onClick={deleteMeeting}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Meeting
-              </Button>
-
-              <Button className="actsix-btn-primary rounded-xl" onClick={saveMeeting}>
-                <Save className="h-4 w-4" />
-                Save Meeting
-              </Button>
-            </div>
-          </Card>
-
-          <div className="space-y-4">
-            <Card className="p-5 border-border/70 bg-card shadow-card">
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <CalendarDays className="h-4 w-4" />
-                  {meeting.meeting_date || "No date"}
-                </div>
-
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock3 className="h-4 w-4" />
-                  {meeting.meeting_time ? meeting.meeting_time.slice(0, 5) : "No time"}
-                </div>
-
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  {meeting.location || "No location"}
-                </div>
-
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <UsersRound className="h-4 w-4" />
-                  {Array.isArray(meeting.attendees) && meeting.attendees.length > 0
-                    ? `${meeting.attendees.length} attendees`
-                    : "No attendees"}
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-5 border-border/70 bg-card shadow-card">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-extrabold tracking-tight">Action Points</h2>
-                <span className="text-xs font-bold text-brand-teal">
-                  {actions.length}
-                </span>
-              </div>
-
-              <form onSubmit={addAction} className="space-y-2 mb-4">
-                <Input
-                  value={actionTitle}
-                  onChange={(event) => setActionTitle(event.target.value)}
-                  placeholder="Action point..."
-                  className="border-border/70 bg-background"
-                />
-
-                <div className="grid grid-cols-[1fr_130px_auto] gap-2">
-                  <Input
-                    value={assignee}
-                    onChange={(event) => setAssignee(event.target.value)}
-                    placeholder="Assignee"
-                    className="border-border/70 bg-background"
-                  />
-
-                  <Input
-                    type="date"
-                    value={due}
-                    onChange={(event) => setDue(event.target.value)}
-                    className="border-border/70 bg-background"
-                  />
-
-                  <Button type="submit" size="icon" className="actsix-btn-primary rounded-xl">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </form>
-
-              <div className="space-y-2">
-                {actions.length === 0 && (
-                  <div className="p-4 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
-                    No action points yet.
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-xl text-brand-teal hover:text-brand-teal"
+                      onClick={() =>
+                        setAgendaDraft((sections) =>
+                          sections.map((item) =>
+                            item.id === section.id
+                              ? { ...item, points: [...item.points, makeAgendaPoint()] }
+                              : item
+                          )
+                        )
+                      }
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add agenda point
+                    </Button>
                   </div>
-                )}
-
-                {actions.map((action) => (
-                  <div
-                    key={action.id}
-                    className="rounded-lg border border-border/70 bg-muted/20 p-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold text-sm">{action.title}</div>
-
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {action.assignee || "Unassigned"}
-                          {action.due ? ` · Due ${action.due}` : ""}
-                        </div>
-                      </div>
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeAction(action.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+                </div>
+              </Card>
+            ))}
           </div>
-        </div>
-      </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setAgendaDraft((sections) => [...sections, makeAgendaSection()])}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Section
+            </Button>
+            <Button className="actsix-btn-primary rounded-xl" onClick={saveAgenda}>
+              Save Agenda and Fill Minutes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

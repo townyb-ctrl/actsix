@@ -99,15 +99,14 @@ const Meetings = () => {
       return (
         (meeting.title || "").toLowerCase().includes(q) ||
         (meeting.location || "").toLowerCase().includes(q) ||
-        (meeting.type || "").toLowerCase().includes(q) ||
-        (meeting.status || "").toLowerCase().includes(q)
+        (meeting.type || "").toLowerCase().includes(q)
       );
     });
   }, [meetings, search]);
 
+  const totalCount = meetings.length;
   const upcomingCount = meetings.filter((meeting) => meeting.meeting_date).length;
-  const plannedCount = meetings.filter((meeting) => meeting.status !== "Completed").length;
-  const completedCount = meetings.filter((meeting) => meeting.status === "Completed").length;
+  const unscheduledCount = meetings.filter((meeting) => !meeting.meeting_date).length;
 
   return (
     <div>
@@ -120,8 +119,8 @@ const Meetings = () => {
       <div className="px-8 pb-12 max-w-7xl space-y-6">
         <div className="grid md:grid-cols-3 gap-4">
           <Card className="p-5 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Planned</p>
-            <div className="mt-2 text-3xl font-extrabold">{plannedCount}</div>
+            <p className="label-eyebrow">Total Meetings</p>
+            <div className="mt-2 text-3xl font-extrabold">{totalCount}</div>
           </Card>
 
           <Card className="p-5 border-border/70 bg-card shadow-card">
@@ -130,8 +129,8 @@ const Meetings = () => {
           </Card>
 
           <Card className="p-5 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Completed</p>
-            <div className="mt-2 text-3xl font-extrabold">{completedCount}</div>
+            <p className="label-eyebrow">Unscheduled</p>
+            <div className="mt-2 text-3xl font-extrabold">{unscheduledCount}</div>
           </Card>
         </div>
 
@@ -231,9 +230,6 @@ const Meetings = () => {
                     </div>
                   </div>
 
-                  <span className="chip bg-secondary text-secondary-foreground">
-                    {meeting.status || "Planned"}
-                  </span>
 
                   <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-teal transition-colors" />
                 </Link>
