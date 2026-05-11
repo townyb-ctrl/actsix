@@ -18,6 +18,83 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+type AgendaPoint = {
+  id: string;
+  text: string;
+};
+
+type AgendaSection = {
+  id: string;
+  heading: string;
+  points: AgendaPoint[];
+};
+
+const makeAgendaPoint = (): AgendaPoint => ({
+  id: crypto.randomUUID(),
+  text: "",
+});
+
+const makeAgendaSection = (): AgendaSection => ({
+  id: crypto.randomUUID(),
+  heading: "",
+  points: [makeAgendaPoint()],
+});
+
+const parseAgenda = (value?: string | null): AgendaSection[] => {
+  if (!value) return [makeAgendaSection()];
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (
+      parsed &&
+      parsed.type === "actsix-agenda-v1" &&
+      Array.isArray(parsed.sections)
+    ) {
+      return parsed.sections.length > 0
+        ? parsed.sections.map((section: any) => ({
+            id: section.id || crypto.randomUUID(),
+            heading: section.heading || "",
+            points:
+              Array.isArray(section.points) && section.points.length > 0
+                ? section.points.map((point: any) => ({
+                    id: point.id || crypto.randomUUID(),
+                    text: point.text || "",
+                  }))
+                : [makeAgendaPoint()],
+          }))
+        : [makeAgendaSection()];
+    }
+  } catch {
+    // Existing plain-text agendas are converted below.
+  }
+
+  const lines = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return [
+    {
+      id: crypto.randomUUID(),
+      heading: "Agenda",
+      points: lines.length
+        ? lines.map((line) => ({ id: crypto.randomUUID(), text: line }))
+        : [makeAgendaPoint()],
+    },
+  ];
+};
+
+const serializeAgenda = (sections: AgendaSection[]) =>
+  JSON.stringify({
+    type: "actsix-agenda-v1",
+    sections: sections.map((section) => ({
+      id: section.id,
+      heading: section.heading,
+      points: section.points,
+    })),
+  });
+
 const parseAttendees = (value: string) =>
   value
     .split(/[,\n]/)
@@ -32,6 +109,9 @@ const MeetingDetail = () => {
   const [meeting, setMeeting] = useState<any | null>(null);
   const [actions, setActions] = useState<any[]>([]);
   const [attendeesText, setAttendeesText] = useState("");
+  const [agendaSections, setAgendaSections] = useState<AgendaSection[]>([
+    makeAgendaSection(),
+  ]);
   const [actionTitle, setActionTitle] = useState("");
   const [assignee, setAssignee] = useState("");
   const [due, setDue] = useState("");
@@ -67,6 +147,7 @@ const MeetingDetail = () => {
         ? meetingData.attendees.join(", ")
         : ""
     );
+    setAgendaSections(parseAgenda(meetingData.agenda));
     setActions(actionData ?? []);
   };
 
@@ -87,7 +168,7 @@ const MeetingDetail = () => {
         type: meeting.type || "General",
         status: meeting.status || "Planned",
         attendees: parseAttendees(attendeesText),
-        agenda: meeting.agenda || "",
+        agenda: serializeAgenda(agendaSections),
         notes: meeting.notes || "",
         updated_at: new Date().toISOString(),
       })
@@ -276,13 +357,167 @@ const MeetingDetail = () => {
             </div>
 
             <div>
-              <label className="label-eyebrow">Agenda</label>
-              <textarea
-                value={meeting.agenda || ""}
-                onChange={(event) => setMeeting({ ...meeting, agenda: event.target.value })}
-                className="mt-2 min-h-40 w-full rounded-md border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Agenda items..."
-              />
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <label className="label-eyebrow">Agenda</label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Create numbered sections and agenda points.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() =>
+                    setAgendaSections((sections) => [
+                      ...sections,
+                      makeAgendaSection(),
+                    ])
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Section
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {agendaSections.map((section, sectionIndex) => (
+                  <Card
+                    key={section.id}
+                    className="p-4 border-border/70 bg-muted/10 shadow-soft"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
+                        {sectionIndex + 1}
+                      </div>
+
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={section.heading}
+                            onChange={(event) =>
+                              setAgendaSections((sections) =>
+                                sections.map((item) =>
+                                  item.id === section.id
+                                    ? { ...item, heading: event.target.value }
+                                    : item
+                                )
+                              )
+                            }
+                            placeholder="Section heading..."
+                            className="border-border/70 bg-background font-semibold"
+                          />
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                            title="Delete section"
+                            aria-label="Delete section"
+                            onClick={() =>
+                              setAgendaSections((sections) =>
+                                sections.length > 1
+                                  ? sections.filter((item) => item.id !== section.id)
+                                  : [makeAgendaSection()]
+                              )
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                          {section.points.map((point, pointIndex) => (
+                            <div key={point.id} className="flex items-center gap-2">
+                              <div className="w-10 shrink-0 text-xs font-bold text-muted-foreground">
+                                {sectionIndex + 1}.{pointIndex + 1}
+                              </div>
+
+                              <Input
+                                value={point.text}
+                                onChange={(event) =>
+                                  setAgendaSections((sections) =>
+                                    sections.map((item) =>
+                                      item.id === section.id
+                                        ? {
+                                            ...item,
+                                            points: item.points.map((agendaPoint) =>
+                                              agendaPoint.id === point.id
+                                                ? {
+                                                    ...agendaPoint,
+                                                    text: event.target.value,
+                                                  }
+                                                : agendaPoint
+                                            ),
+                                          }
+                                        : item
+                                    )
+                                  )
+                                }
+                                placeholder="Agenda point..."
+                                className="border-border/70 bg-background"
+                              />
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground hover:text-destructive"
+                                title="Delete point"
+                                aria-label="Delete point"
+                                onClick={() =>
+                                  setAgendaSections((sections) =>
+                                    sections.map((item) =>
+                                      item.id === section.id
+                                        ? {
+                                            ...item,
+                                            points:
+                                              item.points.length > 1
+                                                ? item.points.filter(
+                                                    (agendaPoint) =>
+                                                      agendaPoint.id !== point.id
+                                                  )
+                                                : [makeAgendaPoint()],
+                                          }
+                                        : item
+                                    )
+                                  )
+                                }
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-xl text-brand-teal hover:text-brand-teal"
+                          onClick={() =>
+                            setAgendaSections((sections) =>
+                              sections.map((item) =>
+                                item.id === section.id
+                                  ? {
+                                      ...item,
+                                      points: [...item.points, makeAgendaPoint()],
+                                    }
+                                  : item
+                              )
+                            )
+                          }
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add agenda point
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
 
             <div>
