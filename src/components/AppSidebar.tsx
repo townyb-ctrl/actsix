@@ -60,7 +60,7 @@ export function AppSidebar() {
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
   const items = inTasksModule ? taskItems : homebaseItems;
 
-  const moduleValue = inTasksModule ? "/tasks" : "/";
+  const moduleValue = pathname.startsWith("/meetings") ? "/meetings" : inTasksModule ? "/tasks" : "/";
 
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
@@ -154,7 +154,7 @@ export function AppSidebar() {
                   >
                     <option value="/">Home</option>
                     <option value="/tasks">ACTSIX: Tasks</option>
-                    <option value="/meetings" disabled>Meetings — Coming Soon</option>
+                    <option value="/meetings">ACTSIX: Meetings</option>
                     <option value="/service-planning" disabled>Service Planning — Coming Soon</option>
                     <option value="/sermon-prep" disabled>Sermon Prep — Coming Soon</option>
                     <option value="/scripture" disabled>Scripture Tools — Coming Soon</option>

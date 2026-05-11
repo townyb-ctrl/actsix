@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 node_modules/
 dist/
+
+.DS_Store
+**/.DS_Store

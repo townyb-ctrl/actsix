@@ -1,25 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  FileText,
+  Headphones,
+  HeartHandshake,
+  LayoutDashboard,
+  ListChecks,
+  Mic2,
+  PlayCircle,
+  ScrollText,
+  Sparkles,
+  UsersRound,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
-import { ArrowUpRight, Computer, Phone, Church, Brain, ShoppingBag, Home, Users } from "lucide-react";
-import { Link } from "react-router-dom";
-import { toast } from "sonner";
-import CompactTaskRow from "@/components/CompactTaskRow";
-import { syncProjectStats } from "@/lib/syncProjectStats";
-
-const contextIcon: Record<string, any> = {
-  Computer,
-  Calls: Phone,
-  Church,
-  "Deep Work": Brain,
-  Errands: ShoppingBag,
-  Home,
-  Meetups: Users,
-};
-
-const CONTEXTS = ["Computer", "Calls", "Church", "Deep Work", "Errands", "Home", "Meetups"];
+import { Button } from "@/components/ui/button";
 
 const priorityWeight: Record<string, number> = {
   Urgent: 4,
@@ -28,322 +27,277 @@ const priorityWeight: Record<string, number> = {
   Low: 1,
 };
 
-const parseLocalDate = (value?: string | null) => {
-  if (!value) return null;
-
-  const [year, month, day] = value.split("-").map(Number);
-  if (!year || !month || !day) return null;
-
-  return new Date(year, month - 1, day);
-};
-
-const startOfToday = () => {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
-
-const isToday = (value?: string | null) => {
-  const due = parseLocalDate(value);
-  if (!due) return false;
-
-  return due.getTime() === startOfToday().getTime();
-};
-
-const isThisWeek = (value?: string | null) => {
-  const due = parseLocalDate(value);
-  if (!due) return false;
-
-  const today = startOfToday();
-  const end = new Date(today);
-  end.setDate(today.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-
-  return due >= today && due <= end;
-};
-
-const isOverdue = (value?: string | null) => {
-  const due = parseLocalDate(value);
-  if (!due) return false;
-
-  return due < startOfToday();
-};
-
-const KpiCard = ({
-  label,
-  value,
-  hint,
+const ModuleCard = ({
+  title,
+  description,
+  icon: Icon,
   to,
+  status = "coming",
+  meta,
 }: {
-  label: string;
-  value: number;
-  hint: string;
-  to: string;
-}) => (
-  <Link to={to}>
-    <Card className="p-5 shadow-card border-border/70 bg-card hover:border-brand-teal/40 transition-colors group">
-      <div className="flex items-start justify-between">
-        <div className="label-eyebrow">{label}</div>
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-teal transition-colors" />
+  title: string;
+  description: string;
+  icon: any;
+  to?: string;
+  status?: "live" | "coming";
+  meta?: string;
+}) => {
+  const content = (
+    <Card className="group relative overflow-hidden p-5 border-border/70 bg-card shadow-card hover:border-brand-teal/40 transition-colors min-h-[180px]">
+      <div className="absolute -right-6 -bottom-8 text-[120px] leading-none font-extrabold text-brand-teal/[0.035] select-none pointer-events-none">
+        {title[0]}
       </div>
-      <div className="mt-4 text-5xl font-extrabold tracking-tight tabular-nums">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+
+      <div className="flex items-start justify-between gap-4">
+        <div className="h-11 w-11 rounded-2xl bg-brand-teal/10 text-brand-teal flex items-center justify-center">
+          <Icon className="h-5 w-5" />
+        </div>
+
+        <span
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${
+            status === "live"
+              ? "border-brand-teal/25 bg-brand-teal/10 text-brand-teal"
+              : "border-border/70 bg-muted/40 text-muted-foreground"
+          }`}
+        >
+          {status === "live" ? "Live" : "Coming soon"}
+        </span>
+      </div>
+
+      <div className="mt-5">
+        <h2 className="text-lg font-extrabold tracking-tight">{title}</h2>
+        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+          {description}
+        </p>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
+        <span>{meta || "Part of the ACTSIX family"}</span>
+        {to && (
+          <ArrowUpRight className="h-4 w-4 group-hover:text-brand-teal transition-colors" />
+        )}
+      </div>
     </Card>
-  </Link>
-);
+  );
+
+  return to ? <Link to={to}>{content}</Link> : content;
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [kpis, setKpis] = useState({ inbox: 0, next: 0, projects: 0, waiting: 0 });
-  const [openTasks, setOpenTasks] = useState<any[]>([]);
-  const [contextCounts, setContextCounts] = useState<Record<string, number>>({});
-  const [contextNext, setContextNext] = useState<Record<string, any>>({});
-  const [contextProjects, setContextProjects] = useState<Record<string, number>>({});
 
-  const load = async () => {
-    if (!user) return;
-
-    const [inbox, next, projects, waiting, taskResult, projAll] = await Promise.all([
-      supabase.from("inbox_items").select("id", { count: "exact", head: true }),
-      supabase.from("tasks").select("id", { count: "exact", head: true }).eq("complete", false),
-      supabase.from("projects").select("id", { count: "exact", head: true }),
-      supabase.from("waiting_items").select("id", { count: "exact", head: true }),
-      supabase
-        .from("tasks")
-        .select("*")
-        .eq("complete", false)
-        .order("created_at", { ascending: false }),
-      supabase.from("projects").select("area"),
-    ]);
-
-    setKpis({
-      inbox: inbox.count ?? 0,
-      next: next.count ?? 0,
-      projects: projects.count ?? 0,
-      waiting: waiting.count ?? 0,
-    });
-
-    const tasks = taskResult.data ?? [];
-    setOpenTasks(tasks);
-
-    const counts: Record<string, number> = {};
-    const nexts: Record<string, any> = {};
-    CONTEXTS.forEach((c) => (counts[c] = 0));
-
-    tasks.forEach((task: any) => {
-      if (CONTEXTS.includes(task.context)) {
-        counts[task.context] = (counts[task.context] ?? 0) + 1;
-        if (!nexts[task.context]) nexts[task.context] = task;
-      }
-    });
-
-    setContextCounts(counts);
-    setContextNext(nexts);
-
-    const projCounts: Record<string, number> = {};
-    CONTEXTS.forEach((c) => (projCounts[c] = 0));
-
-    (projAll.data ?? []).forEach((project: any) => {
-      if (CONTEXTS.includes(project.area)) {
-        projCounts[project.area] = (projCounts[project.area] ?? 0) + 1;
-      }
-    });
-
-    setContextProjects(projCounts);
-  };
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [projectCount, setProjectCount] = useState(0);
 
   useEffect(() => {
-    if (user) load();
+    if (!user) return;
+
+    (async () => {
+      const [taskResult, projectResult] = await Promise.all([
+        supabase.from("tasks").select("*").eq("complete", false),
+        supabase.from("projects").select("id", { count: "exact", head: true }),
+      ]);
+
+      setTasks(taskResult.data ?? []);
+      setProjectCount(projectResult.count ?? 0);
+    })();
   }, [user]);
 
-  const toggleTask = async (task: any) => {
-    const nextComplete = !task.complete;
+  const urgentTasks = useMemo(() => {
+    return [...tasks]
+      .sort((a, b) => {
+        const priorityDiff =
+          (priorityWeight[b.priority || "Medium"] || 0) -
+          (priorityWeight[a.priority || "Medium"] || 0);
 
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        complete: nextComplete,
-        completed_at: nextComplete ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
+        if (priorityDiff !== 0) return priorityDiff;
+
+        const aDue = a.due ? new Date(a.due).getTime() : Number.POSITIVE_INFINITY;
+        const bDue = b.due ? new Date(b.due).getTime() : Number.POSITIVE_INFINITY;
+
+        return aDue - bDue;
       })
-      .eq("id", task.id);
+      .slice(0, 3);
+  }, [tasks]);
 
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    await syncProjectStats(task.project, user?.id);
-    load();
-  };
-
-  const sortedTasks = useMemo(() => {
-    return [...openTasks].sort((a, b) => {
-      const priorityDiff =
-        (priorityWeight[b.priority || "Medium"] || 0) -
-        (priorityWeight[a.priority || "Medium"] || 0);
-
-      if (priorityDiff !== 0) return priorityDiff;
-
-      const aOverdue = isOverdue(a.due) ? 1 : 0;
-      const bOverdue = isOverdue(b.due) ? 1 : 0;
-
-      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
-
-      const aDue = parseLocalDate(a.due)?.getTime() ?? Number.POSITIVE_INFINITY;
-      const bDue = parseLocalDate(b.due)?.getTime() ?? Number.POSITIVE_INFINITY;
-
-      return aDue - bDue;
-    });
-  }, [openTasks]);
-
-  const focusTasks = useMemo(() => {
-    return sortedTasks.slice(0, 5);
-  }, [sortedTasks]);
-
-  const maxContext = Math.max(1, ...Object.values(contextCounts));
+  const modules = [
+    {
+      title: "ACTSIX: Tasks",
+      description:
+        "Capture, clarify, organize, and act. Your GTD-inspired ministry workflow system.",
+      icon: ListChecks,
+      to: "/tasks",
+      status: "live" as const,
+      meta: `${tasks.length} open actions · ${projectCount} projects`,
+    },
+    {
+      title: "Meetings",
+      description:
+        "Agenda planning, minutes, attendees, decisions, and action points for church meetings.",
+      icon: UsersRound,
+    },
+    {
+      title: "Service Planning",
+      description:
+        "Plan worship services, roles, teams, songs, readings, liturgy, and production notes.",
+      icon: CalendarDays,
+    },
+    {
+      title: "Sermon Prep",
+      description:
+        "Organize sermon ideas, manuscripts, illustrations, outlines, research, and delivery notes.",
+      icon: Mic2,
+    },
+    {
+      title: "Scripture Tools",
+      description:
+        "Format Scripture readings, compare passages, prepare service readings, and structure Bible content.",
+      icon: ScrollText,
+    },
+    {
+      title: "Media Tools",
+      description:
+        "Manage downloads, audio prep, song analysis, media assets, and creative production workflows.",
+      icon: PlayCircle,
+    },
+    {
+      title: "People Care",
+      description:
+        "Track pastoral care, follow-ups, prayer needs, visits, and delegated care responsibilities.",
+      icon: HeartHandshake,
+    },
+    {
+      title: "Worship Resources",
+      description:
+        "Song library, keys, tempos, chord notes, biblical review, and team preparation resources.",
+      icon: Headphones,
+    },
+    {
+      title: "Documents",
+      description:
+        "Policies, ministry documents, templates, training guides, and repeatable admin resources.",
+      icon: FileText,
+    },
+    {
+      title: "ACTSIX Labs",
+      description:
+        "Experimental tools and future ideas for ministry workflows, automation, and productivity.",
+      icon: Sparkles,
+    },
+  ];
 
   return (
     <div>
       <PageHeader
-        eyebrow="Dashboard"
-        title="Dashboard"
-        subtitle="A calm command center for tasks, ministry, family, and creative work."
+        eyebrow="ACTSIX"
+        title="Homebase"
+        subtitle="A family-level command center for ministry work. Open a module to enter its dedicated dashboard and tools."
       />
 
       <div className="px-8 pb-12 max-w-7xl space-y-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Inbox" value={kpis.inbox} hint={`${kpis.inbox} unprocessed`} to="/inbox" />
-          <KpiCard label="Next Actions" value={kpis.next} hint={`${kpis.next} ready`} to="/tasks" />
-          <KpiCard label="Projects" value={kpis.projects} hint={`${kpis.projects} open`} to="/projects" />
-          <KpiCard label="Waiting For" value={kpis.waiting} hint={`${kpis.waiting} delegated`} to="/waiting" />
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-5">
-          <Card className="lg:col-span-3 p-6 shadow-card border-border/70 bg-card">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight">Today Focus</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Compact focus list drawn from active next actions.
-                </p>
+        <Card className="p-6 border-border/70 bg-card shadow-card">
+          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] items-start">
+            <div>
+              <div className="flex items-center gap-2 text-brand-teal font-bold text-sm">
+                <LayoutDashboard className="h-4 w-4" />
+                Organize the work. Serve the Word.
               </div>
-              <span className="chip bg-secondary text-secondary-foreground">
-                Highest Priority
-              </span>
-            </div>
 
-            <div className="rounded-2xl border border-border/70 bg-muted/10 p-2 space-y-1.5">
-              {focusTasks.length === 0 && (
-                <div className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground text-center">
-                  No active next actions yet.
-                </div>
-              )}
+              <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
+                Welcome to ACTSIX
+              </h2>
 
-              {focusTasks.map((task) => (
-                <CompactTaskRow
-                  key={task.id}
-                  task={task}
-                  onToggle={toggleTask}
-                />
-              ))}
-            </div>
-          </Card>
+              <p className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">
+                Homebase gives you key signals from across the ACTSIX family.
+                To work inside a specific area, open that module first.
+              </p>
 
-          <Card className="lg:col-span-2 p-7 shadow-card border-border/70 bg-card">
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight">Focus Dynamics</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Active work distributed across contexts.
-                </p>
+              <div className="mt-5">
+                <Button asChild className="actsix-btn-primary rounded-xl">
+                  <Link to="/tasks">Open ACTSIX: Tasks</Link>
+                </Button>
               </div>
-              <span className="chip bg-secondary text-secondary-foreground">This week</span>
             </div>
 
-            <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-3">
-              <span>Context</span>
-              <span>0 — {maxContext} open</span>
-            </div>
+            <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-extrabold tracking-tight">
+                  Key Signals
+                </h3>
+                <span className="chip bg-secondary text-secondary-foreground">
+                  Homebase
+                </span>
+              </div>
 
-            <div className="space-y-3">
-              {CONTEXTS.map((ctx) => {
-                const c = contextCounts[ctx] ?? 0;
-                const pct = (c / maxContext) * 100;
+              <div className="space-y-2">
+                <div className="rounded-lg border border-border/70 bg-card px-3 py-2">
+                  <div className="label-eyebrow">Most urgent tasks</div>
+                  <div className="mt-2 space-y-1">
+                    {urgentTasks.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        No active task signals yet.
+                      </p>
+                    )}
 
-                return (
-                  <div key={ctx} className="grid grid-cols-[110px_1fr_24px] items-center gap-3">
-                    <div>
-                      <div className="text-sm font-semibold">{ctx}</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {c} open action{c === 1 ? "" : "s"}
-                      </div>
-                    </div>
-
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    {urgentTasks.map((task) => (
                       <div
-                        className="h-full bg-brand-teal rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
+                        key={task.id}
+                        className="flex items-center justify-between gap-3 text-sm"
+                      >
+                        <span className="truncate font-semibold">{task.title}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {task.priority || "Medium"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                    <div className="text-sm font-mono font-semibold tabular-nums text-right">
-                      {c}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-border/70 bg-card px-3 py-2">
+                    <div className="label-eyebrow">Projects</div>
+                    <div className="mt-1 text-2xl font-extrabold">
+                      {projectCount}
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="rounded-lg border border-border/70 bg-card px-3 py-2">
+                    <div className="label-eyebrow">Open Tasks</div>
+                    <div className="mt-1 text-2xl font-extrabold">
+                      {tasks.length}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-dashed border-border bg-card px-3 py-3 text-sm text-muted-foreground">
+                  Upcoming service, next sermon, and pastoral care signals will
+                  appear here as those ACTSIX modules are built.
+                </div>
+              </div>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
 
         <div>
-          <div className="flex items-end justify-between mb-4">
+          <div className="flex items-end justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-3xl font-extrabold tracking-tight">Contexts</h2>
+              <h2 className="text-2xl font-extrabold tracking-tight">
+                ACTSIX Family
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Jump into focused lanes for tasks, projects, and routines.
+                Select a module to enter its dedicated workspace.
               </p>
             </div>
-            <span className="chip bg-secondary text-secondary-foreground">Focus lanes</span>
+
+            <span className="chip bg-secondary text-secondary-foreground">
+              1 live
+            </span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {CONTEXTS.map((ctx) => {
-              const Icon = contextIcon[ctx] ?? Computer;
-              const c = contextCounts[ctx] ?? 0;
-              const next = contextNext[ctx];
-              const projCount = contextProjects[ctx] ?? 0;
-
-              return (
-                <Card
-                  key={ctx}
-                  className="relative overflow-hidden p-5 shadow-card border-border/70 bg-card hover:border-brand-teal/40 transition-colors group"
-                >
-                  <div className="absolute -right-4 -bottom-6 text-[120px] leading-none font-extrabold text-brand-teal/[0.04] select-none pointer-events-none">
-                    {ctx[0]}
-                  </div>
-
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <span className="chip bg-secondary text-secondary-foreground">{c} open</span>
-                  </div>
-
-                  <div className="font-extrabold text-lg">{ctx}</div>
-
-                  <div className="mt-2 text-xs text-muted-foreground line-clamp-2 min-h-[2rem]">
-                    {next ? <>Next: {next.title}</> : "No actions queued"}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>{projCount} project{projCount === 1 ? "" : "s"} · 0 weekly</span>
-                    <ArrowUpRight className="h-4 w-4 group-hover:text-brand-teal transition-colors" />
-                  </div>
-                </Card>
-              );
-            })}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {modules.map((module) => (
+              <ModuleCard key={module.title} {...module} />
+            ))}
           </div>
         </div>
       </div>

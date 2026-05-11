@@ -12,6 +12,8 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Inbox from "./pages/Inbox";
 import { Waiting, Someday } from "./pages/SimpleList";
+import Meetings from "./pages/Meetings";
+import MeetingDetail from "./pages/MeetingDetail";
 import Settings from "./pages/Settings";
 import { Recurring, Review, Calendar, Meetups } from "./pages/Placeholder";
 import Auth from "./pages/Auth";
@@ -51,6 +53,8 @@ const App = () => (
               <Route path="/review" element={<Review />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/meetups" element={<Meetups />} />
+              <Route path="/meetings" element={<Meetings />} />
+              <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
