@@ -24,7 +24,6 @@ import { toast } from "sonner";
 import { syncProjectStats } from "@/lib/syncProjectStats";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
-import CompactTaskRow from "@/components/CompactTaskRow";
 
 type InboxItem = {
   id: string;
@@ -147,14 +146,7 @@ const Inbox = () => {
       id: crypto.randomUUID(),
       title: title.trim(),
       user_id: user.id,
-      context: "General",
-      priority: "Medium",
-      energy: "Medium",
-      minutes: 15,
       notes: "",
-      project: "",
-      tags: [],
-      someday_category: "General",
     });
 
     if (error) {
@@ -362,13 +354,48 @@ const Inbox = () => {
           )}
 
           {items.map((item) => (
-            <CompactTaskRow
+            <div
               key={item.id}
-              task={item}
-              showCheckbox={false}
-              onEdit={() => openEditor(item)}
-              onDelete={() => quickDelete(item)}
-            />
+              className="action-row group flex items-center gap-3 px-4 py-3"
+            >
+              <div className="h-1.5 w-1.5 rounded-full bg-brand-teal shrink-0" />
+
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold truncate">
+                  {item.title}
+                </div>
+
+                {item.notes && (
+                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                    {item.notes}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex shrink-0 items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  title="Clarify"
+                  aria-label="Clarify"
+                  onClick={() => openEditor(item)}
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  title="Delete"
+                  aria-label="Delete"
+                  onClick={() => quickDelete(item)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
           ))}
         </Card>
       </div>
