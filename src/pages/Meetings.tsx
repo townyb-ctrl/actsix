@@ -35,9 +35,11 @@ const Meetings = () => {
   const [addOpen, setAddOpen] = useState(false);
 
   const [title, setTitle] = useState("");
+  const [meetingType, setMeetingType] = useState("General");
   const [meetingDate, setMeetingDate] = useState("");
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
+  const [attendees, setAttendees] = useState("");
 
   const load = async () => {
     if (!user) return;
@@ -74,7 +76,7 @@ const Meetings = () => {
       location: location.trim(),
       type: "General",
       status: "Planned",
-      attendees: [],
+      attendees: attendees.split(",").map((name) => name.trim()).filter(Boolean),
       agenda: "",
       notes: "",
     });
@@ -88,6 +90,7 @@ const Meetings = () => {
     setMeetingDate("");
     setMeetingTime("");
     setLocation("");
+    setAttendees("");
     toast.success("Meeting created");
     load();
   };
@@ -269,8 +272,8 @@ const Meetings = () => {
                 <div>
                   <label className="label-eyebrow">Type</label>
                   <Input
-                    value={type}
-                    onChange={(event) => setType(event.target.value)}
+                    value={meetingType}
+                    onChange={(event) => setMeetingType(event.target.value)}
                     placeholder="General"
                     className="mt-2 border-border/70 bg-background"
                   />

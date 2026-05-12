@@ -321,21 +321,26 @@ const RecurringMeetingDetail = () => {
   };
 
   const createMeetingFromOccurrence = async (occurrence: { key: string; number: number; date: string }) => {
-    if (!series || !user) return;
+    if (!series) {
+      toast.error("Recurring meeting not loaded yet.");
+      return;
+    }
 
-    const meetingId = crypto.randomUUID();
+    if (!user) {
+      toast.error("You need to be signed in to create a meeting.");
+      return;
+    }
+
     const regularAgenda = series.regularAgenda || [];
     const notes = generateMinutesFromAgenda(regularAgenda);
 
-    const { error } = await supabase.from("meetings").insert({
-      id: meetingId,
+    const payload = {
       user_id: user.id,
       title: series.title,
       meeting_date: occurrence.date,
       meeting_time: series.meetingTime || null,
       location: series.location || "",
       type: "Recurring",
-      status: "Planned",
       attendees: series.regularAttendees || [],
       agenda: JSON.stringify({
         sections: regularAgenda,
@@ -343,10 +348,24 @@ const RecurringMeetingDetail = () => {
         recurringSeriesId: series.id,
       }),
       notes,
-    });
+    };
+
+    const { data, error } = await supabase
+      .from("meetings")
+      .insert(payload)
+      .select("id")
+      .single();
 
     if (error) {
-      toast.error(error.message);
+      console.error("Create recurring meeting occurrence failed:", error);
+      toast.error(error.message || "Could not create meeting.");
+      return;
+    }
+
+    const meetingId = data?.id;
+
+    if (!meetingId) {
+      toast.error("Meeting was created, but no meeting ID was returned.");
       return;
     }
 
@@ -359,6 +378,7 @@ const RecurringMeetingDetail = () => {
     saveCreatedMap(nextMap);
     toast.success("Meeting created with regular attendees and agenda");
   };
+
 
   if (!series) {
     return (

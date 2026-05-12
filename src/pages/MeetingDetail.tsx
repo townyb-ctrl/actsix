@@ -253,11 +253,11 @@ const cleanAgendaSections = (sections: AgendaSection[]) => {
 };
 
 
-const getRecurringSeriesIdFromAgenda = (agenda?: string | null) => {
+const getRecurringSeriesIdFromAgenda = (agenda?: string | Record<string, unknown> | null) => {
   if (!agenda) return null;
 
   try {
-    const parsed = JSON.parse(agenda);
+    const parsed = typeof agenda === "string" ? JSON.parse(agenda) : agenda;
     return typeof parsed?.recurringSeriesId === "string" ? parsed.recurringSeriesId : null;
   } catch {
     return null;
