@@ -270,6 +270,9 @@ const MeetingDetail = () => {
   const [transcriptText, setTranscriptText] = useState("");
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
   const [transcribing, setTranscribing] = useState(false);
+  const [processingTranscript, setProcessingTranscript] = useState(false);
+  const [generatedMinutes, setGeneratedMinutes] = useState("");
+  const [generatedActionPoints, setGeneratedActionPoints] = useState<string[]>([]);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -342,6 +345,18 @@ const MeetingDetail = () => {
 
     const savedTranscript = localStorage.getItem(`actsix_meeting_transcript_${meetingId}`) || "";
     setTranscriptText(savedTranscript);
+
+    const savedGeneratedMinutes = localStorage.getItem(`actsix_meeting_generated_minutes_${meetingId}`) || "";
+    const savedGeneratedActionPoints = localStorage.getItem(`actsix_meeting_generated_actions_${meetingId}`) || "[]";
+
+    setGeneratedMinutes(savedGeneratedMinutes);
+
+    try {
+      setGeneratedActionPoints(JSON.parse(savedGeneratedActionPoints));
+    } catch {
+      setGeneratedActionPoints([]);
+    }
+
   }, [meetingId]);
 
   useEffect(() => {
@@ -380,6 +395,77 @@ const MeetingDetail = () => {
     if (meetingId) {
       localStorage.setItem(`actsix_meeting_transcript_${meetingId}`, value);
     }
+  };
+
+  const saveGeneratedMinutes = (value: string) => {
+    setGeneratedMinutes(value);
+
+    if (meetingId) {
+      localStorage.setItem(`actsix_meeting_generated_minutes_${meetingId}`, value);
+    }
+  };
+
+  const saveGeneratedActionPoints = (items: string[]) => {
+    setGeneratedActionPoints(items);
+
+    if (meetingId) {
+      localStorage.setItem(`actsix_meeting_generated_actions_${meetingId}`, JSON.stringify(items));
+    }
+  };
+
+  const processTranscriptIntoMinutes = async () => {
+    if (!transcriptText.trim()) {
+      toast.error("There is no transcript to process yet.");
+      return;
+    }
+
+    setProcessingTranscript(true);
+
+    try {
+      const response = await fetch("http://localhost:5055/process", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcript: transcriptText,
+          meeting_title: meeting?.title || "Staff Meeting",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Transcript processing failed.");
+      }
+
+      const result = await response.json();
+
+      saveGeneratedMinutes(result.minutes || "");
+      saveGeneratedActionPoints(result.action_points || []);
+
+      toast.success(
+        result.source === "ollama"
+          ? "Minutes generated with local AI"
+          : "Minutes generated with fallback processor"
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not generate minutes from transcript.");
+    } finally {
+      setProcessingTranscript(false);
+    }
+  };
+
+  const copyGeneratedMinutesToMinutes = () => {
+    if (!meeting || !generatedMinutes.trim()) return;
+
+    setMeeting({
+      ...meeting,
+      notes: meeting.notes?.trim()
+        ? `${meeting.notes.trim()}\n\n${generatedMinutes.trim()}`
+        : generatedMinutes.trim(),
+    });
+
+    toast.success("Generated notes copied into minutes");
   };
 
   const transcribeAudio = async () => {
@@ -770,10 +856,20 @@ ${transcriptText.trim()}`;
                     type="button"
                     variant="outline"
                     className="rounded-xl"
-                    onClick={copyTranscriptToMinutes}
-                    disabled={!transcriptText.trim()}
+                    onClick={processTranscriptIntoMinutes}
+                    disabled={!transcriptText.trim() || processingTranscript}
                   >
-                    Copy to Minutes
+                    {processingTranscript ? "Generating..." : "Generate Minutes"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={copyGeneratedMinutesToMinutes}
+                    disabled={!generatedMinutes.trim()}
+                  >
+                    Copy Generated Notes
                   </Button>
 
                   <Button
@@ -825,6 +921,46 @@ ${transcriptText.trim()}`;
                     className="mt-3 min-h-[260px] w-full resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-border/70 bg-background p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="label-eyebrow">Generated Meeting Notes</label>
+
+                  {generatedMinutes.trim() && (
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-muted-foreground hover:text-brand-teal"
+                      onClick={() => {
+                        saveGeneratedMinutes("");
+                        saveGeneratedActionPoints([]);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <textarea
+                  value={generatedMinutes}
+                  onChange={(event) => saveGeneratedMinutes(event.target.value)}
+                  placeholder="Generated minutes and action points will appear here..."
+                  className="mt-3 min-h-[260px] w-full resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+
+                {generatedActionPoints.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-border/70 bg-card p-4">
+                    <p className="label-eyebrow">Extracted Action Points</p>
+
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      {generatedActionPoints.map((point, index) => (
+                        <li key={`${point}-${index}`} className="leading-6">
+                          • {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
