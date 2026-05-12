@@ -7,7 +7,6 @@ import tempfile
 import os
 import re
 import requests
-import time
 
 app = FastAPI(title="ACTSIX Local Meeting Transcriber")
 
@@ -25,7 +24,6 @@ MINUTES_PROVIDER = os.getenv("ACTSIX_MINUTES_PROVIDER", "ollama").lower()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 
 model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
 
@@ -44,7 +42,6 @@ def health():
         "ollama_model": OLLAMA_MODEL,
         "gemini_model": GEMINI_MODEL,
         "groq_model": GROQ_MODEL,
-        "openai_model": OPENAI_MODEL,
     }
 
 
@@ -214,41 +211,6 @@ def process_with_gemini(prompt: str):
     return "\n".join(part.get("text", "") for part in parts).strip()
 
 
-
-def process_with_openai(prompt: str):
-    api_key = os.getenv("OPENAI_API_KEY")
-
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is not set.")
-
-    response = requests.post(
-        "https://api.openai.com/v1/responses",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": OPENAI_MODEL,
-            "input": prompt,
-        },
-        timeout=240,
-    )
-
-    response.raise_for_status()
-    data = response.json()
-
-    if "output_text" in data:
-        return data["output_text"].strip()
-
-    output_parts = []
-    for item in data.get("output", []):
-        for content in item.get("content", []):
-            if content.get("type") in ["output_text", "text"]:
-                output_parts.append(content.get("text", ""))
-
-    return "\n".join(output_parts).strip()
-
-
 def process_with_groq(prompt: str):
     api_key = os.getenv("GROQ_API_KEY")
 
@@ -374,162 +336,6 @@ def fallback_process_transcript(transcript: str):
     }
 
 
-
-def chunk_text(text: str, max_chars: int = 12000):
-    paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
-    chunks = []
-    current = ""
-
-    for paragraph in paragraphs:
-        if len(current) + len(paragraph) + 2 <= max_chars:
-            current += ("\n\n" if current else "") + paragraph
-        else:
-            if current:
-                chunks.append(current)
-            current = paragraph
-
-    if current:
-        chunks.append(current)
-
-    if not chunks and text.strip():
-        chunks = [text.strip()[i:i + max_chars] for i in range(0, len(text.strip()), max_chars)]
-
-    return chunks
-
-
-def build_chunk_summary_prompt(chunk: str, meeting_title: Optional[str], chunk_number: int, total_chunks: int):
-    return f"""
-You are helping process part of a noisy church staff meeting transcript.
-
-This is chunk {chunk_number} of {total_chunks}.
-
-Create a concise structured summary of this chunk.
-
-Rules:
-- Do not invent details.
-- Remove filler words and repetition.
-- Capture topics discussed.
-- Capture clear decisions.
-- Capture possible action points.
-- Use markdown.
-
-Meeting title: {meeting_title or "Staff Meeting"}
-
-Transcript chunk:
-{chunk}
-"""
-
-
-def build_final_minutes_prompt(chunk_summaries: list, meeting_title: Optional[str]):
-    joined_summaries = "\n\n---\n\n".join(chunk_summaries)
-
-    return f"""
-You are creating final staff meeting minutes from several chunk summaries.
-
-Create clean, useful, structured meeting minutes.
-
-Rules:
-- Do not invent details.
-- Merge duplicate points.
-- Group by topic.
-- Use clear headings.
-- Include decisions if clear.
-- End with a clear Action Points section.
-- Action points must be practical and start with a verb where possible.
-- Use markdown.
-
-Meeting title: {meeting_title or "Staff Meeting"}
-
-Chunk summaries:
-{joined_summaries}
-"""
-
-
-def process_prompt_with_provider(prompt: str, provider: str):
-    if provider == "gemini":
-        return process_with_gemini(prompt)
-
-    if provider == "groq":
-        return process_with_groq(prompt)
-
-    if provider == "openai":
-        return process_with_openai(prompt)
-
-    if provider == "ollama":
-        return process_with_ollama(prompt)
-
-    raise RuntimeError(f"Unsupported provider: {provider}")
-
-
-def process_prompt_with_retry(prompt: str, provider: str, attempts: int = 4):
-    last_error = None
-
-    for attempt in range(attempts):
-        try:
-            return process_prompt_with_provider(prompt, provider)
-        except requests.exceptions.HTTPError as error:
-            last_error = error
-            status_code = error.response.status_code if error.response is not None else None
-
-            if status_code == 429:
-                wait_seconds = int(os.getenv("AI_RETRY_WAIT_SECONDS", "20")) * (attempt + 1)
-                print(f"Provider '{provider}' rate limited. Waiting {wait_seconds}s before retry {attempt + 1}/{attempts}.")
-                time.sleep(wait_seconds)
-                continue
-
-            raise
-        except Exception as error:
-            last_error = error
-            raise
-
-    raise last_error
-
-
-def process_large_transcript_with_provider(transcript: str, meeting_title: Optional[str], provider: str):
-    max_chars = 12000 if provider == "groq" else 18000
-
-    chunks = chunk_text(transcript, max_chars=max_chars)
-
-    if len(chunks) == 1:
-        prompt = build_minutes_prompt(transcript, meeting_title)
-        generated = process_prompt_with_retry(prompt, provider)
-
-        return {
-            "minutes": generated,
-            "action_points": extract_action_points(generated),
-            "source": provider,
-        }
-
-    chunk_summaries = []
-
-    for index, chunk in enumerate(chunks):
-        prompt = build_chunk_summary_prompt(
-            chunk=chunk,
-            meeting_title=meeting_title,
-            chunk_number=index + 1,
-            total_chunks=len(chunks),
-        )
-
-        summary = process_prompt_with_retry(prompt, provider)
-
-        if summary.strip():
-            chunk_summaries.append(summary.strip())
-
-        delay_seconds = int(os.getenv("AI_CHUNK_DELAY_SECONDS", "10"))
-        if delay_seconds > 0 and index < len(chunks) - 1:
-            print(f"Waiting {delay_seconds}s before processing next chunk...")
-            time.sleep(delay_seconds)
-
-    final_prompt = build_final_minutes_prompt(chunk_summaries, meeting_title)
-    final_minutes = process_prompt_with_retry(final_prompt, provider)
-
-    return {
-        "minutes": final_minutes,
-        "action_points": extract_action_points(final_minutes),
-        "source": f"{provider}_chunked",
-    }
-
-
 @app.post("/process")
 def process_transcript(payload: ProcessTranscriptRequest):
     transcript = payload.transcript.strip()
@@ -541,15 +347,34 @@ def process_transcript(payload: ProcessTranscriptRequest):
             "source": "empty",
         }
 
+    prompt = build_minutes_prompt(transcript, payload.meeting_title)
+
     provider = os.getenv("ACTSIX_MINUTES_PROVIDER", MINUTES_PROVIDER).lower()
 
     try:
-        if provider in ["gemini", "groq", "openai", "ollama"]:
-            return process_large_transcript_with_provider(
-                transcript=transcript,
-                meeting_title=payload.meeting_title,
-                provider=provider,
-            )
+        if provider == "gemini":
+            generated = process_with_gemini(prompt)
+            return {
+                "minutes": generated,
+                "action_points": extract_action_points(generated),
+                "source": "gemini",
+            }
+
+        if provider == "groq":
+            generated = process_with_groq(prompt)
+            return {
+                "minutes": generated,
+                "action_points": extract_action_points(generated),
+                "source": "groq",
+            }
+
+        if provider == "ollama":
+            generated = process_with_ollama(prompt)
+            return {
+                "minutes": generated,
+                "action_points": extract_action_points(generated),
+                "source": "ollama",
+            }
 
     except Exception as error:
         print(f"Provider '{provider}' failed:", error)

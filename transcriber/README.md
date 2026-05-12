@@ -1,33 +1,67 @@
 # ACTSIX Local Meeting Transcriber
 
-This is a local open-source transcription server for ACTSIX Meetings.
+This server supports:
 
-Setup:
+- Local audio transcription with faster-whisper
+- Transcript-to-minutes processing with:
+  - Ollama
+  - Gemini
+  - Groq
+  - fallback local processor
 
-1. Open a second Terminal tab.
-2. From the ACTSIX folder, run:
+## Start the server
+
+From ACTSIX:
 
 cd transcriber
-python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn server:app --reload --port 5055
+python3 -m pip install -r requirements.txt
+python3 -m uvicorn server:app --reload --port 5055
 
-3. Keep your normal ACTSIX dev server running in another terminal:
+## Health check
 
-npm run dev
+curl http://127.0.0.1:5055/health
 
-Optional model size:
+## Default mode
 
-Default model is base.
+By default, transcript processing uses Ollama:
 
-For better quality, run:
+ACTSIX_MINUTES_PROVIDER=ollama
 
-ACTSIX_WHISPER_MODEL=small uvicorn server:app --reload --port 5055
+Start Ollama separately:
 
-Model options:
-- tiny
-- base
-- small
-- medium
-- large-v3
+ollama run llama3.1
+
+## Use Gemini
+
+Set your key:
+
+export GEMINI_API_KEY="your_key_here"
+export ACTSIX_MINUTES_PROVIDER=gemini
+export GEMINI_MODEL=gemini-2.0-flash
+
+Then start the server:
+
+python3 -m uvicorn server:app --reload --port 5055
+
+## Use Groq
+
+Set your key:
+
+export GROQ_API_KEY="your_key_here"
+export ACTSIX_MINUTES_PROVIDER=groq
+export GROQ_MODEL=llama-3.1-8b-instant
+
+Then start the server:
+
+python3 -m uvicorn server:app --reload --port 5055
+
+## Local transcription model
+
+Default:
+
+ACTSIX_WHISPER_MODEL=base
+
+Optional:
+
+export ACTSIX_WHISPER_MODEL=small

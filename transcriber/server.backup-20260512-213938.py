@@ -25,7 +25,6 @@ MINUTES_PROVIDER = os.getenv("ACTSIX_MINUTES_PROVIDER", "ollama").lower()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 
 model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
 
@@ -44,7 +43,6 @@ def health():
         "ollama_model": OLLAMA_MODEL,
         "gemini_model": GEMINI_MODEL,
         "groq_model": GROQ_MODEL,
-        "openai_model": OPENAI_MODEL,
     }
 
 
@@ -212,41 +210,6 @@ def process_with_gemini(prompt: str):
     parts = content.get("parts", [])
 
     return "\n".join(part.get("text", "") for part in parts).strip()
-
-
-
-def process_with_openai(prompt: str):
-    api_key = os.getenv("OPENAI_API_KEY")
-
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is not set.")
-
-    response = requests.post(
-        "https://api.openai.com/v1/responses",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": OPENAI_MODEL,
-            "input": prompt,
-        },
-        timeout=240,
-    )
-
-    response.raise_for_status()
-    data = response.json()
-
-    if "output_text" in data:
-        return data["output_text"].strip()
-
-    output_parts = []
-    for item in data.get("output", []):
-        for content in item.get("content", []):
-            if content.get("type") in ["output_text", "text"]:
-                output_parts.append(content.get("text", ""))
-
-    return "\n".join(output_parts).strip()
 
 
 def process_with_groq(prompt: str):
@@ -452,9 +415,6 @@ def process_prompt_with_provider(prompt: str, provider: str):
     if provider == "groq":
         return process_with_groq(prompt)
 
-    if provider == "openai":
-        return process_with_openai(prompt)
-
     if provider == "ollama":
         return process_with_ollama(prompt)
 
@@ -544,7 +504,7 @@ def process_transcript(payload: ProcessTranscriptRequest):
     provider = os.getenv("ACTSIX_MINUTES_PROVIDER", MINUTES_PROVIDER).lower()
 
     try:
-        if provider in ["gemini", "groq", "openai", "ollama"]:
+        if provider in ["gemini", "groq", "ollama"]:
             return process_large_transcript_with_provider(
                 transcript=transcript,
                 meeting_title=payload.meeting_title,

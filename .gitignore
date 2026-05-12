@@ -31,3 +31,4 @@ dist/
 .DS_Store
 **/.DS_Store
 transcriber/.venv/
+transcriber/.env
