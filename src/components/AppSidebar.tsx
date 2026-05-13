@@ -13,6 +13,7 @@ import {
   CalendarDays,
   Repeat,
   Settings as SettingsIcon,
+  Music,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -58,6 +59,12 @@ const taskItems: Item[] = [
   { title: "Meetups", url: "/tasks/meetups", icon: Users },
 ];
 
+const servicePlannerItems: Item[] = [
+  { title: "Services", url: "/service-planner", icon: CalendarDays },
+  { title: "Teams", url: "/service-planner/teams", icon: Users },
+  { title: "Repertoire", url: "/service-planner/repertoire", icon: Music },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -67,9 +74,22 @@ export function AppSidebar() {
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
   const inMeetingsModule = pathname === "/meetings" || pathname.startsWith("/meetings/");
-  const items = inMeetingsModule ? meetingItems : inTasksModule ? taskItems : homebaseItems;
+  const inServicePlannerModule = pathname === "/service-planner" || pathname.startsWith("/service-planner/");
+  const items = inServicePlannerModule
+    ? servicePlannerItems
+    : inMeetingsModule
+      ? meetingItems
+      : inTasksModule
+        ? taskItems
+        : homebaseItems;
 
-  const moduleValue = inMeetingsModule ? "/meetings" : inTasksModule ? "/tasks" : "/";
+  const moduleValue = inServicePlannerModule
+    ? "/service-planner"
+    : inMeetingsModule
+      ? "/meetings"
+      : inTasksModule
+        ? "/tasks"
+        : "/";
 
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
@@ -78,6 +98,7 @@ export function AppSidebar() {
     if (p === "/") return pathname === "/";
     if (p === "/tasks") return pathname === "/tasks";
     if (p === "/meetings") return pathname === "/meetings";
+    if (p === "/service-planner") return pathname === "/service-planner";
     return pathname.startsWith(p);
   };
 
@@ -165,6 +186,7 @@ export function AppSidebar() {
                     <option value="/">Home</option>
                     <option value="/tasks">ACTSIX: Tasks</option>
                     <option value="/meetings">ACTSIX: Meetings</option>
+                    <option value="/service-planner">Service Planner</option>
                     <option value="/service-planning" disabled>Service Planning — Coming Soon</option>
                     <option value="/sermon-prep" disabled>Sermon Prep — Coming Soon</option>
                     <option value="/scripture" disabled>Scripture Tools — Coming Soon</option>
