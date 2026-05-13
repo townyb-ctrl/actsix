@@ -1,0 +1,661 @@
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Clock3,
+  ListChecks,
+  MapPin,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+type ServiceType = {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  default_start_time: string | null;
+  default_duration_minutes: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type ServiceInstance = {
+  id: string;
+  user_id: string;
+  service_type_id: string;
+  title: string | null;
+  service_date: string;
+  start_time: string | null;
+  location: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "No date";
+
+  return new Date(value + "T00:00:00").toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const ServicePlanner = () => {
+  const { user } = useAuth();
+
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
+  const [services, setServices] = useState<ServiceInstance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addTypeOpen, setAddTypeOpen] = useState(false);
+  const [addServiceOpen, setAddServiceOpen] = useState(false);
+  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
+  const [search, setSearch] = useState("");
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [defaultStartTime, setDefaultStartTime] = useState("");
+  const [defaultDuration, setDefaultDuration] = useState("75");
+
+  const [serviceDate, setServiceDate] = useState("");
+  const [serviceStartTime, setServiceStartTime] = useState("");
+  const [serviceTitle, setServiceTitle] = useState("");
+  const [serviceLocation, setServiceLocation] = useState("");
+
+  const filteredServiceTypes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return serviceTypes.filter((type) => {
+      if (!q) return true;
+
+      const servicesForType = services.filter((service) => service.service_type_id === type.id);
+
+      return (
+        type.name.toLowerCase().includes(q) ||
+        (type.description || "").toLowerCase().includes(q) ||
+        servicesForType.some((service) =>
+          [
+            service.title || "",
+            service.service_date || "",
+            service.location || "",
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(q)
+        )
+      );
+    });
+  }, [serviceTypes, services, search]);
+
+  const fetchData = async () => {
+    if (!user) return;
+
+    setLoading(true);
+
+    const [{ data: typeData, error: typeError }, { data: serviceData, error: serviceError }] =
+      await Promise.all([
+        supabase
+          .from("service_types")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("default_start_time", { ascending: true })
+          .order("name", { ascending: true }),
+
+        supabase
+          .from("service_instances")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("service_date", { ascending: true })
+          .order("start_time", { ascending: true }),
+      ]);
+
+    if (typeError) {
+      toast.error(typeError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (serviceError) {
+      toast.error(serviceError.message);
+      setLoading(false);
+      return;
+    }
+
+    setServiceTypes(typeData || []);
+    setServices(serviceData || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [user]);
+
+  const resetTypeForm = () => {
+    setName("");
+    setDescription("");
+    setDefaultStartTime("");
+    setDefaultDuration("75");
+  };
+
+  const resetServiceForm = () => {
+    setServiceDate("");
+    setServiceStartTime("");
+    setServiceTitle("");
+    setServiceLocation("");
+  };
+
+  const createServiceType = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!user) {
+      toast.error("You need to be signed in.");
+      return;
+    }
+
+    if (!name.trim()) {
+      toast.error("Service type name is required.");
+      return;
+    }
+
+    const { error } = await supabase.from("service_types").insert({
+      user_id: user.id,
+      name: name.trim(),
+      description: description.trim() || null,
+      default_start_time: defaultStartTime || null,
+      default_duration_minutes: Number(defaultDuration) || 75,
+      is_active: true,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Service type created");
+    resetTypeForm();
+    setAddTypeOpen(false);
+    fetchData();
+  };
+
+  const openAddService = (serviceType: ServiceType) => {
+    setSelectedServiceType(serviceType);
+    setServiceTitle(serviceType.name);
+    setServiceStartTime(serviceType.default_start_time?.slice(0, 5) || "");
+    setServiceLocation("");
+    setServiceDate("");
+    setAddServiceOpen(true);
+  };
+
+  const createServiceInstance = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!user || !selectedServiceType) {
+      toast.error("Service type not selected.");
+      return;
+    }
+
+    if (!serviceDate) {
+      toast.error("Service date is required.");
+      return;
+    }
+
+    const { error } = await supabase.from("service_instances").insert({
+      user_id: user.id,
+      service_type_id: selectedServiceType.id,
+      title: serviceTitle.trim() || selectedServiceType.name,
+      service_date: serviceDate,
+      start_time: serviceStartTime || selectedServiceType.default_start_time || null,
+      location: serviceLocation.trim() || null,
+      notes: null,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Service date created");
+    resetServiceForm();
+    setSelectedServiceType(null);
+    setAddServiceOpen(false);
+    fetchData();
+  };
+
+  const deleteServiceType = async (serviceType: ServiceType) => {
+    const confirmed = window.confirm(
+      `Delete "${serviceType.name}"? This will also delete service dates inside this service type.`
+    );
+
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("service_types")
+      .delete()
+      .eq("id", serviceType.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Service type deleted");
+    fetchData();
+  };
+
+  const deleteServiceInstance = async (service: ServiceInstance) => {
+    const confirmed = window.confirm(
+      `Delete "${service.title || "Service"}" on ${formatDate(service.service_date)}?`
+    );
+
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("service_instances")
+      .delete()
+      .eq("id", service.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Service deleted");
+    fetchData();
+  };
+
+  return (
+    <div>
+      <div className="px-8 pt-8 pb-12 max-w-7xl space-y-4">
+        <div>
+          <p className="label-eyebrow">ACTSIX: Service Planning</p>
+          <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+            Services
+          </h1>
+          <p className="mt-2 text-base text-muted-foreground">
+            Create service types, add service dates, and open each service to build the order and serving team.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="p-4 border-border/70 bg-card shadow-card">
+            <p className="label-eyebrow">Service Types</p>
+            <div className="mt-2 text-3xl font-extrabold">
+              {serviceTypes.length}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Created service patterns
+            </p>
+          </Card>
+
+          <Card className="p-4 border-border/70 bg-card shadow-card">
+            <p className="label-eyebrow">Service Dates</p>
+            <div className="mt-2 text-3xl font-extrabold">
+              {services.length}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Planned services
+            </p>
+          </Card>
+
+          <Card className="p-4 border-border/70 bg-card shadow-card">
+            <p className="label-eyebrow">Next Service</p>
+            <div className="mt-2 text-3xl font-extrabold">
+              {services[0] ? formatDate(services[0].service_date).split(",")[0] : "—"}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {services[0]?.title || "No services created yet"}
+            </p>
+          </Card>
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="relative max-w-2xl flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search service types or service dates..."
+              className="h-10 pl-10 border-border/70 bg-card shadow-soft"
+            />
+          </div>
+
+          <Button
+            type="button"
+            className="actsix-btn-primary rounded-xl shrink-0"
+            onClick={() => setAddTypeOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Service Type
+          </Button>
+        </div>
+
+        <div className="space-y-5">
+          {loading && (
+            <Card className="p-6 border-border/70 bg-card shadow-card">
+              <p className="text-sm text-muted-foreground">Loading services...</p>
+            </Card>
+          )}
+
+          {!loading && filteredServiceTypes.length === 0 && (
+            <Card className="p-6 border-border/70 bg-card shadow-card">
+              <p className="text-sm text-muted-foreground">
+                No service types found. Add your first service type to begin.
+              </p>
+            </Card>
+          )}
+
+          {!loading &&
+            filteredServiceTypes.map((type) => {
+              const servicesForType = services.filter(
+                (service) => service.service_type_id === type.id
+              );
+
+              return (
+                <Card
+                  key={type.id}
+                  className="border-border/70 bg-card shadow-card overflow-hidden"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-4">
+                    <div className="min-w-0">
+                      <p className="label-eyebrow">Service Type</p>
+                      <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                        {type.name}
+                      </h2>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {type.default_start_time && (
+                          <span className="inline-flex items-center gap-1">
+                            <Clock3 className="h-3.5 w-3.5" />
+                            {type.default_start_time.slice(0, 5)}
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1">
+                          <ListChecks className="h-3.5 w-3.5" />
+                          {type.default_duration_minutes || 75} min default
+                        </span>
+
+                        {type.description && <span>{type.description}</span>}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => openAddService(type)}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Service Date
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl text-destructive"
+                        onClick={() => deleteServiceType(type)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-border">
+                    {servicesForType.length === 0 && (
+                      <div className="p-4 text-sm text-muted-foreground">
+                        No service dates created yet.
+                      </div>
+                    )}
+
+                    {servicesForType.map((service) => (
+                      <div
+                        key={service.id}
+                        className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="h-10 w-10 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                          <CalendarDays className="h-5 w-5" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="font-extrabold tracking-tight truncate">
+                            {service.title || type.name}
+                          </div>
+
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              {formatDate(service.service_date)}
+                            </span>
+
+                            {service.start_time && (
+                              <span className="inline-flex items-center gap-1">
+                                <Clock3 className="h-3.5 w-3.5" />
+                                {service.start_time.slice(0, 5)}
+                              </span>
+                            )}
+
+                            {service.location && (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="h-3.5 w-3.5" />
+                                {service.location}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <Button asChild variant="outline" className="rounded-xl">
+                          <Link to={`/service-planner/services/${service.id}`}>
+                            Open
+                            <ArrowUpRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-xl text-destructive"
+                          onClick={() => deleteServiceInstance(service)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })}
+        </div>
+      </div>
+
+      {addTypeOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Service Type</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Add Service Type
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create patterns like 8AM Service, 10AM Service, Evening Service, or Special Service.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setAddTypeOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <form onSubmit={createServiceType} className="mt-6 space-y-4">
+              <div>
+                <label className="label-eyebrow">Service Name</label>
+                <Input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="8AM Service"
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Description</label>
+                <Input
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Early morning worship service"
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label-eyebrow">Default Start Time</label>
+                  <Input
+                    type="time"
+                    value={defaultStartTime}
+                    onChange={(event) => setDefaultStartTime(event.target.value)}
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Default Duration</label>
+                  <Input
+                    type="number"
+                    min="15"
+                    value={defaultDuration}
+                    onChange={(event) => setDefaultDuration(event.target.value)}
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setAddTypeOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  Create Service Type
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {addServiceOpen && selectedServiceType && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Service Date</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Add {selectedServiceType.name}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create a specific service date that can have its own order and team.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setAddServiceOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <form onSubmit={createServiceInstance} className="mt-6 space-y-4">
+              <div>
+                <label className="label-eyebrow">Service Title</label>
+                <Input
+                  value={serviceTitle}
+                  onChange={(event) => setServiceTitle(event.target.value)}
+                  placeholder={selectedServiceType.name}
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label-eyebrow">Service Date</label>
+                  <Input
+                    type="date"
+                    value={serviceDate}
+                    onChange={(event) => setServiceDate(event.target.value)}
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Start Time</label>
+                  <Input
+                    type="time"
+                    value={serviceStartTime}
+                    onChange={(event) => setServiceStartTime(event.target.value)}
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Location</label>
+                <Input
+                  value={serviceLocation}
+                  onChange={(event) => setServiceLocation(event.target.value)}
+                  placeholder="Sanctuary"
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setAddServiceOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  Create Service
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ServicePlanner;

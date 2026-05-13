@@ -14,6 +14,9 @@ import Inbox from "./pages/Inbox";
 import { Waiting, Someday } from "./pages/SimpleList";
 import Meetings from "./pages/Meetings";
 import ServicePlanner from "./pages/ServicePlanner";
+import ServiceDetail from "./pages/ServiceDetail";
+import ServicePlannerTeams from "./pages/ServicePlannerTeams";
+import ServicePlannerRepertoire from "./pages/ServicePlannerRepertoire";
 import MeetingDetail from "./pages/MeetingDetail";
 import RecurringMeetings from "./pages/RecurringMeetings";
 import RecurringMeetingDetail from "./pages/RecurringMeetingDetail";
@@ -58,6 +61,10 @@ const App = () => (
               <Route path="/meetups" element={<Meetups />} />
               <Route path="/meetings" element={<Meetings />} />
               <Route path="/service-planner" element={<ServicePlanner />} />
+              <Route path="/service-planner/services" element={<ServicePlanner />} />
+              <Route path="/service-planner/services/:serviceId" element={<ServiceDetail />} />
+              <Route path="/service-planner/teams" element={<ServicePlannerTeams />} />
+              <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
               <Route path="/meetings/recurring" element={<RecurringMeetings />} />
               <Route path="/meetings/recurring/:seriesId" element={<RecurringMeetingDetail />} />
               <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
