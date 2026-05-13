@@ -57,6 +57,25 @@ type TeamAssignment = {
   sort_order: number;
 };
 
+type ServiceOrderTemplate = {
+  id: string;
+  user_id: string;
+  service_type_id: string;
+  name: string;
+  description: string | null;
+};
+
+type ServiceOrderTemplateItem = {
+  id: string;
+  user_id: string;
+  template_id: string;
+  item_type: string;
+  title: string;
+  details: string | null;
+  duration_minutes: number | null;
+  sort_order: number;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -76,6 +95,9 @@ const ServiceDetail = () => {
   const [serviceType, setServiceType] = useState<ServiceType | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
+  const [template, setTemplate] = useState<ServiceOrderTemplate | null>(null);
+  const [templateItems, setTemplateItems] = useState<ServiceOrderTemplateItem[]>([]);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [itemType, setItemType] = useState("Song");
@@ -140,6 +162,37 @@ const ServiceDetail = () => {
     setServiceType(typeData || null);
     setOrderItems(orderData || []);
     setTeamAssignments(teamData || []);
+
+    const { data: templateData, error: templateError } = await supabase
+      .from("service_order_templates")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("service_type_id", serviceData.service_type_id)
+      .maybeSingle();
+
+    if (templateError) {
+      toast.error(templateError.message);
+    }
+
+    setTemplate(templateData || null);
+
+    if (templateData) {
+      const { data: templateItemData, error: templateItemError } = await supabase
+        .from("service_order_template_items")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("template_id", templateData.id)
+        .order("sort_order", { ascending: true });
+
+      if (templateItemError) {
+        toast.error(templateItemError.message);
+      }
+
+      setTemplateItems(templateItemData || []);
+    } else {
+      setTemplateItems([]);
+    }
+
     setLoading(false);
   };
 
@@ -241,6 +294,49 @@ const ServiceDetail = () => {
     fetchService();
   };
 
+  const applyTemplateToService = async () => {
+    if (!user || !serviceId || !template || templateItems.length === 0) {
+      toast.error("No template items found for this service type.");
+      return;
+    }
+
+    if (orderItems.length > 0) {
+      const confirmed = window.confirm(
+        "This service already has order items. Do you want to append the template items?"
+      );
+
+      if (!confirmed) return;
+    }
+
+    setApplyingTemplate(true);
+
+    const startingSortOrder = orderItems.length;
+
+    const itemsToInsert = templateItems.map((item, index) => ({
+      user_id: user.id,
+      service_id: serviceId,
+      item_type: item.item_type,
+      title: item.title,
+      details: item.details,
+      duration_minutes: item.duration_minutes || 5,
+      sort_order: startingSortOrder + index,
+    }));
+
+    const { error } = await supabase
+      .from("service_order_items")
+      .insert(itemsToInsert);
+
+    if (error) {
+      toast.error(error.message);
+      setApplyingTemplate(false);
+      return;
+    }
+
+    toast.success("Template applied to service");
+    setApplyingTemplate(false);
+    fetchService();
+  };
+
   if (loading) {
     return (
       <div className="px-8 py-12">
@@ -309,11 +405,28 @@ const ServiceDetail = () => {
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.75fr)]">
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
-            <div className="border-b border-border p-4">
-              <p className="label-eyebrow">Order of Service</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                Build the service flow
-              </h2>
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-4">
+              <div>
+                <p className="label-eyebrow">Order of Service</p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                  Build the service flow
+                </h2>
+                {templateItems.length > 0 && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Template available: {template?.name || "Default Template"} · {templateItems.length} items
+                  </p>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={applyTemplateToService}
+                disabled={!templateItems.length || applyingTemplate}
+              >
+                {applyingTemplate ? "Applying..." : "Apply Template"}
+              </Button>
             </div>
 
             <form onSubmit={addOrderItem} className="grid gap-2 border-b border-border p-4 md:grid-cols-[140px_minmax(0,1fr)_90px_auto]">

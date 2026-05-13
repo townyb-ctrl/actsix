@@ -8,6 +8,7 @@ import {
   MapPin,
   Plus,
   Search,
+  Settings,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,6 +43,33 @@ type ServiceInstance = {
   updated_at: string;
 };
 
+type ServiceOrderTemplate = {
+  id: string;
+  user_id: string;
+  service_type_id: string;
+  name: string;
+  description: string | null;
+};
+
+type ServiceOrderTemplateItem = {
+  id: string;
+  user_id: string;
+  template_id: string;
+  item_type: string;
+  title: string;
+  details: string | null;
+  duration_minutes: number | null;
+  sort_order: number;
+};
+
+type TemplateItemDraft = {
+  id?: string;
+  item_type: string;
+  title: string;
+  details: string;
+  duration_minutes: string;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -61,7 +89,12 @@ const ServicePlanner = () => {
   const [loading, setLoading] = useState(true);
   const [addTypeOpen, setAddTypeOpen] = useState(false);
   const [addServiceOpen, setAddServiceOpen] = useState(false);
+  const [templateOpen, setTemplateOpen] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
+  const [templateServiceType, setTemplateServiceType] = useState<ServiceType | null>(null);
+  const [template, setTemplate] = useState<ServiceOrderTemplate | null>(null);
+  const [templateItems, setTemplateItems] = useState<TemplateItemDraft[]>([]);
+  const [templateLoading, setTemplateLoading] = useState(false);
   const [search, setSearch] = useState("");
 
   const [name, setName] = useState("");
@@ -82,7 +115,150 @@ const ServicePlanner = () => {
 
       const servicesForType = services.filter((service) => service.service_type_id === type.id);
 
-      return (
+      const openTemplateEditor = async (serviceType: ServiceType) => {
+    if (!user) return;
+
+    setTemplateServiceType(serviceType);
+    setTemplateOpen(true);
+    setTemplateLoading(true);
+
+    const { data: existingTemplate, error: templateError } = await supabase
+      .from("service_order_templates")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("service_type_id", serviceType.id)
+      .maybeSingle();
+
+    if (templateError) {
+      toast.error(templateError.message);
+      setTemplateLoading(false);
+      return;
+    }
+
+    let activeTemplate = existingTemplate;
+
+    if (!activeTemplate) {
+      const { data: createdTemplate, error: createError } = await supabase
+        .from("service_order_templates")
+        .insert({
+          user_id: user.id,
+          service_type_id: serviceType.id,
+          name: `${serviceType.name} Template`,
+          description: null,
+        })
+        .select("*")
+        .single();
+
+      if (createError) {
+        toast.error(createError.message);
+        setTemplateLoading(false);
+        return;
+      }
+
+      activeTemplate = createdTemplate;
+    }
+
+    setTemplate(activeTemplate);
+
+    const { data: items, error: itemError } = await supabase
+      .from("service_order_template_items")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("template_id", activeTemplate.id)
+      .order("sort_order", { ascending: true });
+
+    if (itemError) {
+      toast.error(itemError.message);
+      setTemplateLoading(false);
+      return;
+    }
+
+    setTemplateItems(
+      (items || []).map((item: ServiceOrderTemplateItem) => ({
+        id: item.id,
+        item_type: item.item_type,
+        title: item.title,
+        details: item.details || "",
+        duration_minutes: String(item.duration_minutes || 5),
+      }))
+    );
+
+    setTemplateLoading(false);
+  };
+
+  const addTemplateItem = () => {
+    setTemplateItems((previous) => [
+      ...previous,
+      {
+        item_type: "General",
+        title: "",
+        details: "",
+        duration_minutes: "5",
+      },
+    ]);
+  };
+
+  const updateTemplateItem = (
+    index: number,
+    field: keyof TemplateItemDraft,
+    value: string
+  ) => {
+    setTemplateItems((previous) =>
+      previous.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const removeTemplateItem = (index: number) => {
+    setTemplateItems((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const saveTemplateItems = async () => {
+    if (!user || !template) return;
+
+    const cleanedItems = templateItems
+      .map((item, index) => ({
+        user_id: user.id,
+        template_id: template.id,
+        item_type: item.item_type || "General",
+        title: item.title.trim(),
+        details: item.details.trim() || null,
+        duration_minutes: Number(item.duration_minutes) || 5,
+        sort_order: index,
+      }))
+      .filter((item) => item.title);
+
+    const { error: deleteError } = await supabase
+      .from("service_order_template_items")
+      .delete()
+      .eq("template_id", template.id)
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      toast.error(deleteError.message);
+      return;
+    }
+
+    if (cleanedItems.length) {
+      const { error: insertError } = await supabase
+        .from("service_order_template_items")
+        .insert(cleanedItems);
+
+      if (insertError) {
+        toast.error(insertError.message);
+        return;
+      }
+    }
+
+    toast.success("Service template saved");
+    setTemplateOpen(false);
+    setTemplateServiceType(null);
+    setTemplate(null);
+    setTemplateItems([]);
+  };
+
+  return (
         type.name.toLowerCase().includes(q) ||
         (type.description || "").toLowerCase().includes(q) ||
         servicesForType.some((service) =>
@@ -275,6 +451,149 @@ const ServicePlanner = () => {
     fetchData();
   };
 
+  const openTemplateEditor = async (serviceType: ServiceType) => {
+    if (!user) return;
+
+    setTemplateServiceType(serviceType);
+    setTemplateOpen(true);
+    setTemplateLoading(true);
+
+    const { data: existingTemplate, error: templateError } = await supabase
+      .from("service_order_templates")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("service_type_id", serviceType.id)
+      .maybeSingle();
+
+    if (templateError) {
+      toast.error(templateError.message);
+      setTemplateLoading(false);
+      return;
+    }
+
+    let activeTemplate = existingTemplate;
+
+    if (!activeTemplate) {
+      const { data: createdTemplate, error: createError } = await supabase
+        .from("service_order_templates")
+        .insert({
+          user_id: user.id,
+          service_type_id: serviceType.id,
+          name: `${serviceType.name} Template`,
+          description: null,
+        })
+        .select("*")
+        .single();
+
+      if (createError) {
+        toast.error(createError.message);
+        setTemplateLoading(false);
+        return;
+      }
+
+      activeTemplate = createdTemplate;
+    }
+
+    setTemplate(activeTemplate);
+
+    const { data: items, error: itemError } = await supabase
+      .from("service_order_template_items")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("template_id", activeTemplate.id)
+      .order("sort_order", { ascending: true });
+
+    if (itemError) {
+      toast.error(itemError.message);
+      setTemplateLoading(false);
+      return;
+    }
+
+    setTemplateItems(
+      (items || []).map((item: ServiceOrderTemplateItem) => ({
+        id: item.id,
+        item_type: item.item_type,
+        title: item.title,
+        details: item.details || "",
+        duration_minutes: String(item.duration_minutes || 5),
+      }))
+    );
+
+    setTemplateLoading(false);
+  };
+
+  const addTemplateItem = () => {
+    setTemplateItems((previous) => [
+      ...previous,
+      {
+        item_type: "General",
+        title: "",
+        details: "",
+        duration_minutes: "5",
+      },
+    ]);
+  };
+
+  const updateTemplateItem = (
+    index: number,
+    field: keyof TemplateItemDraft,
+    value: string
+  ) => {
+    setTemplateItems((previous) =>
+      previous.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const removeTemplateItem = (index: number) => {
+    setTemplateItems((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const saveTemplateItems = async () => {
+    if (!user || !template) return;
+
+    const cleanedItems = templateItems
+      .map((item, index) => ({
+        user_id: user.id,
+        template_id: template.id,
+        item_type: item.item_type || "General",
+        title: item.title.trim(),
+        details: item.details.trim() || null,
+        duration_minutes: Number(item.duration_minutes) || 5,
+        sort_order: index,
+      }))
+      .filter((item) => item.title);
+
+    const { error: deleteError } = await supabase
+      .from("service_order_template_items")
+      .delete()
+      .eq("template_id", template.id)
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      toast.error(deleteError.message);
+      return;
+    }
+
+    if (cleanedItems.length) {
+      const { error: insertError } = await supabase
+        .from("service_order_template_items")
+        .insert(cleanedItems);
+
+      if (insertError) {
+        toast.error(insertError.message);
+        return;
+      }
+    }
+
+    toast.success("Service template saved");
+    setTemplateOpen(false);
+    setTemplateServiceType(null);
+    setTemplate(null);
+    setTemplateItems([]);
+  };
+
   return (
     <div>
       <div className="px-8 pt-8 pb-12 max-w-7xl space-y-4">
@@ -362,7 +681,150 @@ const ServicePlanner = () => {
                 (service) => service.service_type_id === type.id
               );
 
-              return (
+              const openTemplateEditor = async (serviceType: ServiceType) => {
+    if (!user) return;
+
+    setTemplateServiceType(serviceType);
+    setTemplateOpen(true);
+    setTemplateLoading(true);
+
+    const { data: existingTemplate, error: templateError } = await supabase
+      .from("service_order_templates")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("service_type_id", serviceType.id)
+      .maybeSingle();
+
+    if (templateError) {
+      toast.error(templateError.message);
+      setTemplateLoading(false);
+      return;
+    }
+
+    let activeTemplate = existingTemplate;
+
+    if (!activeTemplate) {
+      const { data: createdTemplate, error: createError } = await supabase
+        .from("service_order_templates")
+        .insert({
+          user_id: user.id,
+          service_type_id: serviceType.id,
+          name: `${serviceType.name} Template`,
+          description: null,
+        })
+        .select("*")
+        .single();
+
+      if (createError) {
+        toast.error(createError.message);
+        setTemplateLoading(false);
+        return;
+      }
+
+      activeTemplate = createdTemplate;
+    }
+
+    setTemplate(activeTemplate);
+
+    const { data: items, error: itemError } = await supabase
+      .from("service_order_template_items")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("template_id", activeTemplate.id)
+      .order("sort_order", { ascending: true });
+
+    if (itemError) {
+      toast.error(itemError.message);
+      setTemplateLoading(false);
+      return;
+    }
+
+    setTemplateItems(
+      (items || []).map((item: ServiceOrderTemplateItem) => ({
+        id: item.id,
+        item_type: item.item_type,
+        title: item.title,
+        details: item.details || "",
+        duration_minutes: String(item.duration_minutes || 5),
+      }))
+    );
+
+    setTemplateLoading(false);
+  };
+
+  const addTemplateItem = () => {
+    setTemplateItems((previous) => [
+      ...previous,
+      {
+        item_type: "General",
+        title: "",
+        details: "",
+        duration_minutes: "5",
+      },
+    ]);
+  };
+
+  const updateTemplateItem = (
+    index: number,
+    field: keyof TemplateItemDraft,
+    value: string
+  ) => {
+    setTemplateItems((previous) =>
+      previous.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const removeTemplateItem = (index: number) => {
+    setTemplateItems((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const saveTemplateItems = async () => {
+    if (!user || !template) return;
+
+    const cleanedItems = templateItems
+      .map((item, index) => ({
+        user_id: user.id,
+        template_id: template.id,
+        item_type: item.item_type || "General",
+        title: item.title.trim(),
+        details: item.details.trim() || null,
+        duration_minutes: Number(item.duration_minutes) || 5,
+        sort_order: index,
+      }))
+      .filter((item) => item.title);
+
+    const { error: deleteError } = await supabase
+      .from("service_order_template_items")
+      .delete()
+      .eq("template_id", template.id)
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      toast.error(deleteError.message);
+      return;
+    }
+
+    if (cleanedItems.length) {
+      const { error: insertError } = await supabase
+        .from("service_order_template_items")
+        .insert(cleanedItems);
+
+      if (insertError) {
+        toast.error(insertError.message);
+        return;
+      }
+    }
+
+    toast.success("Service template saved");
+    setTemplateOpen(false);
+    setTemplateServiceType(null);
+    setTemplate(null);
+    setTemplateItems([]);
+  };
+
+  return (
                 <Card
                   key={type.id}
                   className="border-border/70 bg-card shadow-card overflow-hidden"
@@ -400,6 +862,16 @@ const ServicePlanner = () => {
                       >
                         <Plus className="h-4 w-4" />
                         Add Service Date
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => openTemplateEditor(type)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        Edit Template
                       </Button>
 
                       <Button
@@ -654,6 +1126,123 @@ const ServicePlanner = () => {
           </Card>
         </div>
       )}
+
+      {templateOpen && templateServiceType && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-5xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Service Template</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Edit Service Template
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Set the normal order of service for {templateServiceType.name}. This can be applied to individual service dates.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setTemplateOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {templateLoading ? (
+                <p className="text-sm text-muted-foreground">Loading template...</p>
+              ) : (
+                <>
+                  {templateItems.length === 0 && (
+                    <div className="rounded-xl border border-border/70 bg-background p-4 text-sm text-muted-foreground">
+                      No template items yet. Add your standard welcome, songs, sermon, notices, and other recurring service elements.
+                    </div>
+                  )}
+
+                  {templateItems.map((item, index) => (
+                    <div
+                      key={`${item.id || "new"}-${index}`}
+                      className="grid gap-2 rounded-xl border border-border/70 bg-background p-3 md:grid-cols-[140px_minmax(0,1fr)_100px_auto]"
+                    >
+                      <select
+                        value={item.item_type}
+                        onChange={(event) => updateTemplateItem(index, "item_type", event.target.value)}
+                        className="h-10 rounded-md border border-border/70 bg-card px-3 text-sm"
+                      >
+                        <option>Song</option>
+                        <option>Welcome</option>
+                        <option>Announcements</option>
+                        <option>Prayer</option>
+                        <option>Offering</option>
+                        <option>Sermon</option>
+                        <option>Communion</option>
+                        <option>Benediction</option>
+                        <option>General</option>
+                      </select>
+
+                      <Input
+                        value={item.title}
+                        onChange={(event) => updateTemplateItem(index, "title", event.target.value)}
+                        placeholder="Template item title..."
+                        className="border-border/70 bg-card"
+                      />
+
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.duration_minutes}
+                        onChange={(event) => updateTemplateItem(index, "duration_minutes", event.target.value)}
+                        className="border-border/70 bg-card"
+                      />
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl text-destructive"
+                        onClick={() => removeTemplateItem(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+
+                      <Input
+                        value={item.details}
+                        onChange={(event) => updateTemplateItem(index, "details", event.target.value)}
+                        placeholder="Optional details, key, scripture, or notes..."
+                        className="border-border/70 bg-card md:col-span-4"
+                      />
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={addTemplateItem}
+              >
+                <Plus className="h-4 w-4" />
+                Add Template Item
+              </Button>
+
+              <Button
+                type="button"
+                className="actsix-btn-primary rounded-xl"
+                onClick={saveTemplateItems}
+                disabled={templateLoading}
+              >
+                Save Template
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
     </div>
   );
 };
