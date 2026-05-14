@@ -10,6 +10,7 @@ import {
   Search,
   Settings,
   Trash2,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -41,6 +42,20 @@ type ServiceInstance = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type ServiceTeam = {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+};
+
+type ServiceTypeTeam = {
+  id: string;
+  user_id: string;
+  service_type_id: string;
+  team_id: string;
 };
 
 type ServiceOrderTemplate = {
@@ -86,6 +101,10 @@ const ServicePlanner = () => {
 
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [services, setServices] = useState<ServiceInstance[]>([]);
+  const [teams, setTeams] = useState<ServiceTeam[]>([]);
+  const [serviceTypeTeams, setServiceTypeTeams] = useState<ServiceTypeTeam[]>([]);
+  const [teamLinkOpen, setTeamLinkOpen] = useState(false);
+  const [teamLinkServiceType, setTeamLinkServiceType] = useState<ServiceType | null>(null);
   const [loading, setLoading] = useState(true);
   const [addTypeOpen, setAddTypeOpen] = useState(false);
   const [addServiceOpen, setAddServiceOpen] = useState(false);
@@ -258,6 +277,59 @@ const ServicePlanner = () => {
     setTemplateItems([]);
   };
 
+  const getTeamsForServiceType = (serviceTypeId: string) => {
+    const linkedTeamIds = serviceTypeTeams
+      .filter((link) => link.service_type_id === serviceTypeId)
+      .map((link) => link.team_id);
+
+    return teams.filter((team) => linkedTeamIds.includes(team.id));
+  };
+
+  const openTeamLinkEditor = (serviceType: ServiceType) => {
+    setTeamLinkServiceType(serviceType);
+    setTeamLinkOpen(true);
+  };
+
+  const toggleServiceTypeTeam = async (team: ServiceTeam) => {
+    if (!user || !teamLinkServiceType) return;
+
+    const existingLink = serviceTypeTeams.find(
+      (link) =>
+        link.service_type_id === teamLinkServiceType.id &&
+        link.team_id === team.id
+    );
+
+    if (existingLink) {
+      const { error } = await supabase
+        .from("service_type_teams")
+        .delete()
+        .eq("id", existingLink.id);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(`${team.name} removed from ${teamLinkServiceType.name}`);
+      fetchData();
+      return;
+    }
+
+    const { error } = await supabase.from("service_type_teams").insert({
+      user_id: user.id,
+      service_type_id: teamLinkServiceType.id,
+      team_id: team.id,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(`${team.name} assigned to ${teamLinkServiceType.name}`);
+    fetchData();
+  };
+
   return (
         type.name.toLowerCase().includes(q) ||
         (type.description || "").toLowerCase().includes(q) ||
@@ -309,8 +381,36 @@ const ServicePlanner = () => {
       return;
     }
 
+    const [{ data: teamData, error: teamError }, { data: serviceTypeTeamData, error: serviceTypeTeamError }] =
+      await Promise.all([
+        supabase
+          .from("service_teams")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("name", { ascending: true }),
+
+        supabase
+          .from("service_type_teams")
+          .select("*")
+          .eq("user_id", user.id),
+      ]);
+
+    if (teamError) {
+      toast.error(teamError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (serviceTypeTeamError) {
+      toast.error(serviceTypeTeamError.message);
+      setLoading(false);
+      return;
+    }
+
     setServiceTypes(typeData || []);
     setServices(serviceData || []);
+    setTeams(teamData || []);
+    setServiceTypeTeams(serviceTypeTeamData || []);
     setLoading(false);
   };
 
@@ -594,6 +694,59 @@ const ServicePlanner = () => {
     setTemplateItems([]);
   };
 
+  const getTeamsForServiceType = (serviceTypeId: string) => {
+    const linkedTeamIds = serviceTypeTeams
+      .filter((link) => link.service_type_id === serviceTypeId)
+      .map((link) => link.team_id);
+
+    return teams.filter((team) => linkedTeamIds.includes(team.id));
+  };
+
+  const openTeamLinkEditor = (serviceType: ServiceType) => {
+    setTeamLinkServiceType(serviceType);
+    setTeamLinkOpen(true);
+  };
+
+  const toggleServiceTypeTeam = async (team: ServiceTeam) => {
+    if (!user || !teamLinkServiceType) return;
+
+    const existingLink = serviceTypeTeams.find(
+      (link) =>
+        link.service_type_id === teamLinkServiceType.id &&
+        link.team_id === team.id
+    );
+
+    if (existingLink) {
+      const { error } = await supabase
+        .from("service_type_teams")
+        .delete()
+        .eq("id", existingLink.id);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(`${team.name} removed from ${teamLinkServiceType.name}`);
+      fetchData();
+      return;
+    }
+
+    const { error } = await supabase.from("service_type_teams").insert({
+      user_id: user.id,
+      service_type_id: teamLinkServiceType.id,
+      team_id: team.id,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(`${team.name} assigned to ${teamLinkServiceType.name}`);
+    fetchData();
+  };
+
   return (
     <div>
       <div className="px-8 pt-8 pb-12 max-w-7xl space-y-4">
@@ -824,6 +977,59 @@ const ServicePlanner = () => {
     setTemplateItems([]);
   };
 
+  const getTeamsForServiceType = (serviceTypeId: string) => {
+    const linkedTeamIds = serviceTypeTeams
+      .filter((link) => link.service_type_id === serviceTypeId)
+      .map((link) => link.team_id);
+
+    return teams.filter((team) => linkedTeamIds.includes(team.id));
+  };
+
+  const openTeamLinkEditor = (serviceType: ServiceType) => {
+    setTeamLinkServiceType(serviceType);
+    setTeamLinkOpen(true);
+  };
+
+  const toggleServiceTypeTeam = async (team: ServiceTeam) => {
+    if (!user || !teamLinkServiceType) return;
+
+    const existingLink = serviceTypeTeams.find(
+      (link) =>
+        link.service_type_id === teamLinkServiceType.id &&
+        link.team_id === team.id
+    );
+
+    if (existingLink) {
+      const { error } = await supabase
+        .from("service_type_teams")
+        .delete()
+        .eq("id", existingLink.id);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(`${team.name} removed from ${teamLinkServiceType.name}`);
+      fetchData();
+      return;
+    }
+
+    const { error } = await supabase.from("service_type_teams").insert({
+      user_id: user.id,
+      service_type_id: teamLinkServiceType.id,
+      team_id: team.id,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(`${team.name} assigned to ${teamLinkServiceType.name}`);
+    fetchData();
+  };
+
   return (
                 <Card
                   key={type.id}
@@ -851,6 +1057,28 @@ const ServicePlanner = () => {
 
                         {type.description && <span>{type.description}</span>}
                       </div>
+
+                      <div className="mt-3">
+                        <p className="label-eyebrow">Assigned Teams</p>
+
+                        {getTeamsForServiceType(type.id).length === 0 ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            No teams assigned yet.
+                          </p>
+                        ) : (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {getTeamsForServiceType(type.id).map((team) => (
+                              <span
+                                key={team.id}
+                                className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground"
+                              >
+                                <Users className="h-3 w-3" />
+                                {team.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -862,6 +1090,16 @@ const ServicePlanner = () => {
                       >
                         <Plus className="h-4 w-4" />
                         Add Service Date
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => openTeamLinkEditor(type)}
+                      >
+                        <Users className="h-4 w-4" />
+                        Manage Teams
                       </Button>
 
                       <Button
@@ -1238,6 +1476,80 @@ const ServicePlanner = () => {
               >
                 Save Template
               </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+
+      {teamLinkOpen && teamLinkServiceType && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Assign Teams to Service Type</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  {teamLinkServiceType.name}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Select the teams that normally serve in this service type.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setTeamLinkOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <div className="mt-6 space-y-2">
+              {teams.length === 0 && (
+                <div className="rounded-xl border border-border/70 bg-background p-4 text-sm text-muted-foreground">
+                  No teams created yet. Create teams from Service Planning ? Teams first.
+                </div>
+              )}
+
+              {teams.map((team) => {
+                const linked = serviceTypeTeams.some(
+                  (link) =>
+                    link.service_type_id === teamLinkServiceType.id &&
+                    link.team_id === team.id
+                );
+
+                return (
+                  <button
+                    key={team.id}
+                    type="button"
+                    onClick={() => toggleServiceTypeTeam(team)}
+                    className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                      linked
+                        ? "border-brand-teal bg-brand-teal/10"
+                        : "border-border/70 bg-background hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="font-extrabold tracking-tight">
+                          {team.name}
+                        </div>
+                        {team.description && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {team.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-bold text-muted-foreground">
+                        {linked ? "Assigned" : "Not assigned"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </Card>
         </div>

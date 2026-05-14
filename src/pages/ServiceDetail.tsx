@@ -51,10 +51,37 @@ type TeamAssignment = {
   id: string;
   user_id: string;
   service_id: string;
+  team_id: string | null;
+  team_member_id: string | null;
   role_name: string;
   person_name: string;
   notes: string | null;
   sort_order: number;
+};
+
+type ServiceTeam = {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+};
+
+type ServiceTeamMember = {
+  id: string;
+  user_id: string;
+  team_id: string;
+  person_name: string;
+  role_name: string | null;
+  phone_number: string | null;
+  whatsapp_enabled: boolean;
+  notes: string | null;
+};
+
+type ServiceTypeTeam = {
+  id: string;
+  user_id: string;
+  service_type_id: string;
+  team_id: string;
 };
 
 type ServiceOrderTemplate = {
@@ -95,6 +122,8 @@ const ServiceDetail = () => {
   const [serviceType, setServiceType] = useState<ServiceType | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
+  const [assignedTeams, setAssignedTeams] = useState<ServiceTeam[]>([]);
+  const [teamMembers, setTeamMembers] = useState<ServiceTeamMember[]>([]);
   const [template, setTemplate] = useState<ServiceOrderTemplate | null>(null);
   const [templateItems, setTemplateItems] = useState<ServiceOrderTemplateItem[]>([]);
   const [applyingTemplate, setApplyingTemplate] = useState(false);
@@ -105,6 +134,8 @@ const ServiceDetail = () => {
   const [itemDetails, setItemDetails] = useState("");
   const [itemDuration, setItemDuration] = useState("5");
 
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState("");
   const [roleName, setRoleName] = useState("");
   const [personName, setPersonName] = useState("");
   const [teamNotes, setTeamNotes] = useState("");
@@ -112,6 +143,25 @@ const ServiceDetail = () => {
   const totalDuration = useMemo(() => {
     return orderItems.reduce((sum, item) => sum + (item.duration_minutes || 0), 0);
   }, [orderItems]);
+
+  const selectedTeamMembers = useMemo(() => {
+    if (!selectedTeamId) return [];
+    return teamMembers.filter((member) => member.team_id === selectedTeamId);
+  }, [teamMembers, selectedTeamId]);
+
+  const handleSelectTeamMember = (memberId: string) => {
+    setSelectedTeamMemberId(memberId);
+
+    const member = teamMembers.find((item) => item.id === memberId);
+
+    if (!member) {
+      setPersonName("");
+      return;
+    }
+
+    setPersonName(member.person_name);
+    setRoleName(member.role_name || "");
+  };
 
   const fetchService = async () => {
     if (!user || !serviceId) return;
@@ -162,6 +212,46 @@ const ServiceDetail = () => {
     setServiceType(typeData || null);
     setOrderItems(orderData || []);
     setTeamAssignments(teamData || []);
+
+    const { data: serviceTypeTeamLinks, error: serviceTypeTeamError } = await supabase
+      .from("service_type_teams")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("service_type_id", serviceData.service_type_id);
+
+    if (serviceTypeTeamError) {
+      toast.error(serviceTypeTeamError.message);
+    }
+
+    const linkedTeamIds = (serviceTypeTeamLinks || []).map((link: ServiceTypeTeam) => link.team_id);
+
+    if (linkedTeamIds.length > 0) {
+      const [{ data: assignedTeamData, error: assignedTeamError }, { data: linkedMemberData, error: linkedMemberError }] =
+        await Promise.all([
+          supabase
+            .from("service_teams")
+            .select("*")
+            .eq("user_id", user.id)
+            .in("id", linkedTeamIds)
+            .order("name", { ascending: true }),
+
+          supabase
+            .from("service_team_members")
+            .select("*")
+            .eq("user_id", user.id)
+            .in("team_id", linkedTeamIds)
+            .order("person_name", { ascending: true }),
+        ]);
+
+      if (assignedTeamError) toast.error(assignedTeamError.message);
+      if (linkedMemberError) toast.error(linkedMemberError.message);
+
+      setAssignedTeams(assignedTeamData || []);
+      setTeamMembers(linkedMemberData || []);
+    } else {
+      setAssignedTeams([]);
+      setTeamMembers([]);
+    }
 
     const { data: templateData, error: templateError } = await supabase
       .from("service_order_templates")
@@ -253,6 +343,16 @@ const ServiceDetail = () => {
 
     if (!user || !serviceId) return;
 
+    if (!selectedTeamId) {
+      toast.error("Please select a team.");
+      return;
+    }
+
+    if (!selectedTeamMemberId) {
+      toast.error("Please select a person from the team.");
+      return;
+    }
+
     if (!roleName.trim() || !personName.trim()) {
       toast.error("Role and person are required.");
       return;
@@ -261,6 +361,8 @@ const ServiceDetail = () => {
     const { error } = await supabase.from("service_team_assignments").insert({
       user_id: user.id,
       service_id: serviceId,
+      team_id: selectedTeamId,
+      team_member_id: selectedTeamMemberId,
       role_name: roleName.trim(),
       person_name: personName.trim(),
       notes: teamNotes.trim() || null,
@@ -272,6 +374,8 @@ const ServiceDetail = () => {
       return;
     }
 
+    setSelectedTeamId("");
+    setSelectedTeamMemberId("");
     setRoleName("");
     setPersonName("");
     setTeamNotes("");
@@ -521,23 +625,60 @@ const ServiceDetail = () => {
               </h2>
             </div>
 
+            {assignedTeams.length === 0 && (
+              <div className="border-b border-border p-4 text-sm text-muted-foreground">
+                No teams assigned to this service type yet. Go to Services ? Manage Teams to assign teams first.
+              </div>
+            )}
+
             <form onSubmit={addTeamAssignment} className="space-y-3 border-b border-border p-4">
+              <div>
+                <label className="label-eyebrow">Team</label>
+                <select
+                  value={selectedTeamId}
+                  onChange={(event) => {
+                    setSelectedTeamId(event.target.value);
+                    setSelectedTeamMemberId("");
+                    setPersonName("");
+                    setRoleName("");
+                  }}
+                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option value="">Select team...</option>
+                  {assignedTeams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Person</label>
+                <select
+                  value={selectedTeamMemberId}
+                  onChange={(event) => handleSelectTeamMember(event.target.value)}
+                  disabled={!selectedTeamId}
+                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm disabled:opacity-60"
+                >
+                  <option value="">
+                    {selectedTeamId ? "Select person..." : "Select a team first..."}
+                  </option>
+                  {selectedTeamMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.person_name}
+                      {member.role_name ? ` ? ${member.role_name}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="label-eyebrow">Role</label>
                 <Input
                   value={roleName}
                   onChange={(event) => setRoleName(event.target.value)}
                   placeholder="Worship Leader"
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              <div>
-                <label className="label-eyebrow">Person</label>
-                <Input
-                  value={personName}
-                  onChange={(event) => setPersonName(event.target.value)}
-                  placeholder="Brandon Townsend"
                   className="mt-2 border-border/70 bg-background"
                 />
               </div>
