@@ -56,6 +56,7 @@ const ServicePlannerTeamDetail = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [memberNotes, setMemberNotes] = useState("");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(null);
 
   const roles = useMemo(() => {
     const roleNames = members
@@ -83,6 +84,12 @@ const ServicePlannerTeamDetail = () => {
       return a.localeCompare(b);
     });
   }, [members]);
+
+  const filteredGroupedMembers = useMemo(() => {
+    if (!selectedRoleFilter) return groupedMembers;
+
+    return groupedMembers.filter(([role]) => role === selectedRoleFilter);
+  }, [groupedMembers, selectedRoleFilter]);
 
   const whatsappReadyCount = members.filter((member) => member.whatsapp_enabled).length;
 
@@ -354,55 +361,64 @@ const ServicePlannerTeamDetail = () => {
           )}
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="p-4 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">People</p>
-            <div className="mt-2 text-3xl font-extrabold">{members.length}</div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Assigned to this team
-            </p>
-          </Card>
-
-          <Card className="p-4 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Roles</p>
-            <div className="mt-2 text-3xl font-extrabold">{roles.length}</div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Unique serving roles
-            </p>
-          </Card>
-
-          <Card className="p-4 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">WhatsApp Ready</p>
-            <div className="mt-2 text-3xl font-extrabold">{whatsappReadyCount}</div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Enabled for future reminders
-            </p>
-          </Card>
-        </div>
-
-        {roles.length > 0 && (
-          <Card className="p-4 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Roles in this team</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {roles.map((role) => (
-                <span
-                  key={role}
-                  className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground"
-                >
-                  {role}
-                </span>
-              ))}
-            </div>
-          </Card>
-        )}
-
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
             <div className="border-b border-border p-4">
-              <p className="label-eyebrow">Team Members</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                People grouped by role
-              </h2>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="label-eyebrow">Team Members</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    People grouped by role
+                  </h2>
+                  {roles.length > 0 && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Click a role to filter the people list.
+                    </p>
+                  )}
+                </div>
+
+                {selectedRoleFilter && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => setSelectedRoleFilter(null)}
+                  >
+                    Clear Filter
+                  </Button>
+                )}
+              </div>
+
+              {roles.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRoleFilter(null)}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
+                      selectedRoleFilter === null
+                        ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
+                        : "border-border bg-background text-muted-foreground hover:border-brand-teal hover:text-brand-teal"
+                    }`}
+                  >
+                    All Roles
+                  </button>
+
+                  {roles.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setSelectedRoleFilter(role)}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
+                        selectedRoleFilter === role
+                          ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
+                          : "border-border bg-background text-muted-foreground hover:border-brand-teal hover:text-brand-teal"
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="p-4 space-y-4">
@@ -412,7 +428,13 @@ const ServicePlannerTeamDetail = () => {
                 </div>
               )}
 
-              {groupedMembers.map(([role, roleMembers]) => (
+              {members.length > 0 && filteredGroupedMembers.length === 0 && (
+                <div className="rounded-xl border border-dashed border-border bg-background/70 p-6 text-sm text-muted-foreground">
+                  No people found for this role filter.
+                </div>
+              )}
+
+              {filteredGroupedMembers.map(([role, roleMembers]) => (
                 <div
                   key={role}
                   className="rounded-2xl border border-border/70 bg-background/70 overflow-hidden"
