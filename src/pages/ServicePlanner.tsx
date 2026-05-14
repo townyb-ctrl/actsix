@@ -6,6 +6,7 @@ import {
   Clock3,
   ListChecks,
   MapPin,
+  MoreHorizontal,
   Plus,
   Search,
   Settings,
@@ -16,6 +17,13 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -1081,45 +1089,52 @@ const ServicePlanner = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
                       <Button
                         type="button"
-                        variant="outline"
-                        className="rounded-xl"
+                        className="actsix-btn-primary h-11 w-11 rounded-full p-0 shrink-0"
                         onClick={() => openAddService(type)}
+                        title="Add service date"
                       >
-                        <Plus className="h-4 w-4" />
-                        Add Service Date
+                        <Plus className="h-5 w-5" />
+                        <span className="sr-only">Add service date</span>
                       </Button>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl"
-                        onClick={() => openTeamLinkEditor(type)}
-                      >
-                        <Users className="h-4 w-4" />
-                        Manage Teams
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-11 w-11 rounded-full p-0 shrink-0"
+                            title="More actions"
+                          >
+                            <MoreHorizontal className="h-5 w-5" />
+                            <span className="sr-only">More actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl"
-                        onClick={() => openTemplateEditor(type)}
-                      >
-                        <Settings className="h-4 w-4" />
-                        Edit Template
-                      </Button>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem onClick={() => openTeamLinkEditor(type)}>
+                            <Users className="mr-2 h-4 w-4" />
+                            Manage Teams
+                          </DropdownMenuItem>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl text-destructive"
-                        onClick={() => deleteServiceType(type)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                          <DropdownMenuItem onClick={() => openTemplateEditor(type)}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            Edit Template
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+
+                          <DropdownMenuItem
+                            onClick={() => deleteServiceType(type)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Service Type
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
