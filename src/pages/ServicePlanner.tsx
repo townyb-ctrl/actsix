@@ -768,38 +768,6 @@ const ServicePlanner = () => {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="p-4 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Service Types</p>
-            <div className="mt-2 text-3xl font-extrabold">
-              {serviceTypes.length}
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Created service patterns
-            </p>
-          </Card>
-
-          <Card className="p-4 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Service Dates</p>
-            <div className="mt-2 text-3xl font-extrabold">
-              {services.length}
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Planned services
-            </p>
-          </Card>
-
-          <Card className="p-4 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Next Service</p>
-            <div className="mt-2 text-3xl font-extrabold">
-              {services[0] ? formatDate(services[0].service_date).split(",")[0] : "—"}
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {services[0]?.title || "No services created yet"}
-            </p>
-          </Card>
-        </div>
-
         <div className="flex items-center justify-between gap-4">
           <div className="relative max-w-2xl flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
