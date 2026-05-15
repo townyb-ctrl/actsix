@@ -4,7 +4,6 @@ import {
   ArrowUpRight,
   CalendarDays,
   Clock3,
-  ListChecks,
   MapPin,
   MoreHorizontal,
   Plus,
@@ -100,6 +99,16 @@ const formatDate = (value?: string | null) => {
     weekday: "short",
     month: "short",
     day: "numeric",
+    year: "numeric",
+  });
+};
+
+const formatServiceTitleDate = (value: string) => {
+  if (!value) return "";
+
+  return new Date(value + "T00:00:00").toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
     year: "numeric",
   });
 };
@@ -498,7 +507,7 @@ const ServicePlanner = () => {
     const { error } = await supabase.from("service_instances").insert({
       user_id: user.id,
       service_type_id: selectedServiceType.id,
-      title: serviceTitle.trim() || selectedServiceType.name,
+      title: formatServiceTitleDate(serviceDate),
       service_date: serviceDate,
       start_time: serviceStartTime || selectedServiceType.default_start_time || null,
       location: serviceLocation.trim() || null,
@@ -1018,43 +1027,11 @@ const ServicePlanner = () => {
                         {type.name}
                       </h2>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        {type.default_start_time && (
-                          <span className="inline-flex items-center gap-1">
-                            <Clock3 className="h-3.5 w-3.5" />
-                            {type.default_start_time.slice(0, 5)}
-                          </span>
-                        )}
-
-                        <span className="inline-flex items-center gap-1">
-                          <ListChecks className="h-3.5 w-3.5" />
-                          {type.default_duration_minutes || 75} min default
-                        </span>
-
-                        {type.description && <span>{type.description}</span>}
-                      </div>
-
-                      <div className="mt-3">
-                        <p className="label-eyebrow">Assigned Teams</p>
-
-                        {getTeamsForServiceType(type.id).length === 0 ? (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            No teams assigned yet.
-                          </p>
-                        ) : (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {getTeamsForServiceType(type.id).map((team) => (
-                              <span
-                                key={team.id}
-                                className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground"
-                              >
-                                <Users className="h-3 w-3" />
-                                {team.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {type.description && (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {type.description}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -1124,7 +1101,7 @@ const ServicePlanner = () => {
 
                         <div className="flex-1 min-w-0">
                           <div className="font-extrabold tracking-tight truncate">
-                            {service.title || type.name}
+                            {formatServiceTitleDate(service.service_date)}
                           </div>
 
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
