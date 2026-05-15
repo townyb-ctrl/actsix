@@ -133,6 +133,7 @@ const ServiceDetail = () => {
   const [itemTitle, setItemTitle] = useState("");
   const [itemDetails, setItemDetails] = useState("");
   const [itemDuration, setItemDuration] = useState("5");
+  const [addOrderOpen, setAddOrderOpen] = useState(false);
 
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState("");
@@ -320,6 +321,7 @@ const ServiceDetail = () => {
     setItemDetails("");
     setItemDuration("5");
     toast.success("Order item added");
+    setAddOrderOpen(false);
     fetchService();
   };
 
@@ -509,73 +511,36 @@ const ServiceDetail = () => {
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.75fr)]">
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4">
               <div>
-                <p className="label-eyebrow">Order of Service</p>
+                <p className="label-eyebrow">Service Flow</p>
                 <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                  Build the service flow
+                  Order of Service
                 </h2>
-                {templateItems.length > 0 && (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Template available: {template?.name || "Default Template"} · {templateItems.length} items
-                  </p>
-                )}
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={applyTemplateToService}
-                disabled={!templateItems.length || applyingTemplate}
-              >
-                {applyingTemplate ? "Applying..." : "Apply Template"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  className="actsix-btn-primary h-11 w-11 rounded-full p-0"
+                  onClick={() => setAddOrderOpen(true)}
+                  title="Add service element"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="sr-only">Add service element</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={applyTemplateToService}
+                  disabled={!templateItems.length || applyingTemplate}
+                >
+                  {applyingTemplate ? "Applying..." : "Apply Template"}
+                </Button>
+              </div>
             </div>
-
-            <form onSubmit={addOrderItem} className="grid gap-2 border-b border-border p-4 md:grid-cols-[140px_minmax(0,1fr)_90px_auto]">
-              <select
-                value={itemType}
-                onChange={(event) => setItemType(event.target.value)}
-                className="h-10 rounded-md border border-border/70 bg-background px-3 text-sm"
-              >
-                <option>Song</option>
-                <option>Welcome</option>
-                <option>Announcements</option>
-                <option>Prayer</option>
-                <option>Offering</option>
-                <option>Sermon</option>
-                <option>Communion</option>
-                <option>General</option>
-              </select>
-
-              <Input
-                value={itemTitle}
-                onChange={(event) => setItemTitle(event.target.value)}
-                placeholder="Item title..."
-                className="border-border/70 bg-background"
-              />
-
-              <Input
-                type="number"
-                min="1"
-                value={itemDuration}
-                onChange={(event) => setItemDuration(event.target.value)}
-                className="border-border/70 bg-background"
-              />
-
-              <Button type="submit" className="actsix-btn-primary rounded-xl">
-                <Plus className="h-4 w-4" />
-                Add
-              </Button>
-
-              <Input
-                value={itemDetails}
-                onChange={(event) => setItemDetails(event.target.value)}
-                placeholder="Optional notes, key, scripture, or details..."
-                className="border-border/70 bg-background md:col-span-4"
-              />
-            </form>
 
             <div className="divide-y divide-border">
               {orderItems.length === 0 && (
@@ -736,6 +701,101 @@ const ServiceDetail = () => {
           </Card>
         </div>
       </div>
+
+      {addOrderOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Order of Service</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Add Service Element
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add a song, welcome, sermon, prayer, announcement, or other part of the service.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setAddOrderOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <form onSubmit={addOrderItem} className="mt-6 space-y-4">
+              <div>
+                <label className="label-eyebrow">Element Type</label>
+                <select
+                  value={itemType}
+                  onChange={(event) => setItemType(event.target.value)}
+                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                >
+                  <option>Song</option>
+                  <option>Welcome</option>
+                  <option>Announcements</option>
+                  <option>Prayer</option>
+                  <option>Offering</option>
+                  <option>Sermon</option>
+                  <option>Communion</option>
+                  <option>General</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Title</label>
+                <Input
+                  value={itemTitle}
+                  onChange={(event) => setItemTitle(event.target.value)}
+                  placeholder="Item title..."
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Duration</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={itemDuration}
+                  onChange={(event) => setItemDuration(event.target.value)}
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Notes</label>
+                <Input
+                  value={itemDetails}
+                  onChange={(event) => setItemDetails(event.target.value)}
+                  placeholder="Optional notes, key, scripture, or details..."
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setAddOrderOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  Add Element
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
     </div>
   );
 };
