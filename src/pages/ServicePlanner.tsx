@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowUpRight,
   CalendarDays,
   Clock3,
   MapPin,
@@ -1100,9 +1099,12 @@ const ServicePlanner = () => {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="font-extrabold tracking-tight truncate">
+                          <Link
+                            to={`/service-planner/services/${service.id}`}
+                            className="font-extrabold tracking-tight truncate hover:text-brand-teal transition-colors"
+                          >
                             {formatServiceTitleDate(service.service_date)}
-                          </div>
+                          </Link>
 
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                             <span className="inline-flex items-center gap-1">
@@ -1125,13 +1127,6 @@ const ServicePlanner = () => {
                             )}
                           </div>
                         </div>
-
-                        <Button asChild variant="outline" className="rounded-xl">
-                          <Link to={`/service-planner/services/${service.id}`}>
-                            Open
-                            <ArrowUpRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
 
                         <Button
                           type="button"
