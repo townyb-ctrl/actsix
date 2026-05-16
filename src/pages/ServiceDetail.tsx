@@ -772,7 +772,14 @@ const ServiceDetail = () => {
               <Button
                 type="button"
                 className="actsix-btn-primary h-11 w-11 rounded-full p-0"
-                onClick={() => setAddTeamAssignmentOpen(true)}
+                onClick={() => {
+                  setSelectedTeamId(selectedAssignmentTeamId);
+                  setSelectedTeamMemberId("");
+                  setRoleName("");
+                  setPersonName("");
+                  setTeamNotes("");
+                  setAddTeamAssignmentOpen(true);
+                }}
                 title="Add team member"
               >
                 <Plus className="h-5 w-5" />
@@ -817,132 +824,160 @@ const ServiceDetail = () => {
               </div>
             )}
 
-            <div className="p-4 space-y-3">
+            <div className="p-4">
               {selectedAssignmentTeam && selectedTeamRoleRequirements.length === 0 && (
                 <div className="rounded-xl border border-dashed border-border bg-background/70 p-5 text-sm text-muted-foreground">
                   No roles found for this team yet. Add roles to the team first.
                 </div>
               )}
 
-              {selectedTeamRoleRequirements.map((requirement) => {
-                const assignedCount = getAssignedCountForRole(
-                  requirement.team_id,
-                  requirement.role_name
-                );
-
-                const assignedPeople = teamAssignments.filter(
-                  (assignment) =>
-                    assignment.team_id === requirement.team_id &&
-                    assignment.role_name.trim() === requirement.role_name.trim()
-                );
-
-                const complete =
-                  requirement.required_count > 0 &&
-                  assignedCount >= requirement.required_count;
-
-                return (
-                  <div
-                    key={requirement.id}
-                    className="rounded-2xl border border-border/70 bg-background/70 overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-                      <div className="min-w-0">
-                        <p className="label-eyebrow">Position</p>
-                        <h3 className="mt-1 truncate font-extrabold tracking-tight">
-                          {requirement.role_name}
-                        </h3>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {assignedCount} / {requirement.required_count} assigned
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
-                          onClick={() =>
-                            updateRoleRequirementCount(
-                              requirement,
-                              requirement.required_count - 1
-                            )
-                          }
-                          aria-label={`Decrease ${requirement.role_name} requirement`}
-                        >
-                          −
-                        </button>
-
-                        <span
-                          className={`min-w-10 rounded-full border px-2.5 py-1 text-center text-xs font-bold ${
-                            complete
-                              ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
-                              : "border-border bg-card text-muted-foreground"
-                          }`}
-                        >
-                          {requirement.required_count}
-                        </span>
-
-                        <button
-                          type="button"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
-                          onClick={() =>
-                            updateRoleRequirementCount(
-                              requirement,
-                              requirement.required_count + 1
-                            )
-                          }
-                          aria-label={`Increase ${requirement.role_name} requirement`}
-                        >
-                          +
-                        </button>
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="rounded-xl"
-                          onClick={() => openAssignRole(requirement)}
-                          disabled={complete}
-                        >
-                          Assign
-                        </Button>
-                      </div>
+              {selectedTeamRoleRequirements.length > 0 && (
+                <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-border px-4 py-3">
+                    <div>
+                      <p className="label-eyebrow">Positions</p>
+                      <h3 className="mt-1 font-extrabold tracking-tight">
+                        {selectedAssignmentTeam?.name}
+                      </h3>
                     </div>
 
-                    <div className="divide-y divide-border">
-                      {assignedPeople.length === 0 && (
-                        <div className="px-4 py-3 text-sm text-muted-foreground">
-                          No one assigned yet.
-                        </div>
-                      )}
-
-                      {assignedPeople.map((assignment) => (
-                        <div key={assignment.id} className="flex items-center gap-3 px-4 py-3">
-                          <div className="h-9 w-9 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
-                            <Users className="h-4 w-4" />
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="font-extrabold tracking-tight truncate">
-                              {assignment.person_name}
-                            </div>
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              {assignment.notes || requirement.role_name}
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
-                            onClick={() => deleteTeamAssignment(assignment)}
-                            aria-label="Remove team member"
-                          >
-                            <Trash2 className="h-4 w-4" strokeWidth={1.8} />
-                          </button>
-                        </div>
-                      ))}
+                    <div className="self-center text-xs font-bold text-muted-foreground">
+                      Needed / Assigned
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="divide-y divide-border">
+                    {selectedTeamRoleRequirements.map((requirement) => {
+                      const assignedCount = getAssignedCountForRole(
+                        requirement.team_id,
+                        requirement.role_name
+                      );
+
+                      const assignedPeople = teamAssignments.filter(
+                        (assignment) =>
+                          assignment.team_id === requirement.team_id &&
+                          assignment.role_name.trim() === requirement.role_name.trim()
+                      );
+
+                      const emptySlots = Math.max(
+                        requirement.required_count - assignedCount,
+                        0
+                      );
+
+                      const complete =
+                        requirement.required_count > 0 &&
+                        assignedCount >= requirement.required_count;
+
+                      return (
+                        <div key={requirement.id} className="px-4 py-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="label-eyebrow">Position</p>
+                              <h4 className="mt-1 text-base font-extrabold tracking-tight">
+                                {requirement.role_name}
+                              </h4>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {assignedCount} / {requirement.required_count} assigned
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
+                                onClick={() =>
+                                  updateRoleRequirementCount(
+                                    requirement,
+                                    requirement.required_count - 1
+                                  )
+                                }
+                                aria-label={`Decrease ${requirement.role_name} requirement`}
+                              >
+                                −
+                              </button>
+
+                              <span
+                                className={`min-w-10 rounded-full border px-2.5 py-1 text-center text-xs font-bold ${
+                                  complete
+                                    ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
+                                    : "border-border bg-card text-muted-foreground"
+                                }`}
+                              >
+                                {requirement.required_count}
+                              </span>
+
+                              <button
+                                type="button"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
+                                onClick={() =>
+                                  updateRoleRequirementCount(
+                                    requirement,
+                                    requirement.required_count + 1
+                                  )
+                                }
+                                aria-label={`Increase ${requirement.role_name} requirement`}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 grid gap-2">
+                            {assignedPeople.map((assignment) => (
+                              <div
+                                key={assignment.id}
+                                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card px-3 py-2"
+                              >
+                                <div className="h-8 w-8 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                                  <Users className="h-4 w-4" />
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate text-sm font-extrabold tracking-tight">
+                                    {assignment.person_name}
+                                  </div>
+                                  <div className="mt-0.5 text-xs text-muted-foreground">
+                                    {assignment.notes || requirement.role_name}
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
+                                  onClick={() => deleteTeamAssignment(assignment)}
+                                  aria-label="Remove team member"
+                                >
+                                  <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                                </button>
+                              </div>
+                            ))}
+
+                            {Array.from({ length: emptySlots }).map((_, index) => (
+                              <button
+                                key={`${requirement.id}-slot-${index}`}
+                                type="button"
+                                className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-card/70 px-3 py-2 text-left text-sm text-muted-foreground transition hover:border-brand-teal hover:bg-brand-teal/5 hover:text-brand-teal"
+                                onClick={() => openAssignRole(requirement)}
+                              >
+                                <span className="font-bold">
+                                  Empty {requirement.role_name} slot
+                                </span>
+                                <span className="text-lg leading-none">+</span>
+                              </button>
+                            ))}
+
+                            {requirement.required_count === 0 && (
+                              <div className="rounded-xl border border-dashed border-border bg-card/70 px-3 py-2 text-sm text-muted-foreground">
+                                No people required for this position.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         </div>
