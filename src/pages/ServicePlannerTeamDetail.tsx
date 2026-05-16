@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowDown,
   ArrowUp,
@@ -52,6 +52,7 @@ type ServiceTeamRole = {
 
 const ServicePlannerTeamDetail = () => {
   const { teamId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [team, setTeam] = useState<ServiceTeam | null>(null);
@@ -70,6 +71,8 @@ const ServicePlannerTeamDetail = () => {
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [memberNotes, setMemberNotes] = useState("");
   const [addPersonOpen, setAddPersonOpen] = useState(false);
+  const [addRoleOpen, setAddRoleOpen] = useState(false);
+  const [newRoleName, setNewRoleName] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(null);
 
   const roles = useMemo(() => {
@@ -81,9 +84,7 @@ const ServicePlannerTeamDetail = () => {
       )
     );
 
-    const orderedRoles = serviceTeamRoles
-      .map((role) => role.role_name)
-      .filter((role) => memberRoleNames.includes(role));
+    const orderedRoles = serviceTeamRoles.map((role) => role.role_name);
 
     const missingRoles = memberRoleNames
       .filter((role) => !orderedRoles.includes(role))
@@ -93,16 +94,35 @@ const ServicePlannerTeamDetail = () => {
   }, [members, serviceTeamRoles]);
 
   const groupedMembers = useMemo(() => {
-    const groups = members.reduce<Record<string, ServiceTeamMember[]>>((acc, member) => {
-      const role = member.role_name?.trim() || "No Role Assigned";
+    const memberRoleNames = Array.from(
+      new Set(
+        members
+          .map((member) => member.role_name?.trim())
+          .filter(Boolean) as string[]
+      )
+    );
 
-      if (!acc[role]) {
-        acc[role] = [];
-      }
+    const explicitRoleNames = serviceTeamRoles.map((role) => role.role_name);
 
-      acc[role].push(member);
+    const allRoleNames = [
+      ...explicitRoleNames,
+      ...memberRoleNames.filter((role) => !explicitRoleNames.includes(role)),
+    ];
+
+    const groups = allRoleNames.reduce<Record<string, ServiceTeamMember[]>>((acc, role) => {
+      acc[role] = [];
       return acc;
     }, {});
+
+    members.forEach((member) => {
+      const role = member.role_name?.trim() || "No Role Assigned";
+
+      if (!groups[role]) {
+        groups[role] = [];
+      }
+
+      groups[role].push(member);
+    });
 
     const roleOrder = new Map(
       serviceTeamRoles.map((role) => [role.role_name, role.sort_order])
@@ -282,6 +302,81 @@ const ServicePlannerTeamDetail = () => {
     fetchTeam();
   };
 
+  const openAddPersonForRole = (role: string) => {
+    setRoleName(role === "No Role Assigned" ? "" : role);
+    setPersonName("");
+    setPhoneNumber("");
+    setWhatsappEnabled(false);
+    setMemberNotes("");
+    setAddPersonOpen(true);
+  };
+
+  const createRole = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!user || !teamId) {
+      toast.error("Team not selected.");
+      return;
+    }
+
+    const cleanedRoleName = newRoleName.trim();
+
+    if (!cleanedRoleName) {
+      toast.error("Role name is required.");
+      return;
+    }
+
+    const roleAlreadyExists = roles.some(
+      (role) => role.toLowerCase() === cleanedRoleName.toLowerCase()
+    );
+
+    if (roleAlreadyExists) {
+      toast.error("That role already exists.");
+      return;
+    }
+
+    const { error } = await (supabase as any).from("service_team_roles").insert({
+      user_id: user.id,
+      team_id: teamId,
+      role_name: cleanedRoleName,
+      sort_order: serviceTeamRoles.length,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Role added");
+    setNewRoleName("");
+    setAddRoleOpen(false);
+    fetchTeam();
+  };
+
+  const deleteTeam = async () => {
+    if (!team) return;
+
+    const confirmed = window.confirm(
+      `Delete "${team.name}"? This will also remove people assigned to this team.`
+    );
+
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("service_teams")
+      .delete()
+      .eq("id", team.id)
+      .eq("user_id", team.user_id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Team deleted");
+    navigate("/service-planner/teams");
+  };
+
   const createMember = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -449,11 +544,11 @@ const ServicePlannerTeamDetail = () => {
                 <Button
                   type="button"
                   className="actsix-btn-primary h-11 w-11 rounded-full p-0"
-                  onClick={() => setAddPersonOpen(true)}
-                  title="Add person"
+                  onClick={() => setAddRoleOpen(true)}
+                  title="Add role"
                 >
                   <Plus className="h-5 w-5" />
-                  <span className="sr-only">Add person</span>
+                  <span className="sr-only">Add role</span>
                 </Button>
 
                 <div className="relative">
@@ -479,6 +574,17 @@ const ServicePlannerTeamDetail = () => {
                         }}
                       >
                         Edit Team
+                      </button>
+
+                      <button
+                        type="button"
+                        className="flex w-full items-center rounded-xl px-3 py-2 text-left text-sm font-bold text-destructive hover:bg-destructive/5"
+                        onClick={() => {
+                          setTeamMenuOpen(false);
+                          deleteTeam();
+                        }}
+                      >
+                        Delete Team
                       </button>
                     </div>
                   )}
@@ -570,10 +676,30 @@ const ServicePlannerTeamDetail = () => {
                         <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-muted-foreground">
                           {roleMembers.length} {roleMembers.length === 1 ? "person" : "people"}
                         </span>
+
+                        <button
+                          type="button"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-brand-teal/10 hover:text-brand-teal"
+                          onClick={() => openAddPersonForRole(role)}
+                          aria-label={`Add person to ${role}`}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
 
                     <div className="flex-1 divide-y divide-border">
+                      {roleMembers.length === 0 && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between px-4 py-3 text-left text-sm text-muted-foreground transition hover:bg-brand-teal/5 hover:text-brand-teal"
+                          onClick={() => openAddPersonForRole(role)}
+                        >
+                          <span>Add first person to this role</span>
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      )}
+
                       {roleMembers.map((member) => (
                         <div key={member.id} className="flex items-center gap-3 px-4 py-3">
                           <div className="h-9 w-9 rounded-xl bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
@@ -685,6 +811,61 @@ const ServicePlannerTeamDetail = () => {
                   <Button type="submit" className="actsix-btn-primary rounded-xl">
                     <Save className="h-4 w-4" />
                     Save Team
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {addRoleOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+            <Card className="w-full max-w-lg border-border/70 bg-card shadow-card p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="label-eyebrow">Team Role</p>
+                  <h2 className="text-xl font-extrabold tracking-tight">
+                    Add Role
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add a serving position such as Worship Leader, Vocals, Drums, AV, or Welcome.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setAddRoleOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+
+              <form onSubmit={createRole} className="mt-6 space-y-4">
+                <div>
+                  <label className="label-eyebrow">Role Name</label>
+                  <Input
+                    value={newRoleName}
+                    onChange={(event) => setNewRoleName(event.target.value)}
+                    placeholder="Vocals"
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => setAddRoleOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button type="submit" className="actsix-btn-primary rounded-xl">
+                    <Plus className="h-4 w-4" />
+                    Add Role
                   </Button>
                 </div>
               </form>
