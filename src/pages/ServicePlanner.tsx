@@ -1116,14 +1116,14 @@ const ServicePlanner = () => {
                           </div>
                         </div>
 
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="rounded-xl text-destructive"
-                          onClick={() => deleteServiceInstance(service)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <button
+                            type="button"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
+                            onClick={() => deleteServiceInstance(service)}
+                            aria-label="Delete service date"
+                          >
+                            <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                          </button>
                       </div>
                     ))}
                   </div>
