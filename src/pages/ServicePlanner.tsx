@@ -781,7 +781,7 @@ const ServicePlanner = () => {
             className="actsix-btn-primary rounded-xl shrink-0"
             onClick={() => setAddTypeOpen(true)}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-6 w-6" strokeWidth={3} />
             Add Service Type
           </Button>
         </div>
@@ -1008,43 +1008,42 @@ const ServicePlanner = () => {
                   key={type.id}
                   className="border-border/70 bg-card shadow-card overflow-hidden"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-teal/20 bg-brand-teal px-4 py-3 text-white">
                     <div className="min-w-0">
-                      <p className="label-eyebrow">Service Type</p>
-                      <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/65">
+                        Service Type
+                      </p>
+                      <h2 className="mt-0.5 text-2xl font-extrabold tracking-tight text-white">
                         {type.name}
                       </h2>
 
                       {type.description && (
-                        <p className="mt-2 text-sm text-muted-foreground">
+                        <p className="mt-1 text-xs text-white/75">
                           {type.description}
                         </p>
                       )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Button
+                      <button
                         type="button"
-                        className="actsix-btn-primary h-11 w-11 rounded-full p-0 shrink-0"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent p-0 text-white shadow-none transition hover:bg-white/10 hover:text-white"
                         onClick={() => openAddService(type)}
-                        title="Add service date"
+                        aria-label="Add service date"
                       >
-                        <Plus className="h-5 w-5" />
-                        <span className="sr-only">Add service date</span>
-                      </Button>
+                        <Plus className="h-5 w-5" strokeWidth={2.6} />
+                      </button>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-11 w-11 rounded-full p-0 shrink-0"
-                            title="More actions"
-                          >
-                            <MoreHorizontal className="h-5 w-5" />
-                            <span className="sr-only">More actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
+                        <button
+                          type="button"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent p-0 text-white shadow-none transition hover:bg-white/10 hover:text-white"
+                          aria-label="Service type options"
+                        >
+                          <MoreHorizontal className="h-5 w-5" strokeWidth={2.6} />
+                        </button>
+                      </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end" className="w-52">
                           <DropdownMenuItem onClick={() => openTeamLinkEditor(type)}>
