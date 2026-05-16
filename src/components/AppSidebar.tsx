@@ -186,7 +186,7 @@ export function AppSidebar() {
                     <option value="/">Home</option>
                     <option value="/tasks">ACTSIX: Tasks</option>
                     <option value="/meetings">ACTSIX: Meetings</option>
-                    <option value="/service-planner">Service Planner</option>
+                    <option value="/service-planner">ACTSIX: Service Planner</option>
                     <option value="/service-planning" disabled>Service Planning — Coming Soon</option>
                     <option value="/sermon-prep" disabled>Sermon Prep — Coming Soon</option>
                     <option value="/scripture" disabled>Scripture Tools — Coming Soon</option>
