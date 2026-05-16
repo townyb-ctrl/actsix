@@ -74,6 +74,7 @@ const ServicePlannerTeamDetail = () => {
   const [newRoleName, setNewRoleName] = useState("");
   const [draggedRole, setDraggedRole] = useState<string | null>(null);
   const [dragOverRole, setDragOverRole] = useState<string | null>(null);
+  const [roleOrderPreview, setRoleOrderPreview] = useState<string[] | null>(null);
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(null);
 
   const roles = useMemo(() => {
@@ -85,14 +86,14 @@ const ServicePlannerTeamDetail = () => {
       )
     );
 
-    const orderedRoles = serviceTeamRoles.map((role) => role.role_name);
+    const orderedRoles = roleOrderPreview || serviceTeamRoles.map((role) => role.role_name);
 
     const missingRoles = memberRoleNames
       .filter((role) => !orderedRoles.includes(role))
       .sort((a, b) => a.localeCompare(b));
 
     return [...orderedRoles, ...missingRoles];
-  }, [members, serviceTeamRoles]);
+  }, [members, serviceTeamRoles, roleOrderPreview]);
 
   const groupedMembers = useMemo(() => {
     const memberRoleNames = Array.from(
@@ -473,6 +474,21 @@ const ServicePlannerTeamDetail = () => {
     );
   };
 
+  const moveRoleInList = (list: string[], fromRole: string, toRole: string) => {
+    if (fromRole === toRole) return list;
+
+    const fromIndex = list.indexOf(fromRole);
+    const toIndex = list.indexOf(toRole);
+
+    if (fromIndex < 0 || toIndex < 0) return list;
+
+    const nextList = [...list];
+    const [movedRole] = nextList.splice(fromIndex, 1);
+    nextList.splice(toIndex, 0, movedRole);
+
+    return nextList;
+  };
+
   const saveRoleOrder = async (nextRoles: string[]) => {
     const rolesClient = supabase as any;
 
@@ -698,13 +714,28 @@ const ServicePlannerTeamDetail = () => {
                     key={role}
                     draggable={role !== "No Role Assigned"}
                     onDragStart={(event) => {
+                      const currentRoleOrder = roles.filter((item) => item !== "No Role Assigned");
+
                       setDraggedRole(role);
+                      setRoleOrderPreview(currentRoleOrder);
                       event.dataTransfer.effectAllowed = "move";
                       event.dataTransfer.setData("text/plain", role);
                     }}
                     onDragOver={(event) => {
                       event.preventDefault();
                       event.dataTransfer.dropEffect = "move";
+
+                      const sourceRole = draggedRole || event.dataTransfer.getData("text/plain");
+
+                      if (sourceRole && sourceRole !== role) {
+                        setRoleOrderPreview((currentPreview) => {
+                          const currentRoleOrder =
+                            currentPreview || roles.filter((item) => item !== "No Role Assigned");
+
+                          return moveRoleInList(currentRoleOrder, sourceRole, role);
+                        });
+                      }
+
                       if (dragOverRole !== role) {
                         setDragOverRole(role);
                       }
@@ -714,18 +745,26 @@ const ServicePlannerTeamDetail = () => {
                     }}
                     onDrop={async (event) => {
                       event.preventDefault();
-                      const sourceRole = draggedRole || event.dataTransfer.getData("text/plain");
+
+                      const finalRoleOrder =
+                        roleOrderPreview || roles.filter((item) => item !== "No Role Assigned");
 
                       setDraggedRole(null);
                       setDragOverRole(null);
+                      setRoleOrderPreview(null);
 
-                      if (sourceRole) {
-                        await reorderRole(sourceRole, role);
+                      if (finalRoleOrder.length > 0) {
+                        const saved = await saveRoleOrder(finalRoleOrder);
+
+                        if (saved) {
+                          toast.success("Role order updated");
+                        }
                       }
                     }}
                     onDragEnd={() => {
                       setDraggedRole(null);
                       setDragOverRole(null);
+                      setRoleOrderPreview(null);
                     }}
                     className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
                       dragOverRole === role
