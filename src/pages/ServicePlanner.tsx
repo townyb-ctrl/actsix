@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { LottieIcon } from "@/components/lottie/LottieIcon";
+import emptyServicesAnimation from "@/assets/lottie/empty-services.json";
 
 type ServiceType = {
   id: string;
@@ -795,9 +797,20 @@ const ServicePlanner = () => {
 
           {!loading && filteredServiceTypes.length === 0 && (
             <Card className="p-6 border-border/70 bg-card shadow-card">
-              <p className="text-sm text-muted-foreground">
-                No service types found. Add your first service type to begin.
-              </p>
+              <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
+                <LottieIcon
+                  animationData={emptyServicesAnimation}
+                  className="h-24 w-24 opacity-90"
+                />
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    No service types yet
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add your first service type to begin planning services.
+                  </p>
+                </div>
+              </div>
             </Card>
           )}
 
