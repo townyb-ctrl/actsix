@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Bell,
@@ -10,6 +10,21 @@ import {
   Users,
   X,
 } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,6 +62,47 @@ type ServiceTeamRole = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+};
+
+type SortableRoleCardProps = {
+  role: string;
+  disabled?: boolean;
+  children: ReactNode;
+};
+
+const SortableRoleCard = ({ role, disabled = false, children }: SortableRoleCardProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: role,
+    disabled,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden will-change-transform transition-[box-shadow,border-color,opacity] duration-200 ease-out hover:shadow-md active:cursor-grabbing ${
+        isDragging
+          ? "z-20 scale-[0.985] border-brand-teal opacity-80 shadow-xl ring-2 ring-brand-teal/15"
+          : "border-border/70"
+      }`}
+    >
+      {children}
+    </div>
+  );
 };
 
 const ServicePlannerTeamDetail = () => {
@@ -147,6 +203,45 @@ const ServicePlannerTeamDetail = () => {
 
     return groupedMembers.filter(([role]) => role === selectedRoleFilter);
   }, [groupedMembers, selectedRoleFilter]);
+
+  const roleDragSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const sortableRoleNames = useMemo(() => {
+    return filteredGroupedMembers
+      .map(([role]) => role)
+      .filter((role) => role !== "No Role Assigned");
+  }, [filteredGroupedMembers]);
+
+  const handleRoleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeRole = String(active.id);
+    const overRole = String(over.id);
+
+    const oldIndex = sortableRoleNames.indexOf(activeRole);
+    const newIndex = sortableRoleNames.indexOf(overRole);
+
+    if (oldIndex < 0 || newIndex < 0) {
+      return;
+    }
+
+    const nextRoles = arrayMove(sortableRoleNames, oldIndex, newIndex);
+    const saved = await saveRoleOrder(nextRoles);
+
+    if (saved) {
+      toast.success("Role order updated");
+    }
+  };
 
   const fetchTeam = async () => {
     if (!user || !teamId) return;
@@ -708,69 +803,18 @@ const ServicePlannerTeamDetail = () => {
             )}
 
             {filteredGroupedMembers.length > 0 && (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredGroupedMembers.map(([role, roleMembers], roleIndex) => (
-                  <div
+              <DndContext
+                sensors={roleDragSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleRoleDragEnd}
+              >
+                <SortableContext items={sortableRoleNames} strategy={rectSortingStrategy}>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {filteredGroupedMembers.map(([role, roleMembers], roleIndex) => (
+                  <SortableRoleCard
                     key={role}
-                    draggable={role !== "No Role Assigned"}
-                    onDragStart={(event) => {
-                      const currentRoleOrder = roles.filter((item) => item !== "No Role Assigned");
-
-                      setDraggedRole(role);
-                      setRoleOrderPreview(currentRoleOrder);
-                      event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("text/plain", role);
-                    }}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      event.dataTransfer.dropEffect = "move";
-
-                      const sourceRole = draggedRole || event.dataTransfer.getData("text/plain");
-
-                      if (sourceRole && sourceRole !== role) {
-                        setRoleOrderPreview((currentPreview) => {
-                          const currentRoleOrder =
-                            currentPreview || roles.filter((item) => item !== "No Role Assigned");
-
-                          return moveRoleInList(currentRoleOrder, sourceRole, role);
-                        });
-                      }
-
-                      if (dragOverRole !== role) {
-                        setDragOverRole(role);
-                      }
-                    }}
-                    onDragLeave={() => {
-                      setDragOverRole((current) => current === role ? null : current);
-                    }}
-                    onDrop={async (event) => {
-                      event.preventDefault();
-
-                      const finalRoleOrder =
-                        roleOrderPreview || roles.filter((item) => item !== "No Role Assigned");
-
-                      setDraggedRole(null);
-                      setDragOverRole(null);
-                      setRoleOrderPreview(null);
-
-                      if (finalRoleOrder.length > 0) {
-                        const saved = await saveRoleOrder(finalRoleOrder);
-
-                        if (saved) {
-                          toast.success("Role order updated");
-                        }
-                      }
-                    }}
-                    onDragEnd={() => {
-                      setDraggedRole(null);
-                      setDragOverRole(null);
-                      setRoleOrderPreview(null);
-                    }}
-                    className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
-                      dragOverRole === role
-                        ? "translate-y-1 border-brand-teal shadow-md ring-2 ring-brand-teal/20"
-                        : "border-border/70"
-                    } ${draggedRole === role ? "scale-[0.98] opacity-60" : ""}`}
+                    role={role}
+                    disabled={role === "No Role Assigned"}
                   >
                     <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4">
                       <div className="flex min-w-0 items-center gap-2">
@@ -864,9 +908,11 @@ const ServicePlannerTeamDetail = () => {
                         </div>
                       ))}
                     </div>
+                  </SortableRoleCard>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </Card>
