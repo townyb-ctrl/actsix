@@ -94,9 +94,9 @@ const SortableRoleCard = ({ role, disabled = false, children }: SortableRoleCard
       style={style}
       {...attributes}
       {...listeners}
-      className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden will-change-transform transition-[box-shadow,border-color,opacity] duration-200 ease-out hover:shadow-md active:cursor-grabbing ${
+      className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden will-change-transform transition-[box-shadow,border-color,opacity] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
         isDragging
-          ? "z-20 scale-[0.985] border-brand-teal opacity-80 shadow-xl ring-2 ring-brand-teal/15"
+          ? "z-20 scale-[1.015] border-brand-teal bg-card shadow-xl ring-2 ring-brand-teal/15"
           : "border-border/70"
       }`}
     >
@@ -236,11 +236,25 @@ const ServicePlannerTeamDetail = () => {
     }
 
     const nextRoles = arrayMove(sortableRoleNames, oldIndex, newIndex);
+
+    // Update immediately so the dropped card does not visually snap back.
+    setServiceTeamRoles((previous) =>
+      previous
+        .map((role) => ({
+          ...role,
+          sort_order: nextRoles.indexOf(role.role_name),
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order)
+    );
+
     const saved = await saveRoleOrder(nextRoles);
 
-    if (saved) {
-      toast.success("Role order updated");
+    if (!saved) {
+      fetchTeam();
+      return;
     }
+
+    toast.success("Role order updated");
   };
 
   const fetchTeam = async () => {
