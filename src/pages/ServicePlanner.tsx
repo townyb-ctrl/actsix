@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LottieIcon } from "@/components/lottie/LottieIcon";
 import emptyServicesAnimation from "@/assets/lottie/empty-services.json";
+import scheduleAnimation from "@/assets/lottie/schedule.json";
+import plusAnimation from "@/assets/lottie/plus.json";
 
 type ServiceType = {
   id: string;
@@ -1085,8 +1087,20 @@ const ServicePlanner = () => {
 
                   <div className="divide-y divide-border">
                     {servicesForType.length === 0 && (
-                      <div className="p-4 text-sm text-muted-foreground">
-                        No service dates created yet.
+                      <div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground">
+                        <LottieIcon
+                          animationData={scheduleAnimation}
+                          className="h-8 w-8 shrink-0"
+                        />
+
+                        <div>
+                          <p className="font-bold text-foreground">
+                            No service dates yet
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Use the plus button above to add the first date for this service type.
+                          </p>
+                        </div>
                       </div>
                     )}
 
