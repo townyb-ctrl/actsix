@@ -171,6 +171,14 @@ const ServiceDetail = () => {
     });
   }, [teamMembers, selectedTeamId, roleName]);
 
+  const availableSelectedTeamMembers = useMemo(() => {
+    return selectedTeamMembers.filter((member) => {
+      return !teamAssignments.some(
+        (assignment) => assignment.team_member_id === member.id
+      );
+    });
+  }, [selectedTeamMembers, teamAssignments]);
+
   const visibleTeamAssignments = useMemo(() => {
     if (!selectedAssignmentTeamId) return teamAssignments;
 
@@ -662,26 +670,26 @@ const ServiceDetail = () => {
 
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
+              <CalendarDays className="h-3.5 w-3.5" />
               {formatDate(service.service_date)}
             </span>
 
             {service.start_time && (
               <span className="inline-flex items-center gap-2">
-                <Clock3 className="h-4 w-4" />
+                <Clock3 className="h-3.5 w-3.5" />
                 {service.start_time.slice(0, 5)}
               </span>
             )}
 
             {service.location && (
               <span className="inline-flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-3.5 w-3.5" />
                 {service.location}
               </span>
             )}
 
             <span className="inline-flex items-center gap-2">
-              <ListChecks className="h-4 w-4" />
+              <ListChecks className="h-3.5 w-3.5" />
               {totalDuration} min planned
             </span>
           </div>
@@ -753,7 +761,7 @@ const ServiceDetail = () => {
                     onClick={() => deleteOrderItem(item)}
                     aria-label="Delete order item"
                   >
-                    <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
                   </button>
                 </div>
               ))}
@@ -824,7 +832,7 @@ const ServiceDetail = () => {
               </div>
             )}
 
-            <div className="p-4">
+            <div className="p-3">
               {selectedAssignmentTeam && selectedTeamRoleRequirements.length === 0 && (
                 <div className="rounded-xl border border-dashed border-border bg-background/70 p-5 text-sm text-muted-foreground">
                   No roles found for this team yet. Add roles to the team first.
@@ -832,16 +840,16 @@ const ServiceDetail = () => {
               )}
 
               {selectedTeamRoleRequirements.length > 0 && (
-                <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/70">
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-border px-4 py-3">
+                <div className="overflow-hidden rounded-xl border border-border/70 bg-background/70">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-border px-3 py-2.5">
                     <div>
                       <p className="label-eyebrow">Positions</p>
-                      <h3 className="mt-1 font-extrabold tracking-tight">
+                      <h3 className="mt-0.5 font-extrabold tracking-tight">
                         {selectedAssignmentTeam?.name}
                       </h3>
                     </div>
 
-                    <div className="self-center text-xs font-bold text-muted-foreground">
+                    <div className="self-center text-[11px] font-bold text-muted-foreground">
                       Needed / Assigned
                     </div>
                   </div>
@@ -869,14 +877,13 @@ const ServiceDetail = () => {
                         assignedCount >= requirement.required_count;
 
                       return (
-                        <div key={requirement.id} className="px-4 py-4">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div key={requirement.id} className="px-3 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="label-eyebrow">Position</p>
-                              <h4 className="mt-1 text-base font-extrabold tracking-tight">
+                              <h4 className="text-base font-extrabold tracking-tight">
                                 {requirement.role_name}
                               </h4>
-                              <p className="mt-1 text-xs text-muted-foreground">
+                              <p className="mt-0.5 text-xs text-muted-foreground">
                                 {assignedCount} / {requirement.required_count} assigned
                               </p>
                             </div>
@@ -884,7 +891,7 @@ const ServiceDetail = () => {
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
                                 onClick={() =>
                                   updateRoleRequirementCount(
                                     requirement,
@@ -897,7 +904,7 @@ const ServiceDetail = () => {
                               </button>
 
                               <span
-                                className={`min-w-10 rounded-full border px-2.5 py-1 text-center text-xs font-bold ${
+                                className={`min-w-8 rounded-full border px-2 py-0.5 text-center text-xs font-bold ${
                                   complete
                                     ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
                                     : "border-border bg-card text-muted-foreground"
@@ -908,7 +915,7 @@ const ServiceDetail = () => {
 
                               <button
                                 type="button"
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
                                 onClick={() =>
                                   updateRoleRequirementCount(
                                     requirement,
@@ -922,14 +929,14 @@ const ServiceDetail = () => {
                             </div>
                           </div>
 
-                          <div className="mt-3 grid gap-2">
+                          <div className="mt-2 grid gap-1.5">
                             {assignedPeople.map((assignment) => (
                               <div
                                 key={assignment.id}
-                                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card px-3 py-2"
+                                className="flex items-center gap-2 rounded-lg bg-card px-2.5 py-2"
                               >
-                                <div className="h-8 w-8 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
-                                  <Users className="h-4 w-4" />
+                                <div className="h-7 w-7 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                                  <Users className="h-3.5 w-3.5" />
                                 </div>
 
                                 <div className="flex-1 min-w-0">
@@ -943,11 +950,11 @@ const ServiceDetail = () => {
 
                                 <button
                                   type="button"
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/45 transition hover:bg-muted/40 hover:text-destructive"
                                   onClick={() => deleteTeamAssignment(assignment)}
                                   aria-label="Remove team member"
                                 >
-                                  <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
                                 </button>
                               </div>
                             ))}
@@ -956,11 +963,11 @@ const ServiceDetail = () => {
                               <button
                                 key={`${requirement.id}-slot-${index}`}
                                 type="button"
-                                className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-card/70 px-3 py-2 text-left text-sm text-muted-foreground transition hover:border-brand-teal hover:bg-brand-teal/5 hover:text-brand-teal"
+                                className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border bg-card/70 px-2.5 py-1.5 text-left text-xs text-muted-foreground transition hover:border-brand-teal hover:bg-brand-teal/5 hover:text-brand-teal"
                                 onClick={() => openAssignRole(requirement)}
                               >
                                 <span className="font-bold">
-                                  Empty {requirement.role_name} slot
+                                  Empty slot
                                 </span>
                                 <span className="text-lg leading-none">+</span>
                               </button>
@@ -1009,55 +1016,70 @@ const ServiceDetail = () => {
             </div>
 
             <form onSubmit={addTeamAssignment} className="mt-6 space-y-4">
-              <div>
-                <label className="label-eyebrow">Team</label>
-                <select
-                  value={selectedTeamId}
-                  onChange={(event) => {
-                    setSelectedTeamId(event.target.value);
-                    setSelectedTeamMemberId("");
-                    setPersonName("");
-                    setRoleName("");
-                  }}
-                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                >
-                  <option value="">Select team...</option>
-                  {assignedTeams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+                <p className="label-eyebrow">Selected Position</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {selectedTeamId && (
+                    <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-bold text-muted-foreground">
+                      {assignedTeams.find((team) => team.id === selectedTeamId)?.name || "Selected team"}
+                    </span>
+                  )}
+
+                  {roleName.trim() && (
+                    <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+                      {roleName}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>
-                <label className="label-eyebrow">Person</label>
-                <select
-                  value={selectedTeamMemberId}
-                  onChange={(event) => handleSelectTeamMember(event.target.value)}
-                  disabled={!selectedTeamId}
-                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm disabled:opacity-60"
-                >
-                  <option value="">
-                    {selectedTeamId ? "Select person..." : "Select a team first..."}
-                  </option>
-                  {selectedTeamMembers.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.person_name}
-                      {member.role_name ? ` ? ${member.role_name}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <p className="label-eyebrow">Choose Person</p>
 
-              <div>
-                <label className="label-eyebrow">Role</label>
-                <Input
-                  value={roleName}
-                  onChange={(event) => setRoleName(event.target.value)}
-                  placeholder="Worship Leader"
-                  className="mt-2 border-border/70 bg-background"
-                />
+                <div className="mt-2 overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+                  {availableSelectedTeamMembers.length === 0 && (
+                    <div className="p-5 text-sm text-muted-foreground">
+                      No available people found for this position.
+                    </div>
+                  )}
+
+                  {availableSelectedTeamMembers.map((member) => {
+                    const active = selectedTeamMemberId === member.id;
+
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        className={`flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left transition last:border-b-0 ${
+                          active
+                            ? "bg-brand-teal/10 text-brand-teal"
+                            : "bg-card text-foreground hover:bg-brand-teal/5"
+                        }`}
+                        onClick={() => handleSelectTeamMember(member.id)}
+                      >
+                        <div className="h-9 w-9 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                          <Users className="h-3.5 w-3.5" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-extrabold tracking-tight">
+                            {member.person_name}
+                          </div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            {member.role_name || "No role assigned"}
+                            {member.phone_number ? ` • ${member.phone_number}` : ""}
+                          </div>
+                        </div>
+
+                        {active && (
+                          <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-2.5 py-1 text-xs font-bold text-brand-teal">
+                            Selected
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
@@ -1080,9 +1102,13 @@ const ServiceDetail = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
-                  <Plus className="h-4 w-4" />
-                  Add Team Member
+                <Button
+                  type="submit"
+                  className="actsix-btn-primary rounded-xl"
+                  disabled={!selectedTeamMemberId}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Assign Person
                 </Button>
               </div>
             </form>
@@ -1177,7 +1203,7 @@ const ServiceDetail = () => {
                 </Button>
 
                 <Button type="submit" className="actsix-btn-primary rounded-xl">
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                   Add Element
                 </Button>
               </div>
