@@ -102,6 +102,17 @@ type ServiceOrderTemplateItem = {
   sort_order: number;
 };
 
+type ServiceTeamRoleRequirement = {
+  id: string;
+  user_id: string;
+  service_type_id: string;
+  team_id: string;
+  role_name: string;
+  required_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -121,6 +132,8 @@ const ServiceDetail = () => {
   const [serviceType, setServiceType] = useState<ServiceType | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
+  const [roleRequirements, setRoleRequirements] = useState<ServiceTeamRoleRequirement[]>([]);
+  const [selectedAssignmentTeamId, setSelectedAssignmentTeamId] = useState("");
   const [assignedTeams, setAssignedTeams] = useState<ServiceTeam[]>([]);
   const [teamMembers, setTeamMembers] = useState<ServiceTeamMember[]>([]);
   const [template, setTemplate] = useState<ServiceOrderTemplate | null>(null);
@@ -134,6 +147,7 @@ const ServiceDetail = () => {
   const [itemDuration, setItemDuration] = useState("5");
   const [addOrderOpen, setAddOrderOpen] = useState(false);
 
+  const [addTeamAssignmentOpen, setAddTeamAssignmentOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState("");
   const [roleName, setRoleName] = useState("");
@@ -146,8 +160,44 @@ const ServiceDetail = () => {
 
   const selectedTeamMembers = useMemo(() => {
     if (!selectedTeamId) return [];
-    return teamMembers.filter((member) => member.team_id === selectedTeamId);
-  }, [teamMembers, selectedTeamId]);
+
+    return teamMembers.filter((member) => {
+      const sameTeam = member.team_id === selectedTeamId;
+      const selectedRole = roleName.trim();
+
+      if (!selectedRole) return sameTeam;
+
+      return sameTeam && (member.role_name || "").trim() === selectedRole;
+    });
+  }, [teamMembers, selectedTeamId, roleName]);
+
+  const visibleTeamAssignments = useMemo(() => {
+    if (!selectedAssignmentTeamId) return teamAssignments;
+
+    return teamAssignments.filter(
+      (assignment) => assignment.team_id === selectedAssignmentTeamId
+    );
+  }, [teamAssignments, selectedAssignmentTeamId]);
+
+  const selectedAssignmentTeam = useMemo(() => {
+    return assignedTeams.find((team) => team.id === selectedAssignmentTeamId) || null;
+  }, [assignedTeams, selectedAssignmentTeamId]);
+
+  const selectedTeamRoleRequirements = useMemo(() => {
+    if (!selectedAssignmentTeamId) return [];
+
+    return roleRequirements
+      .filter((requirement) => requirement.team_id === selectedAssignmentTeamId)
+      .sort((a, b) => a.role_name.localeCompare(b.role_name));
+  }, [roleRequirements, selectedAssignmentTeamId]);
+
+  const getAssignedCountForRole = (teamId: string, role: string) => {
+    return teamAssignments.filter(
+      (assignment) =>
+        assignment.team_id === teamId &&
+        assignment.role_name.trim() === role.trim()
+    ).length;
+  };
 
   const handleSelectTeamMember = (memberId: string) => {
     setSelectedTeamMemberId(memberId);
@@ -246,11 +296,83 @@ const ServiceDetail = () => {
       if (assignedTeamError) toast.error(assignedTeamError.message);
       if (linkedMemberError) toast.error(linkedMemberError.message);
 
-      setAssignedTeams(assignedTeamData || []);
-      setTeamMembers(linkedMemberData || []);
+      const nextAssignedTeams = assignedTeamData || [];
+      const nextTeamMembers = linkedMemberData || [];
+
+      setAssignedTeams(nextAssignedTeams);
+      setTeamMembers(nextTeamMembers);
+
+      const rolesToRequire = Array.from(
+        new Map(
+          nextTeamMembers
+            .map((member: ServiceTeamMember) => ({
+              team_id: member.team_id,
+              role_name: (member.role_name || "General").trim() || "General",
+            }))
+            .map((role) => [`${role.team_id}:${role.role_name}`, role])
+        ).values()
+      );
+
+      const requirementsClient = supabase as any;
+
+      const { data: existingRequirements, error: requirementsError } =
+        await requirementsClient
+          .from("service_team_role_requirements")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("service_type_id", serviceData.service_type_id)
+          .in("team_id", linkedTeamIds);
+
+      if (requirementsError) {
+        toast.error(requirementsError.message);
+      }
+
+      const existing = (existingRequirements || []) as ServiceTeamRoleRequirement[];
+
+      const missingRequirements = rolesToRequire.filter((role) => {
+        return !existing.some(
+          (requirement) =>
+            requirement.team_id === role.team_id &&
+            requirement.role_name === role.role_name
+        );
+      });
+
+      if (missingRequirements.length > 0) {
+        const { error: insertRequirementsError } = await requirementsClient
+          .from("service_team_role_requirements")
+          .insert(
+            missingRequirements.map((role) => ({
+              user_id: user.id,
+              service_type_id: serviceData.service_type_id,
+              team_id: role.team_id,
+              role_name: role.role_name,
+              required_count: 1,
+            }))
+          );
+
+        if (insertRequirementsError) {
+          toast.error(insertRequirementsError.message);
+        }
+      }
+
+      const { data: refreshedRequirements, error: refreshedRequirementsError } =
+        await requirementsClient
+          .from("service_team_role_requirements")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("service_type_id", serviceData.service_type_id)
+          .in("team_id", linkedTeamIds)
+          .order("role_name", { ascending: true });
+
+      if (refreshedRequirementsError) {
+        toast.error(refreshedRequirementsError.message);
+      }
+
+      setRoleRequirements(refreshedRequirements || []);
     } else {
       setAssignedTeams([]);
       setTeamMembers([]);
+      setRoleRequirements([]);
     }
 
     const { data: templateData, error: templateError } = await supabase
@@ -289,6 +411,21 @@ const ServiceDetail = () => {
   useEffect(() => {
     fetchService();
   }, [user, serviceId]);
+
+  useEffect(() => {
+    if (assignedTeams.length === 0) {
+      setSelectedAssignmentTeamId("");
+      return;
+    }
+
+    const selectedStillExists = assignedTeams.some(
+      (team) => team.id === selectedAssignmentTeamId
+    );
+
+    if (!selectedAssignmentTeamId || !selectedStillExists) {
+      setSelectedAssignmentTeamId(assignedTeams[0].id);
+    }
+  }, [assignedTeams, selectedAssignmentTeamId]);
 
   const addOrderItem = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -339,6 +476,41 @@ const ServiceDetail = () => {
     fetchService();
   };
 
+  const updateRoleRequirementCount = async (
+    requirement: ServiceTeamRoleRequirement,
+    nextCount: number
+  ) => {
+    const safeCount = Math.max(0, nextCount);
+
+    const { error } = await (supabase as any)
+      .from("service_team_role_requirements")
+      .update({ required_count: safeCount })
+      .eq("id", requirement.id)
+      .eq("user_id", requirement.user_id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setRoleRequirements((previous) =>
+      previous.map((item) =>
+        item.id === requirement.id
+          ? { ...item, required_count: safeCount }
+          : item
+      )
+    );
+  };
+
+  const openAssignRole = (requirement: ServiceTeamRoleRequirement) => {
+    setSelectedTeamId(requirement.team_id);
+    setSelectedTeamMemberId("");
+    setRoleName(requirement.role_name);
+    setPersonName("");
+    setTeamNotes("");
+    setAddTeamAssignmentOpen(true);
+  };
+
   const addTeamAssignment = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -357,6 +529,24 @@ const ServiceDetail = () => {
     if (!roleName.trim() || !personName.trim()) {
       toast.error("Role and person are required.");
       return;
+    }
+
+    const matchingRequirement = roleRequirements.find(
+      (requirement) =>
+        requirement.team_id === selectedTeamId &&
+        requirement.role_name.trim() === roleName.trim()
+    );
+
+    if (matchingRequirement) {
+      const assignedCount = getAssignedCountForRole(
+        selectedTeamId,
+        matchingRequirement.role_name
+      );
+
+      if (assignedCount >= matchingRequirement.required_count) {
+        toast.error("This role already has the required number of people assigned.");
+        return;
+      }
     }
 
     const { error } = await supabase.from("service_team_assignments").insert({
@@ -381,6 +571,7 @@ const ServiceDetail = () => {
     setPersonName("");
     setTeamNotes("");
     toast.success("Team member added");
+    setAddTeamAssignmentOpen(false);
     fetchService();
   };
 
@@ -556,26 +747,69 @@ const ServiceDetail = () => {
                     </div>
                   </div>
 
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    className="rounded-xl text-destructive"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
                     onClick={() => deleteOrderItem(item)}
+                    aria-label="Delete order item"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                  </button>
                 </div>
               ))}
             </div>
           </Card>
 
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
-            <div className="border-b border-border p-4">
-              <p className="label-eyebrow">Service Team</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                Assign people
-              </h2>
+            <div className="flex items-center justify-between gap-4 border-b border-border p-4">
+              <div>
+                <p className="label-eyebrow">Service Team</p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                  Assign people
+                </h2>
+              </div>
+
+              <Button
+                type="button"
+                className="actsix-btn-primary h-11 w-11 rounded-full p-0"
+                onClick={() => setAddTeamAssignmentOpen(true)}
+                title="Add team member"
+              >
+                <Plus className="h-5 w-5" />
+                <span className="sr-only">Add team member</span>
+              </Button>
             </div>
+
+            {assignedTeams.length > 0 && (
+              <div className="border-b border-border px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  {assignedTeams.map((team) => {
+                    const active = selectedAssignmentTeamId === team.id;
+                    const count = teamAssignments.filter(
+                      (assignment) => assignment.team_id === team.id
+                    ).length;
+
+                    return (
+                      <button
+                        key={team.id}
+                        type="button"
+                        onClick={() => setSelectedAssignmentTeamId(team.id)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                          active
+                            ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
+                            : "border-border bg-background text-muted-foreground hover:border-brand-teal hover:text-brand-teal"
+                        }`}
+                      >
+                        {team.name}
+                        <span className="ml-1 opacity-70">
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {assignedTeams.length === 0 && (
               <div className="border-b border-border p-4 text-sm text-muted-foreground">
@@ -583,7 +817,163 @@ const ServiceDetail = () => {
               </div>
             )}
 
-            <form onSubmit={addTeamAssignment} className="space-y-3 border-b border-border p-4">
+            <div className="p-4 space-y-3">
+              {selectedAssignmentTeam && selectedTeamRoleRequirements.length === 0 && (
+                <div className="rounded-xl border border-dashed border-border bg-background/70 p-5 text-sm text-muted-foreground">
+                  No roles found for this team yet. Add roles to the team first.
+                </div>
+              )}
+
+              {selectedTeamRoleRequirements.map((requirement) => {
+                const assignedCount = getAssignedCountForRole(
+                  requirement.team_id,
+                  requirement.role_name
+                );
+
+                const assignedPeople = teamAssignments.filter(
+                  (assignment) =>
+                    assignment.team_id === requirement.team_id &&
+                    assignment.role_name.trim() === requirement.role_name.trim()
+                );
+
+                const complete =
+                  requirement.required_count > 0 &&
+                  assignedCount >= requirement.required_count;
+
+                return (
+                  <div
+                    key={requirement.id}
+                    className="rounded-2xl border border-border/70 bg-background/70 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="label-eyebrow">Position</p>
+                        <h3 className="mt-1 truncate font-extrabold tracking-tight">
+                          {requirement.role_name}
+                        </h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {assignedCount} / {requirement.required_count} assigned
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
+                          onClick={() =>
+                            updateRoleRequirementCount(
+                              requirement,
+                              requirement.required_count - 1
+                            )
+                          }
+                          aria-label={`Decrease ${requirement.role_name} requirement`}
+                        >
+                          −
+                        </button>
+
+                        <span
+                          className={`min-w-10 rounded-full border px-2.5 py-1 text-center text-xs font-bold ${
+                            complete
+                              ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
+                              : "border-border bg-card text-muted-foreground"
+                          }`}
+                        >
+                          {requirement.required_count}
+                        </span>
+
+                        <button
+                          type="button"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-brand-teal hover:text-brand-teal"
+                          onClick={() =>
+                            updateRoleRequirementCount(
+                              requirement,
+                              requirement.required_count + 1
+                            )
+                          }
+                          aria-label={`Increase ${requirement.role_name} requirement`}
+                        >
+                          +
+                        </button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-xl"
+                          onClick={() => openAssignRole(requirement)}
+                          disabled={complete}
+                        >
+                          Assign
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="divide-y divide-border">
+                      {assignedPeople.length === 0 && (
+                        <div className="px-4 py-3 text-sm text-muted-foreground">
+                          No one assigned yet.
+                        </div>
+                      )}
+
+                      {assignedPeople.map((assignment) => (
+                        <div key={assignment.id} className="flex items-center gap-3 px-4 py-3">
+                          <div className="h-9 w-9 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                            <Users className="h-4 w-4" />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="font-extrabold tracking-tight truncate">
+                              {assignment.person_name}
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              {assignment.notes || requirement.role_name}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
+                            onClick={() => deleteTeamAssignment(assignment)}
+                            aria-label="Remove team member"
+                          >
+                            <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      </div>
+
+
+      {addTeamAssignmentOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">Service Team</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Add Team Member
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Choose a person from the teams assigned to this service type.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setAddTeamAssignmentOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <form onSubmit={addTeamAssignment} className="mt-6 space-y-4">
               <div>
                 <label className="label-eyebrow">Team</label>
                 <select
@@ -645,49 +1035,27 @@ const ServiceDetail = () => {
                 />
               </div>
 
-              <Button type="submit" className="actsix-btn-primary rounded-xl w-full">
-                <Plus className="h-4 w-4" />
-                Add Team Member
-              </Button>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setAddTeamAssignmentOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  Add Team Member
+                </Button>
+              </div>
             </form>
 
-            <div className="divide-y divide-border">
-              {teamAssignments.length === 0 && (
-                <div className="p-6 text-sm text-muted-foreground">
-                  No team members assigned yet.
-                </div>
-              )}
 
-              {teamAssignments.map((assignment) => (
-                <div key={assignment.id} className="flex items-center gap-3 p-4">
-                  <div className="h-9 w-9 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
-                    <Users className="h-4 w-4" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="font-extrabold tracking-tight truncate">
-                      {assignment.person_name}
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {assignment.role_name}
-                      {assignment.notes ? ` • ${assignment.notes}` : ""}
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-xl text-destructive"
-                    onClick={() => deleteTeamAssignment(assignment)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
           </Card>
         </div>
-      </div>
+      )}
 
       {addOrderOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
