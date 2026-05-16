@@ -81,6 +81,10 @@ const SortableRoleCard = ({ role, disabled = false, children }: SortableRoleCard
   } = useSortable({
     id: role,
     disabled,
+    transition: {
+      duration: 240,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+    },
   });
 
   const style = {
