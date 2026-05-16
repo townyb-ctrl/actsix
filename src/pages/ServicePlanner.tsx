@@ -6,7 +6,6 @@ import {
   MapPin,
   MoreHorizontal,
   Plus,
-  Search,
   Settings,
   Trash2,
   Users,
@@ -765,26 +764,16 @@ const ServicePlanner = () => {
 
   return (
     <div>
-      <div className="px-8 pt-8 pb-12 max-w-7xl space-y-4">
-        <div>
-          <p className="label-eyebrow">ACTSIX: Service Planning</p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
-            Services
-          </h1>
-          <p className="mt-2 text-base text-muted-foreground">
-            Create service types, add service dates, and open each service to build the order and serving team.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative max-w-2xl flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search service types or service dates..."
-              className="h-10 pl-10 border-border/70 bg-card shadow-soft"
-            />
+      <div className="px-8 pt-4 pb-12 max-w-7xl space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="label-eyebrow">ACTSIX: Service Planning</p>
+            <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+              Services
+            </h1>
+            <p className="mt-2 text-base text-muted-foreground">
+              Create service types, add service dates, and open each service to build the order and serving team.
+            </p>
           </div>
 
           <Button
