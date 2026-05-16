@@ -1,10 +1,9 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Bell,
   Mail,
   Plus,
   Search,
-  Settings,
   Trash2,
   Users,
 } from "lucide-react";
@@ -39,6 +38,7 @@ type ServiceTeamMember = {
 
 const ServicePlannerTeams = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [teams, setTeams] = useState<ServiceTeam[]>([]);
   const [members, setMembers] = useState<ServiceTeamMember[]>([]);
@@ -46,17 +46,8 @@ const ServicePlannerTeams = () => {
   const [search, setSearch] = useState("");
 
   const [addTeamOpen, setAddTeamOpen] = useState(false);
-  const [manageTeamOpen, setManageTeamOpen] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<ServiceTeam | null>(null);
-
   const [teamName, setTeamName] = useState("");
   const [teamDescription, setTeamDescription] = useState("");
-
-  const [personName, setPersonName] = useState("");
-  const [roleName, setRoleName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
-  const [memberNotes, setMemberNotes] = useState("");
 
   const getTeamMembers = (teamId: string) =>
     members.filter((member) => member.team_id === teamId);
@@ -132,15 +123,7 @@ const ServicePlannerTeams = () => {
     setTeamDescription("");
   };
 
-  const resetMemberForm = () => {
-    setPersonName("");
-    setRoleName("");
-    setPhoneNumber("");
-    setWhatsappEnabled(false);
-    setMemberNotes("");
-  };
-
-  const createTeam = async (event: React.FormEvent) => {
+  const createTeam = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!user) {
@@ -170,45 +153,6 @@ const ServicePlannerTeams = () => {
     fetchTeams();
   };
 
-  const openManageTeam = (team: ServiceTeam) => {
-    setSelectedTeam(team);
-    resetMemberForm();
-    setManageTeamOpen(true);
-  };
-
-  const createMember = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!user || !selectedTeam) {
-      toast.error("Team not selected.");
-      return;
-    }
-
-    if (!personName.trim()) {
-      toast.error("Person name is required.");
-      return;
-    }
-
-    const { error } = await supabase.from("service_team_members").insert({
-      user_id: user.id,
-      team_id: selectedTeam.id,
-      person_name: personName.trim(),
-      role_name: roleName.trim() || null,
-      phone_number: phoneNumber.trim() || null,
-      whatsapp_enabled: whatsappEnabled,
-      notes: memberNotes.trim() || null,
-    });
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success("Team member added");
-    resetMemberForm();
-    fetchTeams();
-  };
-
   const deleteTeam = async (team: ServiceTeam) => {
     const confirmed = window.confirm(
       `Delete "${team.name}"? This will also remove people assigned to this team.`
@@ -227,56 +171,12 @@ const ServicePlannerTeams = () => {
     }
 
     toast.success("Team deleted");
-
-    if (selectedTeam?.id === team.id) {
-      setManageTeamOpen(false);
-      setSelectedTeam(null);
-    }
-
-    fetchTeams();
-  };
-
-  const deleteMember = async (member: ServiceTeamMember) => {
-    const confirmed = window.confirm(`Remove "${member.person_name}" from this team?`);
-
-    if (!confirmed) return;
-
-    const { error } = await supabase
-      .from("service_team_members")
-      .delete()
-      .eq("id", member.id);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success("Team member removed");
-    fetchTeams();
-  };
-
-  const toggleWhatsapp = async (member: ServiceTeamMember) => {
-    const { error } = await supabase
-      .from("service_team_members")
-      .update({
-        whatsapp_enabled: !member.whatsapp_enabled,
-      })
-      .eq("id", member.id);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
     fetchTeams();
   };
 
   const messageTeam = (team: ServiceTeam) => {
     toast.info(`Bulk messaging for ${team.name} is coming soon.`);
   };
-
-  const selectedTeamMembers = selectedTeam ? getTeamMembers(selectedTeam.id) : [];
-  const selectedTeamRoles = selectedTeam ? getTeamRoles(selectedTeam.id) : [];
 
   return (
     <div>
@@ -336,7 +236,16 @@ const ServicePlannerTeams = () => {
                 return (
                   <Card
                     key={team.id}
-                    className="flex min-h-[230px] flex-col border-border/70 bg-card shadow-card overflow-hidden"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/service-planner/teams/${team.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/service-planner/teams/${team.id}`);
+                      }
+                    }}
+                    className="flex min-h-[230px] cursor-pointer flex-col border-border/70 bg-card shadow-card overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg"
                   >
                     <div className="flex-1 p-5">
                       <div className="flex items-start justify-between gap-4">
@@ -398,28 +307,25 @@ const ServicePlannerTeams = () => {
                       <Button
                         type="button"
                         variant="outline"
-                        className="rounded-xl"
-                        onClick={() => messageTeam(team)}
+                        className="rounded-xl flex-1"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          messageTeam(team);
+                        }}
                         title="Send message to this team"
                       >
                         <Mail className="h-4 w-4" />
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl flex-1"
-                        onClick={() => openManageTeam(team)}
-                      >
-                        <Settings className="h-4 w-4" />
-                        Manage
+                        Message
                       </Button>
 
                       <Button
                         type="button"
                         variant="outline"
                         className="rounded-xl text-destructive"
-                        onClick={() => deleteTeam(team)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteTeam(team);
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -493,159 +399,6 @@ const ServicePlannerTeams = () => {
                 </Button>
               </div>
             </form>
-          </Card>
-        </div>
-      )}
-
-      {manageTeamOpen && selectedTeam && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-4xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="label-eyebrow">Manage Team</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
-                  {selectedTeam.name}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Add people, assign roles, and prepare future communication.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setManageTeamOpen(false)}
-              >
-                Close
-              </Button>
-            </div>
-
-            <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
-              <div className="rounded-2xl border border-border/70 bg-background/70 overflow-hidden">
-                <div className="border-b border-border p-4">
-                  <p className="label-eyebrow">People</p>
-                  <h3 className="mt-1 font-extrabold tracking-tight">
-                    {selectedTeamMembers.length} assigned
-                  </h3>
-                </div>
-
-                <div className="divide-y divide-border">
-                  {selectedTeamMembers.length === 0 && (
-                    <div className="p-4 text-sm text-muted-foreground">
-                      No people added to this team yet.
-                    </div>
-                  )}
-
-                  {selectedTeamMembers.map((member) => (
-                    <div key={member.id} className="flex items-center gap-3 p-3">
-                      <div className="h-8 w-8 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
-                        <Users className="h-4 w-4" />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-extrabold tracking-tight">
-                          {member.person_name}
-                        </div>
-
-                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                          {member.role_name && <span>{member.role_name}</span>}
-                          {member.phone_number && <span>{member.phone_number}</span>}
-                          {member.whatsapp_enabled && (
-                            <span className="font-bold text-brand-teal">WhatsApp ready</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 rounded-lg p-0 text-muted-foreground hover:text-brand-teal"
-                        onClick={() => toggleWhatsapp(member)}
-                        title="Toggle future WhatsApp reminders"
-                      >
-                        <Bell className="h-3.5 w-3.5" />
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 rounded-lg p-0 text-destructive"
-                        onClick={() => deleteMember(member)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <form onSubmit={createMember} className="space-y-4 rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div>
-                  <p className="label-eyebrow">Add Person</p>
-                  <h3 className="mt-1 font-extrabold tracking-tight">
-                    Team member details
-                  </h3>
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Person Name</label>
-                  <Input
-                    value={personName}
-                    onChange={(event) => setPersonName(event.target.value)}
-                    placeholder="Brandon Townsend"
-                    className="mt-2 border-border/70 bg-card"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Role</label>
-                  <Input
-                    value={roleName}
-                    onChange={(event) => setRoleName(event.target.value)}
-                    placeholder="Worship Leader"
-                    className="mt-2 border-border/70 bg-card"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Phone / WhatsApp Number</label>
-                  <Input
-                    value={phoneNumber}
-                    onChange={(event) => setPhoneNumber(event.target.value)}
-                    placeholder="+27..."
-                    className="mt-2 border-border/70 bg-card"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Notes</label>
-                  <Input
-                    value={memberNotes}
-                    onChange={(event) => setMemberNotes(event.target.value)}
-                    placeholder="Availability, instrument, serving notes..."
-                    className="mt-2 border-border/70 bg-card"
-                  />
-                </div>
-
-                <label className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 text-sm font-bold text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={whatsappEnabled}
-                    onChange={(event) => setWhatsappEnabled(event.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  Enable for future WhatsApp reminders
-                </label>
-
-                <Button type="submit" className="actsix-btn-primary rounded-xl w-full">
-                  <Plus className="h-4 w-4" />
-                  Add Person
-                </Button>
-              </form>
-            </div>
           </Card>
         </div>
       )}

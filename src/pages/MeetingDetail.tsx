@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -732,14 +731,7 @@ ${transcriptText.trim()}`;
       `}</style>
 
       <div className="px-8 pb-12 max-w-7xl space-y-5">
-        <Button asChild variant="ghost" className="rounded-xl text-muted-foreground">
-          <Link to={getRecurringSeriesIdFromAgenda(meeting?.agenda) ? `/meetings/recurring/${getRecurringSeriesIdFromAgenda(meeting?.agenda)}` : "/meetings"}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Meetings
-          </Link>
-        </Button>
-
-        <Card className="p-5 border-border/70 bg-card shadow-card">
+<Card className="p-5 border-border/70 bg-card shadow-card">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   CalendarDays,
   Clock3,
   MapPin,
@@ -391,10 +390,7 @@ const RecurringMeetingDetail = () => {
 
         <div className="px-8 pb-12 max-w-3xl">
           <Card className="p-8 border-border/70 bg-card shadow-card">
-            <Link to="/meetings/recurring" className="text-sm font-bold text-brand-teal">
-              ← Back to Recurring Meetings
-            </Link>
-          </Card>
+</Card>
         </div>
       </div>
     );
@@ -409,15 +405,7 @@ const RecurringMeetingDetail = () => {
       />
 
       <div className="px-8 pb-12 max-w-7xl space-y-6">
-        <Link
-          to="/meetings/recurring"
-          className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand-teal"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Recurring Meetings
-        </Link>
-
-        <Card className="p-5 border-border/70 bg-card shadow-card">
+<Card className="p-5 border-border/70 bg-card shadow-card">
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
               <Repeat className="h-4 w-4" />

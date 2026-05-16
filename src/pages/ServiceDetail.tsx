@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   CalendarDays,
   Clock3,
   GripVertical,
@@ -456,12 +455,7 @@ const ServiceDetail = () => {
       <div className="px-8 py-12">
         <Card className="p-6 border-border/70 bg-card shadow-card">
           <p className="text-sm text-muted-foreground">Service not found.</p>
-          <Button asChild variant="outline" className="mt-4 rounded-xl">
-            <Link to="/service-planner">
-              Back to Services
-            </Link>
-          </Button>
-        </Card>
+</Card>
       </div>
     );
   }
@@ -469,14 +463,7 @@ const ServiceDetail = () => {
   return (
     <div>
       <div className="px-8 pt-8 pb-12 max-w-7xl space-y-5">
-        <Button asChild variant="ghost" className="rounded-xl text-muted-foreground">
-          <Link to="/service-planner">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Services
-          </Link>
-        </Button>
-
-        <div>
+<div>
           <p className="label-eyebrow">ACTSIX: Service Planning</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
             {service.title || serviceType?.name || "Service"}

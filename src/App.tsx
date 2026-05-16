@@ -16,6 +16,7 @@ import Meetings from "./pages/Meetings";
 import ServicePlanner from "./pages/ServicePlanner";
 import ServiceDetail from "./pages/ServiceDetail";
 import ServicePlannerTeams from "./pages/ServicePlannerTeams";
+import ServicePlannerTeamDetail from "./pages/ServicePlannerTeamDetail";
 import ServicePlannerRepertoire from "./pages/ServicePlannerRepertoire";
 import MeetingDetail from "./pages/MeetingDetail";
 import RecurringMeetings from "./pages/RecurringMeetings";
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/service-planner/services" element={<ServicePlanner />} />
               <Route path="/service-planner/services/:serviceId" element={<ServiceDetail />} />
               <Route path="/service-planner/teams" element={<ServicePlannerTeams />} />
+              <Route path="/service-planner/teams/:teamId" element={<ServicePlannerTeamDetail />} />
               <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
               <Route path="/meetings/recurring" element={<RecurringMeetings />} />
               <Route path="/meetings/recurring/:seriesId" element={<RecurringMeetingDetail />} />

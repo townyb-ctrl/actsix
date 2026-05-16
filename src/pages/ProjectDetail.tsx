@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   CheckCircle2,
   Clock3,
   Edit3,
@@ -301,14 +300,7 @@ const ProjectDetail = () => {
       />
 
       <div className="px-8 pb-12 max-w-7xl space-y-6">
-        <Button asChild variant="ghost" className="rounded-xl text-muted-foreground">
-          <Link to="/tasks/projects">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Projects
-          </Link>
-        </Button>
-
-        <Card className="border-border/70 bg-card shadow-card overflow-hidden">
+<Card className="border-border/70 bg-card shadow-card overflow-hidden">
           <div className="p-6 border-b border-border/70">
             <div className="flex items-start justify-between gap-4">
               <div>
