@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowDown,
-  ArrowUp,
   Bell,
+  GripVertical,
   MoreVertical,
   Plus,
   Save,
@@ -73,6 +72,8 @@ const ServicePlannerTeamDetail = () => {
   const [addPersonOpen, setAddPersonOpen] = useState(false);
   const [addRoleOpen, setAddRoleOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
+  const [draggedRole, setDraggedRole] = useState<string | null>(null);
+  const [dragOverRole, setDragOverRole] = useState<string | null>(null);
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(null);
 
   const roles = useMemo(() => {
@@ -472,6 +473,59 @@ const ServicePlannerTeamDetail = () => {
     );
   };
 
+  const saveRoleOrder = async (nextRoles: string[]) => {
+    const rolesClient = supabase as any;
+
+    const results = await Promise.all(
+      nextRoles.map((role, index) =>
+        rolesClient
+          .from("service_team_roles")
+          .update({ sort_order: index })
+          .eq("user_id", user?.id)
+          .eq("team_id", teamId)
+          .eq("role_name", role)
+      )
+    );
+
+    const error = results.find((result) => result.error)?.error;
+
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+
+    setServiceTeamRoles((previous) =>
+      previous
+        .map((role) => ({
+          ...role,
+          sort_order: nextRoles.indexOf(role.role_name),
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order)
+    );
+
+    return true;
+  };
+
+  const reorderRole = async (fromRole: string, toRole: string) => {
+    if (fromRole === toRole) return;
+
+    const orderedRoles = roles.filter((role) => role !== "No Role Assigned");
+    const fromIndex = orderedRoles.indexOf(fromRole);
+    const toIndex = orderedRoles.indexOf(toRole);
+
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const nextRoles = [...orderedRoles];
+    const [movedRole] = nextRoles.splice(fromIndex, 1);
+    nextRoles.splice(toIndex, 0, movedRole);
+
+    const saved = await saveRoleOrder(nextRoles);
+
+    if (saved) {
+      toast.success("Role order updated");
+    }
+  };
+
   const toggleWhatsapp = async (member: ServiceTeamMember) => {
     const { error } = await supabase
       .from("service_team_members")
@@ -642,36 +696,62 @@ const ServicePlannerTeamDetail = () => {
                 {filteredGroupedMembers.map(([role, roleMembers], roleIndex) => (
                   <div
                     key={role}
-                    className="flex min-h-[220px] flex-col rounded-2xl border border-border/70 bg-background/70 overflow-hidden"
+                    draggable={role !== "No Role Assigned"}
+                    onDragStart={(event) => {
+                      setDraggedRole(role);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", role);
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      if (dragOverRole !== role) {
+                        setDragOverRole(role);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      setDragOverRole((current) => current === role ? null : current);
+                    }}
+                    onDrop={async (event) => {
+                      event.preventDefault();
+                      const sourceRole = draggedRole || event.dataTransfer.getData("text/plain");
+
+                      setDraggedRole(null);
+                      setDragOverRole(null);
+
+                      if (sourceRole) {
+                        await reorderRole(sourceRole, role);
+                      }
+                    }}
+                    onDragEnd={() => {
+                      setDraggedRole(null);
+                      setDragOverRole(null);
+                    }}
+                    className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
+                      dragOverRole === role
+                        ? "translate-y-1 border-brand-teal shadow-md ring-2 ring-brand-teal/20"
+                        : "border-border/70"
+                    } ${draggedRole === role ? "scale-[0.98] opacity-60" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4">
-                      <div className="min-w-0">
-                        <p className="label-eyebrow">Role</p>
-                        <h3 className="mt-1 truncate text-lg font-extrabold tracking-tight">
-                          {role}
-                        </h3>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div
+                          className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-md bg-transparent text-muted-foreground/70 transition hover:bg-brand-teal/5 hover:text-brand-teal active:cursor-grabbing"
+                          title="Click and hold to drag"
+                          aria-label="Drag role to reorder"
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="label-eyebrow">Role</p>
+                          <h3 className="mt-0.5 truncate text-lg font-extrabold tracking-tight">
+                            {role}
+                          </h3>
+                        </div>
                       </div>
 
                       <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-brand-teal/10 hover:text-brand-teal disabled:opacity-35"
-                          onClick={() => moveRole(role, "up")}
-                          disabled={roleIndex === 0}
-                          aria-label={`Move ${role} up`}
-                        >
-                          <ArrowUp className="h-3.5 w-3.5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-brand-teal/10 hover:text-brand-teal disabled:opacity-35"
-                          onClick={() => moveRole(role, "down")}
-                          disabled={roleIndex === filteredGroupedMembers.length - 1}
-                          aria-label={`Move ${role} down`}
-                        >
-                          <ArrowDown className="h-3.5 w-3.5" />
-                        </button>
 
                         <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-muted-foreground">
                           {roleMembers.length} {roleMembers.length === 1 ? "person" : "people"}
