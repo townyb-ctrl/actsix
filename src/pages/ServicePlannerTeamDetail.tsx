@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
+  ArrowDown,
+  ArrowUp,
   Bell,
   MoreVertical,
   Plus,
@@ -38,12 +40,23 @@ type ServiceTeamMember = {
   updated_at: string;
 };
 
+type ServiceTeamRole = {
+  id: string;
+  user_id: string;
+  team_id: string;
+  role_name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 const ServicePlannerTeamDetail = () => {
   const { teamId } = useParams();
   const { user } = useAuth();
 
   const [team, setTeam] = useState<ServiceTeam | null>(null);
   const [members, setMembers] = useState<ServiceTeamMember[]>([]);
+  const [serviceTeamRoles, setServiceTeamRoles] = useState<ServiceTeamRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editingTeam, setEditingTeam] = useState(false);
@@ -60,12 +73,24 @@ const ServicePlannerTeamDetail = () => {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(null);
 
   const roles = useMemo(() => {
-    const roleNames = members
-      .map((member) => member.role_name?.trim())
-      .filter(Boolean) as string[];
+    const memberRoleNames = Array.from(
+      new Set(
+        members
+          .map((member) => member.role_name?.trim())
+          .filter(Boolean) as string[]
+      )
+    );
 
-    return Array.from(new Set(roleNames));
-  }, [members]);
+    const orderedRoles = serviceTeamRoles
+      .map((role) => role.role_name)
+      .filter((role) => memberRoleNames.includes(role));
+
+    const missingRoles = memberRoleNames
+      .filter((role) => !orderedRoles.includes(role))
+      .sort((a, b) => a.localeCompare(b));
+
+    return [...orderedRoles, ...missingRoles];
+  }, [members, serviceTeamRoles]);
 
   const groupedMembers = useMemo(() => {
     const groups = members.reduce<Record<string, ServiceTeamMember[]>>((acc, member) => {
@@ -79,12 +104,21 @@ const ServicePlannerTeamDetail = () => {
       return acc;
     }, {});
 
+    const roleOrder = new Map(
+      serviceTeamRoles.map((role) => [role.role_name, role.sort_order])
+    );
+
     return Object.entries(groups).sort(([a], [b]) => {
       if (a === "No Role Assigned") return 1;
       if (b === "No Role Assigned") return -1;
+
+      const aOrder = roleOrder.get(a) ?? 9999;
+      const bOrder = roleOrder.get(b) ?? 9999;
+
+      if (aOrder !== bOrder) return aOrder - bOrder;
       return a.localeCompare(b);
     });
-  }, [members]);
+  }, [members, serviceTeamRoles]);
 
   const filteredGroupedMembers = useMemo(() => {
     if (!selectedRoleFilter) return groupedMembers;
@@ -127,10 +161,74 @@ const ServicePlannerTeamDetail = () => {
       return;
     }
 
+    const nextMembers = memberData || [];
     setTeam(teamData);
-    setMembers(memberData || []);
+    setMembers(nextMembers);
     setEditTeamName(teamData.name);
     setEditTeamDescription(teamData.description || "");
+
+    const roleNames = Array.from(
+      new Set(
+        nextMembers
+          .map((member: ServiceTeamMember) => member.role_name?.trim())
+          .filter(Boolean) as string[]
+      )
+    );
+
+    const rolesClient = supabase as any;
+
+    const { data: existingRoles, error: rolesError } = await rolesClient
+      .from("service_team_roles")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("team_id", teamId)
+      .order("sort_order", { ascending: true });
+
+    if (rolesError) {
+      toast.error(rolesError.message);
+      setLoading(false);
+      return;
+    }
+
+    const existing = (existingRoles || []) as ServiceTeamRole[];
+
+    const missingRoles = roleNames.filter(
+      (roleName) => !existing.some((role) => role.role_name === roleName)
+    );
+
+    if (missingRoles.length > 0) {
+      const { error: insertRolesError } = await rolesClient
+        .from("service_team_roles")
+        .insert(
+          missingRoles.map((roleName, index) => ({
+            user_id: user.id,
+            team_id: teamId,
+            role_name: roleName,
+            sort_order: existing.length + index,
+          }))
+        );
+
+      if (insertRolesError) {
+        toast.error(insertRolesError.message);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const { data: refreshedRoles, error: refreshedRolesError } = await rolesClient
+      .from("service_team_roles")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("team_id", teamId)
+      .order("sort_order", { ascending: true });
+
+    if (refreshedRolesError) {
+      toast.error(refreshedRolesError.message);
+      setLoading(false);
+      return;
+    }
+
+    setServiceTeamRoles(refreshedRoles || []);
     setLoading(false);
   };
 
@@ -235,6 +333,48 @@ const ServicePlannerTeamDetail = () => {
 
     toast.success("Team member removed");
     fetchTeam();
+  };
+
+  const moveRole = async (roleName: string, direction: "up" | "down") => {
+    const orderedRoles = roles.filter((role) => role !== "No Role Assigned");
+    const currentIndex = orderedRoles.indexOf(roleName);
+    const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= orderedRoles.length) {
+      return;
+    }
+
+    const nextRoles = [...orderedRoles];
+    const [movedRole] = nextRoles.splice(currentIndex, 1);
+    nextRoles.splice(nextIndex, 0, movedRole);
+
+    const rolesClient = supabase as any;
+
+    const updates = nextRoles.map((role, index) =>
+      rolesClient
+        .from("service_team_roles")
+        .update({ sort_order: index })
+        .eq("user_id", user?.id)
+        .eq("team_id", teamId)
+        .eq("role_name", role)
+    );
+
+    const results = await Promise.all(updates);
+    const error = results.find((result) => result.error)?.error;
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setServiceTeamRoles((previous) =>
+      previous
+        .map((role) => ({
+          ...role,
+          sort_order: nextRoles.indexOf(role.role_name),
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order)
+    );
   };
 
   const toggleWhatsapp = async (member: ServiceTeamMember) => {
@@ -393,7 +533,7 @@ const ServicePlannerTeamDetail = () => {
 
             {filteredGroupedMembers.length > 0 && (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredGroupedMembers.map(([role, roleMembers]) => (
+                {filteredGroupedMembers.map(([role, roleMembers], roleIndex) => (
                   <div
                     key={role}
                     className="flex min-h-[220px] flex-col rounded-2xl border border-border/70 bg-background/70 overflow-hidden"
@@ -406,9 +546,31 @@ const ServicePlannerTeamDetail = () => {
                         </h3>
                       </div>
 
-                      <span className="shrink-0 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-muted-foreground">
-                        {roleMembers.length} {roleMembers.length === 1 ? "person" : "people"}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-brand-teal/10 hover:text-brand-teal disabled:opacity-35"
+                          onClick={() => moveRole(role, "up")}
+                          disabled={roleIndex === 0}
+                          aria-label={`Move ${role} up`}
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-brand-teal/10 hover:text-brand-teal disabled:opacity-35"
+                          onClick={() => moveRole(role, "down")}
+                          disabled={roleIndex === filteredGroupedMembers.length - 1}
+                          aria-label={`Move ${role} down`}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+
+                        <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                          {roleMembers.length} {roleMembers.length === 1 ? "person" : "people"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex-1 divide-y divide-border">

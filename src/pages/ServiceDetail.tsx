@@ -113,6 +113,16 @@ type ServiceTeamRoleRequirement = {
   updated_at: string;
 };
 
+type ServiceTeamRole = {
+  id: string;
+  user_id: string;
+  team_id: string;
+  role_name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -133,6 +143,7 @@ const ServiceDetail = () => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
   const [roleRequirements, setRoleRequirements] = useState<ServiceTeamRoleRequirement[]>([]);
+  const [serviceTeamRoles, setServiceTeamRoles] = useState<ServiceTeamRole[]>([]);
   const [selectedAssignmentTeamId, setSelectedAssignmentTeamId] = useState("");
   const [assignedTeams, setAssignedTeams] = useState<ServiceTeam[]>([]);
   const [teamMembers, setTeamMembers] = useState<ServiceTeamMember[]>([]);
@@ -194,10 +205,22 @@ const ServiceDetail = () => {
   const selectedTeamRoleRequirements = useMemo(() => {
     if (!selectedAssignmentTeamId) return [];
 
+    const roleOrder = new Map(
+      serviceTeamRoles
+        .filter((role) => role.team_id === selectedAssignmentTeamId)
+        .map((role) => [role.role_name, role.sort_order])
+    );
+
     return roleRequirements
       .filter((requirement) => requirement.team_id === selectedAssignmentTeamId)
-      .sort((a, b) => a.role_name.localeCompare(b.role_name));
-  }, [roleRequirements, selectedAssignmentTeamId]);
+      .sort((a, b) => {
+        const aOrder = roleOrder.get(a.role_name) ?? 9999;
+        const bOrder = roleOrder.get(b.role_name) ?? 9999;
+
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return a.role_name.localeCompare(b.role_name);
+      });
+  }, [roleRequirements, selectedAssignmentTeamId, serviceTeamRoles]);
 
   const getAssignedCountForRole = (teamId: string, role: string) => {
     return teamAssignments.filter(
@@ -322,6 +345,70 @@ const ServiceDetail = () => {
       );
 
       const requirementsClient = supabase as any;
+      const rolesClient = supabase as any;
+
+      const { data: existingTeamRoles, error: teamRolesError } = await rolesClient
+        .from("service_team_roles")
+        .select("*")
+        .eq("user_id", user.id)
+        .in("team_id", linkedTeamIds);
+
+      if (teamRolesError) {
+        toast.error(teamRolesError.message);
+      }
+
+      const existingOrderedRoles = (existingTeamRoles || []) as ServiceTeamRole[];
+
+      const missingTeamRoles = rolesToRequire.filter((role) => {
+        return !existingOrderedRoles.some(
+          (existingRole) =>
+            existingRole.team_id === role.team_id &&
+            existingRole.role_name === role.role_name
+        );
+      });
+
+      if (missingTeamRoles.length > 0) {
+        const { error: insertTeamRolesError } = await rolesClient
+          .from("service_team_roles")
+          .insert(
+            missingTeamRoles.map((role) => {
+              const existingForTeam = existingOrderedRoles.filter(
+                (existingRole) => existingRole.team_id === role.team_id
+              );
+
+              const missingBeforeThis = missingTeamRoles.filter(
+                (missingRole) =>
+                  missingRole.team_id === role.team_id &&
+                  missingTeamRoles.indexOf(missingRole) < missingTeamRoles.indexOf(role)
+              );
+
+              return {
+                user_id: user.id,
+                team_id: role.team_id,
+                role_name: role.role_name,
+                sort_order: existingForTeam.length + missingBeforeThis.length,
+              };
+            })
+          );
+
+        if (insertTeamRolesError) {
+          toast.error(insertTeamRolesError.message);
+        }
+      }
+
+      const { data: refreshedTeamRoles, error: refreshedTeamRolesError } =
+        await rolesClient
+          .from("service_team_roles")
+          .select("*")
+          .eq("user_id", user.id)
+          .in("team_id", linkedTeamIds)
+          .order("sort_order", { ascending: true });
+
+      if (refreshedTeamRolesError) {
+        toast.error(refreshedTeamRolesError.message);
+      }
+
+      setServiceTeamRoles(refreshedTeamRoles || []);
 
       const { data: existingRequirements, error: requirementsError } =
         await requirementsClient
@@ -381,6 +468,7 @@ const ServiceDetail = () => {
       setAssignedTeams([]);
       setTeamMembers([]);
       setRoleRequirements([]);
+      setServiceTeamRoles([]);
     }
 
     const { data: templateData, error: templateError } = await supabase
