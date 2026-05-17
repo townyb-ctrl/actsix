@@ -22,10 +22,21 @@ type Person = {
   updated_at: string;
 };
 
+type PersonTeamMembership = {
+  id: string;
+  person_id: string | null;
+  team_id: string;
+  role_name: string | null;
+  service_teams?: {
+    name: string;
+  } | null;
+};
+
 const People = () => {
   const { user } = useAuth();
 
   const [people, setPeople] = useState<Person[]>([]);
+  const [memberships, setMemberships] = useState<PersonTeamMembership[]>([]);
   const [loading, setLoading] = useState(true);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,24 +65,69 @@ const People = () => {
     });
   }, [people, searchTerm]);
 
+  const getMembershipSummaryForPerson = (personId: string) => {
+    const personMemberships = memberships.filter(
+      (membership) => membership.person_id === personId
+    );
+
+    const grouped = personMemberships.reduce<Record<string, string[]>>((acc, membership) => {
+      const teamName = membership.service_teams?.name || "Service Team";
+      const roleName = membership.role_name?.trim();
+
+      if (!acc[teamName]) {
+        acc[teamName] = [];
+      }
+
+      if (roleName && !acc[teamName].includes(roleName)) {
+        acc[teamName].push(roleName);
+      }
+
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([teamName, roles]) => ({
+      teamName,
+      roles,
+    }));
+  };
+
   const fetchPeople = async () => {
     if (!user) return;
 
     setLoading(true);
 
-    const { data, error } = await (supabase as any)
-      .from("people")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("display_name", { ascending: true });
+    const [
+      { data: peopleData, error: peopleError },
+      { data: membershipData, error: membershipError },
+    ] = await Promise.all([
+      (supabase as any)
+        .from("people")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("display_name", { ascending: true }),
 
-    if (error) {
-      toast.error(error.message);
+      (supabase as any)
+        .from("service_team_members")
+        .select("id, person_id, team_id, role_name, service_teams(name)")
+        .eq("user_id", user.id)
+        .not("person_id", "is", null)
+        .order("role_name", { ascending: true }),
+    ]);
+
+    if (peopleError) {
+      toast.error(peopleError.message);
       setLoading(false);
       return;
     }
 
-    setPeople(data || []);
+    if (membershipError) {
+      toast.error(membershipError.message);
+      setLoading(false);
+      return;
+    }
+
+    setPeople(peopleData || []);
+    setMemberships(membershipData || []);
     setLoading(false);
   };
 
@@ -183,8 +239,9 @@ const People = () => {
 
       {!loading && filteredPeople.length > 0 && (
         <Card className="overflow-hidden border-border/70 bg-card shadow-card">
-          <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_minmax(220px,1fr)_auto] gap-4 border-b border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(220px,1fr)_minmax(160px,0.7fr)_minmax(220px,0.9fr)_auto] gap-4 border-b border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
             <div>Person</div>
+            <div>Teams / Roles</div>
             <div>Phone</div>
             <div>Email</div>
             <div>Status</div>
@@ -195,7 +252,7 @@ const People = () => {
               <Link
                 key={person.id}
                 to={`/people/${person.id}`}
-                className="grid grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_minmax(220px,1fr)_auto] items-center gap-4 px-4 py-3 transition hover:bg-brand-teal/5"
+                className="grid grid-cols-[minmax(0,1.15fr)_minmax(220px,1fr)_minmax(160px,0.7fr)_minmax(220px,0.9fr)_auto] items-center gap-4 px-4 py-3 transition hover:bg-brand-teal/5"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
@@ -212,6 +269,33 @@ const People = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="min-w-0 text-sm text-muted-foreground">
+                  {getMembershipSummaryForPerson(person.id).length > 0 ? (
+                    <div className="space-y-1">
+                      {getMembershipSummaryForPerson(person.id).slice(0, 2).map((membership) => (
+                        <div key={membership.teamName} className="truncate">
+                          <span className="font-bold text-foreground">
+                            {membership.teamName}
+                          </span>
+                          {membership.roles.length > 0 && (
+                            <span className="text-muted-foreground">
+                              {" "}· {membership.roles.join(", ")}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+
+                      {getMembershipSummaryForPerson(person.id).length > 2 && (
+                        <div className="text-xs font-bold text-brand-teal">
+                          +{getMembershipSummaryForPerson(person.id).length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground/55">No team links yet</span>
+                  )}
                 </div>
 
                 <div className="min-w-0 text-sm text-muted-foreground">
