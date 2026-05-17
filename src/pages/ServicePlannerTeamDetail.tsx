@@ -726,6 +726,91 @@ const ServicePlannerTeamDetail = () => {
     }
   };
 
+  const splitDisplayName = (displayName: string) => {
+    const parts = displayName.trim().split(/\s+/).filter(Boolean);
+
+    if (parts.length === 0) {
+      return {
+        first_name: "Unknown",
+        last_name: null,
+      };
+    }
+
+    if (parts.length === 1) {
+      return {
+        first_name: parts[0],
+        last_name: null,
+      };
+    }
+
+    return {
+      first_name: parts[0],
+      last_name: parts.slice(1).join(" "),
+    };
+  };
+
+  const createProfileFromTeamMember = async (member: ServiceTeamMember) => {
+    if (!user) return;
+
+    if (member.person_id) {
+      toast.error("This team member is already linked to a People profile.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Create a People profile for "${member.person_name}" and link it to this team member?`
+    );
+
+    if (!confirmed) return;
+
+    const { first_name, last_name } = splitDisplayName(member.person_name);
+
+    const { data: newPerson, error: createPersonError } = await (supabase as any)
+      .from("people")
+      .insert({
+        user_id: user.id,
+        first_name,
+        last_name,
+        display_name: member.person_name,
+        phone_number: member.phone_number || null,
+        whatsapp_enabled: member.whatsapp_enabled,
+        notes: member.notes || null,
+      })
+      .select("*")
+      .single();
+
+    if (createPersonError) {
+      toast.error(createPersonError.message);
+      return;
+    }
+
+    const { error: linkMemberError } = await (supabase as any)
+      .from("service_team_members")
+      .update({ person_id: newPerson.id })
+      .eq("id", member.id)
+      .eq("user_id", member.user_id);
+
+    if (linkMemberError) {
+      toast.error(linkMemberError.message);
+      return;
+    }
+
+    const { error: linkAssignmentsError } = await (supabase as any)
+      .from("service_team_assignments")
+      .update({ person_id: newPerson.id })
+      .eq("user_id", user.id)
+      .eq("team_member_id", member.id)
+      .is("person_id", null);
+
+    if (linkAssignmentsError) {
+      toast.error(linkAssignmentsError.message);
+      return;
+    }
+
+    toast.success("People profile created and linked");
+    fetchTeam();
+  };
+
   const toggleWhatsapp = async (member: ServiceTeamMember) => {
     const { error } = await supabase
       .from("service_team_members")
@@ -997,6 +1082,19 @@ const ServicePlannerTeamDetail = () => {
                           </div>
 
                           <div className="flex shrink-0 items-center gap-1">
+                            {!member.person_id && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 rounded-lg px-2 text-xs font-bold text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                                onClick={() => createProfileFromTeamMember(member)}
+                                title="Create People profile"
+                              >
+                                Create Profile
+                              </Button>
+                            )}
+
                             <Button
                               type="button"
                               variant="ghost"
