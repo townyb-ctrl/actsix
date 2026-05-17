@@ -182,50 +182,76 @@ const People = () => {
       )}
 
       {!loading && filteredPeople.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredPeople.map((person) => (
-            <Link key={person.id} to={`/people/${person.id}`}>
-              <Card className="h-full border-border/70 bg-card p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
-                    <Users className="h-5 w-5" />
+        <Card className="overflow-hidden border-border/70 bg-card shadow-card">
+          <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_minmax(220px,1fr)_auto] gap-4 border-b border-border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <div>Person</div>
+            <div>Phone</div>
+            <div>Email</div>
+            <div>Status</div>
+          </div>
+
+          <div className="divide-y divide-border">
+            {filteredPeople.map((person) => (
+              <Link
+                key={person.id}
+                to={`/people/${person.id}`}
+                className="grid grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_minmax(220px,1fr)_auto] items-center gap-4 px-4 py-3 transition hover:bg-brand-teal/5"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                    <Users className="h-4 w-4" />
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-lg font-extrabold tracking-tight">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-extrabold tracking-tight text-foreground">
                       {person.display_name}
-                    </h2>
-
-                    <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                      {person.phone_number && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3.5 w-3.5" />
-                          <span>{person.phone_number}</span>
-                        </div>
-                      )}
-
-                      {person.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5" />
-                          <span className="truncate">{person.email}</span>
-                        </div>
-                      )}
                     </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {person.whatsapp_enabled && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-brand-teal bg-brand-teal/10 px-2.5 py-1 text-xs font-bold text-brand-teal">
-                          <MessageCircle className="h-3 w-3" />
-                          WhatsApp ready
-                        </span>
-                      )}
-                    </div>
+                    {person.notes && (
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {person.notes}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
+
+                <div className="min-w-0 text-sm text-muted-foreground">
+                  {person.phone_number ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5" />
+                      {person.phone_number}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/55">—</span>
+                  )}
+                </div>
+
+                <div className="min-w-0 text-sm text-muted-foreground">
+                  {person.email ? (
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{person.email}</span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/55">—</span>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  {person.whatsapp_enabled ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-brand-teal bg-brand-teal/10 px-2.5 py-1 text-xs font-bold text-brand-teal">
+                      <MessageCircle className="h-3 w-3" />
+                      WhatsApp ready
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                      Profile
+                    </span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Card>
       )}
 
       {addPersonOpen && (
