@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Mail, MessageCircle, Phone, Save, Users, X } from "lucide-react";
+import { CalendarDays, Clock3, Mail, MapPin, MessageCircle, Phone, Save, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 type Person = {
   id: string;
@@ -32,12 +32,42 @@ type TeamMembership = {
   } | null;
 };
 
+type ServiceAssignment = {
+  id: string;
+  service_id: string;
+  team_id: string | null;
+  role_name: string;
+  notes: string | null;
+  created_at: string;
+};
+
+type ServiceInstance = {
+  id: string;
+  title: string | null;
+  service_date: string;
+  start_time: string | null;
+  location: string | null;
+};
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "No date";
+
+  return new Date(value + "T00:00:00").toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 const PersonDetail = () => {
   const { personId } = useParams();
   const { user } = useAuth();
 
   const [person, setPerson] = useState<Person | null>(null);
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
+  const [serviceAssignments, setServiceAssignments] = useState<ServiceAssignment[]>([]);
+  const [assignmentServices, setAssignmentServices] = useState<ServiceInstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
@@ -86,6 +116,42 @@ const PersonDetail = () => {
     }
 
     setMemberships(membershipData || []);
+
+    const { data: assignmentData, error: assignmentError } = await (supabase as any)
+      .from("service_team_assignments")
+      .select("id, service_id, team_id, role_name, notes, created_at")
+      .eq("user_id", user.id)
+      .eq("person_id", personId)
+      .order("created_at", { ascending: false });
+
+    if (assignmentError) {
+      toast.error(assignmentError.message);
+    }
+
+    const nextAssignments = assignmentData || [];
+    setServiceAssignments(nextAssignments);
+
+    const serviceIds = Array.from(
+      new Set(nextAssignments.map((assignment: ServiceAssignment) => assignment.service_id))
+    );
+
+    if (serviceIds.length > 0) {
+      const { data: serviceData, error: servicesError } = await (supabase as any)
+        .from("service_instances")
+        .select("id, title, service_date, start_time, location")
+        .eq("user_id", user.id)
+        .in("id", serviceIds)
+        .order("service_date", { ascending: false });
+
+      if (servicesError) {
+        toast.error(servicesError.message);
+      }
+
+      setAssignmentServices(serviceData || []);
+    } else {
+      setAssignmentServices([]);
+    }
+
     setLoading(false);
   };
 
@@ -247,6 +313,72 @@ const PersonDetail = () => {
                 </div>
               )}
             </Card>
+
+            <Card className="border-border/70 bg-background/70 p-5">
+              <p className="label-eyebrow">Service Assignments</p>
+              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                Serving history
+              </h2>
+
+              {serviceAssignments.length === 0 && (
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                  No service assignments linked to this person yet.
+                </div>
+              )}
+
+              {serviceAssignments.length > 0 && (
+                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                  {serviceAssignments.map((assignment) => {
+                    const linkedService = assignmentServices.find(
+                      (serviceItem) => serviceItem.id === assignment.service_id
+                    );
+
+                    return (
+                      <Link
+                        key={assignment.id}
+                        to={`/service-planner/services/${assignment.service_id}`}
+                        className="flex items-center gap-3 px-4 py-3 transition hover:bg-brand-teal/5"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                          <CalendarDays className="h-4 w-4" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-extrabold tracking-tight">
+                            {linkedService?.title || "Service"}
+                          </p>
+
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span>{assignment.role_name}</span>
+
+                            {linkedService?.service_date && (
+                              <span className="inline-flex items-center gap-1">
+                                <CalendarDays className="h-3 w-3" />
+                                {formatDate(linkedService.service_date)}
+                              </span>
+                            )}
+
+                            {linkedService?.start_time && (
+                              <span className="inline-flex items-center gap-1">
+                                <Clock3 className="h-3 w-3" />
+                                {linkedService.start_time.slice(0, 5)}
+                              </span>
+                            )}
+
+                            {linkedService?.location && (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {linkedService.location}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
           </div>
 
           <Card className="border-border/70 bg-background/70 p-5">
@@ -280,6 +412,20 @@ const PersonDetail = () => {
                 <p className="font-bold">
                   {person.whatsapp_enabled ? "Enabled" : "Not enabled"}
                 </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Teams
+                </p>
+                <p className="font-bold">{memberships.length}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Service Assignments
+                </p>
+                <p className="font-bold">{serviceAssignments.length}</p>
               </div>
             </div>
           </Card>

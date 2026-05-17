@@ -971,9 +971,18 @@ const ServicePlannerTeamDetail = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-extrabold tracking-tight">
-                              {member.person_name}
-                            </div>
+                            {member.person_id ? (
+                              <Link
+                                to={`/people/${member.person_id}`}
+                                className="truncate text-sm font-extrabold tracking-tight text-foreground transition hover:text-brand-teal"
+                              >
+                                {member.person_name}
+                              </Link>
+                            ) : (
+                              <div className="truncate text-sm font-extrabold tracking-tight">
+                                {member.person_name}
+                              </div>
+                            )}
 
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                               {member.phone_number && <span>{member.phone_number}</span>}

@@ -1124,9 +1124,18 @@ const ServiceDetail = () => {
                                 </div>
 
                                 <div className="flex-1 min-w-0">
-                                  <div className="truncate text-sm font-extrabold tracking-tight">
-                                    {assignment.person_name}
-                                  </div>
+                                  {assignment.person_id ? (
+                                    <Link
+                                      to={`/people/${assignment.person_id}`}
+                                      className="block truncate text-sm font-extrabold tracking-tight text-foreground transition hover:text-brand-teal"
+                                    >
+                                      {assignment.person_name}
+                                    </Link>
+                                  ) : (
+                                    <div className="truncate text-sm font-extrabold tracking-tight">
+                                      {assignment.person_name}
+                                    </div>
+                                  )}
                                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                     <span>{assignment.notes || requirement.role_name}</span>
                                     {assignment.person_id && (
