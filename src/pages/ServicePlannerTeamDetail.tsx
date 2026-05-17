@@ -47,6 +47,7 @@ type ServiceTeamMember = {
   id: string;
   user_id: string;
   team_id: string;
+  person_id: string | null;
   person_name: string;
   role_name: string | null;
   phone_number: string | null;
@@ -62,6 +63,20 @@ type ServiceTeamRole = {
   team_id: string;
   role_name: string;
   sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type Person = {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string | null;
+  display_name: string;
+  phone_number: string | null;
+  email: string | null;
+  whatsapp_enabled: boolean;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -118,6 +133,7 @@ const ServicePlannerTeamDetail = () => {
 
   const [team, setTeam] = useState<ServiceTeam | null>(null);
   const [members, setMembers] = useState<ServiceTeamMember[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [serviceTeamRoles, setServiceTeamRoles] = useState<ServiceTeamRole[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -127,6 +143,7 @@ const ServicePlannerTeamDetail = () => {
   const [editTeamDescription, setEditTeamDescription] = useState("");
   const [editTeamWhatsAppGroupUrl, setEditTeamWhatsAppGroupUrl] = useState("");
 
+  const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personName, setPersonName] = useState("");
   const [roleName, setRoleName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -269,7 +286,11 @@ const ServicePlannerTeamDetail = () => {
 
     setLoading(true);
 
-    const [{ data: teamData, error: teamError }, { data: memberData, error: memberError }] =
+    const [
+      { data: teamData, error: teamError },
+      { data: memberData, error: memberError },
+      { data: peopleData, error: peopleError },
+    ] =
       await Promise.all([
         supabase
           .from("service_teams")
@@ -285,6 +306,12 @@ const ServicePlannerTeamDetail = () => {
           .eq("team_id", teamId)
           .order("role_name", { ascending: true })
           .order("person_name", { ascending: true }),
+
+        (supabase as any)
+          .from("people")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("display_name", { ascending: true }),
       ]);
 
     if (teamError) {
@@ -299,9 +326,16 @@ const ServicePlannerTeamDetail = () => {
       return;
     }
 
+    if (peopleError) {
+      toast.error(peopleError.message);
+      setLoading(false);
+      return;
+    }
+
     const nextMembers = memberData || [];
     setTeam(teamData);
     setMembers(nextMembers);
+    setPeople(peopleData || []);
     setEditTeamName(teamData.name);
     setEditTeamDescription(teamData.description || "");
     setEditTeamWhatsAppGroupUrl(teamData.whatsapp_group_url || "");
@@ -376,6 +410,7 @@ const ServicePlannerTeamDetail = () => {
   }, [user, teamId]);
 
   const resetMemberForm = () => {
+    setSelectedPersonId("");
     setPersonName("");
     setRoleName("");
     setPhoneNumber("");
@@ -424,6 +459,7 @@ const ServicePlannerTeamDetail = () => {
   };
 
   const openAddPersonForRole = (role: string) => {
+    setSelectedPersonId("");
     setRoleName(role === "No Role Assigned" ? "" : role);
     setPersonName("");
     setPhoneNumber("");
@@ -507,6 +543,25 @@ const ServicePlannerTeamDetail = () => {
     navigate("/service-planner/teams");
   };
 
+  const handleSelectExistingPerson = (personId: string) => {
+    setSelectedPersonId(personId);
+
+    if (!personId) {
+      setPersonName("");
+      setPhoneNumber("");
+      setWhatsappEnabled(false);
+      return;
+    }
+
+    const selectedPerson = people.find((person) => person.id === personId);
+
+    if (!selectedPerson) return;
+
+    setPersonName(selectedPerson.display_name);
+    setPhoneNumber(selectedPerson.phone_number || "");
+    setWhatsappEnabled(Boolean(selectedPerson.whatsapp_enabled));
+  };
+
   const createMember = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -523,6 +578,7 @@ const ServicePlannerTeamDetail = () => {
     const { error } = await supabase.from("service_team_members").insert({
       user_id: user.id,
       team_id: teamId,
+      person_id: selectedPersonId || null,
       person_name: personName.trim(),
       role_name: roleName.trim() || null,
       phone_number: phoneNumber.trim() || null,
@@ -921,6 +977,9 @@ const ServicePlannerTeamDetail = () => {
 
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                               {member.phone_number && <span>{member.phone_number}</span>}
+                              {member.person_id && (
+                                <span className="font-bold text-brand-teal">Linked profile</span>
+                              )}
                               {member.whatsapp_enabled && (
                                 <span className="font-bold text-brand-teal">WhatsApp ready</span>
                               )}
@@ -1121,6 +1180,25 @@ const ServicePlannerTeamDetail = () => {
               </div>
 
               <form onSubmit={createMember} className="mt-6 space-y-4">
+                <div>
+                  <label className="label-eyebrow">Link Existing Person Profile</label>
+                  <select
+                    value={selectedPersonId}
+                    onChange={(event) => handleSelectExistingPerson(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="">Create manually / not linked yet</option>
+                    {people.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.display_name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Link this team member to one ACTSIX People profile so their teams and roles stay connected.
+                  </p>
+                </div>
+
                 <div>
                   <label className="label-eyebrow">Person Name</label>
                   <Input

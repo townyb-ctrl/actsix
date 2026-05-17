@@ -53,6 +53,7 @@ type TeamAssignment = {
   service_id: string;
   team_id: string | null;
   team_member_id: string | null;
+  person_id: string | null;
   role_name: string;
   person_name: string;
   notes: string | null;
@@ -71,6 +72,7 @@ type ServiceTeamMember = {
   id: string;
   user_id: string;
   team_id: string;
+  person_id: string | null;
   person_name: string;
   role_name: string | null;
   phone_number: string | null;
@@ -650,11 +652,14 @@ const ServiceDetail = () => {
       }
     }
 
+    const selectedMember = teamMembers.find((member) => member.id === selectedTeamMemberId);
+
     const { error } = await supabase.from("service_team_assignments").insert({
       user_id: user.id,
       service_id: serviceId,
       team_id: selectedTeamId,
       team_member_id: selectedTeamMemberId,
+      person_id: selectedMember?.person_id || null,
       role_name: roleName.trim(),
       person_name: personName.trim(),
       notes: teamNotes.trim() || null,
@@ -1122,8 +1127,11 @@ const ServiceDetail = () => {
                                   <div className="truncate text-sm font-extrabold tracking-tight">
                                     {assignment.person_name}
                                   </div>
-                                  <div className="mt-0.5 text-xs text-muted-foreground">
-                                    {assignment.notes || requirement.role_name}
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                    <span>{assignment.notes || requirement.role_name}</span>
+                                    {assignment.person_id && (
+                                      <span className="font-bold text-brand-teal">Linked profile</span>
+                                    )}
                                   </div>
                                 </div>
 
