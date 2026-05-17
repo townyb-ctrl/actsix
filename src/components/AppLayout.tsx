@@ -22,6 +22,10 @@ const getBackTarget = (pathname: string) => {
     return { label: "Back to Meetings", to: "/meetings" };
   }
 
+  if (pathname.startsWith("/people/")) {
+    return { label: "Back to People", to: "/people" };
+  }
+
   if (pathname.startsWith("/tasks/projects/")) {
     return { label: "Back to Projects", to: "/tasks/projects" };
   }

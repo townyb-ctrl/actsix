@@ -65,6 +65,10 @@ const servicePlannerItems: Item[] = [
   { title: "Repertoire", url: "/service-planner/repertoire", icon: Music },
 ];
 
+const peopleItems: Item[] = [
+  { title: "People Directory", url: "/people", icon: Users },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -75,17 +79,22 @@ export function AppSidebar() {
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
   const inMeetingsModule = pathname === "/meetings" || pathname.startsWith("/meetings/");
   const inServicePlannerModule = pathname === "/service-planner" || pathname.startsWith("/service-planner/");
-  const items = inServicePlannerModule
-    ? servicePlannerItems
-    : inMeetingsModule
+  const inPeopleModule = pathname === "/people" || pathname.startsWith("/people/");
+  const items = inPeopleModule
+    ? peopleItems
+    : inServicePlannerModule
+      ? servicePlannerItems
+      : inMeetingsModule
       ? meetingItems
       : inTasksModule
         ? taskItems
         : homebaseItems;
 
-  const moduleValue = inServicePlannerModule
-    ? "/service-planner"
-    : inMeetingsModule
+  const moduleValue = inPeopleModule
+    ? "/people"
+    : inServicePlannerModule
+      ? "/service-planner"
+      : inMeetingsModule
       ? "/meetings"
       : inTasksModule
         ? "/tasks"
@@ -99,6 +108,7 @@ export function AppSidebar() {
     if (p === "/tasks") return pathname === "/tasks";
     if (p === "/meetings") return pathname === "/meetings";
     if (p === "/service-planner") return pathname === "/service-planner";
+    if (p === "/people") return pathname === "/people";
     return pathname.startsWith(p);
   };
 
@@ -191,7 +201,7 @@ export function AppSidebar() {
                     <option value="/sermon-prep" disabled>Sermon Prep — Coming Soon</option>
                     <option value="/scripture" disabled>Scripture Tools — Coming Soon</option>
                     <option value="/media" disabled>Media Tools — Coming Soon</option>
-                    <option value="/people-care" disabled>People Care — Coming Soon</option>
+                    <option value="/people">ACTSIX: People</option>
                   </select>
                 </div>
               ) : (
