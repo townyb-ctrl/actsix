@@ -80,6 +80,20 @@ type ServiceTeamMember = {
   notes: string | null;
 };
 
+type Person = {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string | null;
+  display_name: string;
+  phone_number: string | null;
+  email: string | null;
+  whatsapp_enabled: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type ServiceTypeTeam = {
   id: string;
   user_id: string;
@@ -151,6 +165,7 @@ const ServiceDetail = () => {
   const [selectedAssignmentTeamId, setSelectedAssignmentTeamId] = useState("");
   const [assignedTeams, setAssignedTeams] = useState<ServiceTeam[]>([]);
   const [teamMembers, setTeamMembers] = useState<ServiceTeamMember[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [template, setTemplate] = useState<ServiceOrderTemplate | null>(null);
   const [templateItems, setTemplateItems] = useState<ServiceOrderTemplateItem[]>([]);
   const [applyingTemplate, setApplyingTemplate] = useState(false);
@@ -165,6 +180,7 @@ const ServiceDetail = () => {
   const [addTeamAssignmentOpen, setAddTeamAssignmentOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState("");
+  const [selectedAssignmentPersonId, setSelectedAssignmentPersonId] = useState("");
   const [roleName, setRoleName] = useState("");
   const [personName, setPersonName] = useState("");
   const [teamNotes, setTeamNotes] = useState("");
@@ -243,10 +259,12 @@ const ServiceDetail = () => {
     const member = teamMembers.find((item) => item.id === memberId);
 
     if (!member) {
+      setSelectedAssignmentPersonId("");
       setPersonName("");
       return;
     }
 
+    setSelectedAssignmentPersonId(member.person_id || "");
     setPersonName(member.person_name);
     setRoleName(member.role_name || "");
   };
@@ -314,7 +332,11 @@ const ServiceDetail = () => {
     const linkedTeamIds = (serviceTypeTeamLinks || []).map((link: ServiceTypeTeam) => link.team_id);
 
     if (linkedTeamIds.length > 0) {
-      const [{ data: assignedTeamData, error: assignedTeamError }, { data: linkedMemberData, error: linkedMemberError }] =
+      const [
+        { data: assignedTeamData, error: assignedTeamError },
+        { data: linkedMemberData, error: linkedMemberError },
+        { data: peopleData, error: peopleError },
+      ] =
         await Promise.all([
           supabase
             .from("service_teams")
@@ -329,16 +351,24 @@ const ServiceDetail = () => {
             .eq("user_id", user.id)
             .in("team_id", linkedTeamIds)
             .order("person_name", { ascending: true }),
+
+          (supabase as any)
+            .from("people")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("display_name", { ascending: true }),
         ]);
 
       if (assignedTeamError) toast.error(assignedTeamError.message);
       if (linkedMemberError) toast.error(linkedMemberError.message);
+      if (peopleError) toast.error(peopleError.message);
 
       const nextAssignedTeams = assignedTeamData || [];
       const nextTeamMembers = linkedMemberData || [];
 
       setAssignedTeams(nextAssignedTeams);
       setTeamMembers(nextTeamMembers);
+      setPeople(peopleData || []);
 
       const rolesToRequire = Array.from(
         new Map(
@@ -474,6 +504,7 @@ const ServiceDetail = () => {
     } else {
       setAssignedTeams([]);
       setTeamMembers([]);
+      setPeople([]);
       setRoleRequirements([]);
       setServiceTeamRoles([]);
     }
@@ -608,6 +639,7 @@ const ServiceDetail = () => {
   const openAssignRole = (requirement: ServiceTeamRoleRequirement) => {
     setSelectedTeamId(requirement.team_id);
     setSelectedTeamMemberId("");
+    setSelectedAssignmentPersonId("");
     setRoleName(requirement.role_name);
     setPersonName("");
     setTeamNotes("");
@@ -653,13 +685,27 @@ const ServiceDetail = () => {
     }
 
     const selectedMember = teamMembers.find((member) => member.id === selectedTeamMemberId);
+    const nextPersonId = selectedAssignmentPersonId || selectedMember?.person_id || null;
+
+    if (selectedMember && nextPersonId && selectedMember.person_id !== nextPersonId) {
+      const { error: linkMemberError } = await (supabase as any)
+        .from("service_team_members")
+        .update({ person_id: nextPersonId })
+        .eq("id", selectedMember.id)
+        .eq("user_id", selectedMember.user_id);
+
+      if (linkMemberError) {
+        toast.error(linkMemberError.message);
+        return;
+      }
+    }
 
     const { error } = await supabase.from("service_team_assignments").insert({
       user_id: user.id,
       service_id: serviceId,
       team_id: selectedTeamId,
       team_member_id: selectedTeamMemberId,
-      person_id: selectedMember?.person_id || null,
+      person_id: nextPersonId,
       role_name: roleName.trim(),
       person_name: personName.trim(),
       notes: teamNotes.trim() || null,
@@ -673,6 +719,7 @@ const ServiceDetail = () => {
 
     setSelectedTeamId("");
     setSelectedTeamMemberId("");
+    setSelectedAssignmentPersonId("");
     setRoleName("");
     setPersonName("");
     setTeamNotes("");
@@ -952,6 +999,7 @@ const ServiceDetail = () => {
                 onClick={() => {
                   setSelectedTeamId(selectedAssignmentTeamId);
                   setSelectedTeamMemberId("");
+                  setSelectedAssignmentPersonId("");
                   setRoleName("");
                   setPersonName("");
                   setTeamNotes("");
@@ -1374,6 +1422,27 @@ const ServiceDetail = () => {
                 </div>
               </div>
 
+              {selectedTeamMemberId && (
+                <div>
+                  <label className="label-eyebrow">Linked People Profile</label>
+                  <select
+                    value={selectedAssignmentPersonId}
+                    onChange={(event) => setSelectedAssignmentPersonId(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="">No linked profile</option>
+                    {people.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.display_name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Link this service assignment to a People profile. If selected, this team member will stay linked for future services.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="label-eyebrow">Notes</label>
                 <Input
@@ -1473,6 +1542,27 @@ const ServiceDetail = () => {
                   className="mt-2 border-border/70 bg-background"
                 />
               </div>
+
+              {selectedTeamMemberId && (
+                <div>
+                  <label className="label-eyebrow">Linked People Profile</label>
+                  <select
+                    value={selectedAssignmentPersonId}
+                    onChange={(event) => setSelectedAssignmentPersonId(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="">No linked profile</option>
+                    {people.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.display_name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Link this service assignment to a People profile. If selected, this team member will stay linked for future services.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="label-eyebrow">Notes</label>
