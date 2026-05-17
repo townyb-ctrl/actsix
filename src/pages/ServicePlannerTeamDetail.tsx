@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Bell,
   GripVertical,
+  MessageCircle,
   MoreVertical,
   Plus,
   Save,
@@ -37,6 +38,7 @@ type ServiceTeam = {
   user_id: string;
   name: string;
   description: string | null;
+  whatsapp_group_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -123,6 +125,7 @@ const ServicePlannerTeamDetail = () => {
   const [teamMenuOpen, setTeamMenuOpen] = useState(false);
   const [editTeamName, setEditTeamName] = useState("");
   const [editTeamDescription, setEditTeamDescription] = useState("");
+  const [editTeamWhatsAppGroupUrl, setEditTeamWhatsAppGroupUrl] = useState("");
 
   const [personName, setPersonName] = useState("");
   const [roleName, setRoleName] = useState("");
@@ -301,6 +304,7 @@ const ServicePlannerTeamDetail = () => {
     setMembers(nextMembers);
     setEditTeamName(teamData.name);
     setEditTeamDescription(teamData.description || "");
+    setEditTeamWhatsAppGroupUrl(teamData.whatsapp_group_url || "");
 
     const roleNames = Array.from(
       new Set(
@@ -384,6 +388,7 @@ const ServicePlannerTeamDetail = () => {
 
     setEditTeamName(team.name);
     setEditTeamDescription(team.description || "");
+    setEditTeamWhatsAppGroupUrl(team.whatsapp_group_url || "");
     setEditingTeam(false);
   };
 
@@ -402,6 +407,7 @@ const ServicePlannerTeamDetail = () => {
       .update({
         name: editTeamName.trim(),
         description: editTeamDescription.trim() || null,
+        whatsapp_group_url: editTeamWhatsAppGroupUrl.trim() || null,
       })
       .eq("id", team.id)
       .eq("user_id", user.id);
@@ -466,6 +472,15 @@ const ServicePlannerTeamDetail = () => {
     setNewRoleName("");
     setAddRoleOpen(false);
     fetchTeam();
+  };
+
+  const openTeamWhatsAppGroup = () => {
+    if (!team?.whatsapp_group_url) {
+      toast.error("No WhatsApp group link saved for this team.");
+      return;
+    }
+
+    window.open(team.whatsapp_group_url, "_blank", "noopener,noreferrer");
   };
 
   const deleteTeam = async () => {
@@ -724,6 +739,18 @@ const ServicePlannerTeamDetail = () => {
                   </Button>
                 )}
 
+                {team.whatsapp_group_url && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={openTeamWhatsAppGroup}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Open Group
+                  </Button>
+                )}
+
                 <Button
                   type="button"
                   className="actsix-btn-primary h-11 w-11 rounded-full p-0"
@@ -978,6 +1005,19 @@ const ServicePlannerTeamDetail = () => {
                     placeholder="People who serve in worship services"
                     className="mt-2 border-border/70 bg-background"
                   />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">WhatsApp Group Invite Link</label>
+                  <Input
+                    value={editTeamWhatsAppGroupUrl}
+                    onChange={(event) => setEditTeamWhatsAppGroupUrl(event.target.value)}
+                    placeholder="https://chat.whatsapp.com/..."
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Paste the invite link for this team’s existing WhatsApp group.
+                  </p>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">

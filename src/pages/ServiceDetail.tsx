@@ -64,6 +64,7 @@ type ServiceTeam = {
   user_id: string;
   name: string;
   description: string | null;
+  whatsapp_group_url: string | null;
 };
 
 type ServiceTeamMember = {
@@ -752,6 +753,15 @@ const ServiceDetail = () => {
     window.open(`https://wa.me/${number}?text=${encodedMessage}`, "_blank", "noopener,noreferrer");
   };
 
+  const openSelectedTeamWhatsAppGroup = () => {
+    if (!selectedAssignmentTeam?.whatsapp_group_url) {
+      toast.error("No WhatsApp group link saved for this team.");
+      return;
+    }
+
+    window.open(selectedAssignmentTeam.whatsapp_group_url, "_blank", "noopener,noreferrer");
+  };
+
   const applyTemplateToService = async () => {
     if (!user || !serviceId || !template || templateItems.length === 0) {
       toast.error("No template items found for this service type.");
@@ -1003,8 +1013,23 @@ const ServiceDetail = () => {
                       </h3>
                     </div>
 
-                    <div className="self-center text-[11px] font-bold text-muted-foreground">
-                      Needed / Assigned
+                    <div className="flex items-center gap-2 self-center">
+                      {selectedAssignmentTeam?.whatsapp_group_url && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 rounded-lg px-2.5 text-xs"
+                          onClick={openSelectedTeamWhatsAppGroup}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          Open Group
+                        </Button>
+                      )}
+
+                      <div className="text-[11px] font-bold text-muted-foreground">
+                        Needed / Assigned
+                      </div>
                     </div>
                   </div>
 
