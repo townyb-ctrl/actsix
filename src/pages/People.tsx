@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail, MessageCircle, Phone, Plus, Search, Upload, Users } from "lucide-react";
+import { Mail, Merge, MessageCircle, Phone, Plus, Search, Upload, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,172 @@ const People = () => {
       teamName,
       roles,
     }));
+  };
+
+  const duplicateEmailGroups = useMemo(() => {
+    const grouped = people.reduce<Record<string, Person[]>>((acc, person) => {
+      const emailKey = person.email?.trim().toLowerCase();
+
+      if (!emailKey) return acc;
+
+      if (!acc[emailKey]) {
+        acc[emailKey] = [];
+      }
+
+      acc[emailKey].push(person);
+      return acc;
+    }, {});
+
+    return Object.entries(grouped)
+      .filter(([, group]) => group.length > 1)
+      .map(([email, group]) => ({ email, people: group }));
+  }, [people]);
+
+  const getProfileScore = (person: Person) => {
+    let score = 0;
+
+    if (person.phone_number) score += 10;
+    if (person.whatsapp_enabled) score += 10;
+    if (person.email) score += 5;
+    if (person.last_name) score += 4;
+    if (person.notes && !person.notes.toLowerCase().includes("signed-in actsix user profile")) {
+      score += 3;
+    }
+    if (person.auth_user_id) score += 2;
+    if (person.display_name.split(/\s+/).length > 1) score += 2;
+
+    return score;
+  };
+
+  const mergeDuplicateEmailProfiles = async () => {
+    if (!user) return;
+
+    if (duplicateEmailGroups.length === 0) {
+      toast.success("No duplicate email profiles found.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Merge ${duplicateEmailGroups.length} duplicate email group(s)? ACTSIX will keep the most complete profile for each email and remove the duplicates.`
+    );
+
+    if (!confirmed) return;
+
+    let deletedCount = 0;
+
+    for (const group of duplicateEmailGroups) {
+      const sortedProfiles = [...group.people].sort((a, b) => {
+        const scoreDifference = getProfileScore(b) - getProfileScore(a);
+
+        if (scoreDifference !== 0) return scoreDifference;
+
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
+
+      const primary = sortedProfiles[0];
+      const duplicates = sortedProfiles.slice(1);
+      const allGroupIds = sortedProfiles.map((person) => person.id);
+      const duplicateIds = duplicates.map((person) => person.id);
+
+      if (duplicateIds.length === 0) continue;
+
+      const authUserId =
+        sortedProfiles.find((person) => person.auth_user_id)?.auth_user_id || null;
+
+      const phoneNumber =
+        primary.phone_number ||
+        sortedProfiles.find((person) => person.phone_number)?.phone_number ||
+        null;
+
+      const email =
+        primary.email ||
+        sortedProfiles.find((person) => person.email)?.email ||
+        group.email;
+
+      const firstUsefulNotes = sortedProfiles
+        .map((person) => person.notes)
+        .filter(Boolean)
+        .filter((note) => !note!.toLowerCase().includes("signed-in actsix user profile"));
+
+      const signedInNote = sortedProfiles.some((person) =>
+        person.notes?.toLowerCase().includes("signed-in actsix user profile")
+      )
+        ? "Signed-in ACTSIX user profile"
+        : "";
+
+      const notesToMerge = [...firstUsefulNotes, signedInNote]
+        .filter(Boolean)
+        .filter((note, index, notes) => notes.indexOf(note) === index);
+
+      // Clear auth_user_id from the whole duplicate email group first.
+      // This avoids the unique constraint while we move the auth link to the chosen primary.
+      const { error: clearAuthError } = await (supabase as any)
+        .from("people")
+        .update({ auth_user_id: null, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .in("id", allGroupIds);
+
+      if (clearAuthError) {
+        toast.error(clearAuthError.message);
+        return;
+      }
+
+      const { error: updatePrimaryError } = await (supabase as any)
+        .from("people")
+        .update({
+          auth_user_id: authUserId,
+          phone_number: phoneNumber,
+          email,
+          whatsapp_enabled: sortedProfiles.some((person) => person.whatsapp_enabled),
+          notes: notesToMerge.join("\n---\n") || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", primary.id)
+        .eq("user_id", user.id);
+
+      if (updatePrimaryError) {
+        toast.error(updatePrimaryError.message);
+        return;
+      }
+
+      const { error: teamMemberError } = await (supabase as any)
+        .from("service_team_members")
+        .update({ person_id: primary.id })
+        .eq("user_id", user.id)
+        .in("person_id", duplicateIds);
+
+      if (teamMemberError) {
+        toast.error(teamMemberError.message);
+        return;
+      }
+
+      const { error: assignmentError } = await (supabase as any)
+        .from("service_team_assignments")
+        .update({ person_id: primary.id })
+        .eq("user_id", user.id)
+        .in("person_id", duplicateIds);
+
+      if (assignmentError) {
+        toast.error(assignmentError.message);
+        return;
+      }
+
+      const { error: deleteError } = await (supabase as any)
+        .from("people")
+        .delete()
+        .eq("user_id", user.id)
+        .in("id", duplicateIds);
+
+      if (deleteError) {
+        toast.error(deleteError.message);
+        return;
+      }
+
+      deletedCount += duplicateIds.length;
+    }
+
+    toast.success(`Merged duplicate profiles. Removed ${deletedCount} duplicate record(s).`);
+    await fetchPeople();
   };
 
   const fetchPeople = async () => {
@@ -352,6 +518,18 @@ const People = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {duplicateEmailGroups.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl border-brand-teal/40 bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal"
+              onClick={mergeDuplicateEmailProfiles}
+            >
+              <Merge className="h-4 w-4" />
+              Merge Duplicates
+            </Button>
+          )}
+
           <Button
             type="button"
             variant="outline"

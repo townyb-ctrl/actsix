@@ -22,11 +22,13 @@ const titleCaseEmailName = (email?: string | null) => {
   const fallback = "User";
   const emailName = email?.split("@")[0] || fallback;
 
-  return emailName
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ") || fallback;
+  return (
+    emailName
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ") || fallback
+  );
 };
 
 const splitDisplayName = (displayName: string) => {
@@ -90,6 +92,55 @@ export function useCurrentPerson() {
           setLoading(false);
         }
         return;
+      }
+
+      const userEmail = user.email?.trim().toLowerCase();
+
+      if (userEmail) {
+        const { data: emailMatches, error: emailMatchError } = await (supabase as any)
+          .from("people")
+          .select("*")
+          .eq("user_id", user.id)
+          .ilike("email", userEmail);
+
+        if (emailMatchError) {
+          toast.error(emailMatchError.message);
+          if (!cancelled) setLoading(false);
+          return;
+        }
+
+        if (emailMatches && emailMatches.length === 1) {
+          const matchedPerson = emailMatches[0];
+
+          const { data: linkedPerson, error: linkError } = await (supabase as any)
+            .from("people")
+            .update({ auth_user_id: user.id, updated_at: new Date().toISOString() })
+            .eq("id", matchedPerson.id)
+            .eq("user_id", user.id)
+            .select("*")
+            .single();
+
+          if (linkError) {
+            toast.error(linkError.message);
+            if (!cancelled) setLoading(false);
+            return;
+          }
+
+          if (!cancelled) {
+            setPerson(linkedPerson);
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (emailMatches && emailMatches.length > 1) {
+          toast.error("Multiple People profiles use your email. Merge duplicates to connect your signed-in profile cleanly.");
+          if (!cancelled) {
+            setPerson(null);
+            setLoading(false);
+          }
+          return;
+        }
       }
 
       const { firstName, lastName } = splitDisplayName(fallbackName);
