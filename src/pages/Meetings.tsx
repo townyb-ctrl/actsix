@@ -7,6 +7,7 @@ import {
   MapPin,
   Plus,
   Search,
+  Video,
   UsersRound,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,7 @@ const Meetings = () => {
   const [meetingDate, setMeetingDate] = useState("");
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
+  const [googleMeetUrl, setGoogleMeetUrl] = useState("");
   const [attendees, setAttendees] = useState("");
 
   const load = async () => {
@@ -74,7 +76,8 @@ const Meetings = () => {
       meeting_date: meetingDate || null,
       meeting_time: meetingTime || null,
       location: location.trim(),
-      type: "General",
+      google_meet_url: googleMeetUrl.trim() || null,
+      type: meetingType.trim() || "General",
       status: "Planned",
       attendees: attendees.split(",").map((name) => name.trim()).filter(Boolean),
       agenda: "",
@@ -90,6 +93,7 @@ const Meetings = () => {
     setMeetingDate("");
     setMeetingTime("");
     setLocation("");
+    setGoogleMeetUrl("");
     setAttendees("");
     toast.success("Meeting created");
     load();
@@ -222,6 +226,13 @@ const Meetings = () => {
                           {meeting.location}
                         </span>
                       )}
+
+                      {meeting.google_meet_url && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-2 py-0.5 font-bold text-brand-teal">
+                          <Video className="h-3.5 w-3.5" />
+                          Online
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -305,6 +316,16 @@ const Meetings = () => {
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                     placeholder="Location"
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Google Meet Link</label>
+                  <Input
+                    value={googleMeetUrl}
+                    onChange={(event) => setGoogleMeetUrl(event.target.value)}
+                    placeholder="https://meet.google.com/..."
                     className="mt-2 border-border/70 bg-background"
                   />
                 </div>
