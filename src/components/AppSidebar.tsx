@@ -378,7 +378,7 @@ export function AppSidebar() {
             </div>
 
             {user?.email && (
-              <p className="mt-2 truncate text-xs text-sidebar-foreground/45">
+              <p className="mt-1 truncate text-xs text-sidebar-foreground/45">
                 {user.email}
               </p>
             )}

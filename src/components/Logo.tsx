@@ -11,7 +11,7 @@ export const Logo = ({ compact = false }: { compact?: boolean }) => (
       <img
         src={logoIconWhite}
         alt="ACTSIX"
-        className="h-20 w-24 object-contain shrink-0"
+        className="h-7 w-7 object-contain shrink-0"
       />
     ) : (
       <img
