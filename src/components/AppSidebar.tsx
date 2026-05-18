@@ -72,6 +72,7 @@ const servicePlannerItems: Item[] = [
 
 const peopleItems: Item[] = [
   { title: "People Directory", url: "/people", icon: Users },
+  { title: "Groups", url: "/people/groups", icon: FolderKanban },
 ];
 
 const workspaceItems = [
