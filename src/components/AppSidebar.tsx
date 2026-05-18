@@ -34,7 +34,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -91,7 +90,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
@@ -373,35 +372,23 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border bg-transparent">
-        {!collapsed ? (
-          <div className="px-3 py-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-teal-bright opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-teal-bright" />
-              </span>
-              <span className="text-xs font-semibold text-sidebar-foreground">
-                Online ready
-              </span>
-            </div>
-
-            <div className="text-[11px] text-sidebar-foreground/50 truncate">
-              {user?.email}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full bg-transparent border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              onClick={signOut}
-            >
-              Sign out
-            </Button>
+      <SidebarFooter className="border-t border-sidebar-border bg-transparent p-3">
+        {collapsed ? (
+          <div className="flex h-10 items-center justify-center">
+            <span className="h-3 w-3 rounded-full bg-brand-teal-bright" title="Online" />
           </div>
         ) : (
-          <div className="px-2 py-2 flex justify-center">
-            <span className="h-2 w-2 rounded-full bg-brand-teal-bright" />
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 text-sm font-bold text-sidebar-foreground">
+              <span className="h-2.5 w-2.5 rounded-full bg-brand-teal-bright" />
+              <span>Online</span>
+            </div>
+
+            {user?.email && (
+              <p className="mt-2 truncate text-xs text-sidebar-foreground/45">
+                {user.email}
+              </p>
+            )}
           </div>
         )}
       </SidebarFooter>
