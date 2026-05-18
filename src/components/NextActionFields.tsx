@@ -41,7 +41,9 @@ const NextActionFields = ({
 
   useEffect(() => {
     const loadProjectCollaborators = async () => {
-      if (!user || !selectedProjectName) {
+      const cleanProjectName = String(selectedProjectName || "").trim();
+
+      if (!user || !cleanProjectName) {
         setCurrentProject(null);
         setProjectCollaborators([]);
         return;
@@ -49,12 +51,15 @@ const NextActionFields = ({
 
       setLoadingCollaborators(true);
 
-      const { data: projectData, error: projectError } = await (supabase as any)
+      const { data: projectRows, error: projectError } = await (supabase as any)
         .from("projects")
         .select("id, name, user_id")
         .eq("user_id", user.id)
-        .eq("name", selectedProjectName)
-        .maybeSingle();
+        .ilike("name", cleanProjectName)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      const projectData = projectRows?.[0] || null;
 
       if (projectError || !projectData) {
         setCurrentProject(null);
@@ -82,7 +87,7 @@ const NextActionFields = ({
     };
 
     loadProjectCollaborators();
-  }, [user, selectedProjectName]);
+  }, [user?.id, selectedProjectName]);
 
   const assignablePeople = useMemo(() => {
     return projectCollaborators
@@ -126,7 +131,9 @@ const NextActionFields = ({
                   ...item,
                   project,
                   assigned_person_id:
-                    project === item.project ? item.assigned_person_id ?? null : null,
+                    String(project || "").trim() === String(item.project || "").trim()
+                      ? item.assigned_person_id ?? null
+                      : null,
                 })
               }
               onCreated={onRefreshOptions}
@@ -188,7 +195,9 @@ const NextActionFields = ({
           )}
 
           {!loadingCollaborators &&
-            Boolean(selectedProjectName) &&
+            Boolean(String(selectedProjectName || "").trim()) &&
+            currentProject &&
+            canAssignProjectTasks &&
             assignablePeople.length === 0 && (
               <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground md:col-span-2">
                 Add collaborators to this project before assigning tasks.

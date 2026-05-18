@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { syncProjectStats } from "@/lib/syncProjectStats";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
+import NextActionFields from "@/components/NextActionFields";
 
 type InboxItem = {
   id: string;
@@ -35,6 +36,7 @@ type InboxItem = {
   energy?: string | null;
   notes?: string | null;
   project?: string | null;
+  assigned_person_id?: string | null;
   tags?: string[] | null;
   due?: string | null;
   waiting_person?: string | null;
@@ -189,6 +191,7 @@ const Inbox = () => {
         waiting_follow_up: editingItem.waiting_follow_up || null,
         someday_category: editingItem.someday_category || "General",
         tags: Array.isArray(editingItem.tags) ? editingItem.tags : [],
+        assigned_person_id: editingItem.assigned_person_id || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", editingItem.id);
@@ -251,6 +254,7 @@ const Inbox = () => {
           notes: editingItem.notes || "",
           project: editingItem.project || "",
           tags: editingItem.tags || [],
+          assigned_person_id: editingItem.assigned_person_id || null,
           due: editingItem.due || null,
           complete: false,
         });
@@ -492,128 +496,11 @@ const Inbox = () => {
               </section>
 
               {processTarget === "task" && (
-                <>
-                  <section>
-                    <div className="flex items-center gap-2 mb-3">
-                      <CheckCircle2 className="h-4 w-4 text-brand-teal" />
-                      <h3 className="font-extrabold tracking-tight">Next Action details</h3>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-3">
-                      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                        <label className="label-eyebrow">Project</label>
-                                                <ProjectSelect
-                          value={editingItem.project ?? ""}
-                          onChange={(project) =>
-                            setEditingItem({ ...editingItem, project })
-                          }
-                          onCreated={load}
-                        />
-                      </div>
-
-                      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                        <label className="label-eyebrow">Context</label>
-                                                <ContextSelect
-                          value={editingItem.context ?? "General"}
-                          onChange={(context) =>
-                            setEditingItem({ ...editingItem, context })
-                          }
-                          onCreated={load}
-                        />
-                      </div>
-
-                      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                        <label className="label-eyebrow flex items-center gap-2">
-                          <Clock className="h-3.5 w-3.5" />
-                          Duration
-                        </label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={editingItem.minutes ?? 15}
-                          onChange={(event) =>
-                            setEditingItem({
-                              ...editingItem,
-                              minutes: Number(event.target.value) || 15,
-                            })
-                          }
-                          className="mt-2 border-border/70 bg-background"
-                        />
-                      </div>
-
-                      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                        <label className="label-eyebrow">Priority</label>
-                        <select
-                          value={editingItem.priority ?? "Medium"}
-                          onChange={(event) =>
-                            setEditingItem({ ...editingItem, priority: event.target.value })
-                          }
-                          className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                        >
-                          <option>Low</option>
-                          <option>Medium</option>
-                          <option>High</option>
-                          <option>Urgent</option>
-                        </select>
-                      </div>
-
-                      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                        <label className="label-eyebrow">Energy</label>
-                        <select
-                          value={editingItem.energy ?? "Medium"}
-                          onChange={(event) =>
-                            setEditingItem({ ...editingItem, energy: event.target.value })
-                          }
-                          className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                        >
-                          <option>Low</option>
-                          <option>Medium</option>
-                          <option>High</option>
-                        </select>
-                      </div>
-
-                      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                        <label className="label-eyebrow">Due date</label>
-                        <Input
-                          type="date"
-                          value={editingItem.due ?? ""}
-                          onChange={(event) =>
-                            setEditingItem({ ...editingItem, due: event.target.value || null })
-                          }
-                          className="mt-2 border-border/70 bg-background"
-                        />
-                      </div>
-                    </div>
-                  </section>
-
-                  <section>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Tags className="h-4 w-4 text-brand-teal" />
-                      <h3 className="font-extrabold tracking-tight">Organization</h3>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-                      <label className="label-eyebrow">Tags</label>
-                      <Input
-                        value={Array.isArray(editingItem.tags) ? editingItem.tags.join(", ") : ""}
-                        onChange={(event) =>
-                          setEditingItem({
-                            ...editingItem,
-                            tags: event.target.value
-                              .split(",")
-                              .map((tag) => tag.trim())
-                              .filter(Boolean),
-                          })
-                        }
-                        className="mt-2 border-border/70 bg-background"
-                        placeholder="Worship, Admin, Follow-up"
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Separate tags with commas.
-                      </p>
-                    </div>
-                  </section>
-                </>
+                <NextActionFields
+                  item={editingItem}
+                  onChange={setEditingItem}
+                  onRefreshOptions={load}
+                />
               )}
 
               {processTarget === "waiting" && (
