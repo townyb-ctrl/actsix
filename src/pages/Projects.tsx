@@ -15,6 +15,7 @@ import {
   Edit3,
   FolderKanban,
   ListChecks,
+  Plus,
   Search,
   SlidersHorizontal,
   Trash2,
@@ -423,20 +424,34 @@ const Projects = () => {
     setSavingProject(true);
 
     try {
-      const { error } = await supabase
-        .from("projects")
-        .update({
-          name: nextName,
-          area: editingProject.area || "General",
-          status: editingProject.status || "In Progress",
-          notes: editingProject.notes || "",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editingProject.id);
+      const isNewProject = !previousProject;
+
+      const projectPayload = {
+        id: editingProject.id,
+        user_id: user.id,
+        name: nextName,
+        area: editingProject.area || "General",
+        status: editingProject.status || "In Progress",
+        notes: editingProject.notes || "",
+        next_action: editingProject.next_action || "",
+        progress: editingProject.progress || 0,
+        open_tasks: editingProject.open_tasks || 0,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = isNewProject
+        ? await supabase.from("projects").insert({
+            ...projectPayload,
+            created_at: editingProject.created_at || new Date().toISOString(),
+          })
+        : await supabase
+            .from("projects")
+            .update(projectPayload)
+            .eq("id", editingProject.id);
 
       if (error) throw error;
 
-      if (previousName && previousName !== nextName) {
+      if (!isNewProject && previousName && previousName !== nextName) {
         const { error: taskError } = await supabase
           .from("tasks")
           .update({
@@ -451,7 +466,7 @@ const Projects = () => {
 
       await syncProjectStats(nextName, user.id);
 
-      toast.success("Project updated");
+      toast.success(previousProject ? "Project updated" : "Project created");
       setSelectedProjectId(editingProject.id);
       setEditingProject(null);
       await load();
@@ -462,6 +477,26 @@ const Projects = () => {
     } finally {
       setSavingProject(false);
     }
+  };
+
+  const openNewProjectModal = () => {
+    if (!user) return;
+
+    const now = new Date().toISOString();
+
+    setEditingProject({
+      id: crypto.randomUUID(),
+      user_id: user.id,
+      name: "",
+      area: "General",
+      status: "In Progress",
+      notes: "",
+      next_action: "",
+      progress: 0,
+      open_tasks: 0,
+      created_at: now,
+      updated_at: now,
+    });
   };
 
   const projectViews = [
@@ -536,24 +571,36 @@ const Projects = () => {
         </div>
 
         <div className="space-y-3 max-w-7xl">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Showing {filteredProjects.length} of {projects.length} projects
               {hasActiveFilters ? " with filters applied" : ""}
             </div>
 
-            {hasActiveFilters && (
+            <div className="flex items-center gap-2">
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 rounded-xl text-muted-foreground hover:text-foreground"
+                  onClick={clearFilters}
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" />
+                  Clear
+                </Button>
+              )}
+
               <Button
-                variant="ghost"
+                type="button"
                 size="sm"
-                className="h-9 rounded-xl text-muted-foreground hover:text-foreground"
-                onClick={clearFilters}
+                className="actsix-btn-primary rounded-xl"
+                onClick={openNewProjectModal}
               >
-                <X className="h-3.5 w-3.5 mr-1.5" />
-                Clear
+                <Plus className="h-4 w-4" />
+                Add Project
               </Button>
-            )}
+            </div>
           </div>
 
           <div className="relative">
