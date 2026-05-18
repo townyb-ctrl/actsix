@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 
 type Person = {
@@ -501,17 +502,11 @@ const PeopleGroups = () => {
                       <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70">
                         {groupMembers.map((member) => (
                           <div key={member.id} className="flex items-center gap-3 bg-background px-4 py-3">
-                            {member.people?.avatar_url ? (
-                              <img
-                                src={member.people.avatar_url}
-                                alt={member.people.display_name}
-                                className="h-9 w-9 shrink-0 rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
-                                <Users className="h-4 w-4" />
-                              </span>
-                            )}
+                            <PersonAvatar
+                              name={member.people?.display_name}
+                              avatarUrl={member.people?.avatar_url}
+                              size="md"
+                            />
 
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-extrabold tracking-tight">

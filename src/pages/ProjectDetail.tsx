@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
+import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -527,17 +528,11 @@ const ProjectDetail = () => {
                     key={collaborator.id}
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-2.5 py-1.5 text-sm"
                   >
-                    {collaborator.people?.avatar_url ? (
-                      <img
-                        src={collaborator.people.avatar_url}
-                        alt={collaborator.people.display_name}
-                        className="h-7 w-7 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
-                        <UserRound className="h-3.5 w-3.5" />
-                      </span>
-                    )}
+                    <PersonAvatar
+                      name={collaborator.people?.display_name}
+                      avatarUrl={collaborator.people?.avatar_url}
+                      size="xs"
+                    />
 
                     <span className="font-bold">
                       {collaborator.people?.display_name || "Person"}

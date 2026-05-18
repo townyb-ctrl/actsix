@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
 
 type Person = {
@@ -843,17 +844,12 @@ ${row.notes}`
                 className="grid grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] items-center gap-4 px-4 py-3 transition hover:bg-brand-teal/5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  {person.avatar_url ? (
-                    <img
-                      src={person.avatar_url}
-                      alt={person.display_name}
-                      className="h-9 w-9 shrink-0 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-                      <Users className="h-4 w-4" />
-                    </div>
-                  )}
+                  <PersonAvatar
+                    name={person.display_name}
+                    avatarUrl={person.avatar_url}
+                    size="md"
+                    shape="rounded"
+                  />
 
                   <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">

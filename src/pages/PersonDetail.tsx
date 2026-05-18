@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useParams } from "react-router-dom";
+import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
 
 type Person = {
@@ -398,17 +399,13 @@ const PersonDetail = () => {
       <Card className="border-border/70 bg-card shadow-card overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5">
           <div className="flex min-w-0 items-start gap-4">
-            {person.avatar_url ? (
-              <img
-                src={person.avatar_url}
-                alt={person.display_name}
-                className="h-20 w-20 shrink-0 rounded-3xl object-cover"
-              />
-            ) : (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-brand-teal/10 text-brand-teal">
-                <Users className="h-8 w-8" />
-              </div>
-            )}
+            <PersonAvatar
+              name={person.display_name}
+              avatarUrl={person.avatar_url}
+              size="xl"
+              shape="rounded"
+              className="rounded-3xl"
+            />
 
             <div className="min-w-0">
               <p className="label-eyebrow">ACTSIX: People</p>
