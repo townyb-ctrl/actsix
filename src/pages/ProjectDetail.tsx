@@ -166,6 +166,7 @@ const ProjectDetail = () => {
       person: "",
       location: "",
       tags: [],
+      assigned_person_id: null,
       due: newActionDue || null,
     });
 
@@ -237,6 +238,7 @@ const ProjectDetail = () => {
         minutes: Number(editingTask.minutes) || 15,
         due: editingTask.due || null,
         tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
+        assigned_person_id: editingTask.assigned_person_id || null,
         complete: Boolean(editingTask.complete),
         completed_at: editingTask.complete
           ? editingTask.completed_at || new Date().toISOString()

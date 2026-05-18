@@ -1,7 +1,11 @@
-import { CheckCircle2, Clock, Tags } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, Clock, Tags, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
+import { PeopleSearchSelect, type PeopleSearchPerson } from "@/components/people/PeopleSearchSelect";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type NextActionFieldsProps = {
   item: any;
@@ -14,6 +18,25 @@ const NextActionFields = ({
   onChange,
   onRefreshOptions,
 }: NextActionFieldsProps) => {
+  const { user } = useAuth();
+  const [people, setPeople] = useState<PeopleSearchPerson[]>([]);
+
+  useEffect(() => {
+    const loadPeople = async () => {
+      if (!user) return;
+
+      const { data } = await (supabase as any)
+        .from("people")
+        .select("id, display_name, avatar_url, email, phone_number")
+        .eq("user_id", user.id)
+        .order("display_name", { ascending: true });
+
+      setPeople(data || []);
+    };
+
+    loadPeople();
+  }, [user]);
+
   if (!item) return null;
 
   return (
@@ -41,6 +64,27 @@ const NextActionFields = ({
               onChange={(context) => onChange({ ...item, context })}
               onCreated={onRefreshOptions}
             />
+          </div>
+
+          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+            <label className="label-eyebrow flex items-center gap-2">
+              <UserRound className="h-3.5 w-3.5" />
+              Assigned To
+            </label>
+            <div className="mt-2">
+              <PeopleSearchSelect
+                people={people}
+                selectedPersonId={item.assigned_person_id ?? ""}
+                onSelect={(personId) =>
+                  onChange({
+                    ...item,
+                    assigned_person_id: personId || null,
+                  })
+                }
+                placeholder="Search People..."
+                emptyText="No matching People profiles found."
+              />
+            </div>
           </div>
 
           <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
