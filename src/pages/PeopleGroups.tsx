@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 
 type Person = {
   id: string;
@@ -58,7 +59,7 @@ const PeopleGroups = () => {
   const [newGroupDescription, setNewGroupDescription] = useState("");
 
   const [addMemberGroupId, setAddMemberGroupId] = useState<string | null>(null);
-  const [selectedPersonId, setSelectedPersonId] = useState("");
+  const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [memberRole, setMemberRole] = useState("");
 
   const load = async () => {
@@ -187,24 +188,31 @@ const PeopleGroups = () => {
   const addMember = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!user || !addMemberGroupId || !selectedPersonId) return;
+    if (!user || !addMemberGroupId || selectedPersonIds.length === 0) return;
 
     const { error } = await (supabase as any)
       .from("people_group_members")
-      .insert({
-        user_id: user.id,
-        group_id: addMemberGroupId,
-        person_id: selectedPersonId,
-        role: memberRole.trim() || null,
-      });
+      .insert(
+        selectedPersonIds.map((personId) => ({
+          user_id: user.id,
+          group_id: addMemberGroupId,
+          person_id: personId,
+          role: memberRole.trim() || null,
+        }))
+      );
 
     if (error) {
       toast.error(error.message);
       return;
     }
 
-    toast.success("Person added to group");
-    setSelectedPersonId("");
+    toast.success(
+      selectedPersonIds.length === 1
+        ? "Person added to group"
+        : `${selectedPersonIds.length} people added to group`
+    );
+
+    setSelectedPersonIds([]);
     setMemberRole("");
     setAddMemberGroupId(null);
     load();
@@ -462,7 +470,7 @@ const PeopleGroups = () => {
                         className="rounded-xl"
                         onClick={() => {
                           setAddMemberGroupId(group.id);
-                          setSelectedPersonId("");
+                          setSelectedPersonIds([]);
                           setMemberRole("");
                         }}
                       >
@@ -536,16 +544,16 @@ const PeopleGroups = () => {
 
       {addMemberGroupId && activeGroup && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-xl border-border/70 bg-card shadow-card p-6">
-            <form onSubmit={addMember} className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
+          <Card className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden border-border/70 bg-card shadow-card">
+            <form onSubmit={addMember} className="flex min-h-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-6">
                 <div>
                   <p className="label-eyebrow">People Group</p>
                   <h2 className="text-xl font-extrabold tracking-tight">
                     Add Person to {activeGroup.name}
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Choose a People profile and optional role for this group.
+                    Choose People profiles and an optional role for this group.
                   </p>
                 </div>
 
@@ -555,7 +563,7 @@ const PeopleGroups = () => {
                   className="rounded-xl"
                   onClick={() => {
                     setAddMemberGroupId(null);
-                    setSelectedPersonId("");
+                    setSelectedPersonIds([]);
                     setMemberRole("");
                   }}
                 >
@@ -563,46 +571,45 @@ const PeopleGroups = () => {
                 </Button>
               </div>
 
-              <div>
-                <label className="label-eyebrow">Person</label>
-                <select
-                  value={selectedPersonId}
-                  onChange={(event) => setSelectedPersonId(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                >
-                  <option value="">Select person...</option>
-                  {availablePeople.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.display_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="label-eyebrow">Role / Note</label>
-                <Input
-                  value={memberRole}
-                  onChange={(event) => setMemberRole(event.target.value)}
-                  placeholder="Leader, member, host..."
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              {availablePeople.length === 0 && (
-                <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-                  Everyone in People is already in this group.
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+                <div>
+                  <label className="label-eyebrow">People</label>
+                  <div className="mt-2">
+                    <PeopleMultiSearchSelect
+                      people={availablePeople}
+                      selectedPersonIds={selectedPersonIds}
+                      onChange={setSelectedPersonIds}
+                      placeholder="Search by name, email, or phone..."
+                      emptyText="No available people found."
+                    />
+                  </div>
                 </div>
-              )}
 
-              <div className="flex justify-end gap-2 pt-2">
+                <div>
+                  <label className="label-eyebrow">Role / Note</label>
+                  <Input
+                    value={memberRole}
+                    onChange={(event) => setMemberRole(event.target.value)}
+                    placeholder="Leader, member, host..."
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+
+                {availablePeople.length === 0 && (
+                  <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                    Everyone in People is already in this group.
+                  </div>
+                )}
+              </div>
+
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border/70 bg-card p-6">
                 <Button
                   type="button"
                   variant="outline"
                   className="rounded-xl"
                   onClick={() => {
                     setAddMemberGroupId(null);
-                    setSelectedPersonId("");
+                    setSelectedPersonIds([]);
                     setMemberRole("");
                   }}
                 >
@@ -612,10 +619,10 @@ const PeopleGroups = () => {
                 <Button
                   type="submit"
                   className="actsix-btn-primary rounded-xl"
-                  disabled={!selectedPersonId}
+                  disabled={selectedPersonIds.length === 0}
                 >
                   <UserPlus className="h-4 w-4" />
-                  Add Person
+                  {selectedPersonIds.length > 1 ? `Add ${selectedPersonIds.length} People` : "Add Person"}
                 </Button>
               </div>
             </form>
