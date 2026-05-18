@@ -210,6 +210,35 @@ const PersonDetail = () => {
     fetchPerson();
   };
 
+
+  const todayDateKey = new Date().toISOString().slice(0, 10);
+
+  const getServiceForAssignment = (serviceId: string) => {
+    return assignmentServices.find((serviceItem) => serviceItem.id === serviceId) || null;
+  };
+
+  const upcomingServiceAssignments = serviceAssignments
+    .filter((assignment) => {
+      const linkedService = getServiceForAssignment(assignment.service_id);
+      return linkedService?.service_date && linkedService.service_date >= todayDateKey;
+    })
+    .sort((a, b) => {
+      const aService = getServiceForAssignment(a.service_id);
+      const bService = getServiceForAssignment(b.service_id);
+      return (aService?.service_date || "").localeCompare(bService?.service_date || "");
+    });
+
+  const pastServiceAssignments = serviceAssignments
+    .filter((assignment) => {
+      const linkedService = getServiceForAssignment(assignment.service_id);
+      return !linkedService?.service_date || linkedService.service_date < todayDateKey;
+    })
+    .sort((a, b) => {
+      const aService = getServiceForAssignment(a.service_id);
+      const bService = getServiceForAssignment(b.service_id);
+      return (bService?.service_date || "").localeCompare(aService?.service_date || "");
+    });
+
   if (loading) {
     return (
       <div className="px-8 py-12">
@@ -315,23 +344,21 @@ const PersonDetail = () => {
             </Card>
 
             <Card className="border-border/70 bg-background/70 p-5">
-              <p className="label-eyebrow">Service Assignments</p>
+              <p className="label-eyebrow">Upcoming Services</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                Serving history
+                Scheduled to serve
               </h2>
 
-              {serviceAssignments.length === 0 && (
+              {upcomingServiceAssignments.length === 0 && (
                 <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
-                  No service assignments linked to this person yet.
+                  No upcoming service assignments linked to this person.
                 </div>
               )}
 
-              {serviceAssignments.length > 0 && (
+              {upcomingServiceAssignments.length > 0 && (
                 <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
-                  {serviceAssignments.map((assignment) => {
-                    const linkedService = assignmentServices.find(
-                      (serviceItem) => serviceItem.id === assignment.service_id
-                    );
+                  {upcomingServiceAssignments.map((assignment) => {
+                    const linkedService = getServiceForAssignment(assignment.service_id);
 
                     return (
                       <Link
@@ -379,6 +406,76 @@ const PersonDetail = () => {
                 </div>
               )}
             </Card>
+
+            <Card className="border-border/70 bg-background/70 p-5">
+              <p className="label-eyebrow">Past Serving History</p>
+              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                Previous assignments
+              </h2>
+
+              {pastServiceAssignments.length === 0 && (
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                  No past service assignments linked to this person yet.
+                </div>
+              )}
+
+              {pastServiceAssignments.length > 0 && (
+                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                  {pastServiceAssignments.slice(0, 8).map((assignment) => {
+                    const linkedService = getServiceForAssignment(assignment.service_id);
+
+                    return (
+                      <Link
+                        key={assignment.id}
+                        to={`/service-planner/services/${assignment.service_id}`}
+                        className="flex items-center gap-3 px-4 py-3 transition hover:bg-brand-teal/5"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          <CalendarDays className="h-4 w-4" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-extrabold tracking-tight">
+                            {linkedService?.title || "Service"}
+                          </p>
+
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span>{assignment.role_name}</span>
+
+                            {linkedService?.service_date && (
+                              <span className="inline-flex items-center gap-1">
+                                <CalendarDays className="h-3 w-3" />
+                                {formatDate(linkedService.service_date)}
+                              </span>
+                            )}
+
+                            {linkedService?.start_time && (
+                              <span className="inline-flex items-center gap-1">
+                                <Clock3 className="h-3 w-3" />
+                                {linkedService.start_time.slice(0, 5)}
+                              </span>
+                            )}
+
+                            {linkedService?.location && (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {linkedService.location}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+
+                  {pastServiceAssignments.length > 8 && (
+                    <div className="px-4 py-3 text-xs font-bold text-muted-foreground">
+                      Showing latest 8 past assignments.
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
           </div>
 
           <Card className="border-border/70 bg-background/70 p-5">
@@ -423,9 +520,16 @@ const PersonDetail = () => {
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  Service Assignments
+                  Upcoming Services
                 </p>
-                <p className="font-bold">{serviceAssignments.length}</p>
+                <p className="font-bold">{upcomingServiceAssignments.length}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Past Assignments
+                </p>
+                <p className="font-bold">{pastServiceAssignments.length}</p>
               </div>
             </div>
           </Card>
