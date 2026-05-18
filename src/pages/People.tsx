@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Merge, MessageCircle, Phone, Plus, Search, Upload, Users } from "lucide-react";
+import { Mail, Merge, Phone, Plus, Search, Send, Upload, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,31 +50,62 @@ const People = () => {
   const [csvError, setCsvError] = useState("");
   const [importingCsv, setImportingCsv] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [peopleFilter, setPeopleFilter] = useState("all");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [gender, setGender] = useState("");
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [notes, setNotes] = useState("");
+
+  const normalizePhoneForWhatsapp = (value?: string | null) => {
+    return value?.replace(/[^\d+]/g, "") || "";
+  };
+
+  const isMessageablePhone = (value?: string | null) => {
+    const normalized = normalizePhoneForWhatsapp(value);
+    return /^\+[1-9]\d{7,14}$/.test(normalized);
+  };
+
+  const getWhatsappHref = (value?: string | null) => {
+    const normalized = normalizePhoneForWhatsapp(value);
+
+    if (!isMessageablePhone(normalized)) return "";
+
+    return `https://wa.me/${normalized.replace("+", "")}`;
+  };
 
   const filteredPeople = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
-    if (!query) return people;
-
     return people.filter((person) => {
-      return [
-        person.display_name,
-        person.phone_number,
-        person.email,
-        person.notes,
-      ]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(query));
+      const matchesSearch =
+        !query ||
+        [
+          person.display_name,
+          person.phone_number,
+          person.email,
+          person.gender,
+          person.notes,
+        ]
+          .filter(Boolean)
+          .some((value) => value!.toLowerCase().includes(query));
+
+      if (!matchesSearch) return false;
+
+      if (peopleFilter === "messageable") return isMessageablePhone(person.phone_number);
+      if (peopleFilter === "missing_phone") return !person.phone_number;
+      if (peopleFilter === "invalid_phone") {
+        return Boolean(person.phone_number) && !isMessageablePhone(person.phone_number);
+      }
+      if (peopleFilter === "missing_email") return !person.email;
+      if (peopleFilter === "male") return person.gender?.toLowerCase() === "male";
+      if (peopleFilter === "female") return person.gender?.toLowerCase() === "female";
+
+      return true;
     });
-  }, [people, searchTerm]);
+  }, [people, searchTerm, peopleFilter]);
 
   const duplicateEmailGroups = useMemo(() => {
     const grouped = people.reduce<Record<string, Person[]>>((acc, person) => {
@@ -99,7 +130,6 @@ const People = () => {
     let score = 0;
 
     if (person.phone_number) score += 10;
-    if (person.whatsapp_enabled) score += 10;
     if (person.email) score += 5;
     if (person.last_name) score += 4;
     if (person.notes && !person.notes.toLowerCase().includes("signed-in actsix user profile")) {
@@ -404,11 +434,9 @@ const People = () => {
             row.primary_email_address ||
             ""
         ),
-        whatsapp_enabled: getBooleanValue(row.whatsapp_enabled || row.whatsapp || row.whatsapp_ready),
-        notes:
-          [existingNotes, gender ? `Gender: ${gender}` : ""]
-            .filter(Boolean)
-            .join(" | ") || null,
+        gender: gender || null,
+        whatsapp_enabled: false,
+        notes: existingNotes || null,
       });
     });
 
@@ -466,7 +494,8 @@ const People = () => {
         display_name: existing.display_name || row.display_name,
         phone_number: existing.phone_number || row.phone_number,
         email: normalizeEmail(existing.email || row.email),
-        whatsapp_enabled: Boolean(existing.whatsapp_enabled || row.whatsapp_enabled),
+        gender: existing.gender || row.gender,
+        whatsapp_enabled: Boolean(existing.whatsapp_enabled),
         notes:
           existing.notes && row.notes && !existing.notes.includes(row.notes)
             ? `${existing.notes}
@@ -498,7 +527,8 @@ ${row.notes}`
           display_name: row.display_name,
           phone_number: row.phone_number,
           email: normalizeEmail(row.email),
-          whatsapp_enabled: row.whatsapp_enabled,
+          gender: row.gender,
+          whatsapp_enabled: false,
           notes: row.notes,
         }))
       );
@@ -527,7 +557,6 @@ ${row.notes}`
     setPhoneNumber("");
     setEmail("");
     setGender("");
-    setWhatsappEnabled(false);
     setNotes("");
   };
 
@@ -552,7 +581,8 @@ ${row.notes}`
       display_name: displayName,
       phone_number: phoneNumber.trim() || null,
       email: normalizeEmail(email),
-      whatsapp_enabled: whatsappEnabled,
+      gender: gender.trim() || null,
+      whatsapp_enabled: false,
       notes: notes.trim() || null,
     });
 
@@ -628,6 +658,31 @@ ${row.notes}`
             className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
           />
         </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            ["all", "All"],
+            ["messageable", "Can message"],
+            ["missing_phone", "Missing phone"],
+            ["invalid_phone", "Invalid phone"],
+            ["missing_email", "Missing email"],
+            ["male", "Male"],
+            ["female", "Female"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                peopleFilter === value
+                  ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
+              }`}
+              onClick={() => setPeopleFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </Card>
 
       {loading && (
@@ -658,7 +713,7 @@ ${row.notes}`
             <div>Person</div>
             <div>Phone</div>
             <div>Email</div>
-            <div>Status</div>
+            <div>Message</div>
           </div>
 
           <div className="divide-y divide-border">
@@ -723,14 +778,23 @@ ${row.notes}`
                 </div>
 
                 <div className="flex justify-end">
-                  {person.whatsapp_enabled ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-brand-teal bg-brand-teal/10 px-2.5 py-1 text-xs font-bold text-brand-teal">
-                      <MessageCircle className="h-3 w-3" />
-                      WhatsApp ready
-                    </span>
+                  {isMessageablePhone(person.phone_number) ? (
+                    <a
+                      href={getWhatsappHref(person.phone_number)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-teal bg-brand-teal/10 text-brand-teal transition hover:bg-brand-teal/15"
+                      title="Message on WhatsApp"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Send className="h-4 w-4" />
+                    </a>
                   ) : (
-                    <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground">
-                      Profile
+                    <span
+                      className="inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full border border-border bg-background text-muted-foreground/40"
+                      title={person.phone_number ? "Invalid phone format. Use +27..." : "No phone number"}
+                    >
+                      <Send className="h-4 w-4" />
                     </span>
                   )}
                 </div>
@@ -788,7 +852,7 @@ ${row.notes}`
                   First Name,Last Name,Primary Phone Number,Primary Email,Gender
                 </p>
                 <p className="mt-2">
-                  You can also use <span className="font-mono">name,phone,email,whatsapp,notes</span>. Gender will be stored in notes for now.
+                  You can also use <span className="font-mono">name,phone,email,notes</span>. Gender imports into the Gender field.
                 </p>
               </div>
 
@@ -805,7 +869,7 @@ ${row.notes}`
                   <div>Name</div>
                   <div>Phone</div>
                   <div>Email</div>
-                  <div>Status</div>
+                  <div>Message</div>
                 </div>
 
                 <div className="max-h-72 divide-y divide-border overflow-auto bg-card">
@@ -834,13 +898,13 @@ ${row.notes}`
                       </div>
 
                       <div>
-                        {row.whatsapp_enabled ? (
+                        {isMessageablePhone(row.phone_number) ? (
                           <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-2 py-1 text-xs font-bold text-brand-teal">
-                            WhatsApp
+                            Can message
                           </span>
                         ) : (
                           <span className="rounded-full border border-border bg-background px-2 py-1 text-xs font-bold text-muted-foreground">
-                            Profile
+                            Check phone
                           </span>
                         )}
                       </div>
@@ -962,16 +1026,6 @@ ${row.notes}`
                   <option value="Female">Female</option>
                 </select>
               </div>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-4 text-sm font-bold">
-                <input
-                  type="checkbox"
-                  checked={whatsappEnabled}
-                  onChange={(event) => setWhatsappEnabled(event.target.checked)}
-                  className="h-4 w-4 accent-brand-teal"
-                />
-                WhatsApp enabled
-              </label>
 
               <div>
                 <label className="label-eyebrow">Notes</label>

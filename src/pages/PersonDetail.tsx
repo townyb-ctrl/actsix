@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CalendarDays,
-  Trash2, Camera, Clock3, Folder, Mail, MapPin, MessageCircle, Phone, Save, Users, X } from "lucide-react";
+  Trash2, Camera, Clock3, Folder, Mail, MapPin, Send, Phone, Save, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,23 @@ const normalizeEmail = (value?: string | null) => {
   return value?.trim().toLowerCase() || null;
 };
 
+const normalizePhoneForWhatsapp = (value?: string | null) => {
+  return value?.replace(/[^\d+]/g, "") || "";
+};
+
+const isMessageablePhone = (value?: string | null) => {
+  const normalized = normalizePhoneForWhatsapp(value);
+  return /^\+[1-9]\d{7,14}$/.test(normalized);
+};
+
+const getWhatsappHref = (value?: string | null) => {
+  const normalized = normalizePhoneForWhatsapp(value);
+
+  if (!isMessageablePhone(normalized)) return "";
+
+  return `https://wa.me/${normalized.replace("+", "")}`;
+};
+
 const PersonDetail = () => {
   const { personId } = useParams();
   const { user } = useAuth();
@@ -102,7 +119,6 @@ const PersonDetail = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [gender, setGender] = useState("");
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [notes, setNotes] = useState("");
 
   const fetchPerson = async () => {
@@ -129,7 +145,6 @@ const PersonDetail = () => {
     setPhoneNumber(data.phone_number || "");
     setEmail(data.email || "");
     setGender(data.gender || "");
-    setWhatsappEnabled(Boolean(data.whatsapp_enabled));
     setNotes(data.notes || "");
 
     const { data: membershipData, error: membershipError } = await (supabase as any)
@@ -208,7 +223,6 @@ const PersonDetail = () => {
     setPhoneNumber(person.phone_number || "");
     setEmail(person.email || "");
     setGender(person.gender || "");
-    setWhatsappEnabled(Boolean(person.whatsapp_enabled));
     setNotes(person.notes || "");
     setEditing(false);
   };
@@ -235,7 +249,8 @@ const PersonDetail = () => {
         display_name: displayName,
         phone_number: phoneNumber.trim() || null,
         email: normalizeEmail(email),
-        whatsapp_enabled: whatsappEnabled,
+        gender: gender.trim() || null,
+        whatsapp_enabled: false,
         notes: notes.trim() || null,
         updated_at: new Date().toISOString(),
       })
@@ -432,18 +447,34 @@ const PersonDetail = () => {
                   {person.gender}
                 </span>
               )}
-
-              {person.whatsapp_enabled && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  WhatsApp ready
-                </span>
-              )}
               </div>
             </div>
           </div>
 
           <div className="flex flex-wrap justify-end gap-2">
+            {isMessageablePhone(person.phone_number) ? (
+              <a
+                href={getWhatsappHref(person.phone_number)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-brand-teal bg-brand-teal/10 px-4 text-sm font-bold text-brand-teal transition hover:bg-brand-teal/15"
+              >
+                <Send className="h-4 w-4" />
+                Message
+              </a>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="cursor-not-allowed rounded-xl text-muted-foreground/50"
+                disabled
+                title={person.phone_number ? "Invalid phone format. Use +27..." : "No phone number"}
+              >
+                <Send className="h-4 w-4" />
+                Message
+              </Button>
+            )}
+
             <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition hover:bg-muted">
               <Camera className="h-4 w-4" />
               Upload Photo
@@ -751,10 +782,10 @@ const PersonDetail = () => {
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  WhatsApp
+                  Messaging
                 </p>
                 <p className="font-bold">
-                  {person.whatsapp_enabled ? "Enabled" : "Not enabled"}
+                  {isMessageablePhone(person.phone_number) ? "Available" : "Needs valid phone"}
                 </p>
               </div>
 
@@ -864,16 +895,6 @@ const PersonDetail = () => {
                   <option value="Female">Female</option>
                 </select>
               </div>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-4 text-sm font-bold">
-                <input
-                  type="checkbox"
-                  checked={whatsappEnabled}
-                  onChange={(event) => setWhatsappEnabled(event.target.checked)}
-                  className="h-4 w-4 accent-brand-teal"
-                />
-                WhatsApp enabled
-              </label>
 
               <div>
                 <label className="label-eyebrow">Notes</label>
