@@ -632,7 +632,7 @@ const ProjectDetail = () => {
 
       {addCollaboratorOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden border-border/70 bg-card shadow-card">
+          <Card className="relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-visible border-border/70 bg-card shadow-card">
             <form onSubmit={addCollaborator} className="flex min-h-0 flex-1 flex-col">
               <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-6">
                 <div>
@@ -659,7 +659,7 @@ const ProjectDetail = () => {
                 </Button>
               </div>
 
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+              <div className="relative z-20 min-h-0 flex-1 space-y-4 overflow-visible p-6">
 
               <div>
                 <label className="label-eyebrow">People</label>
@@ -691,7 +691,7 @@ const ProjectDetail = () => {
               )}
               </div>
 
-              <div className="flex shrink-0 justify-end gap-2 border-t border-border/70 bg-card p-6">
+              <div className="relative z-10 flex shrink-0 justify-end gap-2 border-t border-border/70 bg-card p-6">
                 <Button
                   type="button"
                   variant="outline"

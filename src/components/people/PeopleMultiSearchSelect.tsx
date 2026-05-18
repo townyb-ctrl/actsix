@@ -63,8 +63,8 @@ export function PeopleMultiSearchSelect({
   const showDropdown = searchTerm.trim().length > 0;
 
   return (
-    <div className="relative space-y-3">
-      <div className="relative z-[70]">
+    <div className="relative z-[100] space-y-3">
+      <div className="relative z-[110]">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           autoFocus
@@ -75,7 +75,7 @@ export function PeopleMultiSearchSelect({
         />
 
         {showDropdown && (
-          <div className="absolute left-0 right-0 top-14 z-[90] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
+          <div className="absolute left-0 right-0 top-14 z-[999] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
             {searchTerm.trim().length < 2 && (
               <div className="px-4 py-3 text-sm text-muted-foreground">
                 Type at least 2 characters to search.
