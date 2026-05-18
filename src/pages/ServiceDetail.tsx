@@ -187,6 +187,7 @@ const ServiceDetail = () => {
 
   const [whatsAppAssignment, setWhatsAppAssignment] = useState<TeamAssignment | null>(null);
   const [whatsAppMessage, setWhatsAppMessage] = useState("");
+  const [reminderCenterOpen, setReminderCenterOpen] = useState(false);
 
   const totalDuration = useMemo(() => {
     return orderItems.reduce((sum, item) => sum + (item.duration_minutes || 0), 0);
@@ -778,6 +779,63 @@ const ServiceDetail = () => {
     ].join("\n");
   };
 
+  const buildTeamWhatsAppMessage = () => {
+    const serviceName = service?.title || serviceType?.name || "Service";
+    const serviceDate = formatDate(service?.service_date);
+    const serviceTime = service?.start_time ? service.start_time.slice(0, 5) : "";
+
+    const assignmentsByTeam = teamAssignments.reduce<Record<string, TeamAssignment[]>>(
+      (acc, assignment) => {
+        const teamName =
+          assignedTeams.find((team) => team.id === assignment.team_id)?.name ||
+          "Service Team";
+
+        if (!acc[teamName]) {
+          acc[teamName] = [];
+        }
+
+        acc[teamName].push(assignment);
+        return acc;
+      },
+      {}
+    );
+
+    const teamSections = Object.entries(assignmentsByTeam).flatMap(
+      ([teamName, assignments]) => [
+        `${teamName}:`,
+        ...assignments.map(
+          (assignment) => `- ${assignment.person_name} — ${assignment.role_name}`
+        ),
+        "",
+      ]
+    );
+
+    return [
+      "Hi team 👋",
+      "",
+      `You are serving at ${serviceName} on ${serviceDate}${serviceTime ? ` at ${serviceTime}` : ""}.`,
+      "",
+      ...teamSections,
+      "Please reply with a 👍 once you have seen this.",
+      "",
+      "Thanks so much!"
+    ].join("\n").trim();
+  };
+
+  const copyTeamWhatsAppMessage = async () => {
+    if (teamAssignments.length === 0) {
+      toast.error("No team members are assigned to this service yet.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildTeamWhatsAppMessage());
+      toast.success("WhatsApp team message copied");
+    } catch {
+      toast.error("Could not copy message. Please try again.");
+    }
+  };
+
   const openWhatsAppComposer = (assignment: TeamAssignment) => {
     const member = getTeamMemberForAssignment(assignment);
 
@@ -878,38 +936,108 @@ const ServiceDetail = () => {
   return (
     <div>
       <div className="px-8 pt-8 pb-12 max-w-7xl space-y-5">
-<div>
-          <p className="label-eyebrow">ACTSIX: Service Planning</p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
-            {service.title || serviceType?.name || "Service"}
-          </h1>
+<div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="label-eyebrow">ACTSIX: Service Planning</p>
+            <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+              {service.title || serviceType?.name || "Service"}
+            </h1>
 
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-2">
-              <CalendarDays className="h-3.5 w-3.5" />
-              {formatDate(service.service_date)}
-            </span>
-
-            {service.start_time && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">
-                <Clock3 className="h-3.5 w-3.5" />
-                {service.start_time.slice(0, 5)}
+                <CalendarDays className="h-3.5 w-3.5" />
+                {formatDate(service.service_date)}
               </span>
-            )}
 
-            {service.location && (
+              {service.start_time && (
+                <span className="inline-flex items-center gap-2">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  {service.start_time.slice(0, 5)}
+                </span>
+              )}
+
+              {service.location && (
+                <span className="inline-flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {service.location}
+                </span>
+              )}
+
               <span className="inline-flex items-center gap-2">
-                <MapPin className="h-3.5 w-3.5" />
-                {service.location}
+                <ListChecks className="h-3.5 w-3.5" />
+                {totalDuration} min planned
               </span>
-            )}
-
-            <span className="inline-flex items-center gap-2">
-              <ListChecks className="h-3.5 w-3.5" />
-              {totalDuration} min planned
-            </span>
+            </div>
           </div>
+
+          <Button
+            type="button"
+            className="actsix-btn-primary rounded-xl"
+            onClick={() => setReminderCenterOpen(true)}
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp Reminder
+          </Button>
         </div>
+
+        {reminderCenterOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+            <Card className="w-full max-w-3xl border-border/70 bg-card p-6 shadow-card">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="label-eyebrow">WhatsApp Reminder</p>
+                  <h2 className="text-xl font-extrabold tracking-tight">
+                    Service Reminder Center
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Copy a clean reminder for this service, grouped by team and role.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setReminderCenterOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Message Preview
+                </p>
+                <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                  {teamAssignments.length > 0
+                    ? buildTeamWhatsAppMessage()
+                    : "Assign team members to this service to generate a WhatsApp reminder."}
+                </pre>
+              </div>
+
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setReminderCenterOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="button"
+                  className="actsix-btn-primary rounded-xl"
+                  onClick={copyTeamWhatsAppMessage}
+                  disabled={teamAssignments.length === 0}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Copy Team Message
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.75fr)]">
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
