@@ -863,13 +863,27 @@ const ServiceDetail = () => {
     window.open(`https://wa.me/${number}?text=${encodedMessage}`, "_blank", "noopener,noreferrer");
   };
 
+  const getWhatsAppGroupOpenUrl = (url: string) => {
+    const inviteCode = url.match(/chat\.whatsapp\.com\/([^/?#]+)/)?.[1];
+
+    if (!inviteCode) {
+      return url;
+    }
+
+    return `whatsapp://chat?code=${inviteCode}`;
+  };
+
   const openSelectedTeamWhatsAppGroup = () => {
     if (!selectedAssignmentTeam?.whatsapp_group_url) {
       toast.error("No WhatsApp group link saved for this team.");
       return;
     }
 
-    window.open(selectedAssignmentTeam.whatsapp_group_url, "_blank", "noopener,noreferrer");
+    window.open(
+      getWhatsAppGroupOpenUrl(selectedAssignmentTeam.whatsapp_group_url),
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const applyTemplateToService = async () => {
