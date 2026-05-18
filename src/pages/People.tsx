@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail, MessageCircle, Phone, Plus, Search, Users } from "lucide-react";
+import { Mail, MessageCircle, Phone, Plus, Search, Upload, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,16 @@ type Person = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+}; 
+
+type CsvPersonRow = {
+  first_name: string;
+  last_name: string | null;
+  display_name: string;
+  phone_number: string | null;
+  email: string | null;
+  whatsapp_enabled: boolean;
+  notes: string | null;
 };
 
 const People = () => {
@@ -28,6 +38,10 @@ const People = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [csvRows, setCsvRows] = useState<CsvPersonRow[]>([]);
+  const [csvError, setCsvError] = useState("");
+  const [importingCsv, setImportingCsv] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [firstName, setFirstName] = useState("");
@@ -105,6 +119,177 @@ const People = () => {
     fetchPeople();
   }, [user]);
 
+  const parseCsvLine = (line: string) => {
+    const values: string[] = [];
+    let current = "";
+    let insideQuotes = false;
+
+    for (let index = 0; index < line.length; index += 1) {
+      const char = line[index];
+      const nextChar = line[index + 1];
+
+      if (char === '"' && insideQuotes && nextChar === '"') {
+        current += '"';
+        index += 1;
+        continue;
+      }
+
+      if (char === '"') {
+        insideQuotes = !insideQuotes;
+        continue;
+      }
+
+      if (char === "," && !insideQuotes) {
+        values.push(current.trim());
+        current = "";
+        continue;
+      }
+
+      current += char;
+    }
+
+    values.push(current.trim());
+    return values;
+  };
+
+  const normalizeHeader = (value: string) => {
+    return value.trim().toLowerCase().replace(/\s+/g, "_");
+  };
+
+  const getBooleanValue = (value?: string) => {
+    const normalized = (value || "").trim().toLowerCase();
+    return ["true", "yes", "y", "1", "whatsapp", "enabled"].includes(normalized);
+  };
+
+  const splitName = (name: string) => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+
+    if (parts.length === 0) {
+      return { firstName: "", lastName: "" };
+    }
+
+    if (parts.length === 1) {
+      return { firstName: parts[0], lastName: "" };
+    }
+
+    return {
+      firstName: parts[0],
+      lastName: parts.slice(1).join(" "),
+    };
+  };
+
+  const handleCsvFile = async (file?: File | null) => {
+    setCsvError("");
+    setCsvRows([]);
+
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setCsvError("Please choose a CSV file.");
+      return;
+    }
+
+    const content = await file.text();
+    const lines = content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length < 2) {
+      setCsvError("CSV must include a header row and at least one person.");
+      return;
+    }
+
+    const headers = parseCsvLine(lines[0]).map(normalizeHeader);
+    const rows = lines.slice(1);
+
+    const parsedRows: CsvPersonRow[] = [];
+
+    rows.forEach((line, index) => {
+      const values = parseCsvLine(line);
+      const row = headers.reduce<Record<string, string>>((acc, header, valueIndex) => {
+        acc[header] = values[valueIndex] || "";
+        return acc;
+      }, {});
+
+      const rawDisplayName = row.display_name || row.name || "";
+      const split = splitName(rawDisplayName);
+
+      const firstName = (row.first_name || row.firstname || split.firstName || "").trim();
+      const lastName = (row.last_name || row.lastname || split.lastName || "").trim();
+      const displayName = (row.display_name || row.name || [firstName, lastName].filter(Boolean).join(" ")).trim();
+
+      if (!firstName) {
+        throw new Error(`Row ${index + 2}: first_name or name is required.`);
+      }
+
+      const gender = (row.gender || "").trim();
+      const existingNotes = (row.notes || row.note || "").trim();
+
+      parsedRows.push({
+        first_name: firstName,
+        last_name: lastName || null,
+        display_name: displayName || firstName,
+        phone_number:
+          (
+            row.phone_number ||
+            row.phone ||
+            row.whatsapp_number ||
+            row.primary_phone_number ||
+            row.primary_phone ||
+            ""
+          ).trim() || null,
+        email:
+          (
+            row.email ||
+            row.email_address ||
+            row.primary_email ||
+            row.primary_email_address ||
+            ""
+          ).trim() || null,
+        whatsapp_enabled: getBooleanValue(row.whatsapp_enabled || row.whatsapp || row.whatsapp_ready),
+        notes:
+          [existingNotes, gender ? `Gender: ${gender}` : ""]
+            .filter(Boolean)
+            .join(" | ") || null,
+      });
+    });
+
+    setCsvRows(parsedRows);
+  };
+
+  const importCsvPeople = async () => {
+    if (!user || csvRows.length === 0) return;
+
+    setImportingCsv(true);
+
+    const { error } = await (supabase as any).from("people").insert(
+      csvRows.map((row) => ({
+        user_id: user.id,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        display_name: row.display_name,
+        phone_number: row.phone_number,
+        email: row.email,
+        whatsapp_enabled: row.whatsapp_enabled,
+        notes: row.notes,
+      }))
+    );
+
+    if (error) {
+      toast.error(error.message);
+      setImportingCsv(false);
+      return;
+    }
+
+    toast.success(`${csvRows.length} people imported`);
+    setCsvRows([]);
+    setCsvError("");
+    setImportOpen(false);
+    setImportingCsv(false);
+    fetchPeople();
+  };
+
   const resetForm = () => {
     setFirstName("");
     setLastName("");
@@ -163,14 +348,30 @@ const People = () => {
           </p>
         </div>
 
-        <Button
-          type="button"
-          className="actsix-btn-primary rounded-xl"
-          onClick={() => setAddPersonOpen(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Add Person
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => {
+              setCsvRows([]);
+              setCsvError("");
+              setImportOpen(true);
+            }}
+          >
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
+
+          <Button
+            type="button"
+            className="actsix-btn-primary rounded-xl"
+            onClick={() => setAddPersonOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Person
+          </Button>
+        </div>
       </div>
 
       <Card className="border-border/70 bg-card shadow-card p-4">
@@ -277,6 +478,144 @@ const People = () => {
             ))}
           </div>
         </Card>
+      )}
+
+      {importOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-3xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">ACTSIX: People</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Import People from CSV
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Upload a CSV file to add multiple People profiles at once.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => {
+                  setCsvRows([]);
+                  setCsvError("");
+                  setImportOpen(false);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4">
+              <label className="label-eyebrow">CSV File</label>
+              <Input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={(event) => {
+                  handleCsvFile(event.target.files?.[0]).catch((error) => {
+                    setCsvRows([]);
+                    setCsvError(error instanceof Error ? error.message : "Could not read CSV file.");
+                  });
+                }}
+                className="mt-2 border-border/70 bg-card"
+              />
+
+              <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
+                <p className="font-bold text-foreground">Supported headers:</p>
+                <p className="mt-1 font-mono">
+                  First Name,Last Name,Primary Phone Number,Primary Email,Gender
+                </p>
+                <p className="mt-2">
+                  You can also use <span className="font-mono">name,phone,email,whatsapp,notes</span>. Gender will be stored in notes for now.
+                </p>
+              </div>
+
+              {csvError && (
+                <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive">
+                  {csvError}
+                </div>
+              )}
+            </div>
+
+            {csvRows.length > 0 && (
+              <div className="mt-5 overflow-hidden rounded-2xl border border-border/70">
+                <div className="grid grid-cols-[minmax(0,1fr)_160px_minmax(0,1fr)_120px] gap-3 border-b border-border bg-background px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  <div>Name</div>
+                  <div>Phone</div>
+                  <div>Email</div>
+                  <div>Status</div>
+                </div>
+
+                <div className="max-h-72 divide-y divide-border overflow-auto bg-card">
+                  {csvRows.map((row, index) => (
+                    <div
+                      key={`${row.display_name}-${index}`}
+                      className="grid grid-cols-[minmax(0,1fr)_160px_minmax(0,1fr)_120px] gap-3 px-4 py-3 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-extrabold tracking-tight">
+                          {row.display_name}
+                        </p>
+                        {row.notes && (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {row.notes}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="truncate text-muted-foreground">
+                        {row.phone_number || "—"}
+                      </div>
+
+                      <div className="truncate text-muted-foreground">
+                        {row.email || "—"}
+                      </div>
+
+                      <div>
+                        {row.whatsapp_enabled ? (
+                          <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-2 py-1 text-xs font-bold text-brand-teal">
+                            WhatsApp
+                          </span>
+                        ) : (
+                          <span className="rounded-full border border-border bg-background px-2 py-1 text-xs font-bold text-muted-foreground">
+                            Profile
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => {
+                  setCsvRows([]);
+                  setCsvError("");
+                  setImportOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                className="actsix-btn-primary rounded-xl"
+                onClick={importCsvPeople}
+                disabled={csvRows.length === 0 || importingCsv}
+              >
+                <Upload className="h-4 w-4" />
+                {importingCsv ? "Importing..." : `Import ${csvRows.length || ""} People`}
+              </Button>
+            </div>
+          </Card>
+        </div>
       )}
 
       {addPersonOpen && (
