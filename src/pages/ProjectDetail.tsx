@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PeopleSearchSelect } from "@/components/people/PeopleSearchSelect";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -653,18 +654,15 @@ const ProjectDetail = () => {
 
               <div>
                 <label className="label-eyebrow">Person</label>
-                <select
-                  value={selectedPersonId}
-                  onChange={(event) => setSelectedPersonId(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                >
-                  <option value="">Select person...</option>
-                  {availablePeople.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.display_name}
-                    </option>
-                  ))}
-                </select>
+                <div className="mt-2">
+                  <PeopleSearchSelect
+                    people={availablePeople}
+                    selectedPersonId={selectedPersonId}
+                    onSelect={setSelectedPersonId}
+                    placeholder="Search by name, email, or phone..."
+                    emptyText="No available collaborators found."
+                  />
+                </div>
               </div>
 
               <div>
