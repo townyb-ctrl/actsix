@@ -330,6 +330,10 @@ const People = () => {
     return ["true", "yes", "y", "1", "whatsapp", "enabled"].includes(normalized);
   };
 
+  const normalizeEmail = (value?: string | null) => {
+    return value?.trim().toLowerCase() || null;
+  };
+
   const splitName = (name: string) => {
     const parts = name.trim().split(/\s+/).filter(Boolean);
 
@@ -408,14 +412,13 @@ const People = () => {
             row.primary_phone ||
             ""
           ).trim() || null,
-        email:
-          (
-            row.email ||
+        email: normalizeEmail(
+          row.email ||
             row.email_address ||
             row.primary_email ||
             row.primary_email_address ||
             ""
-          ).trim() || null,
+        ),
         whatsapp_enabled: getBooleanValue(row.whatsapp_enabled || row.whatsapp || row.whatsapp_ready),
         notes:
           [existingNotes, gender ? `Gender: ${gender}` : ""]
@@ -477,7 +480,7 @@ const People = () => {
         last_name: existing.last_name || row.last_name,
         display_name: existing.display_name || row.display_name,
         phone_number: existing.phone_number || row.phone_number,
-        email: existing.email || row.email,
+        email: normalizeEmail(existing.email || row.email),
         whatsapp_enabled: Boolean(existing.whatsapp_enabled || row.whatsapp_enabled),
         notes:
           existing.notes && row.notes && !existing.notes.includes(row.notes)
@@ -509,7 +512,7 @@ ${row.notes}`
           last_name: row.last_name,
           display_name: row.display_name,
           phone_number: row.phone_number,
-          email: row.email,
+          email: normalizeEmail(row.email),
           whatsapp_enabled: row.whatsapp_enabled,
           notes: row.notes,
         }))
@@ -562,7 +565,7 @@ ${row.notes}`
       last_name: cleanLastName || null,
       display_name: displayName,
       phone_number: phoneNumber.trim() || null,
-      email: email.trim() || null,
+      email: normalizeEmail(email),
       whatsapp_enabled: whatsappEnabled,
       notes: notes.trim() || null,
     });
