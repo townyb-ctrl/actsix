@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Merge, Phone, Plus, Search, Send, Upload, Users } from "lucide-react";
+import { Filter, Mail, Merge, Phone, Plus, Search, Send, Upload, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ type Person = {
   phone_number: string | null;
   email: string | null;
   gender: string | null;
+  membership_status: string | null;
   whatsapp_enabled: boolean;
   notes: string | null;
   created_at: string;
@@ -35,6 +36,7 @@ type CsvPersonRow = {
   phone_number: string | null;
   email: string | null;
   gender: string | null;
+  membership_status: string | null;
   whatsapp_enabled: boolean;
   notes: string | null;
 };
@@ -52,6 +54,15 @@ const People = () => {
   const [importingCsv, setImportingCsv] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [peopleFilter, setPeopleFilter] = useState("all");
+  const [customFilterOpen, setCustomFilterOpen] = useState(false);
+  const [customFilters, setCustomFilters] = useState({
+    canMessage: false,
+    missingPhone: false,
+    invalidPhone: false,
+    missingEmail: false,
+    male: false,
+    female: false,
+  });
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -79,18 +90,27 @@ const People = () => {
 
       if (!matchesSearch) return false;
 
-      if (peopleFilter === "messageable") return isMessageablePhone(person.phone_number);
-      if (peopleFilter === "missing_phone") return !person.phone_number;
-      if (peopleFilter === "invalid_phone") {
-        return Boolean(person.phone_number) && !isMessageablePhone(person.phone_number);
+      if (peopleFilter === "members") {
+        return (person.membership_status || "Member").toLowerCase() === "member";
       }
-      if (peopleFilter === "missing_email") return !person.email;
-      if (peopleFilter === "male") return person.gender?.toLowerCase() === "male";
-      if (peopleFilter === "female") return person.gender?.toLowerCase() === "female";
+
+      if (peopleFilter === "custom") {
+        if (customFilters.canMessage && !isMessageablePhone(person.phone_number)) return false;
+        if (customFilters.missingPhone && person.phone_number) return false;
+        if (
+          customFilters.invalidPhone &&
+          (!person.phone_number || isMessageablePhone(person.phone_number))
+        ) {
+          return false;
+        }
+        if (customFilters.missingEmail && person.email) return false;
+        if (customFilters.male && person.gender?.toLowerCase() !== "male") return false;
+        if (customFilters.female && person.gender?.toLowerCase() !== "female") return false;
+      }
 
       return true;
     });
-  }, [people, searchTerm, peopleFilter]);
+  }, [people, searchTerm, peopleFilter, customFilters]);
 
   const duplicateEmailGroups = useMemo(() => {
     const grouped = people.reduce<Record<string, Person[]>>((acc, person) => {
@@ -643,15 +663,10 @@ ${row.notes}`
           />
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {[
             ["all", "All"],
-            ["messageable", "Can message"],
-            ["missing_phone", "Missing phone"],
-            ["invalid_phone", "Invalid phone"],
-            ["missing_email", "Missing email"],
-            ["male", "Male"],
-            ["female", "Female"],
+            ["members", "Members"],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -661,11 +676,122 @@ ${row.notes}`
                   ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
                   : "border-border bg-background text-muted-foreground hover:bg-muted"
               }`}
-              onClick={() => setPeopleFilter(value)}
+              onClick={() => {
+                setPeopleFilter(value);
+                setCustomFilterOpen(false);
+              }}
             >
               {label}
             </button>
           ))}
+
+          <div className="relative">
+            <button
+              type="button"
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${
+                peopleFilter === "custom"
+                  ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
+              }`}
+              onClick={() => {
+                setCustomFilterOpen((open) => !open);
+                setPeopleFilter("custom");
+              }}
+              aria-label="Custom filters"
+              title="Custom filters"
+            >
+              <Filter className="h-4 w-4" />
+            </button>
+
+            {customFilterOpen && (
+              <div className="absolute left-0 top-10 z-50 w-72 rounded-2xl border border-border/70 bg-card p-4 shadow-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-extrabold tracking-tight">
+                      Custom Filter
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Choose what to show in the People list.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => setCustomFilterOpen(false)}
+                    aria-label="Close custom filters"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {[
+                    ["canMessage", "Can message"],
+                    ["missingPhone", "Missing phone"],
+                    ["invalidPhone", "Invalid phone"],
+                    ["missingEmail", "Missing email"],
+                    ["male", "Male"],
+                    ["female", "Female"],
+                  ].map(([key, label]) => (
+                    <label
+                      key={key}
+                      className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-sm font-bold"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={Boolean(customFilters[key as keyof typeof customFilters])}
+                        onChange={(event) => {
+                          setCustomFilters((current) => ({
+                            ...current,
+                            [key]: event.target.checked,
+                          }));
+                          setPeopleFilter("custom");
+                        }}
+                        className="h-4 w-4 accent-brand-teal"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => {
+                      setCustomFilters({
+                        canMessage: false,
+                        missingPhone: false,
+                        invalidPhone: false,
+                        missingEmail: false,
+                        male: false,
+                        female: false,
+                      });
+                      setPeopleFilter("all");
+                      setCustomFilterOpen(false);
+                    }}
+                  >
+                    Clear
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="actsix-btn-primary rounded-xl"
+                    onClick={() => {
+                      setPeopleFilter("custom");
+                      setCustomFilterOpen(false);
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 
