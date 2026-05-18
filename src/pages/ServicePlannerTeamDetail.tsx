@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  Bell,
   GripVertical,
   MessageCircle,
   MoreVertical,
@@ -32,6 +31,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PeopleSearchSelect } from "@/components/people/PeopleSearchSelect";
+import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { formatPhoneForDisplay, normalizePhoneForStorage } from "@/lib/phone";
 
 type ServiceTeam = {
   id: string;
@@ -73,6 +75,7 @@ type Person = {
   first_name: string;
   last_name: string | null;
   display_name: string;
+  avatar_url: string | null;
   phone_number: string | null;
   email: string | null;
   whatsapp_enabled: boolean;
@@ -147,7 +150,6 @@ const ServicePlannerTeamDetail = () => {
   const [personName, setPersonName] = useState("");
   const [roleName, setRoleName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [memberNotes, setMemberNotes] = useState("");
   const [addPersonOpen, setAddPersonOpen] = useState(false);
   const [addRoleOpen, setAddRoleOpen] = useState(false);
@@ -414,7 +416,6 @@ const ServicePlannerTeamDetail = () => {
     setPersonName("");
     setRoleName("");
     setPhoneNumber("");
-    setWhatsappEnabled(false);
     setMemberNotes("");
   };
 
@@ -463,7 +464,6 @@ const ServicePlannerTeamDetail = () => {
     setRoleName(role === "No Role Assigned" ? "" : role);
     setPersonName("");
     setPhoneNumber("");
-    setWhatsappEnabled(false);
     setMemberNotes("");
     setAddPersonOpen(true);
   };
@@ -549,7 +549,6 @@ const ServicePlannerTeamDetail = () => {
     if (!personId) {
       setPersonName("");
       setPhoneNumber("");
-      setWhatsappEnabled(false);
       return;
     }
 
@@ -558,8 +557,7 @@ const ServicePlannerTeamDetail = () => {
     if (!selectedPerson) return;
 
     setPersonName(selectedPerson.display_name);
-    setPhoneNumber(selectedPerson.phone_number || "");
-    setWhatsappEnabled(Boolean(selectedPerson.whatsapp_enabled));
+    setPhoneNumber(formatPhoneForDisplay(selectedPerson.phone_number) || "");
   };
 
   const createMember = async (event: FormEvent) => {
@@ -570,19 +568,26 @@ const ServicePlannerTeamDetail = () => {
       return;
     }
 
-    if (!personName.trim()) {
-      toast.error("Person name is required.");
+    if (!selectedPersonId) {
+      toast.error("Choose a People profile first.");
+      return;
+    }
+
+    const selectedPerson = people.find((person) => person.id === selectedPersonId);
+
+    if (!selectedPerson) {
+      toast.error("Selected People profile could not be found.");
       return;
     }
 
     const { error } = await supabase.from("service_team_members").insert({
       user_id: user.id,
       team_id: teamId,
-      person_id: selectedPersonId || null,
-      person_name: personName.trim(),
+      person_id: selectedPerson.id,
+      person_name: selectedPerson.display_name,
       role_name: roleName.trim() || null,
-      phone_number: phoneNumber.trim() || null,
-      whatsapp_enabled: whatsappEnabled,
+      phone_number: normalizePhoneForStorage(selectedPerson.phone_number),
+      whatsapp_enabled: false,
       notes: memberNotes.trim() || null,
     });
 
@@ -772,8 +777,8 @@ const ServicePlannerTeamDetail = () => {
         first_name,
         last_name,
         display_name: member.person_name,
-        phone_number: member.phone_number || null,
-        whatsapp_enabled: member.whatsapp_enabled,
+        phone_number: normalizePhoneForStorage(member.phone_number),
+        whatsapp_enabled: false,
         notes: member.notes || null,
       })
       .select("*")
@@ -811,21 +816,6 @@ const ServicePlannerTeamDetail = () => {
     fetchTeam();
   };
 
-  const toggleWhatsapp = async (member: ServiceTeamMember) => {
-    const { error } = await supabase
-      .from("service_team_members")
-      .update({
-        whatsapp_enabled: !member.whatsapp_enabled,
-      })
-      .eq("id", member.id);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    fetchTeam();
-  };
 
   if (loading) {
     return (
@@ -1051,9 +1041,12 @@ const ServicePlannerTeamDetail = () => {
 
                       {roleMembers.map((member) => (
                         <div key={member.id} className="flex items-center gap-3 px-4 py-3">
-                          <div className="h-9 w-9 rounded-xl bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
-                            <Users className="h-4 w-4" />
-                          </div>
+                          <PersonAvatar
+                            name={member.person_name}
+                            avatarUrl={people.find((person) => person.id === member.person_id)?.avatar_url}
+                            size="md"
+                            shape="rounded"
+                          />
 
                           <div className="min-w-0 flex-1">
                             {member.person_id ? (
@@ -1070,41 +1063,13 @@ const ServicePlannerTeamDetail = () => {
                             )}
 
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                              {member.phone_number && <span>{member.phone_number}</span>}
-                              {member.person_id && (
-                                <span className="font-bold text-brand-teal">Linked profile</span>
-                              )}
-                              {member.whatsapp_enabled && (
-                                <span className="font-bold text-brand-teal">WhatsApp ready</span>
-                              )}
+                              {member.phone_number && <span>{formatPhoneForDisplay(member.phone_number)}</span>}
                               {member.notes && <span>{member.notes}</span>}
                             </div>
                           </div>
 
                           <div className="flex shrink-0 items-center gap-1">
-                            {!member.person_id && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 rounded-lg px-2 text-xs font-bold text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
-                                onClick={() => createProfileFromTeamMember(member)}
-                                title="Create People profile"
-                              >
-                                Create Profile
-                              </Button>
-                            )}
 
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 rounded-lg p-0 text-muted-foreground hover:text-brand-teal"
-                              onClick={() => toggleWhatsapp(member)}
-                              title="Toggle future WhatsApp reminders"
-                            >
-                              <Bell className="h-4 w-4" />
-                            </Button>
 
                             <Button
                               type="button"
@@ -1130,7 +1095,7 @@ const ServicePlannerTeamDetail = () => {
 
         {editingTeam && (
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-            <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+            <Card className="w-full max-w-2xl overflow-visible border-border/70 bg-card shadow-card p-6">
               <form onSubmit={updateTeam} className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -1272,7 +1237,7 @@ const ServicePlannerTeamDetail = () => {
                     Add Person
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Add a person to this team and assign their role for future service planning.
+                    Choose an existing People profile and assign their role for future service planning.
                   </p>
                 </div>
 
@@ -1289,32 +1254,32 @@ const ServicePlannerTeamDetail = () => {
               <form onSubmit={createMember} className="mt-6 space-y-4">
                 <div>
                   <label className="label-eyebrow">Link Existing Person Profile</label>
-                  <select
-                    value={selectedPersonId}
-                    onChange={(event) => handleSelectExistingPerson(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                  >
-                    <option value="">Create manually / not linked yet</option>
-                    {people.map((person) => (
-                      <option key={person.id} value={person.id}>
-                        {person.display_name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mt-2">
+                    <PeopleSearchSelect
+                      people={people}
+                      selectedPersonId={selectedPersonId}
+                      onSelect={handleSelectExistingPerson}
+                      placeholder="Search by name, email, or phone..."
+                      emptyText="No matching People profiles found."
+                    />
+                  </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Link this team member to one ACTSIX People profile so their teams and roles stay connected.
+                    Service team members must be linked to a People profile. Create the profile first if this person is not listed.
                   </p>
+
+                  {selectedPersonId && (
+                    <div className="mt-3 rounded-xl border border-brand-teal/20 bg-brand-teal/5 px-3 py-2 text-xs text-muted-foreground">
+                      Selected profile will be added as{" "}
+                      <span className="font-bold text-foreground">{personName}</span>
+                      {phoneNumber ? (
+                        <>
+                          {" "}· <span>{phoneNumber}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
-                <div>
-                  <label className="label-eyebrow">Person Name</label>
-                  <Input
-                    value={personName}
-                    onChange={(event) => setPersonName(event.target.value)}
-                    placeholder="Brandon Townsend"
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
 
                 <div>
                   <label className="label-eyebrow">Role</label>
@@ -1326,15 +1291,6 @@ const ServicePlannerTeamDetail = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="label-eyebrow">Phone / WhatsApp Number</label>
-                  <Input
-                    value={phoneNumber}
-                    onChange={(event) => setPhoneNumber(event.target.value)}
-                    placeholder="+27..."
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
 
                 <div>
                   <label className="label-eyebrow">Notes</label>
@@ -1346,15 +1302,6 @@ const ServicePlannerTeamDetail = () => {
                   />
                 </div>
 
-                <label className="flex items-center gap-3 rounded-xl border border-border/70 bg-background p-3 text-sm font-bold text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={whatsappEnabled}
-                    onChange={(event) => setWhatsappEnabled(event.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  Enable for future WhatsApp reminders
-                </label>
 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
@@ -1366,7 +1313,11 @@ const ServicePlannerTeamDetail = () => {
                     Cancel
                   </Button>
 
-                  <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Button
+                    type="submit"
+                    className="actsix-btn-primary rounded-xl"
+                    disabled={!selectedPersonId}
+                  >
                     <Plus className="h-4 w-4" />
                     Add Person
                   </Button>
