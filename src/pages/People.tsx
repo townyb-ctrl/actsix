@@ -69,6 +69,7 @@ const People = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [gender, setGender] = useState("");
+  const [membershipStatus, setMembershipStatus] = useState("Member");
   const [notes, setNotes] = useState("");
 
   const filteredPeople = useMemo(() => {
@@ -417,6 +418,9 @@ const People = () => {
       }
 
       const gender = (row.gender || "").trim();
+      const rawMembershipStatus = (row.membership_status || row.member_status || row.status || "").trim();
+      const membershipStatus =
+        rawMembershipStatus.toLowerCase() === "adherent" ? "Adherent" : "Member";
       const existingNotes = (row.notes || row.note || "").trim();
 
       parsedRows.push({
@@ -439,6 +443,7 @@ const People = () => {
             ""
         ),
         gender: gender || null,
+        membership_status: membershipStatus,
         whatsapp_enabled: false,
         notes: existingNotes || null,
       });
@@ -499,6 +504,7 @@ const People = () => {
         phone_number: existing.phone_number || normalizePhoneForStorage(row.phone_number),
         email: normalizeEmail(existing.email || row.email),
         gender: existing.gender || row.gender,
+        membership_status: existing.membership_status || row.membership_status || "Member",
         whatsapp_enabled: Boolean(existing.whatsapp_enabled),
         notes:
           existing.notes && row.notes && !existing.notes.includes(row.notes)
@@ -532,6 +538,7 @@ ${row.notes}`
           phone_number: normalizePhoneForStorage(row.phone_number),
           email: normalizeEmail(row.email),
           gender: row.gender,
+          membership_status: row.membership_status || "Member",
           whatsapp_enabled: false,
           notes: row.notes,
         }))
@@ -561,6 +568,7 @@ ${row.notes}`
     setPhoneNumber("");
     setEmail("");
     setGender("");
+    setMembershipStatus("Member");
     setNotes("");
   };
 
@@ -586,6 +594,7 @@ ${row.notes}`
       phone_number: normalizePhoneForStorage(phoneNumber),
       email: normalizeEmail(email),
       gender: gender.trim() || null,
+      membership_status: membershipStatus,
       whatsapp_enabled: false,
       notes: notes.trim() || null,
     });
@@ -858,11 +867,15 @@ ${row.notes}`
                         </span>
                       )}
                     </div>
-                    {(person.notes || person.gender) && (
-                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {person.notes || person.gender}
-                      </div>
-                    )}
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>{person.membership_status || "Member"}</span>
+                      {person.gender && (
+                        <>
+                          <span>·</span>
+                          <span>{person.gender}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="min-w-0 text-sm text-muted-foreground">
@@ -1124,17 +1137,31 @@ ${row.notes}`
                 </div>
               </div>
 
-              <div>
-                <label className="label-eyebrow">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(event) => setGender(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                >
-                  <option value="">Not specified</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label-eyebrow">Gender</label>
+                  <select
+                    value={gender}
+                    onChange={(event) => setGender(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="">Not specified</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Membership</label>
+                  <select
+                    value={membershipStatus}
+                    onChange={(event) => setMembershipStatus(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="Member">Member</option>
+                    <option value="Adherent">Adherent</option>
+                  </select>
+                </div>
               </div>
 
               <div>

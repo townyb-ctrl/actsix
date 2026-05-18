@@ -21,6 +21,7 @@ type Person = {
   phone_number: string | null;
   email: string | null;
   gender: string | null;
+  membership_status: string | null;
   whatsapp_enabled: boolean;
   notes: string | null;
   created_at: string;
@@ -104,6 +105,7 @@ const PersonDetail = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [gender, setGender] = useState("");
+  const [membershipStatus, setMembershipStatus] = useState("Member");
   const [notes, setNotes] = useState("");
 
   const fetchPerson = async () => {
@@ -130,6 +132,7 @@ const PersonDetail = () => {
     setPhoneNumber(formatPhoneForDisplay(data.phone_number) || "");
     setEmail(data.email || "");
     setGender(data.gender || "");
+    setMembershipStatus(data.membership_status || "Member");
     setNotes(data.notes || "");
 
     const { data: membershipData, error: membershipError } = await (supabase as any)
@@ -208,6 +211,7 @@ const PersonDetail = () => {
     setPhoneNumber(formatPhoneForDisplay(person.phone_number) || "");
     setEmail(person.email || "");
     setGender(person.gender || "");
+    setMembershipStatus(person.membership_status || "Member");
     setNotes(person.notes || "");
     setEditing(false);
   };
@@ -235,6 +239,7 @@ const PersonDetail = () => {
         phone_number: normalizePhoneForStorage(phoneNumber),
         email: normalizeEmail(email),
         gender: gender.trim() || null,
+        membership_status: membershipStatus,
         whatsapp_enabled: false,
         notes: notes.trim() || null,
         updated_at: new Date().toISOString(),
@@ -432,6 +437,10 @@ const PersonDetail = () => {
                   {person.gender}
                 </span>
               )}
+
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-bold text-muted-foreground">
+                {person.membership_status || "Member"}
+              </span>
               </div>
             </div>
           </div>
@@ -767,6 +776,13 @@ const PersonDetail = () => {
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Membership
+                </p>
+                <p className="font-bold">{person.membership_status || "Member"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                   Messaging
                 </p>
                 <p className="font-bold">
@@ -869,17 +885,31 @@ const PersonDetail = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="label-eyebrow">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(event) => setGender(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                >
-                  <option value="">Not specified</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label-eyebrow">Gender</label>
+                  <select
+                    value={gender}
+                    onChange={(event) => setGender(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="">Not specified</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Membership</label>
+                  <select
+                    value={membershipStatus}
+                    onChange={(event) => setMembershipStatus(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="Member">Member</option>
+                    <option value="Adherent">Adherent</option>
+                  </select>
+                </div>
               </div>
 
               <div>

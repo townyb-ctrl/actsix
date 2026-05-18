@@ -14,6 +14,7 @@ export type CurrentPerson = {
   phone_number: string | null;
   email: string | null;
   gender: string | null;
+  membership_status: string | null;
   whatsapp_enabled: boolean;
   notes: string | null;
   created_at: string;
@@ -159,6 +160,7 @@ export function useCurrentPerson() {
           phone_number: null,
           email: user.email || null,
           gender: null,
+          membership_status: "Member",
           whatsapp_enabled: false,
           notes: "Signed-in ACTSIX user profile",
         })
