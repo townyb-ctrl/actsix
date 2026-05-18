@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { PeopleSearchSelect } from "@/components/people/PeopleSearchSelect";
+import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ const ProjectDetail = () => {
   const [editingProject, setEditingProject] = useState<any | null>(null);
   const [savingProject, setSavingProject] = useState(false);
   const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
-  const [selectedPersonId, setSelectedPersonId] = useState("");
+  const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
 
   const load = async () => {
@@ -292,24 +292,31 @@ const ProjectDetail = () => {
   const addCollaborator = async (event?: React.FormEvent) => {
     event?.preventDefault();
 
-    if (!user || !project || !selectedPersonId) return;
+    if (!user || !project || selectedPersonIds.length === 0) return;
 
     const { error } = await (supabase as any)
       .from("project_collaborators")
-      .insert({
-        user_id: user.id,
-        project_id: project.id,
-        person_id: selectedPersonId,
-        role: collaboratorRole.trim() || "Collaborator",
-      });
+      .insert(
+        selectedPersonIds.map((personId) => ({
+          user_id: user.id,
+          project_id: project.id,
+          person_id: personId,
+          role: collaboratorRole.trim() || "Collaborator",
+        }))
+      );
 
     if (error) {
       toast.error(error.message);
       return;
     }
 
-    toast.success("Collaborator added");
-    setSelectedPersonId("");
+    toast.success(
+      selectedPersonIds.length === 1
+        ? "Collaborator added"
+        : `${selectedPersonIds.length} collaborators added`
+    );
+
+    setSelectedPersonIds([]);
     setCollaboratorRole("Collaborator");
     setAddCollaboratorOpen(false);
     load();
@@ -625,16 +632,16 @@ const ProjectDetail = () => {
 
       {addCollaboratorOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-xl border-border/70 bg-card shadow-card p-6">
-            <form onSubmit={addCollaborator} className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
+          <Card className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden border-border/70 bg-card shadow-card">
+            <form onSubmit={addCollaborator} className="flex min-h-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-6">
                 <div>
                   <p className="label-eyebrow">Project Collaborators</p>
                   <h2 className="text-xl font-extrabold tracking-tight">
-                    Add Collaborator
+                    Add Collaborators
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Choose a People profile to connect to this project.
+                    Choose People profiles to connect to this project.
                   </p>
                 </div>
 
@@ -643,7 +650,7 @@ const ProjectDetail = () => {
                   variant="outline"
                   className="rounded-xl"
                   onClick={() => {
-                    setSelectedPersonId("");
+                    setSelectedPersonIds([]);
                     setCollaboratorRole("Collaborator");
                     setAddCollaboratorOpen(false);
                   }}
@@ -652,13 +659,15 @@ const ProjectDetail = () => {
                 </Button>
               </div>
 
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+
               <div>
-                <label className="label-eyebrow">Person</label>
+                <label className="label-eyebrow">People</label>
                 <div className="mt-2">
-                  <PeopleSearchSelect
+                  <PeopleMultiSearchSelect
                     people={availablePeople}
-                    selectedPersonId={selectedPersonId}
-                    onSelect={setSelectedPersonId}
+                    selectedPersonIds={selectedPersonIds}
+                    onChange={setSelectedPersonIds}
                     placeholder="Search by name, email, or phone..."
                     emptyText="No available collaborators found."
                   />
@@ -680,14 +689,15 @@ const ProjectDetail = () => {
                   Everyone in People is already linked to this project.
                 </div>
               )}
+              </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border/70 bg-card p-6">
                 <Button
                   type="button"
                   variant="outline"
                   className="rounded-xl"
                   onClick={() => {
-                    setSelectedPersonId("");
+                    setSelectedPersonIds([]);
                     setCollaboratorRole("Collaborator");
                     setAddCollaboratorOpen(false);
                   }}
@@ -698,10 +708,10 @@ const ProjectDetail = () => {
                 <Button
                   type="submit"
                   className="actsix-btn-primary rounded-xl"
-                  disabled={!selectedPersonId}
+                  disabled={selectedPersonIds.length === 0}
                 >
                   <Plus className="h-4 w-4" />
-                  Add Collaborator
+                  {selectedPersonIds.length > 1 ? `Add ${selectedPersonIds.length} Collaborators` : "Add Collaborator"}
                 </Button>
               </div>
             </form>
