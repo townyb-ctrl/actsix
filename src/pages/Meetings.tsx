@@ -117,6 +117,18 @@ const Meetings = () => {
   const upcomingCount = meetings.filter((meeting) => meeting.meeting_date).length;
   const unscheduledCount = meetings.filter((meeting) => !meeting.meeting_date).length;
 
+  const openMeetLink = (event: React.MouseEvent, url?: string | null) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!url) {
+      toast.error("No Google Meet link saved for this meeting.");
+      return;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div>
       <PageHeader
@@ -237,7 +249,21 @@ const Meetings = () => {
                   </div>
 
 
-                  <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-teal transition-colors" />
+                  <div className="flex items-center gap-2">
+                    {meeting.google_meet_url && (
+                      <button
+                        type="button"
+                        onClick={(event) => openMeetLink(event, meeting.google_meet_url)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal transition hover:bg-brand-teal/15"
+                        aria-label={`Open Google Meet for ${meeting.title || "meeting"}`}
+                      >
+                        <Video className="h-3.5 w-3.5" />
+                        Open Meet
+                      </button>
+                    )}
+
+                    <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-teal transition-colors" />
+                  </div>
                 </Link>
               ))}
             </div>
