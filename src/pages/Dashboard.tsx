@@ -53,6 +53,24 @@ const Dashboard = () => {
       .slice(0, 3);
   }, [tasks]);
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  }, []);
+
+  const userName = useMemo(() => {
+    const emailName = user?.email?.split("@")[0] || "there";
+
+    return emailName
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }, [user?.email]);
+
   return (
     <div>
       <PageHeader
@@ -71,7 +89,7 @@ const Dashboard = () => {
               </div>
 
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
-                Welcome to ACTSIX
+                {greeting}, {userName}
               </h2>
 
               <p className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">
