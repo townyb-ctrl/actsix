@@ -172,7 +172,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-gradient-sidebar">
       <SidebarHeader className="border-b border-sidebar-border bg-transparent">
-        <div className="px-2 py-3">
+        <div className={collapsed ? "flex h-16 items-center justify-center px-0 py-0" : "px-2 py-3"}>
           <Logo compact={collapsed} />
         </div>
       </SidebarHeader>
@@ -181,7 +181,7 @@ export function AppSidebar() {
         <SidebarGroup>
 
           <SidebarGroupContent>
-            <div className="px-1.5 mb-3">
+            <div className={collapsed ? "mb-3 flex justify-center px-0" : "px-1.5 mb-3"}>
               {!collapsed ? (
                 <div className="px-1.5">
                   <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/40">
@@ -210,9 +210,9 @@ export function AppSidebar() {
                   onClick={() => navigate("/")}
                   title="Go to Homebase"
                   aria-label="Go to Homebase"
-                  className="flex h-10 w-full items-center justify-center rounded-lg bg-sidebar-accent/60 text-sidebar-foreground hover:bg-sidebar-accent"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-sidebar-accent/60 p-0 text-sidebar-foreground hover:bg-sidebar-accent"
                 >
-                  <LayoutGrid className="h-4 w-4" />
+                  <LayoutGrid className="h-5 w-5 shrink-0" />
                 </button>
               )}
             </div>
@@ -221,7 +221,7 @@ export function AppSidebar() {
               <div className="mx-3 mb-3 border-t border-sidebar-border/70" />
             )}
 
-            <SidebarMenu className="gap-1 px-1.5">
+            <SidebarMenu className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}>
               {items.map((item) => {
                 const active = isActive(item.url);
 
@@ -229,21 +229,24 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`h-10 rounded-lg transition-colors ${
+                      className={`${collapsed ? "mx-auto h-11 w-11 justify-center rounded-xl p-0" : "h-10 rounded-lg"} transition-colors ${
                         active
                           ? "bg-sidebar-accent text-sidebar-foreground font-semibold"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                       }`}
                     >
-                      <NavLink to={item.url} className="flex items-center gap-3">
+                      <NavLink
+                        to={item.url}
+                        className={collapsed ? "flex h-full w-full items-center justify-center" : "flex items-center gap-3"}
+                      >
                         <span
-                          className={`flex h-7 w-7 items-center justify-center rounded-md ${
+                          className={`flex ${collapsed ? "h-9 w-9 rounded-xl" : "h-7 w-7 rounded-md"} items-center justify-center ${
                             active
                               ? "bg-brand-teal/20 text-brand-teal-bright"
                               : "bg-sidebar-accent/40 text-sidebar-foreground/60"
                           }`}
                         >
-                          <item.icon className="h-3.5 w-3.5" />
+                          <item.icon className={collapsed ? "h-5 w-5" : "h-3.5 w-3.5"} />
                         </span>
 
                         {!collapsed && <span className="text-sm">{item.title}</span>}
@@ -259,11 +262,11 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1 px-1.5">
+            <SidebarMenu className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  className={`h-10 rounded-lg ${
+                  className={`${collapsed ? "mx-auto h-11 w-11 justify-center rounded-xl p-0" : "h-10 rounded-lg"} ${
                     isActive("/settings")
                       ? "bg-sidebar-accent text-sidebar-foreground"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60"
@@ -271,7 +274,7 @@ export function AppSidebar() {
                 >
                   <NavLink to="/settings" className="flex items-center gap-3">
                     <span className="flex h-7 w-7 items-center justify-center rounded-md bg-sidebar-accent/40">
-                      <SettingsIcon className="h-3.5 w-3.5" />
+                      <SettingsIcon className={collapsed ? "h-5 w-5" : "h-3.5 w-3.5"} />
                     </span>
                     {!collapsed && <span className="text-sm">Settings</span>}
                   </NavLink>
