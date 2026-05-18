@@ -432,26 +432,100 @@ const People = () => {
 
     setImportingCsv(true);
 
-    const { error } = await (supabase as any).from("people").insert(
-      csvRows.map((row) => ({
-        user_id: user.id,
-        first_name: row.first_name,
-        last_name: row.last_name,
-        display_name: row.display_name,
-        phone_number: row.phone_number,
-        email: row.email,
-        whatsapp_enabled: row.whatsapp_enabled,
-        notes: row.notes,
-      }))
-    );
+    const emails = csvRows
+      .map((row) => row.email?.trim().toLowerCase())
+      .filter(Boolean) as string[];
 
-    if (error) {
-      toast.error(error.message);
+    const { data: existingPeople, error: existingPeopleError } = await (supabase as any)
+      .from("people")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("email", emails.length > 0 ? emails : ["__no_email_matches__"]);
+
+    if (existingPeopleError) {
+      toast.error(existingPeopleError.message);
       setImportingCsv(false);
       return;
     }
 
-    toast.success(`${csvRows.length} people imported`);
+    const existingByEmail = new Map(
+      (existingPeople || [])
+        .filter((person: Person) => person.email)
+        .map((person: Person) => [person.email!.trim().toLowerCase(), person])
+    );
+
+    const rowsToCreate: CsvPersonRow[] = [];
+    const rowsToUpdate: Array<{ existing: Person; row: CsvPersonRow }> = [];
+
+    csvRows.forEach((row) => {
+      const emailKey = row.email?.trim().toLowerCase();
+
+      if (emailKey && existingByEmail.has(emailKey)) {
+        rowsToUpdate.push({
+          existing: existingByEmail.get(emailKey),
+          row,
+        });
+        return;
+      }
+
+      rowsToCreate.push(row);
+    });
+
+    for (const { existing, row } of rowsToUpdate) {
+      const updatePayload = {
+        first_name: existing.first_name || row.first_name,
+        last_name: existing.last_name || row.last_name,
+        display_name: existing.display_name || row.display_name,
+        phone_number: existing.phone_number || row.phone_number,
+        email: existing.email || row.email,
+        whatsapp_enabled: Boolean(existing.whatsapp_enabled || row.whatsapp_enabled),
+        notes:
+          existing.notes && row.notes && !existing.notes.includes(row.notes)
+            ? `${existing.notes}
+---
+${row.notes}`
+            : existing.notes || row.notes,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: updateError } = await (supabase as any)
+        .from("people")
+        .update(updatePayload)
+        .eq("id", existing.id)
+        .eq("user_id", user.id);
+
+      if (updateError) {
+        toast.error(updateError.message);
+        setImportingCsv(false);
+        return;
+      }
+    }
+
+    if (rowsToCreate.length > 0) {
+      const { error: createError } = await (supabase as any).from("people").insert(
+        rowsToCreate.map((row) => ({
+          user_id: user.id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          display_name: row.display_name,
+          phone_number: row.phone_number,
+          email: row.email,
+          whatsapp_enabled: row.whatsapp_enabled,
+          notes: row.notes,
+        }))
+      );
+
+      if (createError) {
+        toast.error(createError.message);
+        setImportingCsv(false);
+        return;
+      }
+    }
+
+    toast.success(
+      `CSV import complete: ${rowsToCreate.length} created, ${rowsToUpdate.length} updated`
+    );
+
     setCsvRows([]);
     setCsvError("");
     setImportOpen(false);
