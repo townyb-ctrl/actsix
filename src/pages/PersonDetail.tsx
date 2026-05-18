@@ -61,6 +61,10 @@ const formatDate = (value?: string | null) => {
   });
 };
 
+const normalizeEmail = (value?: string | null) => {
+  return value?.trim().toLowerCase() || null;
+};
+
 const PersonDetail = () => {
   const { personId } = useParams();
   const { user } = useAuth();
@@ -193,7 +197,7 @@ const PersonDetail = () => {
         last_name: cleanLastName || null,
         display_name: displayName,
         phone_number: phoneNumber.trim() || null,
-        email: email.trim() || null,
+        email: normalizeEmail(email),
         whatsapp_enabled: whatsappEnabled,
         notes: notes.trim() || null,
         updated_at: new Date().toISOString(),
