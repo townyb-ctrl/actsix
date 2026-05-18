@@ -3,6 +3,7 @@ import {
   Inbox,
   ListChecks,
   FolderKanban,
+  House,
   Clock,
   Sparkles,
   RotateCcw,
@@ -75,7 +76,7 @@ const peopleItems: Item[] = [
 ];
 
 const workspaceItems = [
-  { title: "Home", url: "/", icon: LayoutGrid, disabled: false },
+  { title: "Home", url: "/", icon: House, disabled: false },
   { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, disabled: false },
   { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays, disabled: false },
   { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music, disabled: false },
@@ -217,7 +218,7 @@ export function AppSidebar() {
                   {moduleValue === "/" ? (
                     <div className="flex h-11 w-full items-center gap-2 rounded-xl border border-sidebar-border bg-sidebar px-3 text-sidebar-foreground">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-teal-bright">
-                        <LayoutGrid className="h-3.5 w-3.5" />
+                        <House className="h-3.5 w-3.5" />
                       </span>
                       <span className="block truncate text-sm font-bold">
                         Home
@@ -299,7 +300,7 @@ export function AppSidebar() {
                   aria-label="Go to Homebase"
                   className="flex h-11 w-11 items-center justify-center rounded-xl bg-sidebar-accent/60 p-0 text-sidebar-foreground hover:bg-sidebar-accent"
                 >
-                  <LayoutGrid className="h-5 w-5 shrink-0" />
+                  <House className="h-5 w-5 shrink-0" />
                 </button>
               )}
             </div>
