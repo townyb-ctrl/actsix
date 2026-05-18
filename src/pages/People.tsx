@@ -71,32 +71,6 @@ const People = () => {
     });
   }, [people, searchTerm]);
 
-  const getMembershipSummaryForPerson = (personId: string) => {
-    const personMemberships = memberships.filter(
-      (membership) => membership.person_id === personId
-    );
-
-    const grouped = personMemberships.reduce<Record<string, string[]>>((acc, membership) => {
-      const teamName = membership.service_teams?.name || "Service Team";
-      const roleName = membership.role_name?.trim();
-
-      if (!acc[teamName]) {
-        acc[teamName] = [];
-      }
-
-      if (roleName && !acc[teamName].includes(roleName)) {
-        acc[teamName].push(roleName);
-      }
-
-      return acc;
-    }, {});
-
-    return Object.entries(grouped).map(([teamName, roles]) => ({
-      teamName,
-      roles,
-    }));
-  };
-
   const duplicateEmailGroups = useMemo(() => {
     const grouped = people.reduce<Record<string, Person[]>>((acc, person) => {
       const emailKey = person.email?.trim().toLowerCase();
