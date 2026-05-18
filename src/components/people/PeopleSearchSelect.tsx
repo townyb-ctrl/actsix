@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Search, Users, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { formatPhoneForDisplay } from "@/lib/phone";
 
 export type PeopleSearchPerson = {
   id: string;
@@ -41,6 +42,7 @@ export function PeopleSearchSelect({
           person.display_name,
           person.email,
           person.phone_number,
+          formatPhoneForDisplay(person.phone_number),
         ]
           .filter(Boolean)
           .some((value) => value!.toLowerCase().includes(cleanSearch));
@@ -71,7 +73,7 @@ export function PeopleSearchSelect({
               </p>
               {(selectedPerson.email || selectedPerson.phone_number) && (
                 <p className="truncate text-xs text-muted-foreground">
-                  {selectedPerson.email || selectedPerson.phone_number}
+                  {selectedPerson.email || formatPhoneForDisplay(selectedPerson.phone_number)}
                 </p>
               )}
             </div>
@@ -144,7 +146,7 @@ export function PeopleSearchSelect({
                     </p>
                     {(person.email || person.phone_number) && (
                       <p className="truncate text-xs text-muted-foreground">
-                        {person.email || person.phone_number}
+                        {person.email || formatPhoneForDisplay(person.phone_number)}
                       </p>
                     )}
                   </div>

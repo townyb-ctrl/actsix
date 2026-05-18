@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
 
 type Person = {
   id: string;
@@ -59,23 +60,6 @@ const People = () => {
   const [gender, setGender] = useState("");
   const [notes, setNotes] = useState("");
 
-  const normalizePhoneForWhatsapp = (value?: string | null) => {
-    return value?.replace(/[^\d+]/g, "") || "";
-  };
-
-  const isMessageablePhone = (value?: string | null) => {
-    const normalized = normalizePhoneForWhatsapp(value);
-    return /^\+[1-9]\d{7,14}$/.test(normalized);
-  };
-
-  const getWhatsappHref = (value?: string | null) => {
-    const normalized = normalizePhoneForWhatsapp(value);
-
-    if (!isMessageablePhone(normalized)) return "";
-
-    return `https://wa.me/${normalized.replace("+", "")}`;
-  };
-
   const filteredPeople = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
@@ -85,6 +69,7 @@ const People = () => {
         [
           person.display_name,
           person.phone_number,
+          formatPhoneForDisplay(person.phone_number),
           person.email,
           person.gender,
           person.notes,
@@ -418,15 +403,14 @@ const People = () => {
         first_name: firstName,
         last_name: lastName || null,
         display_name: displayName || firstName,
-        phone_number:
-          (
-            row.phone_number ||
+        phone_number: normalizePhoneForStorage(
+          row.phone_number ||
             row.phone ||
             row.whatsapp_number ||
             row.primary_phone_number ||
             row.primary_phone ||
             ""
-          ).trim() || null,
+        ),
         email: normalizeEmail(
           row.email ||
             row.email_address ||
@@ -492,7 +476,7 @@ const People = () => {
         first_name: existing.first_name || row.first_name,
         last_name: existing.last_name || row.last_name,
         display_name: existing.display_name || row.display_name,
-        phone_number: existing.phone_number || row.phone_number,
+        phone_number: existing.phone_number || normalizePhoneForStorage(row.phone_number),
         email: normalizeEmail(existing.email || row.email),
         gender: existing.gender || row.gender,
         whatsapp_enabled: Boolean(existing.whatsapp_enabled),
@@ -525,7 +509,7 @@ ${row.notes}`
           first_name: row.first_name,
           last_name: row.last_name,
           display_name: row.display_name,
-          phone_number: row.phone_number,
+          phone_number: normalizePhoneForStorage(row.phone_number),
           email: normalizeEmail(row.email),
           gender: row.gender,
           whatsapp_enabled: false,
@@ -579,7 +563,7 @@ ${row.notes}`
       first_name: cleanFirstName,
       last_name: cleanLastName || null,
       display_name: displayName,
-      phone_number: phoneNumber.trim() || null,
+      phone_number: normalizePhoneForStorage(phoneNumber),
       email: normalizeEmail(email),
       gender: gender.trim() || null,
       whatsapp_enabled: false,
@@ -759,7 +743,7 @@ ${row.notes}`
                   {person.phone_number ? (
                     <span className="inline-flex items-center gap-2">
                       <Phone className="h-3.5 w-3.5" />
-                      {person.phone_number}
+                      {formatPhoneForDisplay(person.phone_number)}
                     </span>
                   ) : (
                     <span className="text-muted-foreground/55">—</span>
@@ -890,7 +874,7 @@ ${row.notes}`
                       </div>
 
                       <div className="truncate text-muted-foreground">
-                        {row.phone_number || "—"}
+                        {formatPhoneForDisplay(row.phone_number) || "—"}
                       </div>
 
                       <div className="truncate text-muted-foreground">
@@ -998,7 +982,7 @@ ${row.notes}`
                   <Input
                     value={phoneNumber}
                     onChange={(event) => setPhoneNumber(event.target.value)}
-                    placeholder="+27..."
+                    placeholder="073 775 4927"
                     className="mt-2 border-border/70 bg-background"
                   />
                 </div>

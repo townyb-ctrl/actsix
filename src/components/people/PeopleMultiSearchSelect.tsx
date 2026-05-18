@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Check, Search, Users, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { formatPhoneForDisplay } from "@/lib/phone";
 
 export type PeopleMultiSearchPerson = {
   id: string;
@@ -40,7 +41,7 @@ export function PeopleMultiSearchSelect({
 
     return people
       .filter((person) => {
-        return [person.display_name, person.email, person.phone_number]
+        return [person.display_name, person.email, person.phone_number, formatPhoneForDisplay(person.phone_number)]
           .filter(Boolean)
           .some((value) => value!.toLowerCase().includes(cleanSearch));
       })

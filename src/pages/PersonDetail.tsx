@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useParams } from "react-router-dom";
+import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
 
 type Person = {
   id: string;
@@ -85,22 +86,6 @@ const normalizeEmail = (value?: string | null) => {
   return value?.trim().toLowerCase() || null;
 };
 
-const normalizePhoneForWhatsapp = (value?: string | null) => {
-  return value?.replace(/[^\d+]/g, "") || "";
-};
-
-const isMessageablePhone = (value?: string | null) => {
-  const normalized = normalizePhoneForWhatsapp(value);
-  return /^\+[1-9]\d{7,14}$/.test(normalized);
-};
-
-const getWhatsappHref = (value?: string | null) => {
-  const normalized = normalizePhoneForWhatsapp(value);
-
-  if (!isMessageablePhone(normalized)) return "";
-
-  return `https://wa.me/${normalized.replace("+", "")}`;
-};
 
 const PersonDetail = () => {
   const { personId } = useParams();
@@ -142,7 +127,7 @@ const PersonDetail = () => {
     setPerson(data);
     setFirstName(data.first_name || "");
     setLastName(data.last_name || "");
-    setPhoneNumber(data.phone_number || "");
+    setPhoneNumber(formatPhoneForDisplay(data.phone_number) || "");
     setEmail(data.email || "");
     setGender(data.gender || "");
     setNotes(data.notes || "");
@@ -220,7 +205,7 @@ const PersonDetail = () => {
 
     setFirstName(person.first_name || "");
     setLastName(person.last_name || "");
-    setPhoneNumber(person.phone_number || "");
+    setPhoneNumber(formatPhoneForDisplay(person.phone_number) || "");
     setEmail(person.email || "");
     setGender(person.gender || "");
     setNotes(person.notes || "");
@@ -247,7 +232,7 @@ const PersonDetail = () => {
         first_name: cleanFirstName,
         last_name: cleanLastName || null,
         display_name: displayName,
-        phone_number: phoneNumber.trim() || null,
+        phone_number: normalizePhoneForStorage(phoneNumber),
         email: normalizeEmail(email),
         gender: gender.trim() || null,
         whatsapp_enabled: false,
@@ -430,7 +415,7 @@ const PersonDetail = () => {
               {person.phone_number && (
                 <span className="inline-flex items-center gap-2">
                   <Phone className="h-3.5 w-3.5" />
-                  {person.phone_number}
+                  {formatPhoneForDisplay(person.phone_number)}
                 </span>
               )}
 
@@ -763,7 +748,7 @@ const PersonDetail = () => {
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                   Phone
                 </p>
-                <p className="font-bold">{person.phone_number || "Not added"}</p>
+                <p className="font-bold">{formatPhoneForDisplay(person.phone_number) || "Not added"}</p>
               </div>
 
               <div>
@@ -850,6 +835,7 @@ const PersonDetail = () => {
                     value={firstName}
                     onChange={(event) => setFirstName(event.target.value)}
                     className="mt-2 border-border/70 bg-background"
+                    placeholder="073 775 4927"
                   />
                 </div>
 
