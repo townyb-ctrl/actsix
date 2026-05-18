@@ -560,6 +560,51 @@ const ServicePlannerTeamDetail = () => {
     setPhoneNumber(formatPhoneForDisplay(selectedPerson.phone_number) || "");
   };
 
+  const createPersonFromSearch = async (displayName: string) => {
+    if (!user) return;
+
+    const cleanedName = displayName.trim();
+
+    if (!cleanedName) {
+      toast.error("Person name is required.");
+      return;
+    }
+
+    const { first_name, last_name } = splitDisplayName(cleanedName);
+
+    const { data: newPerson, error } = await (supabase as any)
+      .from("people")
+      .insert({
+        user_id: user.id,
+        first_name,
+        last_name,
+        display_name: cleanedName,
+        phone_number: null,
+        membership_status: "Member",
+        whatsapp_enabled: false,
+        notes: null,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setPeople((currentPeople) =>
+      [...currentPeople, newPerson].sort((a, b) =>
+        a.display_name.localeCompare(b.display_name)
+      )
+    );
+
+    setSelectedPersonId(newPerson.id);
+    setPersonName(newPerson.display_name);
+    setPhoneNumber("");
+
+    toast.success("People profile created");
+  };
+
   const createMember = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -1261,6 +1306,7 @@ const ServicePlannerTeamDetail = () => {
                       onSelect={handleSelectExistingPerson}
                       placeholder="Search by name, email, or phone..."
                       emptyText="No matching People profiles found."
+                      onCreatePerson={createPersonFromSearch}
                     />
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
