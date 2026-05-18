@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock, Tags, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -6,11 +6,23 @@ import ContextSelect from "@/components/ContextSelect";
 import { PeopleSearchSelect, type PeopleSearchPerson } from "@/components/people/PeopleSearchSelect";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 
 type NextActionFieldsProps = {
   item: any;
   onChange: (item: any) => void;
   onRefreshOptions?: () => void | Promise<void>;
+};
+
+type ProjectRecord = {
+  id: string;
+  name: string;
+  user_id: string;
+};
+
+type ProjectCollaborator = {
+  person_id: string;
+  people?: PeopleSearchPerson | null;
 };
 
 const NextActionFields = ({
@@ -19,23 +31,80 @@ const NextActionFields = ({
   onRefreshOptions,
 }: NextActionFieldsProps) => {
   const { user } = useAuth();
-  const [people, setPeople] = useState<PeopleSearchPerson[]>([]);
+  const { person: currentPerson } = useCurrentPerson();
+
+  const [currentProject, setCurrentProject] = useState<ProjectRecord | null>(null);
+  const [projectCollaborators, setProjectCollaborators] = useState<ProjectCollaborator[]>([]);
+  const [loadingCollaborators, setLoadingCollaborators] = useState(false);
+
+  const selectedProjectName = item?.project || "";
 
   useEffect(() => {
-    const loadPeople = async () => {
-      if (!user) return;
+    const loadProjectCollaborators = async () => {
+      if (!user || !selectedProjectName) {
+        setCurrentProject(null);
+        setProjectCollaborators([]);
+        return;
+      }
 
-      const { data } = await (supabase as any)
-        .from("people")
-        .select("id, display_name, avatar_url, email, phone_number")
+      setLoadingCollaborators(true);
+
+      const { data: projectData, error: projectError } = await (supabase as any)
+        .from("projects")
+        .select("id, name, user_id")
         .eq("user_id", user.id)
-        .order("display_name", { ascending: true });
+        .eq("name", selectedProjectName)
+        .maybeSingle();
 
-      setPeople(data || []);
+      if (projectError || !projectData) {
+        setCurrentProject(null);
+        setProjectCollaborators([]);
+        setLoadingCollaborators(false);
+        return;
+      }
+
+      setCurrentProject(projectData);
+
+      const { data: collaboratorData, error: collaboratorError } = await (supabase as any)
+        .from("project_collaborators")
+        .select("person_id, people(id, display_name, avatar_url, email, phone_number)")
+        .eq("user_id", user.id)
+        .eq("project_id", projectData.id);
+
+      if (collaboratorError) {
+        setProjectCollaborators([]);
+        setLoadingCollaborators(false);
+        return;
+      }
+
+      setProjectCollaborators(collaboratorData || []);
+      setLoadingCollaborators(false);
     };
 
-    loadPeople();
-  }, [user]);
+    loadProjectCollaborators();
+  }, [user, selectedProjectName]);
+
+  const assignablePeople = useMemo(() => {
+    return projectCollaborators
+      .map((collaborator) => collaborator.people)
+      .filter(Boolean) as PeopleSearchPerson[];
+  }, [projectCollaborators]);
+
+  const canAssignProjectTasks = useMemo(() => {
+    if (!user || !currentProject) return false;
+
+    const isProjectOwner = currentProject.user_id === user.id;
+    const isProjectCollaborator =
+      Boolean(currentPerson?.id) &&
+      projectCollaborators.some((collaborator) => collaborator.person_id === currentPerson?.id);
+
+    return isProjectOwner || isProjectCollaborator;
+  }, [user, currentProject, currentPerson?.id, projectCollaborators]);
+
+  const shouldShowAssignedTo =
+    Boolean(selectedProjectName) &&
+    assignablePeople.length > 0 &&
+    canAssignProjectTasks;
 
   if (!item) return null;
 
@@ -52,7 +121,14 @@ const NextActionFields = ({
             <label className="label-eyebrow">Project</label>
             <ProjectSelect
               value={item.project ?? ""}
-              onChange={(project) => onChange({ ...item, project })}
+              onChange={(project) =>
+                onChange({
+                  ...item,
+                  project,
+                  assigned_person_id:
+                    project === item.project ? item.assigned_person_id ?? null : null,
+                })
+              }
               onCreated={onRefreshOptions}
             />
           </div>
@@ -64,27 +140,6 @@ const NextActionFields = ({
               onChange={(context) => onChange({ ...item, context })}
               onCreated={onRefreshOptions}
             />
-          </div>
-
-          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
-            <label className="label-eyebrow flex items-center gap-2">
-              <UserRound className="h-3.5 w-3.5" />
-              Assigned To
-            </label>
-            <div className="mt-2">
-              <PeopleSearchSelect
-                people={people}
-                selectedPersonId={item.assigned_person_id ?? ""}
-                onSelect={(personId) =>
-                  onChange({
-                    ...item,
-                    assigned_person_id: personId || null,
-                  })
-                }
-                placeholder="Search People..."
-                emptyText="No matching People profiles found."
-              />
-            </div>
           </div>
 
           <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
@@ -105,6 +160,40 @@ const NextActionFields = ({
               className="mt-2 border-border/70 bg-background"
             />
           </div>
+
+          {shouldShowAssignedTo && (
+            <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft md:col-span-2">
+              <label className="label-eyebrow flex items-center gap-2">
+                <UserRound className="h-3.5 w-3.5" />
+                Assigned To
+              </label>
+              <div className="mt-2">
+                <PeopleSearchSelect
+                  people={assignablePeople}
+                  selectedPersonId={item.assigned_person_id ?? ""}
+                  onSelect={(personId) =>
+                    onChange({
+                      ...item,
+                      assigned_person_id: personId || null,
+                    })
+                  }
+                  placeholder="Search project collaborators..."
+                  emptyText="No matching project collaborators found."
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Tasks can only be assigned to People who are collaborators on this project.
+              </p>
+            </div>
+          )}
+
+          {!loadingCollaborators &&
+            Boolean(selectedProjectName) &&
+            assignablePeople.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground md:col-span-2">
+                Add collaborators to this project before assigning tasks.
+              </div>
+            )}
 
           <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
             <label className="label-eyebrow">Priority</label>
