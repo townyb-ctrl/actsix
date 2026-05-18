@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 
 type Person = {
   id: string;
   user_id: string;
+  auth_user_id: string | null;
   first_name: string;
   last_name: string | null;
   display_name: string;
@@ -34,6 +36,7 @@ type CsvPersonRow = {
 
 const People = () => {
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,7 +120,7 @@ const People = () => {
 
   useEffect(() => {
     fetchPeople();
-  }, [user]);
+  }, [user, currentPerson?.id]);
 
   const parseCsvLine = (line: string) => {
     const values: string[] = [];
@@ -430,8 +433,16 @@ const People = () => {
                   </div>
 
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-extrabold tracking-tight text-foreground">
-                      {person.display_name}
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div className="truncate text-sm font-extrabold tracking-tight text-foreground">
+                        {person.display_name}
+                      </div>
+
+                      {person.auth_user_id === user?.id && (
+                        <span className="shrink-0 rounded-full border border-brand-teal bg-brand-teal/10 px-2 py-0.5 text-[10px] font-bold text-brand-teal">
+                          You
+                        </span>
+                      )}
                     </div>
                     {person.notes && (
                       <div className="mt-0.5 truncate text-xs text-muted-foreground">

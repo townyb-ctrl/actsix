@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ const priorityWeight: Record<string, number> = {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { displayName } = useCurrentPerson();
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [projectCount, setProjectCount] = useState(0);
@@ -61,15 +63,6 @@ const Dashboard = () => {
     return "Good evening";
   }, []);
 
-  const userName = useMemo(() => {
-    const emailName = user?.email?.split("@")[0] || "there";
-
-    return emailName
-      .split(/[._-]+/)
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-  }, [user?.email]);
 
   return (
     <div>
@@ -89,7 +82,7 @@ const Dashboard = () => {
               </div>
 
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
-                {greeting}, {userName}
+                {greeting}, {displayName}
               </h2>
 
               <p className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">

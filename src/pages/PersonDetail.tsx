@@ -11,6 +11,7 @@ import { Link, useParams } from "react-router-dom";
 type Person = {
   id: string;
   user_id: string;
+  auth_user_id: string | null;
   first_name: string;
   last_name: string | null;
   display_name: string;
