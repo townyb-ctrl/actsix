@@ -10,6 +10,8 @@ import {
   Calendar,
   Users,
   BarChart3,
+  Check,
+  ChevronsUpDown,
   CalendarDays,
   Repeat,
   Settings as SettingsIcon,
@@ -69,12 +71,24 @@ const peopleItems: Item[] = [
   { title: "People Directory", url: "/people", icon: Users },
 ];
 
+const workspaceItems = [
+  { title: "Home", url: "/", icon: LayoutGrid, disabled: false },
+  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, disabled: false },
+  { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays, disabled: false },
+  { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music, disabled: false },
+  { title: "ACTSIX: People", url: "/people", icon: Users, disabled: false },
+  { title: "Sermon Prep — Coming Soon", url: "/sermon-prep", icon: Sparkles, disabled: true },
+  { title: "Scripture Tools — Coming Soon", url: "/scripture", icon: ClipboardCheck, disabled: true },
+  { title: "Media Tools — Coming Soon", url: "/media", icon: BarChart3, disabled: true },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
   const inMeetingsModule = pathname === "/meetings" || pathname.startsWith("/meetings/");
@@ -100,6 +114,11 @@ export function AppSidebar() {
         ? "/tasks"
         : "/";
 
+  const selectedWorkspace =
+    workspaceItems.find((item) => item.url === moduleValue) || workspaceItems[0];
+
+  const SelectedWorkspaceIcon = selectedWorkspace.icon;
+
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
 
@@ -111,6 +130,10 @@ export function AppSidebar() {
     if (p === "/people") return pathname === "/people";
     return pathname.startsWith(p);
   };
+
+  useEffect(() => {
+    setWorkspaceOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;
@@ -183,26 +206,76 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <div className={collapsed ? "mb-3 flex justify-center px-0" : "px-1.5 mb-3"}>
               {!collapsed ? (
-                <div className="px-1.5">
-                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/40">
+                <div className="px-0">
+                  <label className="mb-1.5 block px-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/40">
                     Workspace
                   </label>
 
-                  <select
-                    value={moduleValue}
-                    onChange={(event) => navigate(event.target.value)}
-                    className="h-10 w-full rounded-lg border border-sidebar-border bg-sidebar px-2 text-sm font-semibold text-sidebar-foreground outline-none focus:ring-2 focus:ring-sidebar-ring"
-                  >
-                    <option value="/">Home</option>
-                    <option value="/tasks">ACTSIX: Tasks</option>
-                    <option value="/meetings">ACTSIX: Meetings</option>
-                    <option value="/service-planner">ACTSIX: Service Planner</option>
-                    <option value="/service-planning" disabled>Service Planning — Coming Soon</option>
-                    <option value="/sermon-prep" disabled>Sermon Prep — Coming Soon</option>
-                    <option value="/scripture" disabled>Scripture Tools — Coming Soon</option>
-                    <option value="/media" disabled>Media Tools — Coming Soon</option>
-                    <option value="/people">ACTSIX: People</option>
-                  </select>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="grid h-11 w-full grid-cols-1 rounded-xl border border-sidebar-border bg-sidebar px-3 text-left text-sidebar-foreground outline-none transition hover:bg-sidebar-accent/45 focus:ring-2 focus:ring-sidebar-ring"
+                      onClick={() => setWorkspaceOpen((open) => !open)}
+                    >
+                      <span className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 pr-7">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-teal-bright">
+                          <SelectedWorkspaceIcon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="block truncate text-sm font-bold">
+                          {selectedWorkspace.title}
+                        </span>
+                      </span>
+
+                      <ChevronsUpDown className="col-start-1 row-start-1 h-4 w-4 self-center justify-self-end text-sidebar-foreground/45" />
+                    </button>
+
+                    {workspaceOpen && (
+                      <div className="absolute left-0 right-0 top-12 z-50 max-h-80 overflow-auto rounded-2xl border border-sidebar-border bg-sidebar p-1.5 shadow-xl">
+                        {workspaceItems.map((item) => {
+                          const active = item.url === moduleValue;
+                          const WorkspaceIcon = item.icon;
+
+                          return (
+                            <button
+                              key={item.url}
+                              type="button"
+                              disabled={item.disabled}
+                              className={`group flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition ${
+                                active
+                                  ? "bg-sidebar-accent text-sidebar-foreground"
+                                  : item.disabled
+                                    ? "cursor-not-allowed text-sidebar-foreground/30"
+                                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                              }`}
+                              onClick={() => {
+                                if (item.disabled) return;
+                                setWorkspaceOpen(false);
+                                navigate(item.url);
+                              }}
+                            >
+                              <span
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                                  active
+                                    ? "bg-brand-teal/20 text-brand-teal-bright"
+                                    : "bg-sidebar-accent/35 text-sidebar-foreground/55"
+                                }`}
+                              >
+                                <WorkspaceIcon className="h-3.5 w-3.5" />
+                              </span>
+
+                              <span className="min-w-0 flex-1 truncate text-sm font-bold">
+                                {item.title}
+                              </span>
+
+                              {active && (
+                                <Check className="h-4 w-4 shrink-0 text-brand-teal-bright" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <button
