@@ -780,7 +780,7 @@ const ServiceDetail = () => {
   };
 
   const buildTeamWhatsAppMessage = () => {
-    const serviceName = service?.title || serviceType?.name || "Service";
+    const serviceName = serviceType?.name || service?.title || "Service";
     const serviceDate = formatDate(service?.service_date);
     const serviceTime = service?.start_time ? service.start_time.slice(0, 5) : "";
 
@@ -813,7 +813,7 @@ const ServiceDetail = () => {
     return [
       "Hi team 👋",
       "",
-      `You are serving at ${serviceName} on ${serviceDate}${serviceTime ? ` at ${serviceTime}` : ""}.`,
+      `You are serving at the ${serviceName} on ${serviceDate}${serviceTime ? ` at ${serviceTime}` : ""}.`,
       "",
       ...teamSections,
       "Please reply with a 👍 once you have seen this.",
