@@ -4,6 +4,8 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Copy,
+  ExternalLink,
   FileText,
   ListChecks,
   MapPin,
@@ -13,6 +15,7 @@ import {
   Trash2,
   UserRoundX,
   UsersRound,
+  Video,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -295,6 +298,7 @@ const MeetingDetail = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [peopleOpen, setPeopleOpen] = useState(false);
+  const [googleMeetUrlDraft, setGoogleMeetUrlDraft] = useState("");
 
   const attendeeList = useMemo(() => parseAttendees(attendeesText), [attendeesText]);
   const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
@@ -328,6 +332,7 @@ const MeetingDetail = () => {
 
     setMeeting(meetingData);
     setEditDraft(meetingData);
+    setGoogleMeetUrlDraft(meetingData.google_meet_url || "");
     setAttendeesText(
       Array.isArray(meetingData.attendees)
         ? meetingData.attendees.join(", ")
@@ -385,6 +390,56 @@ const MeetingDetail = () => {
     toast.success("Meeting details updated");
     setEditOpen(false);
     load();
+  };
+
+  const saveGoogleMeetUrl = async () => {
+    if (!meeting) return;
+
+    const cleanUrl = googleMeetUrlDraft.trim();
+
+    const { error } = await (supabase as any)
+      .from("meetings")
+      .update({
+        google_meet_url: cleanUrl || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", meeting.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setMeeting({ ...meeting, google_meet_url: cleanUrl || null });
+    setGoogleMeetUrlDraft(cleanUrl);
+    toast.success(cleanUrl ? "Google Meet link saved" : "Google Meet link removed");
+  };
+
+  const openGoogleMeet = () => {
+    const url = (meeting?.google_meet_url || googleMeetUrlDraft || "").trim();
+
+    if (!url) {
+      toast.error("No Google Meet link saved yet.");
+      return;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const copyGoogleMeetUrl = async () => {
+    const url = (meeting?.google_meet_url || googleMeetUrlDraft || "").trim();
+
+    if (!url) {
+      toast.error("No Google Meet link saved yet.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Google Meet link copied");
+    } catch {
+      toast.error("Could not copy Google Meet link.");
+    }
   };
 
 
@@ -802,6 +857,71 @@ ${transcriptText.trim()}`;
                 <span className="label-eyebrow">Actions</span>
               </div>
               <div className="mt-2 text-2xl font-extrabold">{actions.length}</div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border-border/70 bg-card p-5 shadow-card">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                  <Video className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <p className="label-eyebrow">Online Meeting</p>
+                  <h2 className="text-xl font-extrabold tracking-tight">
+                    Google Meet
+                  </h2>
+                </div>
+              </div>
+
+              <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+                Add a Google Meet link for this meeting so the online meeting workflow stays connected to the agenda, minutes, and action points.
+              </p>
+
+              <div className="mt-4 flex flex-col gap-3 md:flex-row">
+                <Input
+                  value={googleMeetUrlDraft}
+                  onChange={(event) => setGoogleMeetUrlDraft(event.target.value)}
+                  placeholder="https://meet.google.com/..."
+                  className="border-border/70 bg-background"
+                />
+
+                <Button
+                  type="button"
+                  className="actsix-btn-primary rounded-xl md:w-auto"
+                  onClick={saveGoogleMeetUrl}
+                >
+                  <Save className="h-4 w-4" />
+                  Save Link
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={copyGoogleMeetUrl}
+                disabled={!(meeting?.google_meet_url || googleMeetUrlDraft).trim()}
+              >
+                <Copy className="h-4 w-4" />
+                Copy Link
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={openGoogleMeet}
+                disabled={!(meeting?.google_meet_url || googleMeetUrlDraft).trim()}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open Meet
+              </Button>
             </div>
           </div>
         </Card>
