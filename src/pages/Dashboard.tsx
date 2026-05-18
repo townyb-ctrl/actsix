@@ -1,18 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowUpRight,
-  CalendarDays,
-  FileText,
-  Headphones,
-  HeartHandshake,
   LayoutDashboard,
-  ListChecks,
-  Mic2,
-  PlayCircle,
-  ScrollText,
-  Sparkles,
-  UsersRound,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,62 +14,6 @@ const priorityWeight: Record<string, number> = {
   High: 3,
   Medium: 2,
   Low: 1,
-};
-
-const ModuleCard = ({
-  title,
-  description,
-  icon: Icon,
-  to,
-  status = "coming",
-  meta,
-}: {
-  title: string;
-  description: string;
-  icon: any;
-  to?: string;
-  status?: "live" | "coming";
-  meta?: string;
-}) => {
-  const content = (
-    <Card className="group relative overflow-hidden p-5 border-border/70 bg-card shadow-card hover:border-brand-teal/40 transition-colors min-h-[180px]">
-      <div className="absolute -right-6 -bottom-8 text-[120px] leading-none font-extrabold text-brand-teal/[0.035] select-none pointer-events-none">
-        {title[0]}
-      </div>
-
-      <div className="flex items-start justify-between gap-4">
-        <div className="h-11 w-11 rounded-2xl bg-brand-teal/10 text-brand-teal flex items-center justify-center">
-          <Icon className="h-5 w-5" />
-        </div>
-
-        <span
-          className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${
-            status === "live"
-              ? "border-brand-teal/25 bg-brand-teal/10 text-brand-teal"
-              : "border-border/70 bg-muted/40 text-muted-foreground"
-          }`}
-        >
-          {status === "live" ? "Live" : "Coming soon"}
-        </span>
-      </div>
-
-      <div className="mt-5">
-        <h2 className="text-lg font-extrabold tracking-tight">{title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-          {description}
-        </p>
-      </div>
-
-      <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
-        <span>{meta || "Part of the ACTSIX family"}</span>
-        {to && (
-          <ArrowUpRight className="h-4 w-4 group-hover:text-brand-teal transition-colors" />
-        )}
-      </div>
-    </Card>
-  );
-
-  return to ? <Link to={to}>{content}</Link> : content;
 };
 
 const Dashboard = () => {
@@ -119,72 +52,6 @@ const Dashboard = () => {
       })
       .slice(0, 3);
   }, [tasks]);
-
-  const modules = [
-    {
-      title: "ACTSIX: Tasks",
-      description:
-        "Capture, clarify, organize, and act. Your GTD-inspired ministry workflow system.",
-      icon: ListChecks,
-      to: "/tasks",
-      status: "live" as const,
-      meta: `${tasks.length} open actions · ${projectCount} projects`,
-    },
-    {
-      title: "Meetings",
-      description:
-        "Agenda planning, minutes, attendees, decisions, and action points for church meetings.",
-      icon: UsersRound,
-    },
-    {
-      title: "Service Planning",
-      description:
-        "Plan worship services, roles, teams, songs, readings, liturgy, and production notes.",
-      icon: CalendarDays,
-    },
-    {
-      title: "Sermon Prep",
-      description:
-        "Organize sermon ideas, manuscripts, illustrations, outlines, research, and delivery notes.",
-      icon: Mic2,
-    },
-    {
-      title: "Scripture Tools",
-      description:
-        "Format Scripture readings, compare passages, prepare service readings, and structure Bible content.",
-      icon: ScrollText,
-    },
-    {
-      title: "Media Tools",
-      description:
-        "Manage downloads, audio prep, song analysis, media assets, and creative production workflows.",
-      icon: PlayCircle,
-    },
-    {
-      title: "People Care",
-      description:
-        "Track pastoral care, follow-ups, prayer needs, visits, and delegated care responsibilities.",
-      icon: HeartHandshake,
-    },
-    {
-      title: "Worship Resources",
-      description:
-        "Song library, keys, tempos, chord notes, biblical review, and team preparation resources.",
-      icon: Headphones,
-    },
-    {
-      title: "Documents",
-      description:
-        "Policies, ministry documents, templates, training guides, and repeatable admin resources.",
-      icon: FileText,
-    },
-    {
-      title: "ACTSIX Labs",
-      description:
-        "Experimental tools and future ideas for ministry workflows, automation, and productivity.",
-      icon: Sparkles,
-    },
-  ];
 
   return (
     <div>
@@ -277,29 +144,6 @@ const Dashboard = () => {
             </div>
           </div>
         </Card>
-
-        <div>
-          <div className="flex items-end justify-between gap-4 mb-4">
-            <div>
-              <h2 className="text-2xl font-extrabold tracking-tight">
-                ACTSIX Family
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Select a module to enter its dedicated workspace.
-              </p>
-            </div>
-
-            <span className="chip bg-secondary text-secondary-foreground">
-              1 live
-            </span>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {modules.map((module) => (
-              <ModuleCard key={module.title} {...module} />
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
