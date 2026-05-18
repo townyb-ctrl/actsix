@@ -16,8 +16,10 @@ type Person = {
   first_name: string;
   last_name: string | null;
   display_name: string;
+  avatar_url: string | null;
   phone_number: string | null;
   email: string | null;
+  gender: string | null;
   whatsapp_enabled: boolean;
   notes: string | null;
   created_at: string;
@@ -28,8 +30,10 @@ type CsvPersonRow = {
   first_name: string;
   last_name: string | null;
   display_name: string;
+  avatar_url: string | null;
   phone_number: string | null;
   email: string | null;
+  gender: string | null;
   whatsapp_enabled: boolean;
   notes: string | null;
 };
@@ -51,6 +55,7 @@ const People = () => {
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
+  const [gender, setGender] = useState("");
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [notes, setNotes] = useState("");
 
@@ -151,6 +156,11 @@ const People = () => {
         sortedProfiles.find((person) => person.email)?.email ||
         group.email;
 
+      const gender =
+        primary.gender ||
+        sortedProfiles.find((person) => person.gender)?.gender ||
+        null;
+
       const firstUsefulNotes = sortedProfiles
         .map((person) => person.notes)
         .filter(Boolean)
@@ -185,6 +195,7 @@ const People = () => {
           auth_user_id: authUserId,
           phone_number: phoneNumber,
           email,
+          gender,
           whatsapp_enabled: sortedProfiles.some((person) => person.whatsapp_enabled),
           notes: notesToMerge.join("\n---\n") || null,
           updated_at: new Date().toISOString(),
@@ -515,6 +526,7 @@ ${row.notes}`
     setLastName("");
     setPhoneNumber("");
     setEmail("");
+    setGender("");
     setWhatsappEnabled(false);
     setNotes("");
   };
@@ -657,9 +669,17 @@ ${row.notes}`
                 className="grid grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] items-center gap-4 px-4 py-3 transition hover:bg-brand-teal/5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-                    <Users className="h-4 w-4" />
-                  </div>
+                  {person.avatar_url ? (
+                    <img
+                      src={person.avatar_url}
+                      alt={person.display_name}
+                      className="h-9 w-9 shrink-0 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                      <Users className="h-4 w-4" />
+                    </div>
+                  )}
 
                   <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">
@@ -673,9 +693,9 @@ ${row.notes}`
                         </span>
                       )}
                     </div>
-                    {person.notes && (
+                    {(person.notes || person.gender) && (
                       <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {person.notes}
+                        {person.notes || person.gender}
                       </div>
                     )}
                   </div>
@@ -928,6 +948,19 @@ ${row.notes}`
                     className="mt-2 border-border/70 bg-background"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Gender</label>
+                <select
+                  value={gender}
+                  onChange={(event) => setGender(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                >
+                  <option value="">Not specified</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
               </div>
 
               <label className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-4 text-sm font-bold">

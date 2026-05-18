@@ -10,8 +10,10 @@ export type CurrentPerson = {
   first_name: string;
   last_name: string | null;
   display_name: string;
+  avatar_url: string | null;
   phone_number: string | null;
   email: string | null;
+  gender: string | null;
   whatsapp_enabled: boolean;
   notes: string | null;
   created_at: string;
@@ -153,8 +155,10 @@ export function useCurrentPerson() {
           first_name: firstName,
           last_name: lastName || null,
           display_name: fallbackName,
+          avatar_url: null,
           phone_number: null,
           email: user.email || null,
+          gender: null,
           whatsapp_enabled: false,
           notes: "Signed-in ACTSIX user profile",
         })
