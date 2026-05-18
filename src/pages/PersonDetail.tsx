@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CalendarDays,
-  Trash2, Camera, Clock3, Mail, MapPin, MessageCircle, Phone, Save, Users, X } from "lucide-react";
+  Trash2, Camera, Clock3, Folder, Mail, MapPin, MessageCircle, Phone, Save, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,23 @@ type ServiceInstance = {
   location: string | null;
 };
 
+type GroupMembership = {
+  id: string;
+  group_id: string;
+  person_id: string;
+  role: string | null;
+  created_at: string;
+  people_groups?: {
+    id: string;
+    name: string;
+    description: string | null;
+    folder_id: string | null;
+    people_group_folders?: {
+      name: string;
+    } | null;
+  } | null;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -74,6 +91,7 @@ const PersonDetail = () => {
 
   const [person, setPerson] = useState<Person | null>(null);
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
+  const [groupMemberships, setGroupMemberships] = useState<GroupMembership[]>([]);
   const [serviceAssignments, setServiceAssignments] = useState<ServiceAssignment[]>([]);
   const [assignmentServices, setAssignmentServices] = useState<ServiceInstance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,6 +144,19 @@ const PersonDetail = () => {
     }
 
     setMemberships(membershipData || []);
+
+    const { data: groupMembershipData, error: groupMembershipError } = await (supabase as any)
+      .from("people_group_members")
+      .select("id, group_id, person_id, role, created_at, people_groups(id, name, description, folder_id, people_group_folders(name))")
+      .eq("user_id", user.id)
+      .eq("person_id", personId)
+      .order("created_at", { ascending: false });
+
+    if (groupMembershipError) {
+      toast.error(groupMembershipError.message);
+    }
+
+    setGroupMemberships(groupMembershipData || []);
 
     const { data: assignmentData, error: assignmentError } = await (supabase as any)
       .from("service_team_assignments")
@@ -494,6 +525,65 @@ const PersonDetail = () => {
             </Card>
 
             <Card className="border-border/70 bg-background/70 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="label-eyebrow">Groups</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    People group connections
+                  </h2>
+                </div>
+
+                <Link
+                  to="/people/groups"
+                  className="inline-flex h-9 items-center justify-center rounded-xl border border-border bg-background px-3 text-sm font-bold text-foreground transition hover:bg-muted"
+                >
+                  View Groups
+                </Link>
+              </div>
+
+              {groupMemberships.length === 0 && (
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                  This person is not part of any People Groups yet.
+                </div>
+              )}
+
+              {groupMemberships.length > 0 && (
+                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                  {groupMemberships.map((membership) => (
+                    <Link
+                      key={membership.id}
+                      to="/people/groups"
+                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-brand-teal/5"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                        <Folder className="h-4 w-4" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-extrabold tracking-tight">
+                          {membership.people_groups?.name || "People Group"}
+                        </p>
+
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          <span>
+                            {membership.people_groups?.people_group_folders?.name || "Uncategorized"}
+                          </span>
+
+                          {membership.role && (
+                            <>
+                              <span>·</span>
+                              <span>{membership.role}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            <Card className="border-border/70 bg-background/70 p-5">
               <p className="label-eyebrow">Upcoming Services</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                 Scheduled to serve
@@ -673,6 +763,13 @@ const PersonDetail = () => {
                   Teams
                 </p>
                 <p className="font-bold">{memberships.length}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Groups
+                </p>
+                <p className="font-bold">{groupMemberships.length}</p>
               </div>
 
               <div>
