@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   CalendarDays,
   Clock3,
+  Copy,
   MapPin,
   Plus,
   Search,
@@ -129,6 +130,23 @@ const Meetings = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  const copyMeetLink = async (event: React.MouseEvent, url?: string | null) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!url) {
+      toast.error("No Google Meet link saved for this meeting.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Google Meet link copied");
+    } catch {
+      toast.error("Could not copy Google Meet link.");
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -251,15 +269,27 @@ const Meetings = () => {
 
                   <div className="flex items-center gap-2">
                     {meeting.google_meet_url && (
-                      <button
-                        type="button"
-                        onClick={(event) => openMeetLink(event, meeting.google_meet_url)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal transition hover:bg-brand-teal/15"
-                        aria-label={`Open Google Meet for ${meeting.title || "meeting"}`}
-                      >
-                        <Video className="h-3.5 w-3.5" />
-                        Open Meet
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={(event) => copyMeetLink(event, meeting.google_meet_url)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-muted-foreground transition hover:border-brand-teal/40 hover:bg-brand-teal/5 hover:text-brand-teal"
+                          aria-label={`Copy Google Meet link for ${meeting.title || "meeting"}`}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Copy Link
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(event) => openMeetLink(event, meeting.google_meet_url)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal transition hover:bg-brand-teal/15"
+                          aria-label={`Open Google Meet for ${meeting.title || "meeting"}`}
+                        >
+                          <Video className="h-3.5 w-3.5" />
+                          Open Meet
+                        </button>
+                      </>
                     )}
 
                     <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-teal transition-colors" />
