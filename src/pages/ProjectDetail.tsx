@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock3,
   Edit3,
+  Plus,
   ListChecks,
   Trash2,
   UserRound,
@@ -19,6 +20,25 @@ import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/components/ProjectEditorModal";
 import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
 import { toast } from "sonner";
+
+type Person = {
+  id: string;
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  email: string | null;
+  phone_number: string | null;
+};
+
+type ProjectCollaborator = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  person_id: string;
+  role: string | null;
+  created_at: string;
+  people?: Person | null;
+};
 
 const statusClass = (status?: string | null) => {
   const clean = (status || "Active").toLowerCase();
@@ -37,6 +57,8 @@ const ProjectDetail = () => {
 
   const [project, setProject] = useState<any | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [newActionTitle, setNewActionTitle] = useState("");
   const [newActionDue, setNewActionDue] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
@@ -44,6 +66,9 @@ const ProjectDetail = () => {
   const [savingTask, setSavingTask] = useState(false);
   const [editingProject, setEditingProject] = useState<any | null>(null);
   const [savingProject, setSavingProject] = useState(false);
+  const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
+  const [selectedPersonId, setSelectedPersonId] = useState("");
+  const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
 
   const load = async () => {
     if (!user || !projectId) return;
@@ -59,20 +84,51 @@ const ProjectDetail = () => {
       return;
     }
 
-    const { data: taskData, error: taskError } = await supabase
-      .from("tasks")
-      .select("*")
-      .eq("project", projectData.name)
-      .order("created_at", { ascending: false });
+    const [
+      { data: taskData, error: taskError },
+      { data: peopleData, error: peopleError },
+      { data: collaboratorData, error: collaboratorError },
+    ] = await Promise.all([
+      supabase
+        .from("tasks")
+        .select("*")
+        .eq("project", projectData.name)
+        .order("created_at", { ascending: false }),
+
+      (supabase as any)
+        .from("people")
+        .select("id, user_id, display_name, avatar_url, email, phone_number")
+        .eq("user_id", user.id)
+        .order("display_name", { ascending: true }),
+
+      (supabase as any)
+        .from("project_collaborators")
+        .select("id, user_id, project_id, person_id, role, created_at, people(id, user_id, display_name, avatar_url, email, phone_number)")
+        .eq("user_id", user.id)
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: true }),
+    ]);
 
     if (taskError) {
       toast.error(taskError.message);
       return;
     }
 
+    if (peopleError) {
+      toast.error(peopleError.message);
+      return;
+    }
+
+    if (collaboratorError) {
+      toast.error(collaboratorError.message);
+      return;
+    }
+
     setProject(projectData);
     setNotesDraft(projectData.notes || "");
     setTasks(taskData ?? []);
+    setPeople(peopleData ?? []);
+    setCollaborators(collaboratorData ?? []);
   };
 
   useEffect(() => {
@@ -232,6 +288,52 @@ const ProjectDetail = () => {
     navigate("/tasks/projects");
   };
 
+  const addCollaborator = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+
+    if (!user || !project || !selectedPersonId) return;
+
+    const { error } = await (supabase as any)
+      .from("project_collaborators")
+      .insert({
+        user_id: user.id,
+        project_id: project.id,
+        person_id: selectedPersonId,
+        role: collaboratorRole.trim() || "Collaborator",
+      });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Collaborator added");
+    setSelectedPersonId("");
+    setCollaboratorRole("Collaborator");
+    setAddCollaboratorOpen(false);
+    load();
+  };
+
+  const removeCollaborator = async (collaboratorId: string) => {
+    const { error } = await (supabase as any)
+      .from("project_collaborators")
+      .delete()
+      .eq("id", collaboratorId)
+      .eq("user_id", user?.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Collaborator removed");
+    load();
+  };
+
+  const availablePeople = people.filter((person) => {
+    return !collaborators.some((collaborator) => collaborator.person_id === person.id);
+  });
+
   const saveProject = async () => {
     if (!editingProject || !user || !project) return;
 
@@ -384,6 +486,74 @@ const ProjectDetail = () => {
           </div>
 
           <div className="p-5 border-b border-border/70">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div>
+                <h3 className="font-extrabold tracking-tight">Collaborators</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Link People profiles to this project.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => setAddCollaboratorOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Add Collaborator
+              </Button>
+            </div>
+
+            {collaborators.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+                No collaborators added yet.
+              </div>
+            )}
+
+            {collaborators.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {collaborators.map((collaborator) => (
+                  <div
+                    key={collaborator.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-2.5 py-1.5 text-sm"
+                  >
+                    {collaborator.people?.avatar_url ? (
+                      <img
+                        src={collaborator.people.avatar_url}
+                        alt={collaborator.people.display_name}
+                        className="h-7 w-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
+                        <UserRound className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+
+                    <span className="font-bold">
+                      {collaborator.people?.display_name || "Person"}
+                    </span>
+
+                    <span className="text-xs text-muted-foreground">
+                      {collaborator.role || "Collaborator"}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="ml-1 text-muted-foreground/60 transition hover:text-destructive"
+                      onClick={() => removeCollaborator(collaborator.id)}
+                      aria-label="Remove collaborator"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-5 border-b border-border/70">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-extrabold tracking-tight">Next Actions</h3>
               <span className="text-xs text-brand-teal font-bold">
@@ -451,6 +621,95 @@ const ProjectDetail = () => {
           </div>
         </Card>
       </div>
+
+      {addCollaboratorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-xl border-border/70 bg-card shadow-card p-6">
+            <form onSubmit={addCollaborator} className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="label-eyebrow">Project Collaborators</p>
+                  <h2 className="text-xl font-extrabold tracking-tight">
+                    Add Collaborator
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Choose a People profile to connect to this project.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => {
+                    setSelectedPersonId("");
+                    setCollaboratorRole("Collaborator");
+                    setAddCollaboratorOpen(false);
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Person</label>
+                <select
+                  value={selectedPersonId}
+                  onChange={(event) => setSelectedPersonId(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                >
+                  <option value="">Select person...</option>
+                  {availablePeople.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.display_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Role</label>
+                <Input
+                  value={collaboratorRole}
+                  onChange={(event) => setCollaboratorRole(event.target.value)}
+                  placeholder="Collaborator"
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              {availablePeople.length === 0 && (
+                <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                  Everyone in People is already linked to this project.
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => {
+                    setSelectedPersonId("");
+                    setCollaboratorRole("Collaborator");
+                    setAddCollaboratorOpen(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  className="actsix-btn-primary rounded-xl"
+                  disabled={!selectedPersonId}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Collaborator
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
 
       <ProjectEditorModal
         project={editingProject}
