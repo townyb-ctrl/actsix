@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { Folder, Plus, Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
@@ -453,9 +454,12 @@ const PeopleGroups = () => {
                   <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/70 p-5">
                     <div>
                       <p className="label-eyebrow">{folderName(group.folder_id)}</p>
-                      <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                      <Link
+                        to={`/people/groups/${group.id}`}
+                        className="mt-1 block text-xl font-extrabold tracking-tight transition hover:text-brand-teal"
+                      >
                         {group.name}
-                      </h2>
+                      </Link>
                       {group.description && (
                         <p className="mt-1 text-sm text-muted-foreground">
                           {group.description}

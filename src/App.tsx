@@ -21,6 +21,7 @@ import ServicePlannerRepertoire from "./pages/ServicePlannerRepertoire";
 import People from "./pages/People";
 import PersonDetail from "./pages/PersonDetail";
 import PeopleGroups from "./pages/PeopleGroups";
+import PeopleGroupDetail from "./pages/PeopleGroupDetail";
 import MeetingDetail from "./pages/MeetingDetail";
 import RecurringMeetings from "./pages/RecurringMeetings";
 import RecurringMeetingDetail from "./pages/RecurringMeetingDetail";
@@ -72,6 +73,7 @@ const App = () => (
               <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
               <Route path="/people" element={<People />} />
               <Route path="/people/groups" element={<PeopleGroups />} />
+              <Route path="/people/groups/:groupId" element={<PeopleGroupDetail />} />
               <Route path="/people/:personId" element={<PersonDetail />} />
               <Route path="/meetings/recurring" element={<RecurringMeetings />} />
               <Route path="/meetings/recurring/:seriesId" element={<RecurringMeetingDetail />} />
