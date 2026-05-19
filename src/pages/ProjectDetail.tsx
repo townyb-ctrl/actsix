@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   CheckCircle2,
   Clock3,
+  History,
   Edit3,
   Plus,
   ListChecks,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PageHeader } from "@/components/PageHeader";
@@ -22,6 +24,7 @@ import CompactTaskRow from "@/components/CompactTaskRow";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/components/ProjectEditorModal";
 import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
+import { logActivity } from "@/lib/activityLog";
 import { toast } from "sonner";
 import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
 
@@ -44,6 +47,22 @@ type ProjectCollaborator = {
   people?: Person | null;
 };
 
+type ActivityLog = {
+  id: string;
+  actor_person_id: string | null;
+  entity_type: string;
+  entity_id: string;
+  action_type: string;
+  title: string;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  people?: {
+    display_name: string;
+    avatar_url: string | null;
+  } | null;
+};
+
 const statusClass = (status?: string | null) => {
   const clean = (status || "Active").toLowerCase();
 
@@ -58,11 +77,13 @@ const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [project, setProject] = useState<any | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [newActionTitle, setNewActionTitle] = useState("");
   const [newActionDue, setNewActionDue] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
@@ -93,6 +114,7 @@ const ProjectDetail = () => {
       { data: taskData, error: taskError },
       { data: peopleData, error: peopleError },
       { data: collaboratorData, error: collaboratorError },
+      { data: activityData, error: activityError },
     ] = await Promise.all([
       supabase
         .from("tasks")
@@ -112,6 +134,15 @@ const ProjectDetail = () => {
         .eq("user_id", user.id)
         .eq("project_id", projectId)
         .order("created_at", { ascending: true }),
+
+      (supabase as any)
+        .from("activity_logs")
+        .select("id, actor_person_id, entity_type, entity_id, action_type, title, description, metadata, created_at")
+        .eq("user_id", user.id)
+        .eq("entity_type", "project")
+        .eq("entity_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(20),
     ]);
 
     if (taskError) {
@@ -129,11 +160,47 @@ const ProjectDetail = () => {
       return;
     }
 
+    if (activityError) {
+      toast.error(activityError.message);
+      return;
+    }
+
+    const actorPersonIds = Array.from(
+      new Set(
+        (activityData ?? [])
+          .map((activity: ActivityLog) => activity.actor_person_id)
+          .filter(Boolean)
+      )
+    );
+
+    let actorPeople: { id: string; display_name: string; avatar_url: string | null }[] = [];
+
+    if (actorPersonIds.length > 0) {
+      const { data: actorPeopleData, error: actorPeopleError } = await (supabase as any)
+        .from("people")
+        .select("id, display_name, avatar_url")
+        .eq("user_id", user.id)
+        .in("id", actorPersonIds);
+
+      if (actorPeopleError) {
+        toast.error(actorPeopleError.message);
+      }
+
+      actorPeople = actorPeopleData || [];
+    }
+
+    const enrichedActivityLogs = (activityData ?? []).map((activity: ActivityLog) => ({
+      ...activity,
+      people:
+        actorPeople.find((person) => person.id === activity.actor_person_id) || null,
+    }));
+
     setProject(projectData);
     setNotesDraft(projectData.notes || "");
     setTasks(taskData ?? []);
     setPeople(peopleData ?? []);
     setCollaborators(collaboratorData ?? []);
+    setActivityLogs(enrichedActivityLogs);
   };
 
   useEffect(() => {
@@ -149,6 +216,26 @@ const ProjectDetail = () => {
 
     return { openTasks, completedTasks, dueSoon, progress };
   }, [tasks, project]);
+
+  const logProjectActivity = async (
+    actionType: string,
+    title: string,
+    description?: string | null,
+    metadata: Record<string, unknown> = {}
+  ) => {
+    if (!user || !project) return;
+
+    await logActivity({
+      userId: user.id,
+      actorPersonId: currentPerson?.id || null,
+      entityType: "project",
+      entityId: project.id,
+      actionType,
+      title,
+      description,
+      metadata,
+    });
+  };
 
   const addProjectAction = async (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -179,6 +266,12 @@ const ProjectDetail = () => {
     }
 
     await syncProjectStats(project.name, user.id);
+    await logProjectActivity(
+      "task_added",
+      "Task added",
+      newActionTitle.trim(),
+      { due: newActionDue || null }
+    );
     setNewActionTitle("");
     setNewActionDue("");
     toast.success("Next action added");
@@ -203,6 +296,12 @@ const ProjectDetail = () => {
     }
 
     await syncProjectStats(task.project, user?.id);
+    await logProjectActivity(
+      nextComplete ? "task_completed" : "task_reopened",
+      nextComplete ? "Task completed" : "Task reopened",
+      task.title,
+      { task_id: task.id }
+    );
     load();
   };
 
@@ -218,6 +317,12 @@ const ProjectDetail = () => {
     }
 
     await syncProjectStats(targetTask?.project, user?.id);
+    await logProjectActivity(
+      "task_deleted",
+      "Task deleted",
+      targetTask?.title || "Project task deleted",
+      { task_id: id }
+    );
     toast.success("Action deleted");
     load();
   };
@@ -258,6 +363,12 @@ const ProjectDetail = () => {
     }
 
     await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    await logProjectActivity(
+      "task_updated",
+      "Task updated",
+      editingTask.title || "Project task updated",
+      { task_id: editingTask.id, previous_project: previousProject, next_project: editingTask.project }
+    );
     toast.success("Task updated");
     setEditingTask(null);
     load();
@@ -279,6 +390,11 @@ const ProjectDetail = () => {
       return;
     }
 
+    await logProjectActivity(
+      "notes_updated",
+      "Project notes updated",
+      "Project notes were changed"
+    );
     toast.success("Project notes saved");
     load();
   };
@@ -316,6 +432,15 @@ const ProjectDetail = () => {
       return;
     }
 
+    await logProjectActivity(
+      "collaborator_added",
+      selectedPersonIds.length === 1 ? "Collaborator added" : "Collaborators added",
+      selectedPersonIds.length === 1
+        ? "One collaborator was added to this project"
+        : `${selectedPersonIds.length} collaborators were added to this project`,
+      { person_ids: selectedPersonIds, role: collaboratorRole.trim() || "Collaborator" }
+    );
+
     toast.success(
       selectedPersonIds.length === 1
         ? "Collaborator added"
@@ -339,6 +464,13 @@ const ProjectDetail = () => {
       toast.error(error.message);
       return;
     }
+
+    await logProjectActivity(
+      "collaborator_removed",
+      "Collaborator removed",
+      "A collaborator was removed from this project",
+      { collaborator_id: collaboratorId }
+    );
 
     toast.success("Collaborator removed");
     load();
@@ -424,6 +556,14 @@ const ProjectDetail = () => {
       }
 
       await syncProjectStats(nextName, user.id);
+      await logProjectActivity(
+        "project_updated",
+        "Project details updated",
+        previousName !== nextName
+          ? `Project renamed from ${previousName} to ${nextName}`
+          : "Project details were updated",
+        { previous_name: previousName, next_name: nextName }
+      );
       toast.success("Project updated");
       setEditingProject(null);
       load();
@@ -691,6 +831,57 @@ const ProjectDetail = () => {
                 Add
               </Button>
             </form>
+          </div>
+
+          <div className="p-5 border-b border-border/70">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-extrabold tracking-tight">Activity Log</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Recent changes made to this collaborative project.
+                </p>
+              </div>
+
+              <History className="h-4 w-4 text-muted-foreground" />
+            </div>
+
+            {activityLogs.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+                No activity recorded yet.
+              </div>
+            )}
+
+            {activityLogs.length > 0 && (
+              <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70 bg-background">
+                {activityLogs.map((activity) => (
+                  <div key={activity.id} className="flex gap-3 px-4 py-3">
+                    <PersonAvatar
+                      name={activity.people?.display_name || "ACTSIX"}
+                      avatarUrl={activity.people?.avatar_url}
+                      size="sm"
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="truncate text-sm font-extrabold tracking-tight">
+                          {activity.title}
+                        </p>
+
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(activity.created_at).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {activity.description && (
+                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                          {activity.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="p-5">
