@@ -6,6 +6,7 @@ import {
   Edit3,
   Plus,
   ListChecks,
+  MessageCircle,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/components/ProjectEditorModal";
 import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
 import { toast } from "sonner";
+import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
 
 type Person = {
   id: string;
@@ -71,6 +73,7 @@ const ProjectDetail = () => {
   const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
+  const [collaboratorMessage, setCollaboratorMessage] = useState("");
 
   const load = async () => {
     if (!user || !projectId) return;
@@ -345,6 +348,41 @@ const ProjectDetail = () => {
     return !collaborators.some((collaborator) => collaborator.person_id === person.id);
   });
 
+  const messageableCollaborators = collaborators.filter((collaborator) =>
+    isMessageablePhone(collaborator.people?.phone_number)
+  );
+
+  const nonMessageableCollaborators = collaborators.filter((collaborator) =>
+    !isMessageablePhone(collaborator.people?.phone_number)
+  );
+
+  const messageProjectCollaborators = () => {
+    if (messageableCollaborators.length === 0) {
+      toast.error("No collaborators have valid phone numbers.");
+      return;
+    }
+
+    const encodedMessage = collaboratorMessage.trim()
+      ? `?text=${encodeURIComponent(collaboratorMessage.trim())}`
+      : "";
+
+    messageableCollaborators.forEach((collaborator, index) => {
+      const href = getWhatsappHref(collaborator.people?.phone_number);
+
+      if (!href) return;
+
+      window.setTimeout(() => {
+        window.open(`${href}${encodedMessage}`, "_blank", "noopener,noreferrer");
+      }, index * 250);
+    });
+
+    toast.success(
+      messageableCollaborators.length === 1
+        ? "Opening WhatsApp message"
+        : `Opening ${messageableCollaborators.length} WhatsApp messages`
+    );
+  };
+
   const saveProject = async () => {
     if (!editingProject || !user || !project) return;
 
@@ -554,6 +592,52 @@ const ProjectDetail = () => {
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {collaborators.length > 0 && (
+              <div className="mt-5 rounded-2xl border border-border/70 bg-muted/10 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="label-eyebrow">Messaging</p>
+                    <h4 className="mt-1 font-extrabold tracking-tight">
+                      Message collaborators
+                    </h4>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Opens WhatsApp chats for collaborators with valid phone numbers.
+                    </p>
+                  </div>
+
+                  <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+                    {messageableCollaborators.length} messageable
+                  </span>
+                </div>
+
+                <textarea
+                  value={collaboratorMessage}
+                  onChange={(event) => setCollaboratorMessage(event.target.value)}
+                  rows={3}
+                  placeholder={`Hi team, quick update on ${project.name}...`}
+                  className="mt-4 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                />
+
+                {nonMessageableCollaborators.length > 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {nonMessageableCollaborators.length} collaborator{nonMessageableCollaborators.length === 1 ? "" : "s"} will be skipped because they do not have a valid phone number.
+                  </p>
+                )}
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    type="button"
+                    className="actsix-btn-primary rounded-xl"
+                    onClick={messageProjectCollaborators}
+                    disabled={messageableCollaborators.length === 0}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Message Collaborators
+                  </Button>
+                </div>
               </div>
             )}
           </div>
