@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CalendarDays,
-  Trash2, Camera, Clock3, Folder, Mail, MapPin, Send, Phone, Save, Users, X } from "lucide-react";
+  Trash2, Camera, CheckCircle2, Clock3, Folder, Mail, MapPin, Send, Phone, Save, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -73,6 +73,16 @@ type GroupMembership = {
   } | null;
 };
 
+type AssignedTask = {
+  id: string;
+  title: string;
+  project: string | null;
+  priority: string | null;
+  due: string | null;
+  complete: boolean | null;
+  created_at: string | null;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -96,6 +106,7 @@ const PersonDetail = () => {
   const [person, setPerson] = useState<Person | null>(null);
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
   const [groupMemberships, setGroupMemberships] = useState<GroupMembership[]>([]);
+  const [assignedTasks, setAssignedTasks] = useState<AssignedTask[]>([]);
   const [serviceAssignments, setServiceAssignments] = useState<ServiceAssignment[]>([]);
   const [assignmentServices, setAssignmentServices] = useState<ServiceInstance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,6 +172,20 @@ const PersonDetail = () => {
     }
 
     setGroupMemberships(groupMembershipData || []);
+
+    const { data: assignedTaskData, error: assignedTaskError } = await (supabase as any)
+      .from("tasks")
+      .select("id, title, project, priority, due, complete, created_at")
+      .eq("user_id", user.id)
+      .eq("assigned_person_id", personId)
+      .order("complete", { ascending: true })
+      .order("due", { ascending: true, nullsFirst: false });
+
+    if (assignedTaskError) {
+      toast.error(assignedTaskError.message);
+    }
+
+    setAssignedTasks(assignedTaskData || []);
 
     const { data: assignmentData, error: assignmentError } = await (supabase as any)
       .from("service_team_assignments")
@@ -286,6 +311,9 @@ const PersonDetail = () => {
       const bService = getServiceForAssignment(b.service_id);
       return (bService?.service_date || "").localeCompare(aService?.service_date || "");
     });
+
+  const openAssignedTasks = assignedTasks.filter((task) => !task.complete);
+  const completedAssignedTasks = assignedTasks.filter((task) => task.complete);
 
   const uploadAvatar = async (file?: File | null) => {
     if (!user || !person || !file) return;
@@ -606,6 +634,81 @@ const PersonDetail = () => {
             </Card>
 
             <Card className="border-border/70 bg-background/70 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="label-eyebrow">Assigned Tasks</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    Current responsibilities
+                  </h2>
+                </div>
+
+                {openAssignedTasks.length > 0 && (
+                  <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+                    {openAssignedTasks.length} open
+                  </span>
+                )}
+              </div>
+
+              {assignedTasks.length === 0 && (
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                  No tasks are currently assigned to this person.
+                </div>
+              )}
+
+              {assignedTasks.length > 0 && (
+                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                  {assignedTasks.slice(0, 8).map((task) => (
+                    <div key={task.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                        task.complete
+                          ? "bg-muted text-muted-foreground"
+                          : "bg-brand-teal/10 text-brand-teal"
+                      }`}>
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className={`truncate text-sm font-extrabold tracking-tight ${
+                          task.complete ? "text-muted-foreground line-through" : "text-foreground"
+                        }`}>
+                          {task.title}
+                        </p>
+
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          {task.project && <span>{task.project}</span>}
+                          {task.priority && (
+                            <>
+                              {task.project && <span>·</span>}
+                              <span>{task.priority}</span>
+                            </>
+                          )}
+                          {task.due && (
+                            <>
+                              <span>·</span>
+                              <span>{formatDate(task.due)}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {task.complete && (
+                        <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                          Done
+                        </span>
+                      )}
+                    </div>
+                  ))}
+
+                  {assignedTasks.length > 8 && (
+                    <div className="px-4 py-3 text-xs font-bold text-muted-foreground">
+                      Showing latest 8 assigned tasks.
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+
+            <Card className="border-border/70 bg-background/70 p-5">
               <p className="label-eyebrow">Upcoming Services</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                 Scheduled to serve
@@ -799,6 +902,20 @@ const PersonDetail = () => {
                   Groups
                 </p>
                 <p className="font-bold">{groupMemberships.length}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Open Tasks
+                </p>
+                <p className="font-bold">{openAssignedTasks.length}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Completed Tasks
+                </p>
+                <p className="font-bold">{completedAssignedTasks.length}</p>
               </div>
 
               <div>
