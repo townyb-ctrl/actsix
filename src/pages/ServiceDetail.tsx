@@ -1,9 +1,10 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   CalendarDays,
   Clock3,
   GripVertical,
+  History,
   ListChecks,
   MapPin,
   MessageCircle,
@@ -15,8 +16,11 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { logActivity } from "@/lib/activityLog";
 
 type ServiceInstance = {
   id: string;
@@ -141,6 +145,22 @@ type ServiceTeamRole = {
   updated_at: string;
 };
 
+type ActivityLog = {
+  id: string;
+  actor_person_id: string | null;
+  entity_type: string;
+  entity_id: string;
+  action_type: string;
+  title: string;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  people?: {
+    display_name: string;
+    avatar_url: string | null;
+  } | null;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -155,11 +175,13 @@ const formatDate = (value?: string | null) => {
 const ServiceDetail = () => {
   const { serviceId } = useParams();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [service, setService] = useState<ServiceInstance | null>(null);
   const [serviceType, setServiceType] = useState<ServiceType | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [roleRequirements, setRoleRequirements] = useState<ServiceTeamRoleRequirement[]>([]);
   const [serviceTeamRoles, setServiceTeamRoles] = useState<ServiceTeamRole[]>([]);
   const [selectedAssignmentTeamId, setSelectedAssignmentTeamId] = useState("");
@@ -290,7 +312,12 @@ const ServiceDetail = () => {
 
     setService(serviceData);
 
-    const [{ data: typeData }, { data: orderData, error: orderError }, { data: teamData, error: teamError }] =
+    const [
+      { data: typeData },
+      { data: orderData, error: orderError },
+      { data: teamData, error: teamError },
+      { data: activityData, error: activityError },
+    ] =
       await Promise.all([
         supabase
           .from("service_types")
@@ -311,14 +338,55 @@ const ServiceDetail = () => {
           .eq("service_id", serviceId)
           .eq("user_id", user.id)
           .order("sort_order", { ascending: true }),
+
+        (supabase as any)
+          .from("activity_logs")
+          .select("id, actor_person_id, entity_type, entity_id, action_type, title, description, metadata, created_at")
+          .eq("user_id", user.id)
+          .eq("entity_type", "service")
+          .eq("entity_id", serviceId)
+          .order("created_at", { ascending: false })
+          .limit(20),
       ]);
 
     if (orderError) toast.error(orderError.message);
     if (teamError) toast.error(teamError.message);
+    if (activityError) toast.error(activityError.message);
+
+    const actorPersonIds = Array.from(
+      new Set(
+        (activityData ?? [])
+          .map((activity: ActivityLog) => activity.actor_person_id)
+          .filter(Boolean)
+      )
+    );
+
+    let actorPeople: { id: string; display_name: string; avatar_url: string | null }[] = [];
+
+    if (actorPersonIds.length > 0) {
+      const { data: actorPeopleData, error: actorPeopleError } = await (supabase as any)
+        .from("people")
+        .select("id, display_name, avatar_url")
+        .eq("user_id", user.id)
+        .in("id", actorPersonIds);
+
+      if (actorPeopleError) {
+        toast.error(actorPeopleError.message);
+      }
+
+      actorPeople = actorPeopleData || [];
+    }
+
+    const enrichedActivityLogs = (activityData ?? []).map((activity: ActivityLog) => ({
+      ...activity,
+      people:
+        actorPeople.find((person) => person.id === activity.actor_person_id) || null,
+    }));
 
     setServiceType(typeData || null);
     setOrderItems(orderData || []);
     setTeamAssignments(teamData || []);
+    setActivityLogs(enrichedActivityLogs);
 
     const { data: serviceTypeTeamLinks, error: serviceTypeTeamError } = await supabase
       .from("service_type_teams")
@@ -562,6 +630,46 @@ const ServiceDetail = () => {
     }
   }, [assignedTeams, selectedAssignmentTeamId]);
 
+  const logServiceActivity = async (
+    actionType: string,
+    title: string,
+    description?: string | null,
+    metadata: Record<string, unknown> = {}
+  ) => {
+    if (!user || !serviceId) return;
+
+    const { data, error } = await logActivity({
+      userId: user.id,
+      actorPersonId: currentPerson?.id || null,
+      entityType: "service",
+      entityId: serviceId,
+      actionType,
+      title,
+      description,
+      metadata,
+    });
+
+    if (error) {
+      toast.error(`Could not log activity: ${error.message}`);
+      return;
+    }
+
+    if (data) {
+      setActivityLogs((currentLogs) => [
+        {
+          ...data,
+          people: currentPerson
+            ? {
+                display_name: currentPerson.display_name,
+                avatar_url: currentPerson.avatar_url,
+              }
+            : null,
+        },
+        ...currentLogs,
+      ].slice(0, 20));
+    }
+  };
+
   const addOrderItem = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -591,6 +699,13 @@ const ServiceDetail = () => {
     setItemTitle("");
     setItemDetails("");
     setItemDuration("5");
+    await logServiceActivity(
+      "order_item_added",
+      "Order item added",
+      itemTitle.trim(),
+      { item_type: itemType, duration_minutes: Number(itemDuration) || 5 }
+    );
+
     toast.success("Order item added");
     setAddOrderOpen(false);
     fetchService();
@@ -606,6 +721,13 @@ const ServiceDetail = () => {
       toast.error(error.message);
       return;
     }
+
+    await logServiceActivity(
+      "order_item_deleted",
+      "Order item deleted",
+      item.title,
+      { order_item_id: item.id, item_type: item.item_type }
+    );
 
     toast.success("Order item deleted");
     fetchService();
@@ -627,6 +749,18 @@ const ServiceDetail = () => {
       toast.error(error.message);
       return;
     }
+
+    await logServiceActivity(
+      "role_requirement_updated",
+      "Role requirement updated",
+      `${requirement.role_name}: ${requirement.required_count} → ${safeCount}`,
+      {
+        requirement_id: requirement.id,
+        role_name: requirement.role_name,
+        previous_count: requirement.required_count,
+        next_count: safeCount,
+      }
+    );
 
     setRoleRequirements((previous) =>
       previous.map((item) =>
@@ -724,6 +858,18 @@ const ServiceDetail = () => {
     setRoleName("");
     setPersonName("");
     setTeamNotes("");
+    await logServiceActivity(
+      "team_member_assigned",
+      "Team member assigned",
+      `${personName.trim()} — ${roleName.trim()}`,
+      {
+        team_id: selectedTeamId,
+        team_member_id: selectedTeamMemberId,
+        person_id: nextPersonId,
+        role_name: roleName.trim(),
+      }
+    );
+
     toast.success("Team member added");
     setAddTeamAssignmentOpen(false);
     fetchService();
@@ -739,6 +885,18 @@ const ServiceDetail = () => {
       toast.error(error.message);
       return;
     }
+
+    await logServiceActivity(
+      "team_member_removed",
+      "Team member removed",
+      `${assignment.person_name} — ${assignment.role_name}`,
+      {
+        assignment_id: assignment.id,
+        team_id: assignment.team_id,
+        person_id: assignment.person_id,
+        role_name: assignment.role_name,
+      }
+    );
 
     toast.success("Team member removed");
     fetchService();
@@ -923,6 +1081,13 @@ const ServiceDetail = () => {
       setApplyingTemplate(false);
       return;
     }
+
+    await logServiceActivity(
+      "template_applied",
+      "Template applied",
+      `${itemsToInsert.length} order item${itemsToInsert.length === 1 ? "" : "s"} added from template`,
+      { template_id: template.id, item_count: itemsToInsert.length }
+    );
 
     toast.success("Template applied to service");
     setApplyingTemplate(false);
@@ -1620,6 +1785,60 @@ const ServiceDetail = () => {
           </Card>
         </div>
       )}
+
+      <Card className="border-border/70 bg-card p-5 shadow-card">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="label-eyebrow">Activity</p>
+            <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+              Activity Log
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Recent changes made to this service plan.
+            </p>
+          </div>
+
+          <History className="h-4 w-4 text-muted-foreground" />
+        </div>
+
+        {activityLogs.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+            No activity recorded yet.
+          </div>
+        )}
+
+        {activityLogs.length > 0 && (
+          <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70 bg-background">
+            {activityLogs.map((activity) => (
+              <div key={activity.id} className="flex gap-3 px-4 py-3">
+                <PersonAvatar
+                  name={activity.people?.display_name || "ACTSIX"}
+                  avatarUrl={activity.people?.avatar_url}
+                  size="sm"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="truncate text-sm font-extrabold tracking-tight">
+                      {activity.title}
+                    </p>
+
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(activity.created_at).toLocaleString()}
+                    </span>
+                  </div>
+
+                  {activity.description && (
+                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                      {activity.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {addOrderOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
