@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Edit3, Folder, Save, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ArrowLeft, Edit3, Folder, MessageCircle, Save, Trash2, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
+import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
 
 type Person = {
   id: string;
@@ -66,6 +67,7 @@ const PeopleGroupDetail = () => {
   const [addPeopleOpen, setAddPeopleOpen] = useState(false);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [memberRole, setMemberRole] = useState("");
+  const [groupMessage, setGroupMessage] = useState("");
 
   const load = async () => {
     if (!user || !groupId) return;
@@ -131,6 +133,41 @@ const PeopleGroupDetail = () => {
     const memberPersonIds = new Set(members.map((member) => member.person_id));
     return people.filter((person) => !memberPersonIds.has(person.id));
   }, [people, members]);
+
+  const messageableMembers = useMemo(() => {
+    return members.filter((member) => isMessageablePhone(member.people?.phone_number));
+  }, [members]);
+
+  const nonMessageableMembers = useMemo(() => {
+    return members.filter((member) => !isMessageablePhone(member.people?.phone_number));
+  }, [members]);
+
+  const messageGroupMembers = () => {
+    if (messageableMembers.length === 0) {
+      toast.error("No group members have valid phone numbers.");
+      return;
+    }
+
+    const encodedMessage = groupMessage.trim()
+      ? `?text=${encodeURIComponent(groupMessage.trim())}`
+      : "";
+
+    messageableMembers.forEach((member, index) => {
+      const href = getWhatsappHref(member.people?.phone_number);
+
+      if (!href) return;
+
+      window.setTimeout(() => {
+        window.open(`${href}${encodedMessage}`, "_blank", "noopener,noreferrer");
+      }, index * 250);
+    });
+
+    toast.success(
+      messageableMembers.length === 1
+        ? "Opening WhatsApp message"
+        : `Opening ${messageableMembers.length} WhatsApp messages`
+    );
+  };
 
   const addMembers = async (event: FormEvent) => {
     event.preventDefault();
@@ -306,6 +343,53 @@ const PeopleGroupDetail = () => {
           </Button>
         </div>
       </div>
+
+      <Card className="border-border/70 bg-card p-5 shadow-card">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="label-eyebrow">Messaging</p>
+            <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+              Message group members
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Opens WhatsApp chats for members with valid phone numbers.
+            </p>
+          </div>
+
+          <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+            {messageableMembers.length} messageable
+          </span>
+        </div>
+
+        <div className="mt-4">
+          <label className="label-eyebrow">Message</label>
+          <textarea
+            value={groupMessage}
+            onChange={(event) => setGroupMessage(event.target.value)}
+            rows={3}
+            placeholder={`Hi ${group.name} team...`}
+            className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+          />
+        </div>
+
+        {nonMessageableMembers.length > 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {nonMessageableMembers.length} member{nonMessageableMembers.length === 1 ? "" : "s"} will be skipped because they do not have a valid phone number.
+          </p>
+        )}
+
+        <div className="mt-4 flex justify-end">
+          <Button
+            type="button"
+            className="actsix-btn-primary rounded-xl"
+            onClick={messageGroupMembers}
+            disabled={messageableMembers.length === 0}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Message Group
+          </Button>
+        </div>
+      </Card>
 
       <Card className="overflow-hidden border-border/70 bg-card shadow-card">
         <div className="border-b border-border/70 px-5 py-4">
