@@ -1,6 +1,21 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { CalendarDays,
-  Trash2, Camera, CheckCircle2, Clock3, Folder, Mail, MapPin, Send, Phone, Save, Users, X } from "lucide-react";
+import {
+  useEffect,
+  useState,
+  type FormEvent } from "react"; import { CalendarDays,
+  Trash2,
+  Camera,
+  CheckCircle2,
+  Clock3,
+  Folder,
+  FolderKanban,
+  Mail,
+  MapPin,
+  Send,
+  Phone,
+  Save,
+  Users,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -83,6 +98,22 @@ type AssignedTask = {
   created_at: string | null;
 };
 
+type ProjectCollaboration = {
+  id: string;
+  project_id: string;
+  person_id: string;
+  role: string | null;
+  created_at: string | null;
+};
+
+type CollaborationProject = {
+  id: string;
+  name: string;
+  area: string | null;
+  status: string | null;
+  notes: string | null;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -107,6 +138,8 @@ const PersonDetail = () => {
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
   const [groupMemberships, setGroupMemberships] = useState<GroupMembership[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<AssignedTask[]>([]);
+  const [projectCollaborations, setProjectCollaborations] = useState<ProjectCollaboration[]>([]);
+  const [collaborationProjects, setCollaborationProjects] = useState<CollaborationProject[]>([]);
   const [serviceAssignments, setServiceAssignments] = useState<ServiceAssignment[]>([]);
   const [assignmentServices, setAssignmentServices] = useState<ServiceInstance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,6 +219,40 @@ const PersonDetail = () => {
     }
 
     setAssignedTasks(assignedTaskData || []);
+
+    const { data: collaborationData, error: collaborationError } = await (supabase as any)
+      .from("project_collaborators")
+      .select("id, project_id, person_id, role, created_at")
+      .eq("user_id", user.id)
+      .eq("person_id", personId)
+      .order("created_at", { ascending: false });
+
+    if (collaborationError) {
+      toast.error(collaborationError.message);
+    }
+
+    const collaborations = collaborationData || [];
+    setProjectCollaborations(collaborations);
+
+    const projectIds = Array.from(
+      new Set(collaborations.map((collaboration: ProjectCollaboration) => collaboration.project_id))
+    );
+
+    if (projectIds.length > 0) {
+      const { data: collaborationProjectData, error: collaborationProjectError } = await (supabase as any)
+        .from("projects")
+        .select("id, name, area, status, notes")
+        .eq("user_id", user.id)
+        .in("id", projectIds);
+
+      if (collaborationProjectError) {
+        toast.error(collaborationProjectError.message);
+      }
+
+      setCollaborationProjects(collaborationProjectData || []);
+    } else {
+      setCollaborationProjects([]);
+    }
 
     const { data: assignmentData, error: assignmentError } = await (supabase as any)
       .from("service_team_assignments")
@@ -314,6 +381,10 @@ const PersonDetail = () => {
 
   const openAssignedTasks = assignedTasks.filter((task) => !task.complete);
   const completedAssignedTasks = assignedTasks.filter((task) => task.complete);
+
+  const getProjectForCollaboration = (projectId: string) => {
+    return collaborationProjects.find((project) => project.id === projectId) || null;
+  };
 
   const uploadAvatar = async (file?: File | null) => {
     if (!user || !person || !file) return;
@@ -636,6 +707,73 @@ const PersonDetail = () => {
             <Card className="border-border/70 bg-background/70 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
+                  <p className="label-eyebrow">Project Collaborations</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    Projects connected to this person
+                  </h2>
+                </div>
+
+                {projectCollaborations.length > 0 && (
+                  <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+                    {projectCollaborations.length} project{projectCollaborations.length === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
+
+              {projectCollaborations.length === 0 && (
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                  This person is not currently linked to any projects.
+                </div>
+              )}
+
+              {projectCollaborations.length > 0 && (
+                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                  {projectCollaborations.map((collaboration) => {
+                    const linkedProject = getProjectForCollaboration(collaboration.project_id);
+
+                    return (
+                      <Link
+                        key={collaboration.id}
+                        to={`/tasks/projects/${collaboration.project_id}`}
+                        className="flex items-center gap-3 px-4 py-3 transition hover:bg-brand-teal/5"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                          <FolderKanban className="h-4 w-4" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-extrabold tracking-tight">
+                            {linkedProject?.name || "Project"}
+                          </p>
+
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                            {linkedProject?.area && <span>{linkedProject.area}</span>}
+
+                            {collaboration.role && (
+                              <>
+                                {linkedProject?.area && <span>·</span>}
+                                <span>{collaboration.role}</span>
+                              </>
+                            )}
+
+                            {linkedProject?.status && (
+                              <>
+                                <span>·</span>
+                                <span>{linkedProject.status}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            <Card className="border-border/70 bg-background/70 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
                   <p className="label-eyebrow">Assigned Tasks</p>
                   <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                     Current responsibilities
@@ -902,6 +1040,13 @@ const PersonDetail = () => {
                   Groups
                 </p>
                 <p className="font-bold">{groupMemberships.length}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Project Collaborations
+                </p>
+                <p className="font-bold">{projectCollaborations.length}</p>
               </div>
 
               <div>
