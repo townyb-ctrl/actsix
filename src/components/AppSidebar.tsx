@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "./Logo";
+import { NotificationBell } from "./NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 
 type Item = { title: string; url: string; icon: any; badgeKey?: string };
@@ -343,6 +344,10 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupContent>
+            <div className={collapsed ? "mb-2 flex justify-center px-0" : "mb-2 px-1.5"}>
+              <NotificationBell collapsed={collapsed} />
+            </div>
+
             <SidebarMenu className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}>
               <SidebarMenuItem>
                 <SidebarMenuButton

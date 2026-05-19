@@ -25,6 +25,7 @@ import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/components/ProjectEditorModal";
 import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
 import { logActivity } from "@/lib/activityLog";
+import { createNotificationForPerson } from "@/lib/notifications";
 import { toast } from "sonner";
 import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
 
@@ -369,6 +370,23 @@ const ProjectDetail = () => {
       editingTask.title || "Project task updated",
       { task_id: editingTask.id, previous_project: previousProject, next_project: editingTask.project }
     );
+
+    const previousAssignedPersonId =
+      tasks.find((task) => task.id === editingTask.id)?.assigned_person_id || null;
+    const nextAssignedPersonId = editingTask.assigned_person_id || null;
+
+    if (nextAssignedPersonId && nextAssignedPersonId !== previousAssignedPersonId) {
+      await createNotificationForPerson({
+        personId: nextAssignedPersonId,
+        currentUserId: user.id,
+        actorPersonId: currentPerson?.id || null,
+        title: "A task was assigned to you",
+        message: `${editingTask.title || "A project task"} was assigned to you in ${editingTask.project || project.name}.`,
+        type: "task",
+        entityType: "project",
+        entityId: project.id,
+      });
+    }
     toast.success("Task updated");
     setEditingTask(null);
     load();
@@ -439,6 +457,21 @@ const ProjectDetail = () => {
         ? "One collaborator was added to this project"
         : `${selectedPersonIds.length} collaborators were added to this project`,
       { person_ids: selectedPersonIds, role: collaboratorRole.trim() || "Collaborator" }
+    );
+
+    await Promise.all(
+      selectedPersonIds.map((personId) =>
+        createNotificationForPerson({
+          personId,
+          currentUserId: user.id,
+          actorPersonId: currentPerson?.id || null,
+          title: "You were added to a project",
+          message: `You were added to ${project.name} as ${collaboratorRole.trim() || "Collaborator"}.`,
+          type: "project",
+          entityType: "project",
+          entityId: project.id,
+        })
+      )
     );
 
     toast.success(
