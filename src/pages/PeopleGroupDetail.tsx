@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Folder, Trash2, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Edit3, Folder, Save, Trash2, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,13 @@ type PeopleGroup = {
   } | null;
 };
 
+type PeopleGroupFolder = {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+};
+
 type PeopleGroupMember = {
   id: string;
   user_id: string;
@@ -46,9 +53,15 @@ const PeopleGroupDetail = () => {
   const { user } = useAuth();
 
   const [group, setGroup] = useState<PeopleGroup | null>(null);
+  const [folders, setFolders] = useState<PeopleGroupFolder[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [members, setMembers] = useState<PeopleGroupMember[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [editGroupOpen, setEditGroupOpen] = useState(false);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupDescription, setEditGroupDescription] = useState("");
+  const [editGroupFolderId, setEditGroupFolderId] = useState("");
 
   const [addPeopleOpen, setAddPeopleOpen] = useState(false);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
@@ -61,6 +74,7 @@ const PeopleGroupDetail = () => {
 
     const [
       { data: groupData, error: groupError },
+      { data: folderData, error: folderError },
       { data: peopleData, error: peopleError },
       { data: memberData, error: memberError },
     ] = await Promise.all([
@@ -70,6 +84,12 @@ const PeopleGroupDetail = () => {
         .eq("user_id", user.id)
         .eq("id", groupId)
         .maybeSingle(),
+
+      (supabase as any)
+        .from("people_group_folders")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("name", { ascending: true }),
 
       (supabase as any)
         .from("people")
@@ -86,12 +106,20 @@ const PeopleGroupDetail = () => {
     ]);
 
     if (groupError) toast.error(groupError.message);
+    if (folderError) toast.error(folderError.message);
     if (peopleError) toast.error(peopleError.message);
     if (memberError) toast.error(memberError.message);
 
     setGroup(groupData || null);
+    setFolders(folderData || []);
     setPeople(peopleData || []);
     setMembers(memberData || []);
+
+    if (groupData) {
+      setEditGroupName(groupData.name || "");
+      setEditGroupDescription(groupData.description || "");
+      setEditGroupFolderId(groupData.folder_id || "");
+    }
     setLoading(false);
   };
 
@@ -134,6 +162,34 @@ const PeopleGroupDetail = () => {
     setSelectedPersonIds([]);
     setMemberRole("");
     setAddPeopleOpen(false);
+    load();
+  };
+
+  const updateGroup = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!user || !groupId || !editGroupName.trim()) {
+      toast.error("Group name is required.");
+      return;
+    }
+
+    const { error } = await (supabase as any)
+      .from("people_groups")
+      .update({
+        name: editGroupName.trim(),
+        description: editGroupDescription.trim() || null,
+        folder_id: editGroupFolderId || null,
+      })
+      .eq("id", groupId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Group updated");
+    setEditGroupOpen(false);
     load();
   };
 
@@ -220,18 +276,35 @@ const PeopleGroupDetail = () => {
           )}
         </div>
 
-        <Button
-          type="button"
-          className="actsix-btn-primary rounded-xl"
-          onClick={() => {
-            setSelectedPersonIds([]);
-            setMemberRole("");
-            setAddPeopleOpen(true);
-          }}
-        >
-          <UserPlus className="h-4 w-4" />
-          Add People
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => {
+              setEditGroupName(group.name || "");
+              setEditGroupDescription(group.description || "");
+              setEditGroupFolderId(group.folder_id || "");
+              setEditGroupOpen(true);
+            }}
+          >
+            <Edit3 className="h-4 w-4" />
+            Edit Group
+          </Button>
+
+          <Button
+            type="button"
+            className="actsix-btn-primary rounded-xl"
+            onClick={() => {
+              setSelectedPersonIds([]);
+              setMemberRole("");
+              setAddPeopleOpen(true);
+            }}
+          >
+            <UserPlus className="h-4 w-4" />
+            Add People
+          </Button>
+        </div>
       </div>
 
       <Card className="overflow-hidden border-border/70 bg-card shadow-card">
@@ -305,6 +378,93 @@ const PeopleGroupDetail = () => {
           </div>
         )}
       </Card>
+
+      {editGroupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-xl border-border/70 bg-card p-6 shadow-card">
+            <form onSubmit={updateGroup} className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="label-eyebrow">People Group</p>
+                  <h2 className="text-xl font-extrabold tracking-tight">
+                    Edit Group
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Update the group name, description, or folder.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setEditGroupOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                  Close
+                </Button>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Group Name</label>
+                <Input
+                  value={editGroupName}
+                  onChange={(event) => setEditGroupName(event.target.value)}
+                  placeholder="Bible Study Group"
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Folder</label>
+                <select
+                  value={editGroupFolderId}
+                  onChange={(event) => setEditGroupFolderId(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                >
+                  <option value="">Uncategorized</option>
+                  {folders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Description</label>
+                <textarea
+                  value={editGroupDescription}
+                  onChange={(event) => setEditGroupDescription(event.target.value)}
+                  rows={4}
+                  placeholder="Optional notes about this group..."
+                  className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setEditGroupOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  className="actsix-btn-primary rounded-xl"
+                  disabled={!editGroupName.trim()}
+                >
+                  <Save className="h-4 w-4" />
+                  Save Group
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
 
       {addPeopleOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
