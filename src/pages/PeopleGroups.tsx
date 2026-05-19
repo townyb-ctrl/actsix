@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Folder, Plus, Trash2, UserPlus, Users } from "lucide-react";
+import { Edit3, Folder, Plus, Save, Trash2, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -56,6 +56,8 @@ const PeopleGroups = () => {
 
   const [selectedFolderId, setSelectedFolderId] = useState("all");
   const [newFolderName, setNewFolderName] = useState("");
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupFolderId, setNewGroupFolderId] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
@@ -137,6 +139,39 @@ const PeopleGroups = () => {
   const availablePeopleForGroup = (groupId: string) => {
     const groupPersonIds = new Set(membersForGroup(groupId).map((member) => member.person_id));
     return people.filter((person) => !groupPersonIds.has(person.id));
+  };
+
+  const startEditingFolder = (folderItem: PeopleGroupFolder) => {
+    setEditingFolderId(folderItem.id);
+    setEditingFolderName(folderItem.name);
+  };
+
+  const cancelEditingFolder = () => {
+    setEditingFolderId(null);
+    setEditingFolderName("");
+  };
+
+  const updateFolder = async (event?: FormEvent) => {
+    event?.preventDefault();
+
+    if (!user || !editingFolderId || !editingFolderName.trim()) return;
+
+    const { error } = await (supabase as any)
+      .from("people_group_folders")
+      .update({
+        name: editingFolderName.trim(),
+      })
+      .eq("id", editingFolderId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Folder renamed");
+    cancelEditingFolder();
+    load();
   };
 
   const createFolder = async (event: FormEvent) => {
@@ -330,31 +365,75 @@ const PeopleGroups = () => {
                   <span>{groups.filter((group) => !group.folder_id).length}</span>
                 </button>
 
-                {folders.map((folderItem) => (
-                  <div key={folderItem.id} className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className={`flex min-w-0 flex-1 items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
-                        selectedFolderId === folderItem.id
-                          ? "bg-brand-teal/10 text-brand-teal"
-                          : "text-muted-foreground hover:bg-muted"
-                      }`}
-                      onClick={() => setSelectedFolderId(folderItem.id)}
-                    >
-                      <span className="truncate">{folderItem.name}</span>
-                      <span>{groups.filter((group) => group.folder_id === folderItem.id).length}</span>
-                    </button>
+                {folders.map((folderItem) => {
+                  const isEditingFolder = editingFolderId === folderItem.id;
 
-                    <button
-                      type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:bg-muted hover:text-destructive"
-                      onClick={() => deleteFolder(folderItem)}
-                      aria-label="Delete folder"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
+                  return (
+                    <div key={folderItem.id} className="flex items-center gap-1">
+                      {isEditingFolder ? (
+                        <form onSubmit={updateFolder} className="flex min-w-0 flex-1 items-center gap-1">
+                          <Input
+                            value={editingFolderName}
+                            onChange={(event) => setEditingFolderName(event.target.value)}
+                            className="h-9 rounded-xl border-border/70 bg-background text-sm"
+                            autoFocus
+                          />
+
+                          <button
+                            type="submit"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-brand-teal hover:bg-brand-teal/10"
+                            aria-label="Save folder name"
+                            disabled={!editingFolderName.trim()}
+                          >
+                            <Save className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                            onClick={cancelEditingFolder}
+                            aria-label="Cancel rename"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </form>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className={`flex min-w-0 flex-1 items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
+                              selectedFolderId === folderItem.id
+                                ? "bg-brand-teal/10 text-brand-teal"
+                                : "text-muted-foreground hover:bg-muted"
+                            }`}
+                            onClick={() => setSelectedFolderId(folderItem.id)}
+                          >
+                            <span className="truncate">{folderItem.name}</span>
+                            <span>{groups.filter((group) => group.folder_id === folderItem.id).length}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:bg-muted hover:text-brand-teal"
+                            onClick={() => startEditingFolder(folderItem)}
+                            aria-label="Rename folder"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:bg-muted hover:text-destructive"
+                            onClick={() => deleteFolder(folderItem)}
+                            aria-label="Delete folder"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <form onSubmit={createFolder} className="mt-4 flex gap-2">
