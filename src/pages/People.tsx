@@ -358,6 +358,23 @@ const People = () => {
     return value?.trim().toLowerCase() || null;
   };
 
+  const findExistingPersonByEmail = async (emailToCheck: string) => {
+    if (!currentPerson?.workspace_id) return null;
+
+    const { data, error } = await (supabase as any)
+      .from("people")
+      .select("id, display_name, email")
+      .eq("workspace_id", currentPerson.workspace_id)
+      .ilike("email", emailToCheck)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  };
+
   const getWelcomeMessage = (person: CsvPersonRow) => {
     const appUrl = window.location.origin;
     const firstName = person.first_name || person.display_name || "there";
@@ -610,7 +627,7 @@ ${row.notes}`
     }
 
     toast.success(
-      `CSV import complete: ${rowsToCreate.length} created, ${rowsToUpdate.length} updated`
+      `CSV import complete: ${rowsToCreate.length} created, ${rowsToUpdate.length} existing profiles updated`
     );
 
     const welcomeRows = csvRows.filter((row) => row.email);
@@ -651,6 +668,22 @@ ${row.notes}`
     if (!cleanFirstName) {
       toast.error("First name is required.");
       return;
+    }
+
+    if (cleanEmail) {
+      try {
+        const existingPerson = await findExistingPersonByEmail(cleanEmail);
+
+        if (existingPerson) {
+          toast.error(
+            `${existingPerson.display_name || "This person"} already exists with this email.`
+          );
+          return;
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Could not check for duplicate email.");
+        return;
+      }
     }
 
     const { data: createdPerson, error } = await (supabase as any)
