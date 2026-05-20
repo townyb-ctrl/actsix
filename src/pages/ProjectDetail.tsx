@@ -126,7 +126,7 @@ const ProjectDetail = () => {
       (supabase as any)
         .from("people")
         .select("id, user_id, display_name, avatar_url, email, phone_number")
-        .eq("user_id", user.id)
+        .eq("workspace_id", currentPerson.workspace_id)
         .order("display_name", { ascending: true }),
 
       (supabase as any)
@@ -180,7 +180,7 @@ const ProjectDetail = () => {
       const { data: actorPeopleData, error: actorPeopleError } = await (supabase as any)
         .from("people")
         .select("id, display_name, avatar_url")
-        .eq("user_id", user.id)
+        .eq("workspace_id", currentPerson.workspace_id)
         .in("id", actorPersonIds);
 
       if (actorPeopleError) {
@@ -206,7 +206,7 @@ const ProjectDetail = () => {
 
   useEffect(() => {
     load();
-  }, [user, projectId]);
+  }, [user, projectId, currentPerson?.workspace_id]);
 
   const stats = useMemo(() => {
     const openTasks = tasks.filter((task) => !task.complete);
