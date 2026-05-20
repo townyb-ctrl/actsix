@@ -1055,16 +1055,18 @@ ${row.notes}`
 
                 <div className="flex justify-end">
                   {isMessageablePhone(person.phone_number) ? (
-                    <a
-                      href={getWhatsappHref(person.phone_number)}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
                       className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-teal bg-brand-teal/10 text-brand-teal transition hover:bg-brand-teal/15"
                       title="Message on WhatsApp"
-                      onClick={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        window.open(getWhatsappHref(person.phone_number), "_blank", "noreferrer");
+                      }}
                     >
                       <Send className="h-4 w-4" />
-                    </a>
+                    </button>
                   ) : (
                     <span
                       className="inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full border border-border bg-background text-muted-foreground/40"
