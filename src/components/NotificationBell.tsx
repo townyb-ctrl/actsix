@@ -45,7 +45,37 @@ export function NotificationBell({ collapsed = false }: { collapsed?: boolean })
   };
 
   useEffect(() => {
+    if (!user?.id) {
+      setNotifications([]);
+      return;
+    }
+
     loadNotifications();
+
+    const intervalId = window.setInterval(() => {
+      loadNotifications();
+    }, 5000);
+
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          loadNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.clearInterval(intervalId);
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const markAsRead = async (notificationId: string) => {
