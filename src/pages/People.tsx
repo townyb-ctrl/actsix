@@ -30,6 +30,12 @@ type Person = {
   updated_at: string;
 }; 
 
+type WorkspaceInvite = {
+  workspace_id: string;
+  workspace_name: string | null;
+  join_code: string | null;
+};
+
 type CsvPersonRow = {
   first_name: string;
   last_name: string | null;
@@ -56,6 +62,7 @@ const People = () => {
   const [importingCsv, setImportingCsv] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [welcomeRecipients, setWelcomeRecipients] = useState<CsvPersonRow[]>([]);
+  const [workspaceInvite, setWorkspaceInvite] = useState<WorkspaceInvite | null>(null);
   const [peopleFilter, setPeopleFilter] = useState("all");
   const [customFilterOpen, setCustomFilterOpen] = useState(false);
   const [customFilters, setCustomFilters] = useState({
@@ -358,6 +365,19 @@ const People = () => {
     return value?.trim().toLowerCase() || null;
   };
 
+  const fetchWorkspaceInvite = async () => {
+    const { data, error } = await (supabase as any).rpc(
+      "get_current_workspace_invite_details"
+    );
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setWorkspaceInvite(data?.[0] || null);
+  };
+
   const findExistingPersonByEmail = async (emailToCheck: string) => {
     if (!currentPerson?.workspace_id) return null;
 
@@ -378,15 +398,22 @@ const People = () => {
   const getWelcomeMessage = (person: CsvPersonRow) => {
     const appUrl = window.location.origin;
     const firstName = person.first_name || person.display_name || "there";
+    const workspaceName = workspaceInvite?.workspace_name || "our church workspace";
+    const joinCodeLine = workspaceInvite?.join_code
+      ? `Join code: ${workspaceInvite.join_code}`
+      : "Join code: [ask the admin for the join code]";
 
     return `Hi ${firstName},
 
-You've been added to ACTSIX for our church workspace.
+You've been added to ACTSIX for ${workspaceName}.
 
 Please create your account here:
 ${appUrl}
 
-After registering, choose the option to join an existing workspace and use the church join code and secret phrase provided by the admin.
+After registering, choose the option to join an existing workspace.
+
+${joinCodeLine}
+Secret phrase: [add the current workspace secret phrase before sending]
 
 Once your account is active, ACTSIX will connect you to your People profile automatically.`;
   };
@@ -734,6 +761,12 @@ ${row.notes}`
 
     fetchPeople();
   };
+
+  useEffect(() => {
+    if (user && currentPerson?.workspace_id) {
+      fetchWorkspaceInvite();
+    }
+  }, [user, currentPerson?.workspace_id]);
 
   return (
     <div className="px-8 pt-8 pb-12 max-w-7xl space-y-5">
@@ -1211,7 +1244,7 @@ ${row.notes}`
 
             <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
               <p>
-                The welcome message includes the ACTSIX link. Add the church join code and secret phrase from{" "}
+                The welcome message includes the ACTSIX link and join code. Add the current secret phrase from{" "}
                 <span className="font-semibold text-foreground">Settings → Workspace Settings</span> before sending.
               </p>
             </div>
