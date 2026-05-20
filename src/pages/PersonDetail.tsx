@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { Link, useParams } from "react-router-dom";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
@@ -133,6 +134,7 @@ const normalizeEmail = (value?: string | null) => {
 const PersonDetail = () => {
   const { personId } = useParams();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [person, setPerson] = useState<Person | null>(null);
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
@@ -154,7 +156,7 @@ const PersonDetail = () => {
   const [notes, setNotes] = useState("");
 
   const fetchPerson = async () => {
-    if (!user || !personId) return;
+    if (!user || !personId || !currentPerson?.workspace_id) return;
 
     setLoading(true);
 
@@ -162,7 +164,7 @@ const PersonDetail = () => {
       .from("people")
       .select("*")
       .eq("id", personId)
-      .eq("user_id", user.id)
+      .eq("workspace_id", currentPerson.workspace_id)
       .single();
 
     if (error) {
@@ -294,7 +296,7 @@ const PersonDetail = () => {
 
   useEffect(() => {
     fetchPerson();
-  }, [user, personId]);
+  }, [user, personId, currentPerson?.workspace_id]);
 
   const cancelEdit = () => {
     if (!person) return;
@@ -428,7 +430,7 @@ const PersonDetail = () => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", person.id)
-      .eq("user_id", user.id);
+      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000");
 
     if (updateError) {
       toast.error(updateError.message);
@@ -458,7 +460,7 @@ const PersonDetail = () => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", person.id)
-      .eq("user_id", user.id);
+      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000");
 
     if (error) {
       toast.error(error.message);
