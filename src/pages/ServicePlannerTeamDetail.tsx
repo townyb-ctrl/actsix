@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PeopleSearchSelect } from "@/components/people/PeopleSearchSelect";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { formatPhoneForDisplay, normalizePhoneForStorage } from "@/lib/phone";
@@ -133,6 +134,7 @@ const ServicePlannerTeamDetail = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [team, setTeam] = useState<ServiceTeam | null>(null);
   const [members, setMembers] = useState<ServiceTeamMember[]>([]);
@@ -312,7 +314,7 @@ const ServicePlannerTeamDetail = () => {
         (supabase as any)
           .from("people")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
           .order("display_name", { ascending: true }),
       ]);
 
@@ -409,7 +411,7 @@ const ServicePlannerTeamDetail = () => {
 
   useEffect(() => {
     fetchTeam();
-  }, [user, teamId]);
+  }, [user, teamId, currentPerson?.workspace_id]);
 
   const resetMemberForm = () => {
     setSelectedPersonId("");
@@ -561,7 +563,7 @@ const ServicePlannerTeamDetail = () => {
   };
 
   const createPersonFromSearch = async (displayName: string) => {
-    if (!user) return;
+    if (!user || !currentPerson?.workspace_id) return;
 
     const cleanedName = displayName.trim();
 
