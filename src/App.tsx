@@ -26,6 +26,7 @@ import MeetingDetail from "./pages/MeetingDetail";
 import RecurringMeetings from "./pages/RecurringMeetings";
 import RecurringMeetingDetail from "./pages/RecurringMeetingDetail";
 import Settings from "./pages/Settings";
+import WorkspaceSettings from "./pages/WorkspaceSettings";
 import { Recurring, Review, Calendar, Meetups } from "./pages/Placeholder";
 import Auth from "./pages/Auth";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
@@ -81,6 +82,7 @@ const App = () => (
               <Route path="/meetings/recurring/:seriesId" element={<RecurringMeetingDetail />} />
               <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/workspace" element={<WorkspaceSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -91,5 +93,6 @@ const App = () => (
 );
 
 export default App;
+
 
 
