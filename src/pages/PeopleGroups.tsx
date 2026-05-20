@@ -82,7 +82,7 @@ const PeopleGroups = () => {
       (supabase as any)
         .from("people")
         .select("id, display_name, avatar_url, email, phone_number")
-        .eq("workspace_id", currentPerson.workspace_id)
+        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
         .order("display_name", { ascending: true }),
 
       (supabase as any)

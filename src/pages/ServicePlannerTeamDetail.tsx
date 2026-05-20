@@ -578,6 +578,7 @@ const ServicePlannerTeamDetail = () => {
       .from("people")
       .insert({
         user_id: user.id,
+        workspace_id: currentPerson.workspace_id,
         first_name,
         last_name,
         display_name: cleanedName,
@@ -802,7 +803,7 @@ const ServicePlannerTeamDetail = () => {
   };
 
   const createProfileFromTeamMember = async (member: ServiceTeamMember) => {
-    if (!user) return;
+    if (!user || !currentPerson?.workspace_id) return;
 
     if (member.person_id) {
       toast.error("This team member is already linked to a People profile.");
@@ -821,6 +822,7 @@ const ServicePlannerTeamDetail = () => {
       .from("people")
       .insert({
         user_id: user.id,
+        workspace_id: currentPerson.workspace_id,
         first_name,
         last_name,
         display_name: member.person_name,

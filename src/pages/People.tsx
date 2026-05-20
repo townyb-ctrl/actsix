@@ -227,7 +227,7 @@ const People = () => {
       const { error: clearAuthError } = await (supabase as any)
         .from("people")
         .update({ auth_user_id: null, updated_at: new Date().toISOString() })
-        .eq("user_id", user.id)
+        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
         .in("id", allGroupIds);
 
       if (clearAuthError) {
@@ -279,7 +279,7 @@ const People = () => {
       const { error: deleteError } = await (supabase as any)
         .from("people")
         .delete()
-        .eq("user_id", user.id)
+        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
         .in("id", duplicateIds);
 
       if (deleteError) {
@@ -302,7 +302,7 @@ const People = () => {
     const { data, error } = await (supabase as any)
       .from("people")
       .select("*")
-      .eq("workspace_id", currentPerson.workspace_id)
+      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
       .order("display_name", { ascending: true });
 
     if (error) {
@@ -384,7 +384,7 @@ const People = () => {
     const { data, error } = await (supabase as any)
       .from("people")
       .select("id, display_name, email")
-      .eq("workspace_id", currentPerson.workspace_id)
+      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
       .ilike("email", emailToCheck)
       .maybeSingle();
 
@@ -565,7 +565,7 @@ Once your account is active, ACTSIX will connect you to your People profile auto
     const { data: existingPeople, error: existingPeopleError } = await (supabase as any)
       .from("people")
       .select("*")
-      .eq("workspace_id", currentPerson.workspace_id)
+      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
       .in("email", emails.length > 0 ? emails : ["__no_email_matches__"]);
 
     if (existingPeopleError) {
@@ -620,7 +620,7 @@ ${row.notes}`
         .from("people")
         .update(updatePayload)
         .eq("id", existing.id)
-        .eq("workspace_id", currentPerson.workspace_id);
+        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000");
 
       if (updateError) {
         toast.error(updateError.message);

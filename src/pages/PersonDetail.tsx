@@ -430,7 +430,7 @@ const PersonDetail = () => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", person.id)
-      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000");
+      .eq("workspace_id", currentPerson?.workspace_id);
 
     if (updateError) {
       toast.error(updateError.message);
@@ -460,7 +460,7 @@ const PersonDetail = () => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", person.id)
-      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000");
+      .eq("workspace_id", currentPerson?.workspace_id);
 
     if (error) {
       toast.error(error.message);
