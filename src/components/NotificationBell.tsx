@@ -125,13 +125,32 @@ export function NotificationBell({ collapsed = false }: { collapsed?: boolean })
     await markAsRead(notification.id);
     setOpen(false);
 
-    if (notification.entity_type === "project" && notification.entity_id) {
-      navigate(`/tasks/projects/${notification.entity_id}`);
+    if (!notification.entity_type || !notification.entity_id) {
       return;
     }
 
-    if (notification.entity_type === "service" && notification.entity_id) {
-      navigate(`/service-planner/services/${notification.entity_id}`);
+    switch (notification.entity_type) {
+      case "project":
+      case "project_task":
+        navigate(`/tasks/projects/${notification.entity_id}`);
+        return;
+
+      case "task":
+        navigate("/tasks");
+        return;
+
+      case "service":
+      case "service_assignment":
+        navigate(`/service-planner/services/${notification.entity_id}`);
+        return;
+
+      case "person":
+        navigate(`/people/${notification.entity_id}`);
+        return;
+
+      default:
+        console.warn("Unknown notification entity type:", notification.entity_type);
+        return;
     }
   };
 
