@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { supabase } from "@/integrations/supabase/client";
+import { createNotificationForPerson } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { logActivity } from "@/lib/activityLog";
@@ -869,6 +870,17 @@ const ServiceDetail = () => {
         role_name: roleName.trim(),
       }
     );
+
+    if (nextPersonId) {
+      await createNotificationForPerson({
+        personId: nextPersonId,
+        title: "Service assignment updated",
+        message: `You have been assigned to ${roleName.trim()} for ${service?.title || "a service"}.`,
+        type: "assignment",
+        entityType: "service_assignment",
+        entityId: serviceId,
+      });
+    }
 
     toast.success("Team member added");
     setAddTeamAssignmentOpen(false);
