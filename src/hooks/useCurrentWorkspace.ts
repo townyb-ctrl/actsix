@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 
 export type WorkspaceRole = "admin" | "scheduler" | "editor" | "viewer" | "member";
 
@@ -27,33 +26,12 @@ export type WorkspaceMember = {
   updated_at: string;
 };
 
-const createWorkspaceSlug = (email?: string | null, userId?: string) => {
-  const prefix = (email?.split("@")[0] || "actsix")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 24);
-
-  return `${prefix || "actsix"}-${userId?.slice(0, 8) || Date.now()}`;
-};
-
-const createJoinCode = (userId: string) => {
-  return `ACTSIX-${userId.slice(0, 8).toUpperCase()}`;
-};
-
 export function useCurrentWorkspace() {
   const { user } = useAuth();
-  const { person } = useCurrentPerson();
 
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [membership, setMembership] = useState<WorkspaceMember | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const isAdmin = membership?.role === "admin";
-  const isScheduler = membership?.role === "scheduler";
-  const isEditor = membership?.role === "editor";
-  const isViewer = membership?.role === "viewer";
-  const isMember = membership?.role === "member";
 
   const loadWorkspace = async () => {
     if (!user) {
@@ -76,88 +54,95 @@ export function useCurrentWorkspace() {
 
     if (membershipError) {
       console.error("Workspace membership load error:", membershipError.message);
+      setWorkspace(null);
+      setMembership(null);
       setLoading(false);
       return;
     }
 
-    if (existingMembership?.workspace_id) {
-      const { data: existingWorkspace, error: workspaceError } = await (supabase as any)
-        .from("workspaces")
-        .select("*")
-        .eq("id", existingMembership.workspace_id)
-        .maybeSingle();
+    if (!existingMembership?.workspace_id) {
+      setWorkspace(null);
+      setMembership(null);
+      setLoading(false);
+      return;
+    }
 
-      if (workspaceError) {
-        console.error("Workspace load error:", workspaceError.message);
-        setLoading(false);
-        return;
-      }
+    const { data: existingWorkspace, error: workspaceError } = await (supabase as any)
+      .from("workspaces")
+      .select("*")
+      .eq("id", existingMembership.workspace_id)
+      .maybeSingle();
 
-      setWorkspace(existingWorkspace || null);
+    if (workspaceError) {
+      console.error("Workspace load error:", workspaceError.message);
+      setWorkspace(null);
       setMembership(existingMembership || null);
       setLoading(false);
       return;
     }
 
-    const workspaceName = user.user_metadata?.church_name || "ACTSIX Alpha Workspace";
-    const slug = createWorkspaceSlug(user.email, user.id);
-    const joinCode = createJoinCode(user.id);
-
-    const { data: newWorkspace, error: createWorkspaceError } = await (supabase as any)
-      .from("workspaces")
-      .insert({
-        name: workspaceName,
-        slug,
-        join_code: joinCode,
-        owner_user_id: user.id,
-        release_mode: "alpha",
-      })
-      .select("*")
-      .single();
-
-    if (createWorkspaceError) {
-      console.error("Workspace create error:", createWorkspaceError.message);
-      setLoading(false);
-      return;
-    }
-
-    const { data: newMembership, error: createMembershipError } = await (supabase as any)
-      .from("workspace_members")
-      .insert({
-        workspace_id: newWorkspace.id,
-        auth_user_id: user.id,
-        person_id: person?.id || null,
-        role: "admin",
-        status: "active",
-      })
-      .select("*")
-      .single();
-
-    if (createMembershipError) {
-      console.error("Workspace membership create error:", createMembershipError.message);
-      setLoading(false);
-      return;
-    }
-
-    setWorkspace(newWorkspace);
-    setMembership(newMembership);
+    setWorkspace(existingWorkspace || null);
+    setMembership(existingMembership || null);
     setLoading(false);
+  };
+
+  const createWorkspace = async ({
+    name,
+    joinCode,
+    joinPhrase,
+  }: {
+    name: string;
+    joinCode: string;
+    joinPhrase: string;
+  }) => {
+    const { error } = await (supabase as any).rpc("create_workspace_for_current_user", {
+      workspace_name: name,
+      workspace_join_code: joinCode,
+      workspace_join_phrase: joinPhrase,
+    });
+
+    if (error) return { error };
+
+    await loadWorkspace();
+    return { error: null };
+  };
+
+  const joinWorkspace = async ({
+    joinCode,
+    joinPhrase,
+  }: {
+    joinCode: string;
+    joinPhrase: string;
+  }) => {
+    const { error } = await (supabase as any).rpc("join_workspace_by_code", {
+      workspace_join_code: joinCode,
+      workspace_join_phrase: joinPhrase,
+    });
+
+    if (error) return { error };
+
+    await loadWorkspace();
+    return { error: null };
   };
 
   useEffect(() => {
     loadWorkspace();
-  }, [user?.id, person?.id]);
+  }, [user?.id]);
+
+  const role = membership?.role || null;
 
   return {
     workspace,
     membership,
     loading,
     reloadWorkspace: loadWorkspace,
-    role: membership?.role || null,
-    isAdmin,
-    isScheduler,
-    isEditor,
-    isViewer,
-    isMember,
+    createWorkspace,
+    joinWorkspace,
+    role,
+    isAdmin: role === "admin",
+    isScheduler: role === "scheduler",
+    isEditor: role === "editor",
+    isViewer: role === "viewer",
+    isMember: role === "member",
   };
 }

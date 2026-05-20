@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -6,6 +6,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ const priorityWeight: Record<string, number> = {
 const Dashboard = () => {
   const { user } = useAuth();
   const { displayName } = useCurrentPerson();
+  const { workspace, loading: workspaceLoading } = useCurrentWorkspace();
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [projectCount, setProjectCount] = useState(0);
@@ -65,6 +67,35 @@ const Dashboard = () => {
   }, []);
 
 
+  if (!workspaceLoading && !workspace) {
+    return (
+      <div>
+        <PageHeader
+          eyebrow="ACTSIX"
+          title="Workspace Setup"
+          subtitle="Create or join a church workspace before using ACTSIX."
+        />
+
+        <div className="max-w-3xl px-8 pb-12">
+          <Card className="border-border/70 bg-card p-6 shadow-card">
+            <h2 className="text-2xl font-extrabold tracking-tight">
+              Connect ACTSIX to your church
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              ACTSIX is designed around church workspaces. Create your church workspace
+              or join one using the code and secret phrase from your admin.
+            </p>
+
+            <div className="mt-5">
+              <Button asChild className="actsix-btn-primary rounded-xl">
+                <Link to="/workspace-setup">Set Up Workspace</Link>
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
   return (
     <div>
       <PageHeader
@@ -166,3 +197,5 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
