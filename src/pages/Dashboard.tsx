@@ -9,6 +9,7 @@ import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { isAlphaMode, getReleaseLabel } from "@/lib/releaseMode";
 
 const priorityWeight: Record<string, number> = {
   Urgent: 4,
@@ -69,7 +70,11 @@ const Dashboard = () => {
       <PageHeader
         eyebrow="ACTSIX"
         title="Homebase"
-        subtitle="A family-level command center for ministry work. Open a module to enter its dedicated dashboard and tools."
+        subtitle={
+          isAlphaMode
+            ? "Alpha workspace for testing the core ACTSIX ministry workflows."
+            : "A family-level command center for ministry work. Open a module to enter its dedicated dashboard and tools."
+        }
       />
 
       <div className="px-8 pb-12 max-w-7xl space-y-8">
@@ -86,8 +91,9 @@ const Dashboard = () => {
               </h2>
 
               <p className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">
-                Homebase gives you key signals from across the ACTSIX family.
-                To work inside a specific area, open that module first.
+                {isAlphaMode
+                  ? "This Alpha version focuses on the core workflows we are testing with churches: People, Groups, Tasks, Projects, Service Planning, and Meetings."
+                  : "Homebase gives you key signals from across the ACTSIX family. To work inside a specific area, open that module first."}
               </p>
 
               <div className="mt-5">
@@ -103,7 +109,7 @@ const Dashboard = () => {
                   Key Signals
                 </h3>
                 <span className="chip bg-secondary text-secondary-foreground">
-                  Homebase
+                  {getReleaseLabel()}
                 </span>
               </div>
 
@@ -148,8 +154,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="rounded-lg border border-dashed border-border bg-card px-3 py-3 text-sm text-muted-foreground">
-                  Upcoming service, next sermon, and pastoral care signals will
-                  appear here as those ACTSIX modules are built.
+                  Alpha signals will stay focused on real ministry activity: tasks, projects, people, services, and meetings.
                 </div>
               </div>
             </div>

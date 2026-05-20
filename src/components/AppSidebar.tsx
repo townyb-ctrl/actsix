@@ -37,14 +37,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "./Logo";
 import { NotificationBell } from "./NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
+import { isAlphaMode, isModuleEnabled, getReleaseLabel } from "@/lib/releaseMode";
 
-type Item = { title: string; url: string; icon: any; badgeKey?: string };
+type Item = { title: string; url: string; icon: any; badgeKey?: string; moduleKey?: string };
 
 const homebaseItems: Item[] = [
-  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, badgeKey: "tasks_open" },
-  { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays },
-  { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music },
-  { title: "ACTSIX: People", url: "/people", icon: Users },
+  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, badgeKey: "tasks_open", moduleKey: "tasks" },
+  { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays, moduleKey: "meetings" },
+  { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music, moduleKey: "service_planner" },
+  { title: "ACTSIX: People", url: "/people", icon: Users, moduleKey: "people" },
 ];
 
 const meetingItems: Item[] = [
@@ -77,14 +78,14 @@ const peopleItems: Item[] = [
 ];
 
 const workspaceItems = [
-  { title: "Home", url: "/", icon: House, disabled: false },
-  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, disabled: false },
-  { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays, disabled: false },
-  { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music, disabled: false },
-  { title: "ACTSIX: People", url: "/people", icon: Users, disabled: false },
-  { title: "Sermon Prep — Coming Soon", url: "/sermon-prep", icon: Sparkles, disabled: true },
-  { title: "Scripture Tools — Coming Soon", url: "/scripture", icon: ClipboardCheck, disabled: true },
-  { title: "Media Tools — Coming Soon", url: "/media", icon: BarChart3, disabled: true },
+  { title: "Home", url: "/", icon: House, disabled: false, moduleKey: "home" },
+  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, disabled: false, moduleKey: "tasks" },
+  { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays, disabled: false, moduleKey: "meetings" },
+  { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music, disabled: false, moduleKey: "service_planner" },
+  { title: "ACTSIX: People", url: "/people", icon: Users, disabled: false, moduleKey: "people" },
+  { title: "Sermon Hub", url: "/sermon-hub", icon: Sparkles, disabled: false, moduleKey: "sermon_hub" },
+  { title: "Resources", url: "/resources", icon: ClipboardCheck, disabled: false, moduleKey: "resources" },
+  { title: "Media Tools", url: "/media", icon: BarChart3, disabled: false, moduleKey: "media" },
 ];
 
 export function AppSidebar() {
@@ -99,7 +100,7 @@ export function AppSidebar() {
   const inMeetingsModule = pathname === "/meetings" || pathname.startsWith("/meetings/");
   const inServicePlannerModule = pathname === "/service-planner" || pathname.startsWith("/service-planner/");
   const inPeopleModule = pathname === "/people" || pathname.startsWith("/people/");
-  const items = inPeopleModule
+  const rawItems = inPeopleModule
     ? peopleItems
     : inServicePlannerModule
       ? servicePlannerItems
@@ -108,6 +109,14 @@ export function AppSidebar() {
       : inTasksModule
         ? taskItems
         : homebaseItems;
+
+  const items = rawItems.filter((item) =>
+    item.moduleKey ? isModuleEnabled(item.moduleKey as any) : true
+  );
+
+  const visibleWorkspaceItems = workspaceItems.filter((item) =>
+    item.moduleKey ? isModuleEnabled(item.moduleKey as any) : true
+  );
 
   const moduleValue = inPeopleModule
     ? "/people"
@@ -120,7 +129,7 @@ export function AppSidebar() {
         : "/";
 
   const selectedWorkspace =
-    workspaceItems.find((item) => item.url === moduleValue) || workspaceItems[0];
+    visibleWorkspaceItems.find((item) => item.url === moduleValue) || visibleWorkspaceItems[0];
 
   const SelectedWorkspaceIcon = selectedWorkspace.icon;
 
@@ -238,7 +247,7 @@ export function AppSidebar() {
 
                         {workspaceOpen && (
                           <div className="absolute left-0 right-0 top-12 z-50 max-h-80 overflow-auto rounded-2xl border border-sidebar-border bg-sidebar p-1.5 shadow-xl">
-                            {workspaceItems.map((item) => {
+                            {visibleWorkspaceItems.map((item) => {
                               const active = item.url === moduleValue;
                               const WorkspaceIcon = item.icon;
 
@@ -301,6 +310,12 @@ export function AppSidebar() {
                   <div className="mx-3 mb-3 border-t border-sidebar-border/70" />
                 )}
               </>
+            )}
+
+            {!collapsed && isAlphaMode && (
+              <div className="mx-1.5 mb-3 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal-bright">
+                {getReleaseLabel()} Mode
+              </div>
             )}
 
             <SidebarMenu className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}>
