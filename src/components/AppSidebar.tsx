@@ -37,6 +37,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "./Logo";
 import { NotificationBell } from "./NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { isAlphaMode, isModuleEnabled, getReleaseLabel } from "@/lib/releaseMode";
 
 type Item = { title: string; url: string; icon: any; badgeKey?: string; moduleKey?: string };
@@ -94,6 +95,7 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { workspace, role } = useCurrentWorkspace();
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
@@ -398,11 +400,15 @@ export function AppSidebar() {
               <span>Online</span>
             </div>
 
-            {user?.email && (
-              <p className="mt-1 truncate text-xs text-sidebar-foreground/45">
-                {user.email}
+            {workspace?.name && (
+              <p className="mt-1 truncate text-xs font-bold text-sidebar-foreground/70">
+                {workspace.name}
               </p>
             )}
+
+            <p className="mt-1 truncate text-xs text-sidebar-foreground/45">
+              {role ? `${role.charAt(0).toUpperCase()}${role.slice(1)}` : user?.email}
+            </p>
           </div>
         )}
       </SidebarFooter>
