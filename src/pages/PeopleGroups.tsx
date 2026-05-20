@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 
@@ -47,6 +48,7 @@ type PeopleGroupMember = {
 
 const PeopleGroups = () => {
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [people, setPeople] = useState<Person[]>([]);
   const [folders, setFolders] = useState<PeopleGroupFolder[]>([]);
@@ -67,7 +69,7 @@ const PeopleGroups = () => {
   const [memberRole, setMemberRole] = useState("");
 
   const load = async () => {
-    if (!user) return;
+    if (!user || !currentPerson?.workspace_id) return;
 
     setLoading(true);
 
@@ -80,7 +82,7 @@ const PeopleGroups = () => {
       (supabase as any)
         .from("people")
         .select("id, display_name, avatar_url, email, phone_number")
-        .eq("user_id", user.id)
+        .eq("workspace_id", currentPerson.workspace_id)
         .order("display_name", { ascending: true }),
 
       (supabase as any)
@@ -116,7 +118,7 @@ const PeopleGroups = () => {
 
   useEffect(() => {
     load();
-  }, [user]);
+  }, [user, currentPerson?.workspace_id]);
 
   const filteredGroups = useMemo(() => {
     if (selectedFolderId === "all") return groups;

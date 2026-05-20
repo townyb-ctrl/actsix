@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
@@ -52,6 +53,7 @@ const PeopleGroupDetail = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [group, setGroup] = useState<PeopleGroup | null>(null);
   const [folders, setFolders] = useState<PeopleGroupFolder[]>([]);
@@ -102,7 +104,7 @@ const PeopleGroupDetail = () => {
       (supabase as any)
         .from("people_group_members")
         .select("id, user_id, group_id, person_id, role, created_at, people(id, display_name, avatar_url, email, phone_number)")
-        .eq("user_id", user.id)
+        .eq("workspace_id", currentPerson.workspace_id)
         .eq("group_id", groupId)
         .order("created_at", { ascending: true }),
     ]);
