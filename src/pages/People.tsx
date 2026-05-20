@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Filter, Mail, Merge, Phone, Plus, Search, Send, Upload, Users, X } from "lucide-react";
+import { Copy, Filter, Mail, Merge, Phone, Plus, Search, Send, Upload, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePh
 type Person = {
   id: string;
   user_id: string;
+  workspace_id: string | null;
   auth_user_id: string | null;
   first_name: string;
   last_name: string | null;
@@ -54,6 +55,7 @@ const People = () => {
   const [csvError, setCsvError] = useState("");
   const [importingCsv, setImportingCsv] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [welcomeRecipients, setWelcomeRecipients] = useState<CsvPersonRow[]>([]);
   const [peopleFilter, setPeopleFilter] = useState("all");
   const [customFilterOpen, setCustomFilterOpen] = useState(false);
   const [customFilters, setCustomFilters] = useState({
@@ -286,14 +288,14 @@ const People = () => {
   };
 
   const fetchPeople = async () => {
-    if (!user) return;
+    if (!user || !currentPerson?.workspace_id) return;
 
     setLoading(true);
 
     const { data, error } = await (supabase as any)
       .from("people")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("workspace_id", currentPerson.workspace_id)
       .order("display_name", { ascending: true });
 
     if (error) {
@@ -308,7 +310,7 @@ const People = () => {
 
   useEffect(() => {
     fetchPeople();
-  }, [user, currentPerson?.id]);
+  }, [user, currentPerson?.id, currentPerson?.workspace_id]);
 
   const parseCsvLine = (line: string) => {
     const values: string[] = [];
@@ -354,6 +356,60 @@ const People = () => {
 
   const normalizeEmail = (value?: string | null) => {
     return value?.trim().toLowerCase() || null;
+  };
+
+  const getWelcomeMessage = (person: CsvPersonRow) => {
+    const appUrl = window.location.origin;
+    const firstName = person.first_name || person.display_name || "there";
+
+    return `Hi ${firstName},
+
+You've been added to ACTSIX for our church workspace.
+
+Please create your account here:
+${appUrl}
+
+After registering, choose the option to join an existing workspace and use the church join code and secret phrase provided by the admin.
+
+Once your account is active, ACTSIX will connect you to your People profile automatically.`;
+  };
+
+  const copyWelcomeMessage = async (person: CsvPersonRow) => {
+    const message = getWelcomeMessage(person);
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(message);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = message;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+
+      toast.success("Welcome message copied.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not copy the welcome message.");
+    }
+  };
+
+  const openWelcomeEmailDraft = (person: CsvPersonRow) => {
+    if (!person.email) {
+      toast.error("This person does not have an email address.");
+      return;
+    }
+
+    const subject = encodeURIComponent("Welcome to ACTSIX");
+    const body = encodeURIComponent(getWelcomeMessage(person));
+    const mailtoUrl = `mailto:${person.email}?subject=${subject}&body=${body}`;
+
+    window.open(mailtoUrl, "_self");
   };
 
   const splitName = (name: string) => {
@@ -454,7 +510,7 @@ const People = () => {
   };
 
   const importCsvPeople = async () => {
-    if (!user || csvRows.length === 0) return;
+    if (!user || !currentPerson?.workspace_id || csvRows.length === 0) return;
 
     setImportingCsv(true);
 
@@ -465,7 +521,7 @@ const People = () => {
     const { data: existingPeople, error: existingPeopleError } = await (supabase as any)
       .from("people")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("workspace_id", currentPerson.workspace_id)
       .in("email", emails.length > 0 ? emails : ["__no_email_matches__"]);
 
     if (existingPeopleError) {
@@ -520,7 +576,7 @@ ${row.notes}`
         .from("people")
         .update(updatePayload)
         .eq("id", existing.id)
-        .eq("user_id", user.id);
+        .eq("workspace_id", currentPerson.workspace_id);
 
       if (updateError) {
         toast.error(updateError.message);
@@ -533,6 +589,7 @@ ${row.notes}`
       const { error: createError } = await (supabase as any).from("people").insert(
         rowsToCreate.map((row) => ({
           user_id: user.id,
+          workspace_id: currentPerson.workspace_id,
           first_name: row.first_name,
           last_name: row.last_name,
           display_name: row.display_name,
@@ -556,6 +613,11 @@ ${row.notes}`
       `CSV import complete: ${rowsToCreate.length} created, ${rowsToUpdate.length} updated`
     );
 
+    const welcomeRows = csvRows.filter((row) => row.email);
+    if (welcomeRows.length > 0) {
+      setWelcomeRecipients(welcomeRows);
+    }
+
     setCsvRows([]);
     setCsvError("");
     setImportOpen(false);
@@ -576,29 +638,38 @@ ${row.notes}`
   const createPerson = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!user) return;
+    if (!user || !currentPerson?.workspace_id) {
+      toast.error("Workspace is still loading. Please try again.");
+      return;
+    }
 
     const cleanFirstName = firstName.trim();
     const cleanLastName = lastName.trim();
     const displayName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ");
+    const cleanEmail = normalizeEmail(email);
 
     if (!cleanFirstName) {
       toast.error("First name is required.");
       return;
     }
 
-    const { error } = await (supabase as any).from("people").insert({
-      user_id: user.id,
-      first_name: cleanFirstName,
-      last_name: cleanLastName || null,
-      display_name: displayName,
-      phone_number: normalizePhoneForStorage(phoneNumber),
-      email: normalizeEmail(email),
-      gender: gender.trim() || null,
-      membership_status: membershipStatus,
-      whatsapp_enabled: false,
-      notes: notes.trim() || null,
-    });
+    const { data: createdPerson, error } = await (supabase as any)
+      .from("people")
+      .insert({
+        user_id: user.id,
+        workspace_id: currentPerson.workspace_id,
+        first_name: cleanFirstName,
+        last_name: cleanLastName || null,
+        display_name: displayName,
+        phone_number: normalizePhoneForStorage(phoneNumber),
+        email: cleanEmail,
+        gender: gender.trim() || null,
+        membership_status: membershipStatus,
+        whatsapp_enabled: false,
+        notes: notes.trim() || null,
+      })
+      .select("first_name, last_name, display_name, phone_number, email, whatsapp_enabled, notes")
+      .single();
 
     if (error) {
       toast.error(error.message);
@@ -606,8 +677,28 @@ ${row.notes}`
     }
 
     toast.success("Person added");
+
     resetForm();
     setAddPersonOpen(false);
+
+    if (createdPerson?.email) {
+      setWelcomeRecipients([
+        {
+          first_name: createdPerson.first_name,
+          last_name: createdPerson.last_name,
+          display_name: createdPerson.display_name,
+          phone_number: createdPerson.phone_number,
+          email: createdPerson.email,
+          whatsapp_enabled: createdPerson.whatsapp_enabled,
+          notes: createdPerson.notes,
+        },
+      ]);
+
+      toast.success("Invite prompt ready.");
+    } else {
+      toast.info("No email added, so no invite prompt was created.");
+    }
+
     fetchPeople();
   };
 
@@ -1056,6 +1147,79 @@ ${row.notes}`
                 <Upload className="h-4 w-4" />
                 {importingCsv ? "Importing..." : `Import ${csvRows.length || ""} People`}
               </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {welcomeRecipients.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-3xl border-border/70 bg-card shadow-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="label-eyebrow">ACTSIX: People</p>
+                <h2 className="text-xl font-extrabold tracking-tight">
+                  Invite people to activate their ACTSIX account
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Send these people a welcome message so they can register, join the workspace, and connect to their People profile automatically.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setWelcomeRecipients([])}
+              >
+                Close
+              </Button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+              <p>
+                The welcome message includes the ACTSIX link. Add the church join code and secret phrase from{" "}
+                <span className="font-semibold text-foreground">Settings → Workspace Settings</span> before sending.
+              </p>
+            </div>
+
+            <div className="mt-5 max-h-80 space-y-3 overflow-auto">
+              {welcomeRecipients.map((recipient, index) => (
+                <div
+                  key={`${recipient.email}-${index}`}
+                  className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-background p-4 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="font-extrabold tracking-tight">
+                      {recipient.display_name}
+                    </p>
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                      {recipient.email}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl"
+                      onClick={() => copyWelcomeMessage(recipient)}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </Button>
+
+                    <Button
+                      type="button"
+                      className="actsix-btn-primary rounded-xl"
+                      onClick={() => openWelcomeEmailDraft(recipient)}
+                    >
+                      <Send className="h-4 w-4" />
+                      Email
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
         </div>
