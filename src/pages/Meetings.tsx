@@ -37,12 +37,11 @@ const Meetings = () => {
   const [addOpen, setAddOpen] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [meetingType, setMeetingType] = useState("General");
+  const [meetingType, setMeetingType] = useState("In Person");
   const [meetingDate, setMeetingDate] = useState("");
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
   const [googleMeetUrl, setGoogleMeetUrl] = useState("");
-  const [attendees, setAttendees] = useState("");
 
   const load = async () => {
     if (!user) return;
@@ -78,9 +77,8 @@ const Meetings = () => {
       meeting_time: meetingTime || null,
       location: location.trim(),
       google_meet_url: googleMeetUrl.trim() || null,
-      type: meetingType.trim() || "General",
+      type: meetingType.trim() || "In Person",
       status: "Planned",
-      attendees: attendees.split(",").map((name) => name.trim()).filter(Boolean),
       agenda: "",
       notes: "",
     });
@@ -95,7 +93,6 @@ const Meetings = () => {
     setMeetingTime("");
     setLocation("");
     setGoogleMeetUrl("");
-    setAttendees("");
     toast.success("Meeting created");
     load();
   };
@@ -338,12 +335,20 @@ const Meetings = () => {
 
                 <div>
                   <label className="label-eyebrow">Type</label>
-                  <Input
+                  <select
                     value={meetingType}
-                    onChange={(event) => setMeetingType(event.target.value)}
-                    placeholder="General"
-                    className="mt-2 border-border/70 bg-background"
-                  />
+                    onChange={(event) => {
+                      setMeetingType(event.target.value);
+                      if (event.target.value === "Online") {
+                        setLocation("");
+                      }
+                    }}
+                    className="h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                  >
+                    <option value="In Person">In Person</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Online">Online</option>
+                  </select>
                 </div>
 
                 <div>
@@ -366,15 +371,17 @@ const Meetings = () => {
                   />
                 </div>
 
+                {meetingType !== "Online" && (
                 <div>
                   <label className="label-eyebrow">Location</label>
                   <Input
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                     placeholder="Location"
-                    className="mt-2 border-border/70 bg-background"
+                    className="border-border/70 bg-background"
                   />
                 </div>
+              )}
 
                 <div>
                   <label className="label-eyebrow">Google Meet Link</label>
@@ -386,15 +393,7 @@ const Meetings = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="label-eyebrow">Attendees</label>
-                  <Input
-                    value={attendees}
-                    onChange={(event) => setAttendees(event.target.value)}
-                    placeholder="Brandon, Michelle, Barbara"
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
+                
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
