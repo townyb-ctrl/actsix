@@ -1,22 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Copy,
-  ExternalLink,
-  FileText,
-  ListChecks,
-  MapPin,
-  Pencil,
-  Plus,
-  Save,
-  Trash2,
-  UserRoundX,
-  UsersRound,
-  Video,
-} from "lucide-react";
+import { CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, ListChecks, MapPin, Pencil, Plus, Save, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -26,6 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -267,6 +264,87 @@ const getRecurringSeriesIdFromAgenda = (agenda?: string | Record<string, unknown
   }
 };
 
+
+type MeetingSourceOption = {
+  value: string;
+  label: string;
+  description?: string | null;
+};
+
+function MeetingSourceCombobox({
+  value,
+  onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+  emptyText,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: MeetingSourceOption[];
+  placeholder: string;
+  searchPlaceholder: string;
+  emptyText: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedOption = options.find((option) => option.value === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="min-h-10 w-full justify-between rounded-xl border-border/70 bg-card px-3 text-left font-normal"
+        >
+          <span className="min-w-0 truncate">
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={`${option.label} ${option.description || ""}`}
+                  onSelect={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{option.label}</p>
+                    {option.description && (
+                      <p className="truncate text-xs text-muted-foreground">
+                        {option.description}
+                      </p>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 const MeetingDetail = () => {
   const minutesRef = useRef<HTMLDivElement | null>(null);
   const { meetingId } = useParams();
@@ -311,9 +389,36 @@ const MeetingDetail = () => {
   const [selectedMeetingPersonId, setSelectedMeetingPersonId] = useState("");
   const [selectedMeetingGroupId, setSelectedMeetingGroupId] = useState("");
   const [selectedMeetingFolderId, setSelectedMeetingFolderId] = useState("");
+  const [selectedMeetingGroupFolderId, setSelectedMeetingGroupFolderId] = useState("");
 
   const attendeeList = useMemo(() => parseAttendees(attendeesText), [attendeesText]);
   const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
+
+  const meetingIndividualOptions = useMemo(
+    () =>
+      peopleOptions.map((person) => ({
+        value: person.id,
+        label: person.display_name,
+        description: person.email || "Person",
+      })),
+    [peopleOptions]
+  );
+
+  const meetingGroupFolderOptions = useMemo(
+    () => [
+      ...folderOptions.map((folder) => ({
+        value: `folder:${folder.id}`,
+        label: folder.name,
+        description: "Folder",
+      })),
+      ...groupOptions.map((group) => ({
+        value: `group:${group.id}`,
+        label: group.name,
+        description: "Group",
+      })),
+    ],
+    [folderOptions, groupOptions]
+  );
 
   const load = async () => {
     if (!user || !meetingId) return;
@@ -809,6 +914,35 @@ ${transcriptText.trim()}`;
     setSelectedMeetingFolderId("");
     toast.success("Folder added to meeting");
     loadMeetingPeopleSources();
+  };
+
+  const addMeetingGroupOrFolderSource = async () => {
+    if (!meetingId || !selectedMeetingGroupFolderId) return;
+
+    const [sourceType, sourceId] = selectedMeetingGroupFolderId.split(":");
+
+    if (!sourceType || !sourceId) return;
+
+    const rpcName =
+      sourceType === "folder"
+        ? "add_meeting_folder_source"
+        : "add_meeting_group_source";
+
+    const rpcArgs =
+      sourceType === "folder"
+        ? { p_meeting_id: meetingId, p_folder_id: sourceId }
+        : { p_meeting_id: meetingId, p_group_id: sourceId };
+
+    const { error } = await (supabase as any).rpc(rpcName, rpcArgs);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setSelectedMeetingGroupFolderId("");
+    toast.success(sourceType === "folder" ? "Folder added to meeting" : "Group added to meeting");
+    await loadMeetingPeopleSources();
   };
 
   const loadActions = async () => {
@@ -1307,68 +1441,50 @@ ${transcriptText.trim()}`;
             </Badge>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-3">
+          <div className="grid gap-3 lg:grid-cols-2">
             <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
               <label className="label-eyebrow">Add individual</label>
               <div className="mt-2 flex gap-2">
-                <select
+                <MeetingSourceCombobox
                   value={selectedMeetingPersonId}
-                  onChange={(event) => setSelectedMeetingPersonId(event.target.value)}
-                  className="min-h-10 min-w-0 flex-1 rounded-md border border-border/70 bg-card px-3 py-2 text-sm"
-                >
-                  <option value="">Choose person...</option>
-                  {peopleOptions.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.display_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedMeetingPersonId}
+                  options={meetingIndividualOptions}
+                  placeholder="Search for a person..."
+                  searchPlaceholder="Search people..."
+                  emptyText="No people found."
+                />
 
-                <Button type="button" variant="outline" className="rounded-xl" onClick={addMeetingPersonSource}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={addMeetingPersonSource}
+                  disabled={!selectedMeetingPersonId}
+                >
                   Add
                 </Button>
               </div>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
-              <label className="label-eyebrow">Add group</label>
+              <label className="label-eyebrow">Add group or folder</label>
               <div className="mt-2 flex gap-2">
-                <select
-                  value={selectedMeetingGroupId}
-                  onChange={(event) => setSelectedMeetingGroupId(event.target.value)}
-                  className="min-h-10 min-w-0 flex-1 rounded-md border border-border/70 bg-card px-3 py-2 text-sm"
+                <MeetingSourceCombobox
+                  value={selectedMeetingGroupFolderId}
+                  onChange={setSelectedMeetingGroupFolderId}
+                  options={meetingGroupFolderOptions}
+                  placeholder="Search groups and folders..."
+                  searchPlaceholder="Search groups or folders..."
+                  emptyText="No groups or folders found."
+                />
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={addMeetingGroupOrFolderSource}
+                  disabled={!selectedMeetingGroupFolderId}
                 >
-                  <option value="">Choose group...</option>
-                  {groupOptions.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-
-                <Button type="button" variant="outline" className="rounded-xl" onClick={addMeetingGroupSource}>
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
-              <label className="label-eyebrow">Add folder</label>
-              <div className="mt-2 flex gap-2">
-                <select
-                  value={selectedMeetingFolderId}
-                  onChange={(event) => setSelectedMeetingFolderId(event.target.value)}
-                  className="min-h-10 min-w-0 flex-1 rounded-md border border-border/70 bg-card px-3 py-2 text-sm"
-                >
-                  <option value="">Choose folder...</option>
-                  {folderOptions.map((folder) => (
-                    <option key={folder.id} value={folder.id}>
-                      {folder.name}
-                    </option>
-                  ))}
-                </select>
-
-                <Button type="button" variant="outline" className="rounded-xl" onClick={addMeetingFolderSource}>
                   Add
                 </Button>
               </div>
