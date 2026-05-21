@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, ListChecks, MapPin, Pencil, Plus, Save, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
+import { CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, ListChecks, MapPin, Pencil, Plus, Save, Search, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { PeopleSearchSelect } from "@/components/people/PeopleSearchSelect";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -287,63 +288,95 @@ function MeetingSourceCombobox({
   emptyText: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selectedOption = options.find((option) => option.value === value);
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="min-h-10 w-full justify-between rounded-xl border-border/70 bg-card px-3 text-left font-normal"
-        >
-          <span className="min-w-0 truncate">
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
 
-      <PopoverContent className="w-[320px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={`${option.label} ${option.description || ""}`}
-                  onSelect={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{option.label}</p>
-                    {option.description && (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {option.description}
-                      </p>
-                    )}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    if (!normalizedQuery) return options;
+
+    return options.filter((option) =>
+      [option.label, option.description]
+        .filter(Boolean)
+        .some((field) => field!.toLowerCase().includes(normalizedQuery))
+    );
+  }, [options, query]);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3 text-left text-sm shadow-soft transition hover:border-brand-teal/40 hover:bg-card focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className={selectedOption ? "truncate font-semibold text-foreground" : "truncate text-muted-foreground"}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-[56px] z-[80] w-full overflow-hidden rounded-3xl border border-border/70 bg-card shadow-2xl">
+          <div className="border-b border-border/70 bg-card p-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="h-11 rounded-2xl border-border/70 bg-background pl-9 pr-3 text-sm focus-visible:ring-brand-teal/40"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-auto bg-card">
+            {filteredOptions.length === 0 && (
+              <div className="px-4 py-5 text-sm text-muted-foreground">
+                {emptyText}
+              </div>
+            )}
+
+            {filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-brand-teal/5"
+                onClick={() => {
+                  onChange(option.value);
+                  setQuery("");
+                  setOpen(false);
+                }}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
+                  <UsersRound className="h-4 w-4" />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-extrabold tracking-tight text-foreground">
+                    {option.label}
+                  </span>
+                  {option.description && (
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
+                  )}
+                </span>
+
+                <Check
+                  className={`h-4 w-4 shrink-0 text-brand-teal ${
+                    value === option.value ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-
 
 const MeetingDetail = () => {
   const minutesRef = useRef<HTMLDivElement | null>(null);
@@ -393,16 +426,6 @@ const MeetingDetail = () => {
 
   const attendeeList = useMemo(() => parseAttendees(attendeesText), [attendeesText]);
   const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
-
-  const meetingIndividualOptions = useMemo(
-    () =>
-      peopleOptions.map((person) => ({
-        value: person.id,
-        label: person.display_name,
-        description: person.email || "Person",
-      })),
-    [peopleOptions]
-  );
 
   const meetingGroupFolderOptions = useMemo(
     () => [
@@ -1445,14 +1468,15 @@ ${transcriptText.trim()}`;
             <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
               <label className="label-eyebrow">Add individual</label>
               <div className="mt-2 flex gap-2">
-                <MeetingSourceCombobox
-                  value={selectedMeetingPersonId}
-                  onChange={setSelectedMeetingPersonId}
-                  options={meetingIndividualOptions}
-                  placeholder="Search for a person..."
-                  searchPlaceholder="Search people..."
-                  emptyText="No people found."
-                />
+                <div className="min-w-0 flex-1">
+                  <PeopleSearchSelect
+                    people={peopleOptions}
+                    selectedPersonId={selectedMeetingPersonId}
+                    onSelect={setSelectedMeetingPersonId}
+                    placeholder="Search by name, email, or phone..."
+                    emptyText="No matching People profiles found."
+                  />
+                </div>
 
                 <Button
                   type="button"
@@ -1469,14 +1493,16 @@ ${transcriptText.trim()}`;
             <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
               <label className="label-eyebrow">Add group or folder</label>
               <div className="mt-2 flex gap-2">
-                <MeetingSourceCombobox
-                  value={selectedMeetingGroupFolderId}
-                  onChange={setSelectedMeetingGroupFolderId}
-                  options={meetingGroupFolderOptions}
-                  placeholder="Search groups and folders..."
-                  searchPlaceholder="Search groups or folders..."
-                  emptyText="No groups or folders found."
-                />
+                <div className="min-w-0 flex-1">
+                  <MeetingSourceCombobox
+                    value={selectedMeetingGroupFolderId}
+                    onChange={setSelectedMeetingGroupFolderId}
+                    options={meetingGroupFolderOptions}
+                    placeholder="Search groups and folders..."
+                    searchPlaceholder="Search groups or folders..."
+                    emptyText="No groups or folders found."
+                  />
+                </div>
 
                 <Button
                   type="button"
