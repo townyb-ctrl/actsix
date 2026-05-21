@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -278,6 +279,7 @@ const MeetingDetail = () => {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [meeting, setMeeting] = useState<any | null>(null);
   const [editDraft, setEditDraft] = useState<any>(EMPTY_MEETING);
@@ -299,6 +301,16 @@ const MeetingDetail = () => {
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [googleMeetUrlDraft, setGoogleMeetUrlDraft] = useState("");
+
+  const [meetingPeople, setMeetingPeople] = useState<any[]>([]);
+  const [peopleOptions, setPeopleOptions] = useState<any[]>([]);
+  const [groupOptions, setGroupOptions] = useState<any[]>([]);
+  const [folderOptions, setFolderOptions] = useState<any[]>([]);
+  const [meetingGroupSources, setMeetingGroupSources] = useState<any[]>([]);
+  const [meetingFolderSources, setMeetingFolderSources] = useState<any[]>([]);
+  const [selectedMeetingPersonId, setSelectedMeetingPersonId] = useState("");
+  const [selectedMeetingGroupId, setSelectedMeetingGroupId] = useState("");
+  const [selectedMeetingFolderId, setSelectedMeetingFolderId] = useState("");
 
   const attendeeList = useMemo(() => parseAttendees(attendeesText), [attendeesText]);
   const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
@@ -659,6 +671,146 @@ ${transcriptText.trim()}`;
     navigate(getRecurringSeriesIdFromAgenda(meeting?.agenda) ? `/meetings/recurring/${getRecurringSeriesIdFromAgenda(meeting?.agenda)}` : "/meetings");
   };
 
+  const loadMeetingPeopleSources = async () => {
+    if (!user || !meetingId || !currentPerson?.workspace_id) return;
+
+    const [scopeResult, peopleResult, groupsResult, foldersResult] = await Promise.all([
+      (supabase as any).rpc("get_meeting_people_scope", {
+        p_meeting_id: meetingId,
+      }),
+
+      (supabase as any)
+        .from("people")
+        .select("id, display_name, email, avatar_url")
+        .eq("workspace_id", currentPerson.workspace_id)
+        .order("display_name", { ascending: true }),
+
+      (supabase as any)
+        .from("people_groups")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .order("name", { ascending: true }),
+
+      (supabase as any)
+        .from("people_group_folders")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .order("name", { ascending: true }),
+    ]);
+
+    const firstError =
+      scopeResult.error ||
+      peopleResult.error ||
+      groupsResult.error ||
+      foldersResult.error;
+
+    if (firstError) {
+      toast.error(firstError.message);
+      return;
+    }
+
+    const scopeRows = scopeResult.data || [];
+
+    setMeetingPeople(
+      scopeRows
+        .filter((row: any) => row.row_kind === "person")
+        .map((row: any) => ({
+          id: row.id,
+          person_id: row.person_id,
+          status: row.status,
+          people: {
+            id: row.person_id,
+            display_name: row.display_name,
+            email: row.email,
+          },
+        }))
+    );
+
+    setMeetingGroupSources(
+      scopeRows
+        .filter((row: any) => row.row_kind === "group_source")
+        .map((row: any) => ({
+          id: row.id,
+          group_id: row.source_id,
+          people_groups: {
+            id: row.source_id,
+            name: row.source_name,
+          },
+        }))
+    );
+
+    setMeetingFolderSources(
+      scopeRows
+        .filter((row: any) => row.row_kind === "folder_source")
+        .map((row: any) => ({
+          id: row.id,
+          folder_id: row.source_id,
+          people_group_folders: {
+            id: row.source_id,
+            name: row.source_name,
+          },
+        }))
+    );
+
+    setPeopleOptions(peopleResult.data || []);
+    setGroupOptions(groupsResult.data || []);
+    setFolderOptions(foldersResult.data || []);
+  };
+
+  const addMeetingPersonSource = async () => {
+    if (!meetingId || !selectedMeetingPersonId) return;
+
+    const { error } = await (supabase as any).rpc("add_meeting_individual_person", {
+      p_meeting_id: meetingId,
+      p_person_id: selectedMeetingPersonId,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setSelectedMeetingPersonId("");
+    toast.success("Person added to meeting");
+    loadMeetingPeopleSources();
+  };
+
+  const addMeetingGroupSource = async () => {
+    if (!meetingId || !selectedMeetingGroupId) return;
+
+    const { error } = await (supabase as any).rpc("add_meeting_group_source", {
+      p_meeting_id: meetingId,
+      p_group_id: selectedMeetingGroupId,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setSelectedMeetingGroupId("");
+    toast.success("Group added to meeting");
+    loadMeetingPeopleSources();
+  };
+
+  const addMeetingFolderSource = async () => {
+    if (!meetingId || !selectedMeetingFolderId) return;
+
+    const { error } = await (supabase as any).rpc("add_meeting_folder_source", {
+      p_meeting_id: meetingId,
+      p_folder_id: selectedMeetingFolderId,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setSelectedMeetingFolderId("");
+    toast.success("Folder added to meeting");
+    loadMeetingPeopleSources();
+  };
+
   const loadActions = async () => {
     if (!meetingId) return;
 
@@ -731,6 +883,10 @@ ${transcriptText.trim()}`;
     setApologiesDraft(apologies.join(", "));
     setPeopleOpen(true);
   };
+
+  useEffect(() => {
+    loadMeetingPeopleSources();
+  }, [meetingId, user?.id, currentPerson?.workspace_id]);
 
   if (!meeting) {
 
@@ -1134,6 +1290,145 @@ ${transcriptText.trim()}`;
               });
             }}
           />
+        </Card>
+
+        <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="label-eyebrow">Meeting People</p>
+              <h2 className="mt-1 text-xl font-extrabold tracking-tight">People scope</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add individuals, groups, or folders to define who belongs in this meeting.
+              </p>
+            </div>
+
+            <Badge variant="secondary" className="w-fit rounded-full">
+              {meetingPeople.length} people
+            </Badge>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
+              <label className="label-eyebrow">Add individual</label>
+              <div className="mt-2 flex gap-2">
+                <select
+                  value={selectedMeetingPersonId}
+                  onChange={(event) => setSelectedMeetingPersonId(event.target.value)}
+                  className="min-h-10 min-w-0 flex-1 rounded-md border border-border/70 bg-card px-3 py-2 text-sm"
+                >
+                  <option value="">Choose person...</option>
+                  {peopleOptions.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.display_name}
+                    </option>
+                  ))}
+                </select>
+
+                <Button type="button" variant="outline" className="rounded-xl" onClick={addMeetingPersonSource}>
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
+              <label className="label-eyebrow">Add group</label>
+              <div className="mt-2 flex gap-2">
+                <select
+                  value={selectedMeetingGroupId}
+                  onChange={(event) => setSelectedMeetingGroupId(event.target.value)}
+                  className="min-h-10 min-w-0 flex-1 rounded-md border border-border/70 bg-card px-3 py-2 text-sm"
+                >
+                  <option value="">Choose group...</option>
+                  {groupOptions.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+
+                <Button type="button" variant="outline" className="rounded-xl" onClick={addMeetingGroupSource}>
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
+              <label className="label-eyebrow">Add folder</label>
+              <div className="mt-2 flex gap-2">
+                <select
+                  value={selectedMeetingFolderId}
+                  onChange={(event) => setSelectedMeetingFolderId(event.target.value)}
+                  className="min-h-10 min-w-0 flex-1 rounded-md border border-border/70 bg-card px-3 py-2 text-sm"
+                >
+                  <option value="">Choose folder...</option>
+                  {folderOptions.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </option>
+                  ))}
+                </select>
+
+                <Button type="button" variant="outline" className="rounded-xl" onClick={addMeetingFolderSource}>
+                  Add
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <p className="label-eyebrow">Sources</p>
+
+              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                {meetingGroupSources.length === 0 && meetingFolderSources.length === 0 && (
+                  <p>No group or folder sources yet.</p>
+                )}
+
+                {meetingGroupSources.map((source) => (
+                  <div key={`group-${source.id}`} className="rounded-xl border border-border/70 bg-card px-3 py-2">
+                    Group: {source.people_groups?.name || "Unnamed group"}
+                  </div>
+                ))}
+
+                {meetingFolderSources.map((source) => (
+                  <div key={`folder-${source.id}`} className="rounded-xl border border-border/70 bg-card px-3 py-2">
+                    Folder: {source.people_group_folders?.name || "Unnamed folder"}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <p className="label-eyebrow">Meeting people</p>
+
+              <div className="mt-3 max-h-52 space-y-2 overflow-auto text-sm">
+                {meetingPeople.length === 0 && (
+                  <p className="text-muted-foreground">No people added to this meeting yet.</p>
+                )}
+
+                {meetingPeople.map((meetingPerson) => {
+                  const person = Array.isArray(meetingPerson.people)
+                    ? meetingPerson.people[0]
+                    : meetingPerson.people;
+
+                  return (
+                    <div key={meetingPerson.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{person?.display_name || "Unknown person"}</p>
+                        {person?.email && (
+                          <p className="truncate text-xs text-muted-foreground">{person.email}</p>
+                        )}
+                      </div>
+
+                      <Badge variant="secondary" className="rounded-full">
+                        {meetingPerson.status}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </Card>
 
         {showActionPoints ? (
