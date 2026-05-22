@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, ListChecks, MapPin, Pencil, Plus, Save, Search, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
+import { CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, ListChecks, MapPin, MoreHorizontal, Pencil, Plus, Save, Search, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -413,6 +413,8 @@ const MeetingDetail = () => {
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [googleMeetUrlDraft, setGoogleMeetUrlDraft] = useState("");
   const [minutesOpen, setMinutesOpen] = useState(false);
+  const [meetingPeopleOpen, setMeetingPeopleOpen] = useState(false);
+  const [meetingMenuOpen, setMeetingMenuOpen] = useState(false);
 
   const [meetingPeople, setMeetingPeople] = useState<any[]>([]);
   const [peopleOptions, setPeopleOptions] = useState<any[]>([]);
@@ -1152,19 +1154,49 @@ ${transcriptText.trim()}`;
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 lg:justify-end">
-              <Button variant="outline" className="rounded-xl" onClick={openPeopleModal}>
-                <UsersRound className="h-4 w-4 mr-2" />
-                Attendees / Apologies
+            <div className="relative flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                onClick={() => setMeetingMenuOpen((current) => !current)}
+                aria-label="Meeting options"
+              >
+                <MoreHorizontal className="h-5 w-5" />
               </Button>
-              <Button variant="outline" className="rounded-xl" onClick={openEditModal}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit Meeting
-              </Button>
+
+              {meetingMenuOpen && (
+                <div className="absolute right-0 top-14 z-50 w-56 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition hover:bg-muted"
+                    onClick={() => {
+                      setMeetingMenuOpen(false);
+                      openEditModal();
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit Meeting
+                  </button>
+
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 border-t border-border/70 px-4 py-3 text-left text-sm font-semibold text-destructive transition hover:bg-destructive/10"
+                    onClick={() => {
+                      setMeetingMenuOpen(false);
+                      deleteMeeting();
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Meeting
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <UsersRound className="h-4 w-4" />
@@ -1181,13 +1213,6 @@ ${transcriptText.trim()}`;
               <div className="mt-2 text-2xl font-extrabold">{linkedApologyCount || apologies.length}</div>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <FileText className="h-4 w-4" />
-                <span className="label-eyebrow">Agenda</span>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{agendaSections.length}</div>
-            </div>
 
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -1266,15 +1291,25 @@ ${transcriptText.trim()}`;
         </Card>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-start gap-3">
           <Button className="actsix-btn-soft rounded-xl" onClick={openAgendaModal}>
             <FileText className="h-4 w-4" />
-            Manage Agenda
+            Edit Agenda
           </Button>
 
-          <Button variant="outline" className="rounded-xl" onClick={saveMinutes}>
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-full px-6 py-6"
+          onClick={() => setMeetingPeopleOpen((current) => !current)}
+        >
+          <UsersRound className="h-4 w-4 mr-2" />
+          {meetingPeopleOpen ? "Hide People" : "Edit People"}
+        </Button>
+
+          <Button variant="outline" className="rounded-xl" onClick={() => setMinutesOpen((current) => !current)}>
             <Save className="h-4 w-4 mr-2" />
-            Save Minutes
+            {minutesOpen ? "Hide Minutes" : "Edit Minutes"}
           </Button>
         </div>
 
@@ -1352,7 +1387,7 @@ ${transcriptText.trim()}`;
                 </div>
 
                 <div className="rounded-xl border border-border/70 bg-background p-4">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-start gap-3">
                     <label className="label-eyebrow">Transcript</label>
 
                     {transcriptText.trim() && (
@@ -1376,7 +1411,7 @@ ${transcriptText.trim()}`;
               </div>
 
               <div className="mt-4 rounded-xl border border-border/70 bg-background p-4">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-start gap-3">
                   <label className="label-eyebrow">Generated Meeting Notes</label>
 
                   {generatedMinutes.trim() && (
@@ -1503,6 +1538,7 @@ ${transcriptText.trim()}`;
           )}
         </Card>
 
+        {meetingPeopleOpen && (
         <Card className="p-5 border-border/70 bg-card shadow-card">
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
@@ -1513,9 +1549,21 @@ ${transcriptText.trim()}`;
               </p>
             </div>
 
-            <Badge variant="secondary" className="w-fit rounded-full">
-              {meetingPeople.length} people
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setPeopleOpen(true)}
+              >
+                <UsersRound className="h-4 w-4 mr-2" />
+                Attendance / Apologies
+              </Button>
+
+              <Badge variant="secondary" className="w-fit rounded-full">
+                {meetingPeople.length} people
+              </Badge>
+            </div>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-2">
@@ -1626,6 +1674,7 @@ ${transcriptText.trim()}`;
             </div>
           </div>
         </Card>
+      )}
 
         {showActionPoints ? (
           <Card className="p-5 border-border/70 bg-card shadow-card">
@@ -1707,17 +1756,6 @@ ${transcriptText.trim()}`;
             </div>
           </Card>
         )}
-
-        <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            className="text-destructive hover:text-destructive"
-            onClick={deleteMeeting}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Meeting
-          </Button>
-        </div>
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -1877,7 +1915,7 @@ ${transcriptText.trim()}`;
       <Dialog open={agendaOpen} onOpenChange={setAgendaOpen}>
         <DialogContent className="max-h-[86vh] max-w-3xl overflow-y-auto rounded-2xl border-border/70 bg-card">
           <DialogHeader>
-            <DialogTitle>Manage Agenda</DialogTitle>
+            <DialogTitle>Edit Agenda</DialogTitle>
             <DialogDescription>
               Build the agenda here. Saving will auto-fill the Minutes section.
             </DialogDescription>
