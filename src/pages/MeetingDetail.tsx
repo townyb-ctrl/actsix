@@ -412,6 +412,7 @@ const MeetingDetail = () => {
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [googleMeetUrlDraft, setGoogleMeetUrlDraft] = useState("");
+  const [minutesOpen, setMinutesOpen] = useState(false);
 
   const [meetingPeople, setMeetingPeople] = useState<any[]>([]);
   const [peopleOptions, setPeopleOptions] = useState<any[]>([]);
@@ -425,7 +426,14 @@ const MeetingDetail = () => {
   const [selectedMeetingGroupFolderId, setSelectedMeetingGroupFolderId] = useState("");
 
   const attendeeList = useMemo(() => parseAttendees(attendeesText), [attendeesText]);
+
+  const linkedAttendedCount = meetingPeople.filter((person) => person.status === "attended").length;
+  const linkedApologyCount = meetingPeople.filter((person) => person.status === "apology").length;
+  const linkedAbsentCount = meetingPeople.filter((person) => person.status === "absent").length;
+
   const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
+  const meetingMode = String(meeting?.type || "").trim().toLowerCase();
+  const shouldShowOnlineMeetingTools = meetingMode === "online" || meetingMode === "hybrid";
 
   const meetingGroupFolderOptions = useMemo(
     () => [
@@ -1025,6 +1033,23 @@ ${transcriptText.trim()}`;
     loadActions();
   };
 
+  const updateMeetingPersonStatus = async (personId: string, status: string) => {
+    if (!meetingId) return;
+
+    const { error } = await (supabase as any).rpc("update_meeting_person_status", {
+      p_meeting_id: meetingId,
+      p_person_id: personId,
+      p_status: status,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await loadMeetingPeopleSources();
+  };
+
   const openEditModal = () => {
     setEditDraft(meeting ?? EMPTY_MEETING);
     setEditOpen(true);
@@ -1145,7 +1170,7 @@ ${transcriptText.trim()}`;
                 <UsersRound className="h-4 w-4" />
                 <span className="label-eyebrow">Attendees</span>
               </div>
-              <div className="mt-2 text-2xl font-extrabold">{attendeeList.length}</div>
+              <div className="mt-2 text-2xl font-extrabold">{linkedAttendedCount || attendeeList.length}</div>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
@@ -1153,7 +1178,7 @@ ${transcriptText.trim()}`;
                 <UserRoundX className="h-4 w-4" />
                 <span className="label-eyebrow">Apologies</span>
               </div>
-              <div className="mt-2 text-2xl font-extrabold">{apologies.length}</div>
+              <div className="mt-2 text-2xl font-extrabold">{linkedApologyCount || apologies.length}</div>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
@@ -1174,6 +1199,7 @@ ${transcriptText.trim()}`;
           </div>
         </Card>
 
+        {shouldShowOnlineMeetingTools && (
         <Card className="border-border/70 bg-card p-5 shadow-card">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
@@ -1238,6 +1264,7 @@ ${transcriptText.trim()}`;
             </div>
           </div>
         </Card>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button className="actsix-btn-soft rounded-xl" onClick={openAgendaModal}>
@@ -1433,6 +1460,28 @@ ${transcriptText.trim()}`;
             </Badge>
           </div>
 
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="label-eyebrow">Minutes</p>
+              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                Meeting minutes
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Keep the page clean by opening the full minutes editor only when needed.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit rounded-xl"
+              onClick={() => setMinutesOpen((current) => !current)}
+            >
+              {minutesOpen ? "Hide Minutes" : "Open Minutes"}
+            </Button>
+          </div>
+
+          {minutesOpen ? (
           <div
             ref={minutesRef}
             contentEditable
@@ -1447,6 +1496,11 @@ ${transcriptText.trim()}`;
               });
             }}
           />
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border bg-background/70 p-5 text-sm text-muted-foreground">
+              Minutes are collapsed. Click <span className="font-semibold text-foreground">Open Minutes</span> to edit the full document.
+            </div>
+          )}
         </Card>
 
         <Card className="p-5 border-border/70 bg-card shadow-card">
@@ -1736,42 +1790,85 @@ ${transcriptText.trim()}`;
       </Dialog>
 
       <Dialog open={peopleOpen} onOpenChange={setPeopleOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl border-border/70 bg-card">
+        <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col overflow-hidden rounded-2xl border-border/70 bg-card">
           <DialogHeader>
-            <DialogTitle>Attendees / Apologies</DialogTitle>
+            <DialogTitle>Attendance / Apologies</DialogTitle>
             <DialogDescription>
-              Separate names with commas or place each name on a new line.
+              Mark attendance from the People already connected to this meeting.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="label-eyebrow">Attendees</label>
-              <Textarea
-                value={attendeesDraft}
-                onChange={(event) => setAttendeesDraft(event.target.value)}
-                className="mt-2 min-h-36 border-border/70 bg-background"
-                placeholder="Brandon, Michelle, Barbara"
-              />
-            </div>
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
+            {meetingPeople.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
+                No people have been added to this meeting yet. Add individuals, groups, or folders in the Meeting People section first.
+              </div>
+            )}
 
-            <div>
-              <label className="label-eyebrow">Apologies</label>
-              <Textarea
-                value={apologiesDraft}
-                onChange={(event) => setApologiesDraft(event.target.value)}
-                className="mt-2 min-h-36 border-border/70 bg-background"
-                placeholder="Names of those who sent apologies"
-              />
-            </div>
+            {meetingPeople.map((meetingPerson) => {
+              const person = Array.isArray(meetingPerson.people)
+                ? meetingPerson.people[0]
+                : meetingPerson.people;
+
+              const statusOptions = [
+                { value: "invited", label: "Invited" },
+                { value: "attended", label: "Attended" },
+                { value: "apology", label: "Apology" },
+                { value: "absent", label: "Absent" },
+                { value: "not_required", label: "Not required" },
+              ];
+
+              return (
+                <div
+                  key={meetingPerson.id}
+                  className="rounded-2xl border border-border/70 bg-background p-3"
+                >
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold tracking-tight">
+                        {person?.display_name || "Unknown person"}
+                      </p>
+                      {person?.email && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {person.email}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                      {statusOptions.map((option) => {
+                        const active = meetingPerson.status === option.value;
+
+                        return (
+                          <Button
+                            key={option.value}
+                            type="button"
+                            variant={active ? "default" : "outline"}
+                            size="sm"
+                            className={active ? "actsix-btn-primary rounded-xl px-3" : "rounded-xl px-3"}
+                            onClick={() =>
+                              updateMeetingPersonStatus(meetingPerson.person_id, option.value)
+                            }
+                          >
+                            {option.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className="rounded-xl" onClick={() => setPeopleOpen(false)}>
-              Cancel
-            </Button>
-            <Button className="actsix-btn-primary rounded-xl" onClick={savePeople}>
-              Save People
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setPeopleOpen(false)}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
