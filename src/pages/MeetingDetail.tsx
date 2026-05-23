@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, ListChecks, MapPin, MoreHorizontal, Pencil, Plus, Save, Search, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { createNotificationForPerson } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PeopleSearchSelect } from "@/components/people/PeopleSearchSelect";
@@ -407,6 +408,7 @@ const MeetingDetail = () => {
   const [apologiesDraft, setApologiesDraft] = useState("");
   const [actionTitle, setActionTitle] = useState("");
   const [assignee, setAssignee] = useState("");
+  const [selectedActionPersonId, setSelectedActionPersonId] = useState("");
   const [due, setDue] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
@@ -432,6 +434,26 @@ const MeetingDetail = () => {
   const linkedAttendedCount = meetingPeople.filter((person) => person.status === "attended").length;
   const linkedApologyCount = meetingPeople.filter((person) => person.status === "apology").length;
   const linkedAbsentCount = meetingPeople.filter((person) => person.status === "absent").length;
+
+  const meetingActionPeople = useMemo(() => {
+    return meetingPeople
+      .filter((meetingPerson) => meetingPerson.status !== "not_required")
+      .map((meetingPerson) => {
+        const person = Array.isArray(meetingPerson.people)
+          ? meetingPerson.people[0]
+          : meetingPerson.people;
+
+        if (!meetingPerson.person_id || !person?.display_name) return null;
+
+        return {
+          id: meetingPerson.person_id,
+          display_name: person.display_name,
+          email: person.email || null,
+          avatar_url: person.avatar_url || null,
+        };
+      })
+      .filter(Boolean) as any[];
+  }, [meetingPeople]);
 
   const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
   const meetingMode = String(meeting?.type || "").trim().toLowerCase();
@@ -1000,12 +1022,18 @@ ${transcriptText.trim()}`;
 
     if (!actionTitle.trim() || !user || !meeting) return;
 
+    const selectedActionPerson = meetingActionPeople.find(
+      (person) => person.id === selectedActionPersonId
+    );
+    const newActionId = crypto.randomUUID();
+
     const { error } = await supabase.from("meeting_actions").insert({
-      id: crypto.randomUUID(),
+      id: newActionId,
       meeting_id: meeting.id,
       user_id: user.id,
       title: actionTitle.trim(),
-      assignee: assignee.trim(),
+      assignee: selectedActionPerson?.display_name || assignee.trim(),
+      assigned_person_id: selectedActionPersonId || null,
       due: due || null,
       linked_project: "",
       status: "Open",
@@ -1016,8 +1044,20 @@ ${transcriptText.trim()}`;
       return;
     }
 
+    if (selectedActionPersonId) {
+      await createNotificationForPerson({
+        personId: selectedActionPersonId,
+        title: "Meeting action point assigned",
+        message: `You have been assigned: ${actionTitle.trim()}`,
+        type: "assignment",
+        entityType: "meeting_action",
+        entityId: meeting.id,
+      });
+    }
+
     setActionTitle("");
     setAssignee("");
+    setSelectedActionPersonId("");
     setDue("");
     toast.success("Action point added");
     loadActions();
@@ -1049,6 +1089,28 @@ ${transcriptText.trim()}`;
       return;
     }
 
+    await loadMeetingPeopleSources();
+  };
+
+  const removeMeetingPersonFromMeeting = async (personId: string) => {
+    if (!meetingId) return;
+
+    const { error } = await (supabase as any).rpc("remove_meeting_person", {
+      p_meeting_id: meetingId,
+      p_person_id: personId,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    if (selectedActionPersonId === personId) {
+      setSelectedActionPersonId("");
+      setAssignee("");
+    }
+
+    toast.success("Person removed from meeting");
     await loadMeetingPeopleSources();
   };
 
@@ -1301,10 +1363,10 @@ ${transcriptText.trim()}`;
           type="button"
           variant="outline"
           className="rounded-full px-6 py-6"
-          onClick={() => setMeetingPeopleOpen((current) => !current)}
+          onClick={() => setMeetingPeopleOpen(true)}
         >
           <UsersRound className="h-4 w-4 mr-2" />
-          {meetingPeopleOpen ? "Hide People" : "Edit People"}
+          Edit People
         </Button>
 
           <Button variant="outline" className="rounded-xl" onClick={() => setMinutesOpen((current) => !current)}>
@@ -1538,8 +1600,17 @@ ${transcriptText.trim()}`;
           )}
         </Card>
 
-        {meetingPeopleOpen && (
-        <Card className="p-5 border-border/70 bg-card shadow-card">
+        <Dialog open={meetingPeopleOpen} onOpenChange={setMeetingPeopleOpen}>
+        <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col overflow-hidden rounded-2xl border-border/70 bg-card">
+          <DialogHeader>
+            <DialogTitle>Edit People</DialogTitle>
+            <DialogDescription>
+              Add individuals, groups, or folders to define who belongs in this meeting.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+            <Card className="border-0 bg-transparent p-0 shadow-none">
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="label-eyebrow">Meeting People</p>
@@ -1554,7 +1625,10 @@ ${transcriptText.trim()}`;
                 type="button"
                 variant="outline"
                 className="rounded-xl"
-                onClick={() => setPeopleOpen(true)}
+                onClick={() => {
+                  setMeetingPeopleOpen(false);
+                  setPeopleOpen(true);
+                }}
               >
                 <UsersRound className="h-4 w-4 mr-2" />
                 Attendance / Apologies
@@ -1664,9 +1738,22 @@ ${transcriptText.trim()}`;
                         )}
                       </div>
 
-                      <Badge variant="secondary" className="rounded-full">
-                        {meetingPerson.status}
-                      </Badge>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant="secondary" className="rounded-full">
+                          {meetingPerson.status}
+                        </Badge>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          title="Remove from meeting"
+                          onClick={() => removeMeetingPersonFromMeeting(meetingPerson.person_id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -1674,7 +1761,20 @@ ${transcriptText.trim()}`;
             </div>
           </div>
         </Card>
-      )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setMeetingPeopleOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
         {showActionPoints ? (
           <Card className="p-5 border-border/70 bg-card shadow-card">
@@ -1688,7 +1788,7 @@ ${transcriptText.trim()}`;
               </Badge>
             </div>
 
-            <form onSubmit={addAction} className="mb-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_180px_150px_auto]">
+            <form onSubmit={addAction} className="mb-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_320px_150px_auto]">
               <Input
                 value={actionTitle}
                 onChange={(event) => setActionTitle(event.target.value)}
@@ -1696,11 +1796,18 @@ ${transcriptText.trim()}`;
                 className="border-border/70 bg-background"
               />
 
-              <Input
-                value={assignee}
-                onChange={(event) => setAssignee(event.target.value)}
-                placeholder="Assignee"
-                className="border-border/70 bg-background"
+              <PeopleSearchSelect
+                people={meetingActionPeople}
+                selectedPersonId={selectedActionPersonId}
+                onSelect={(personId) => {
+                  setSelectedActionPersonId(personId);
+                  const person = meetingActionPeople.find((option) => option.id === personId);
+                  setAssignee(person?.display_name || "");
+                }}
+                placeholder="Search meeting people..."
+                emptyText="No matching meeting people found."
+                zIndexClass="z-20"
+                dropdownZIndexClass="z-30"
               />
 
               <Input
