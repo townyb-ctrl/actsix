@@ -20,6 +20,8 @@ type PeopleSearchSelectProps = {
   placeholder?: string;
   emptyText?: string;
   onCreatePerson?: (displayName: string) => Promise<void> | void;
+  zIndexClass?: string;
+  dropdownZIndexClass?: string;
 };
 
 export function PeopleSearchSelect({
@@ -29,6 +31,8 @@ export function PeopleSearchSelect({
   placeholder = "Search people...",
   emptyText = "No people found.",
   onCreatePerson,
+  zIndexClass = "z-[100]",
+  dropdownZIndexClass = "z-[999]",
 }: PeopleSearchSelectProps) {
   const inputId = useId();
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,7 +78,7 @@ export function PeopleSearchSelect({
   };
 
   return (
-    <div className="relative z-[100] space-y-2">
+    <div className={`relative ${zIndexClass} space-y-2`}>
       {selectedPerson ? (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2">
           <div className="flex min-w-0 items-center gap-3">
@@ -127,7 +131,7 @@ export function PeopleSearchSelect({
           />
 
           {showDropdown && (
-            <div className="absolute left-0 right-0 top-14 z-[999] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
+            <div className={`absolute left-0 right-0 top-14 ${dropdownZIndexClass} overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl`}>
               {cleanSearch.length < 2 && (
                 <div className="px-4 py-3 text-sm text-muted-foreground">
                   Type at least 2 characters to search.

@@ -416,6 +416,8 @@ const MeetingDetail = () => {
   const [googleMeetUrlDraft, setGoogleMeetUrlDraft] = useState("");
   const [minutesOpen, setMinutesOpen] = useState(false);
   const [meetingPeopleOpen, setMeetingPeopleOpen] = useState(false);
+  const [chairpersonId, setChairpersonId] = useState("");
+  const [minuteTakerId, setMinuteTakerId] = useState("");
   const [meetingMenuOpen, setMeetingMenuOpen] = useState(false);
 
   const [meetingPeople, setMeetingPeople] = useState<any[]>([]);
@@ -504,6 +506,8 @@ const MeetingDetail = () => {
 
     setMeeting(meetingData);
     setEditDraft(meetingData);
+    setChairpersonId(meetingData.chairperson_id || "");
+    setMinuteTakerId(meetingData.minute_taker_id || "");
     setGoogleMeetUrlDraft(meetingData.google_meet_url || "");
     setAttendeesText(
       Array.isArray(meetingData.attendees)
@@ -1114,6 +1118,32 @@ ${transcriptText.trim()}`;
     await loadMeetingPeopleSources();
   };
 
+  const updateMeetingLeadership = async (
+    field: "chairperson_id" | "minute_taker_id",
+    personId: string
+  ) => {
+    if (!meeting?.id) return;
+
+    const { error } = await (supabase as any)
+      .from("meetings")
+      .update({
+        [field]: personId || null,
+      })
+      .eq("id", meeting.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setMeeting({
+      ...meeting,
+      [field]: personId || null,
+    });
+
+    toast.success(field === "chairperson_id" ? "Chairperson updated" : "Minute taker updated");
+  };
+
   const openEditModal = () => {
     setEditDraft(meeting ?? EMPTY_MEETING);
     setEditOpen(true);
@@ -1374,6 +1404,63 @@ ${transcriptText.trim()}`;
             {minutesOpen ? "Hide Minutes" : "Edit Minutes"}
           </Button>
         </div>
+      
+      <Card className="p-5 border-border/70 bg-card shadow-soft">
+        <div className="mb-4">
+          <p className="label-eyebrow">Meeting Leadership</p>
+          <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+            Chairperson and minute taker
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Select from the people already connected to this meeting.
+          </p>
+        </div>
+
+        {meetingActionPeople.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+            Add people to this meeting before assigning a chairperson or minute taker.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <label className="label-eyebrow">Chairperson</label>
+              <div className="mt-2">
+                <PeopleSearchSelect
+                  people={meetingActionPeople}
+                  selectedPersonId={chairpersonId}
+                  onSelect={(personId) => {
+                    setChairpersonId(personId);
+                    updateMeetingLeadership("chairperson_id", personId);
+                  }}
+                  placeholder="Search meeting people..."
+                  emptyText="No matching meeting people found."
+                  zIndexClass="z-10"
+                  dropdownZIndexClass="z-20"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <label className="label-eyebrow">Minute taker</label>
+              <div className="mt-2">
+                <PeopleSearchSelect
+                  people={meetingActionPeople}
+                  selectedPersonId={minuteTakerId}
+                  onSelect={(personId) => {
+                    setMinuteTakerId(personId);
+                    updateMeetingLeadership("minute_taker_id", personId);
+                  }}
+                  placeholder="Search meeting people..."
+                  emptyText="No matching meeting people found."
+                  zIndexClass="z-10"
+                  dropdownZIndexClass="z-20"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
 
 
 
