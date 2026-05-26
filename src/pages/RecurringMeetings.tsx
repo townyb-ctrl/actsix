@@ -16,6 +16,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 
 type AgendaPoint = {
   text: string;
@@ -36,6 +39,18 @@ type RecurringMeeting = {
   occurrences: number;
   regularAttendees?: string[];
   regularAgenda?: AgendaSection[];
+  peopleGroupId?: string;
+  peopleGroupName?: string;
+  peopleGroupMemberIds?: string[];
+};
+
+type PeopleGroupOption = {
+  id: string;
+  name: string;
+  members: {
+    person_id: string;
+    display_name: string;
+  }[];
 };
 
 const STORAGE_KEY = "actsix_recurring_meetings";
@@ -50,6 +65,7 @@ const loadRecurringMeetings = (): RecurringMeeting[] => {
 
 const saveRecurringMeetings = (items: RecurringMeeting[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  window.dispatchEvent(new Event("actsix-recurring-meetings-updated"));
 };
 
 const formatDate = (date?: string) => {
@@ -63,6 +79,9 @@ const formatDate = (date?: string) => {
 };
 
 const RecurringMeetings = () => {
+  const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
+
   const [items, setItems] = useState<RecurringMeeting[]>([]);
   const [search, setSearch] = useState("");
 
@@ -74,11 +93,66 @@ const RecurringMeetings = () => {
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
   const [occurrences, setOccurrences] = useState("12");
+  const [peopleGroupOptions, setPeopleGroupOptions] = useState<PeopleGroupOption[]>([]);
+  const [selectedPeopleGroupId, setSelectedPeopleGroupId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<RecurringMeeting | null>(null);
 
   useEffect(() => {
     setItems(loadRecurringMeetings());
   }, []);
+
+  useEffect(() => {
+    const loadPeopleGroupOptions = async () => {
+      if (!user) return;
+
+      const { data: groupsData, error: groupsError } = await (supabase as any)
+        .from("people_groups")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .order("name", { ascending: true });
+
+      if (groupsError) {
+        console.error(groupsError);
+        return;
+      }
+
+      const { data: membersData, error: membersError } = await (supabase as any)
+        .from("people_group_members")
+        .select("group_id, person_id, people(id, display_name)")
+        .eq("user_id", user.id);
+
+      if (membersError) {
+        console.error(membersError);
+      }
+
+      const membersByGroup = new Map<string, PeopleGroupOption["members"]>();
+
+      (membersData || []).forEach((member: any) => {
+        const person = Array.isArray(member.people) ? member.people[0] : member.people;
+
+        if (!member.group_id || !member.person_id) return;
+
+        const existing = membersByGroup.get(member.group_id) || [];
+
+        existing.push({
+          person_id: member.person_id,
+          display_name: person?.display_name || "Unnamed person",
+        });
+
+        membersByGroup.set(member.group_id, existing);
+      });
+
+      setPeopleGroupOptions(
+        (groupsData || []).map((group: any) => ({
+          id: group.id,
+          name: group.name,
+          members: membersByGroup.get(group.id) || [],
+        }))
+      );
+    };
+
+    loadPeopleGroupOptions();
+  }, [user]);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -99,6 +173,10 @@ const RecurringMeetings = () => {
 
     if (!title.trim()) return;
 
+    const selectedPeopleGroup = peopleGroupOptions.find(
+      (group) => group.id === selectedPeopleGroupId
+    );
+
     const nextItems: RecurringMeeting[] = [
       {
         id: crypto.randomUUID(),
@@ -108,8 +186,13 @@ const RecurringMeetings = () => {
         meetingTime,
         location: location.trim(),
         occurrences: Number(occurrences) || 12,
-        regularAttendees: [],
+        regularAttendees: selectedPeopleGroup
+          ? selectedPeopleGroup.members.map((member) => member.display_name)
+          : [],
         regularAgenda: [],
+        peopleGroupId: selectedPeopleGroup?.id,
+        peopleGroupName: selectedPeopleGroup?.name,
+        peopleGroupMemberIds: selectedPeopleGroup?.members.map((member) => member.person_id) || [],
       },
       ...items,
     ];
@@ -123,6 +206,7 @@ const RecurringMeetings = () => {
     setMeetingTime("");
     setLocation("");
     setOccurrences("12");
+    setSelectedPeopleGroupId("");
     setAddOpen(false);
   };
 
@@ -271,7 +355,9 @@ const RecurringMeetings = () => {
 
                     <span className="inline-flex items-center gap-1">
                       <Users className="h-3.5 w-3.5" />
-                      {item.regularAttendees?.length || 0} regular attendees
+                      {item.peopleGroupName
+                        ? `${item.peopleGroupName} group`
+                        : `${item.regularAttendees?.length || 0} regular attendees`}
                     </span>
 
                     <span className="inline-flex items-center gap-1">
@@ -381,6 +467,25 @@ const RecurringMeetings = () => {
                     placeholder="Location"
                     className="mt-2 border-border/70 bg-background"
                   />
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">People Group Source</label>
+                  <select
+                    value={selectedPeopleGroupId}
+                    onChange={(event) => setSelectedPeopleGroupId(event.target.value)}
+                    className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                  >
+                    <option value="">No linked group</option>
+                    {peopleGroupOptions.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} — {group.members.length} people
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Use this for recurring meetings that happen within a fixed team or leadership group.
+                  </p>
                 </div>
 
                 <div>

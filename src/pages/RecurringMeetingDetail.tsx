@@ -38,6 +38,9 @@ type RecurringMeeting = {
   occurrences: number;
   regularAttendees?: string[];
   regularAgenda?: AgendaSection[];
+  peopleGroupId?: string;
+  peopleGroupName?: string;
+  peopleGroupMemberIds?: string[];
 };
 
 type CreatedMeetingMap = Record<string, string>;
@@ -346,6 +349,8 @@ const RecurringMeetingDetail = () => {
         sections: regularAgenda,
         apologies: [],
         recurringSeriesId: series.id,
+        peopleGroupId: series.peopleGroupId || null,
+        peopleGroupName: series.peopleGroupName || null,
       }),
       notes,
     };
@@ -367,6 +372,21 @@ const RecurringMeetingDetail = () => {
     if (!meetingId) {
       toast.error("Meeting was created, but no meeting ID was returned.");
       return;
+    }
+
+    if (series.peopleGroupId) {
+      const { error: groupSourceError } = await (supabase as any).rpc(
+        "add_meeting_group_source",
+        {
+          p_meeting_id: meetingId,
+          p_group_id: series.peopleGroupId,
+        }
+      );
+
+      if (groupSourceError) {
+        console.error("Attach recurring meeting group failed:", groupSourceError);
+        toast.error("Meeting created, but the people group could not be attached.");
+      }
     }
 
     const nextMap = {
@@ -571,7 +591,9 @@ const RecurringMeetingDetail = () => {
 
                       <span className="inline-flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
-                        {(series.regularAttendees || []).length} regular attendees
+                        {series.peopleGroupName
+                          ? `${series.peopleGroupName} group`
+                          : `${(series.regularAttendees || []).length} regular attendees`}
                       </span>
 
                       <span className="inline-flex items-center gap-1">

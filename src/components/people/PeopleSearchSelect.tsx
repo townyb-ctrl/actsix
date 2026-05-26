@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { Check, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export function PeopleSearchSelect({
   dropdownZIndexClass = "z-[999]",
 }: PeopleSearchSelectProps) {
   const inputId = useId();
+  const peopleSearchSelectRef = useRef<HTMLDivElement | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
 
@@ -78,7 +79,7 @@ export function PeopleSearchSelect({
   };
 
   return (
-    <div className={`relative ${zIndexClass} space-y-2`}>
+    <div ref={peopleSearchSelectRef} className={`relative ${zIndexClass} space-y-2`}>
       {selectedPerson ? (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2">
           <div className="flex min-w-0 items-center gap-3">

@@ -3,15 +3,20 @@
   Inbox,
   ListChecks,
   FolderKanban,
+  House,
   Clock,
   Sparkles,
   RotateCcw,
+  ClipboardCheck,
   Users,
+  BarChart3,
+  Check,
+  ChevronsUpDown,
   CalendarDays,
   Settings as SettingsIcon,
   Music,
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Sidebar,
@@ -32,6 +37,32 @@ import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { isAlphaMode, isModuleEnabled, getReleaseLabel } from "@/lib/releaseMode";
 
 type Item = { title: string; url: string; icon: any; badgeKey?: string; moduleKey?: string };
+
+type RecurringSidebarMeeting = {
+  id: string;
+  title: string;
+  frequency?: string;
+};
+
+const RECURRING_MEETINGS_STORAGE_KEY = "actsix_recurring_meetings";
+
+const loadRecurringSidebarMeetings = (): RecurringSidebarMeeting[] => {
+  try {
+    const items = JSON.parse(localStorage.getItem(RECURRING_MEETINGS_STORAGE_KEY) || "[]");
+
+    return Array.isArray(items)
+      ? items
+          .filter((item) => item?.id && item?.title)
+          .map((item) => ({
+            id: item.id,
+            title: item.title,
+            frequency: item.frequency,
+          }))
+      : [];
+  } catch {
+    return [];
+  }
+};
 
 const homebaseItems: Item[] = [
   { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, badgeKey: "tasks_open", moduleKey: "tasks" },
@@ -65,12 +96,26 @@ const peopleItems: Item[] = [
   { title: "Groups", url: "/people/groups", icon: FolderKanban },
 ];
 
+const workspaceItems = [
+  { title: "Home", url: "/", icon: House, disabled: false, moduleKey: "home" },
+  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, disabled: false, moduleKey: "tasks" },
+  { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays, disabled: false, moduleKey: "meetings" },
+  { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music, disabled: false, moduleKey: "service_planner" },
+  { title: "ACTSIX: People", url: "/people", icon: Users, disabled: false, moduleKey: "people" },
+  { title: "Sermon Hub", url: "/sermon-hub", icon: Sparkles, disabled: false, moduleKey: "sermon_hub" },
+  { title: "Resources", url: "/resources", icon: ClipboardCheck, disabled: false, moduleKey: "resources" },
+  { title: "Media Tools", url: "/media", icon: BarChart3, disabled: false, moduleKey: "media" },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { workspace, role } = useCurrentWorkspace();
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [recurringSidebarMeetings, setRecurringSidebarMeetings] = useState<RecurringSidebarMeeting[]>([]);
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
   const inMeetingsModule = pathname === "/meetings" || pathname.startsWith("/meetings/");
@@ -90,6 +135,25 @@ export function AppSidebar() {
     item.moduleKey ? isModuleEnabled(item.moduleKey as any) : true
   );
 
+  const visibleWorkspaceItems = workspaceItems.filter((item) =>
+    item.moduleKey ? isModuleEnabled(item.moduleKey as any) : true
+  );
+
+  const moduleValue = inPeopleModule
+    ? "/people"
+    : inServicePlannerModule
+      ? "/service-planner"
+      : inMeetingsModule
+      ? "/meetings"
+      : inTasksModule
+        ? "/tasks"
+        : "/";
+
+  const selectedWorkspace =
+    visibleWorkspaceItems.find((item) => item.url === moduleValue) || visibleWorkspaceItems[0];
+
+  const SelectedWorkspaceIcon = selectedWorkspace.icon;
+
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
 
@@ -101,6 +165,26 @@ export function AppSidebar() {
     if (p === "/people") return pathname === "/people";
     return pathname.startsWith(p);
   };
+
+  useEffect(() => {
+    setWorkspaceOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const refreshRecurringMeetings = () => {
+      setRecurringSidebarMeetings(loadRecurringSidebarMeetings());
+    };
+
+    refreshRecurringMeetings();
+
+    window.addEventListener("storage", refreshRecurringMeetings);
+    window.addEventListener("actsix-recurring-meetings-updated", refreshRecurringMeetings);
+
+    return () => {
+      window.removeEventListener("storage", refreshRecurringMeetings);
+      window.removeEventListener("actsix-recurring-meetings-updated", refreshRecurringMeetings);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -170,6 +254,100 @@ export function AppSidebar() {
       <SidebarContent className="bg-transparent">
         <SidebarGroup>
           <SidebarGroupContent data-tour="sidebar-primary-nav">
+            {moduleValue !== "/" && (
+              <>
+                <div className={collapsed ? "mb-3 flex justify-center px-0" : "px-1.5 mb-3"}>
+                  {!collapsed ? (
+                    <div className="px-0">
+                      <label className="mb-1.5 block px-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/40">
+                        Workspace
+                      </label>
+
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className="grid h-11 w-full grid-cols-1 rounded-xl border border-sidebar-border bg-sidebar px-3 text-left text-sidebar-foreground outline-none transition hover:bg-sidebar-accent/45 focus:ring-2 focus:ring-sidebar-ring"
+                          onClick={() => setWorkspaceOpen((open) => !open)}
+                        >
+                          <span className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 pr-7">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-teal-bright">
+                              <SelectedWorkspaceIcon className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="block truncate text-sm font-bold">
+                              {selectedWorkspace.title}
+                            </span>
+                          </span>
+
+                          <ChevronsUpDown className="col-start-1 row-start-1 h-4 w-4 self-center justify-self-end text-sidebar-foreground/45" />
+                        </button>
+
+                        {workspaceOpen && (
+                          <div className="absolute left-0 right-0 top-12 z-50 max-h-80 overflow-auto rounded-2xl border border-sidebar-border bg-sidebar p-1.5 shadow-xl">
+                            {visibleWorkspaceItems.map((item) => {
+                              const active = item.url === moduleValue;
+                              const WorkspaceIcon = item.icon;
+
+                              return (
+                                <button
+                                  key={item.url}
+                                  type="button"
+                                  disabled={item.disabled}
+                                  className={`group flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition ${
+                                    active
+                                      ? "bg-sidebar-accent text-sidebar-foreground"
+                                      : item.disabled
+                                        ? "cursor-not-allowed text-sidebar-foreground/30"
+                                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                                  }`}
+                                  onClick={() => {
+                                    if (item.disabled) return;
+                                    setWorkspaceOpen(false);
+                                    navigate(item.url);
+                                  }}
+                                >
+                                  <span
+                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                                      active
+                                        ? "bg-brand-teal/20 text-brand-teal-bright"
+                                        : "bg-sidebar-accent/35 text-sidebar-foreground/55"
+                                    }`}
+                                  >
+                                    <WorkspaceIcon className="h-3.5 w-3.5" />
+                                  </span>
+
+                                  <span className="min-w-0 flex-1 truncate text-sm font-bold">
+                                    {item.title}
+                                  </span>
+
+                                  {active && (
+                                    <Check className="h-4 w-4 shrink-0 text-brand-teal-bright" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigate("/")}
+                      title="Go to Homebase"
+                      aria-label="Go to Homebase"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl bg-sidebar-accent/60 p-0 text-sidebar-foreground hover:bg-sidebar-accent"
+                    >
+                      <House className="h-5 w-5 shrink-0" />
+                    </button>
+                  )}
+                </div>
+
+                {!collapsed && (
+                  <div className="mx-3 mb-3 border-t border-sidebar-border/70" />
+                )}
+              </>
+            )}
+
             {!collapsed && isAlphaMode && (
               <div className="mx-1.5 mb-3 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal-bright">
                 {getReleaseLabel()} Mode
@@ -208,6 +386,35 @@ export function AppSidebar() {
                         {renderBadge(item)}
                       </NavLink>
                     </SidebarMenuButton>
+
+                    {!collapsed && inMeetingsModule && item.url === "/meetings/recurring" && (
+                      <div className="ml-10 mt-1 space-y-1 border-l border-sidebar-border/70 pl-3">
+                        {recurringSidebarMeetings.length === 0 ? (
+                          <p className="px-2 py-1.5 text-xs text-sidebar-foreground/35">
+                            No recurring meetings yet
+                          </p>
+                        ) : (
+                          recurringSidebarMeetings.map((series) => {
+                            const seriesUrl = `/meetings/recurring/${series.id}`;
+                            const seriesActive = pathname === seriesUrl;
+
+                            return (
+                              <NavLink
+                                key={series.id}
+                                to={seriesUrl}
+                                className={`block truncate rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
+                                  seriesActive
+                                    ? "bg-sidebar-accent/80 text-sidebar-foreground"
+                                    : "text-sidebar-foreground/55 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground"
+                                }`}
+                              >
+                                {series.title}
+                              </NavLink>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
                   </SidebarMenuItem>
                 );
               })}
@@ -267,4 +474,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
