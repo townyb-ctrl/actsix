@@ -37,7 +37,6 @@ const Meetings = () => {
   const [addOpen, setAddOpen] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [meetingType, setMeetingType] = useState("In Person");
   const [meetingDate, setMeetingDate] = useState("");
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
@@ -77,7 +76,7 @@ const Meetings = () => {
       meeting_time: meetingTime || null,
       location: location.trim(),
       google_meet_url: googleMeetUrl.trim() || null,
-      type: meetingType.trim() || "In Person",
+      type: "General",
       status: "Planned",
       agenda: "",
       notes: "",
@@ -105,8 +104,7 @@ const Meetings = () => {
 
       return (
         (meeting.title || "").toLowerCase().includes(q) ||
-        (meeting.location || "").toLowerCase().includes(q) ||
-        (meeting.type || "").toLowerCase().includes(q)
+        (meeting.location || "").toLowerCase().includes(q)
       );
     });
   }, [meetings, search]);
@@ -145,77 +143,59 @@ const Meetings = () => {
   };
 
   return (
-    <div>
+    <div className="pb-12">
       <PageHeader
         eyebrow="ACTSIX: Meetings"
         title="Meetings"
         subtitle="Plan agendas, record notes, and track action points."
       />
 
-      <div className="px-8 pb-12 max-w-7xl space-y-6">
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card className="p-5 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Total Meetings</p>
-            <div className="mt-2 text-3xl font-extrabold">{totalCount}</div>
-          </Card>
-
-          <Card className="p-5 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Scheduled</p>
-            <div className="mt-2 text-3xl font-extrabold">{upcomingCount}</div>
-          </Card>
-
-          <Card className="p-5 border-border/70 bg-card shadow-card">
-            <p className="label-eyebrow">Unscheduled</p>
-            <div className="mt-2 text-3xl font-extrabold">{unscheduledCount}</div>
-          </Card>
+      <div className="px-8 max-w-7xl space-y-6">
+        <div className="grid gap-px overflow-hidden rounded-2xl border border-border/70 bg-border/70 shadow-card md:grid-cols-3">
+          {[
+            ["Total meetings", totalCount],
+            ["Scheduled", upcomingCount],
+            ["Unscheduled", unscheduledCount],
+          ].map(([label, value]) => (
+            <div key={label} className="bg-card px-5 py-4">
+              <p className="label-eyebrow">{label}</p>
+              <div className="mt-2 text-3xl font-extrabold tracking-tight">{value}</div>
+            </div>
+          ))}
         </div>
 
-<div className="space-y-3">
-          <div className="flex items-center justify-between gap-4">
-
-            <div className="relative max-w-2xl flex-1">
-
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-
+        <div className="rounded-2xl border border-border/70 bg-card shadow-card">
+          <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-
                 value={search}
-
                 onChange={(event) => setSearch(event.target.value)}
-
                 placeholder="Search meetings..."
-
-                className="h-10 pl-10 border-border/70 bg-card shadow-soft"
-
+                className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-none"
               />
-
             </div>
 
-          
-
             <Button
-
               type="button"
-
-              className="actsix-btn-primary rounded-xl shrink-0"
-
+              className="actsix-btn-primary h-11 shrink-0 rounded-xl px-4"
               onClick={() => setAddOpen(true)}
-
             >
-
               <Plus className="h-4 w-4" />
-
               Add Meeting
-
             </Button>
-
           </div>
 
-          <Card className="border-border/70 bg-card shadow-card overflow-hidden">
-            <div className="divide-y divide-border">
+          <div className="divide-y divide-border/70">
               {filteredMeetings.length === 0 && (
-                <div className="p-6 text-sm text-muted-foreground">
-                  No meetings found.
+                <div className="p-8 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
+                    <CalendarDays className="h-5 w-5" />
+                  </div>
+                  <p className="mt-3 text-sm font-semibold">No meetings found</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Create a meeting or adjust your search.
+                  </p>
                 </div>
               )}
 
@@ -223,32 +203,32 @@ const Meetings = () => {
                 <Link
                   key={meeting.id}
                   to={`/meetings/${meeting.id}`}
-                  className="group flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors"
+                  className="group flex flex-col gap-4 p-4 transition-colors hover:bg-brand-teal/5 sm:flex-row sm:items-center"
                 >
-                  <div className="h-10 w-10 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal ring-1 ring-brand-teal/15">
                     <UsersRound className="h-5 w-5" />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="font-extrabold tracking-tight truncate">
+                    <div className="truncate text-base font-extrabold tracking-tight">
                       {meeting.title}
                     </div>
 
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-medium text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
                         <CalendarDays className="h-3.5 w-3.5" />
                         {formatDate(meeting.meeting_date)}
                       </span>
 
                       {meeting.meeting_time && (
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1.5">
                           <Clock3 className="h-3.5 w-3.5" />
                           {meeting.meeting_time.slice(0, 5)}
                         </span>
                       )}
 
                       {meeting.location && (
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1.5">
                           <MapPin className="h-3.5 w-3.5" />
                           {meeting.location}
                         </span>
@@ -264,13 +244,13 @@ const Meetings = () => {
                   </div>
 
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                     {meeting.google_meet_url && (
                       <>
                         <button
                           type="button"
                           onClick={(event) => copyMeetLink(event, meeting.google_meet_url)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-muted-foreground transition hover:border-brand-teal/40 hover:bg-brand-teal/5 hover:text-brand-teal"
+                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-bold text-muted-foreground transition hover:border-brand-teal/40 hover:bg-brand-teal/5 hover:text-brand-teal"
                           aria-label={`Copy Google Meet link for ${meeting.title || "meeting"}`}
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -280,7 +260,7 @@ const Meetings = () => {
                         <button
                           type="button"
                           onClick={(event) => openMeetLink(event, meeting.google_meet_url)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal transition hover:bg-brand-teal/15"
+                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 text-xs font-bold text-brand-teal transition hover:bg-brand-teal/15"
                           aria-label={`Open Google Meet for ${meeting.title || "meeting"}`}
                         >
                           <Video className="h-3.5 w-3.5" />
@@ -293,8 +273,7 @@ const Meetings = () => {
                   </div>
                 </Link>
               ))}
-            </div>
-          </Card>
+          </div>
         </div>
       </div>
       {addOpen && (
@@ -323,7 +302,7 @@ const Meetings = () => {
 
             <form onSubmit={createMeeting} className="mt-6 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
+                <div className="md:col-span-2">
                   <label className="label-eyebrow">Meeting Title</label>
                   <Input
                     value={title}
@@ -331,24 +310,6 @@ const Meetings = () => {
                     placeholder="Executive Meeting"
                     className="mt-2 border-border/70 bg-background"
                   />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Type</label>
-                  <select
-                    value={meetingType}
-                    onChange={(event) => {
-                      setMeetingType(event.target.value);
-                      if (event.target.value === "Online") {
-                        setLocation("");
-                      }
-                    }}
-                    className="h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option value="In Person">In Person</option>
-                    <option value="Hybrid">Hybrid</option>
-                    <option value="Online">Online</option>
-                  </select>
                 </div>
 
                 <div>
@@ -371,7 +332,6 @@ const Meetings = () => {
                   />
                 </div>
 
-                {meetingType !== "Online" && (
                 <div>
                   <label className="label-eyebrow">Location</label>
                   <Input
@@ -381,7 +341,6 @@ const Meetings = () => {
                     className="border-border/70 bg-background"
                   />
                 </div>
-              )}
 
                 <div>
                   <label className="label-eyebrow">Google Meet Link</label>

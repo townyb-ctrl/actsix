@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, ListChecks, MapPin, MoreHorizontal, Pencil, Plus, Save, Search, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
+import { Bold, CalendarDays, Check, CheckCircle2, ChevronsUpDown, Clock3, Copy, ExternalLink, FileText, Heading1, Heading2, Italic, ListChecks, MapPin, Mic, MoreHorizontal, Pencil, Pilcrow, Plus, Search, Trash2, UserRoundX, UsersRound, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { createNotificationForPerson } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PeopleSearchSelect } from "@/components/people/PeopleSearchSelect";
+import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { MeetingPeopleSection } from "@/components/meeting/MeetingPeopleSection";
 import {
   Command,
   CommandEmpty,
@@ -40,7 +42,6 @@ const EMPTY_MEETING = {
   meeting_date: null as string | null,
   meeting_time: null as string | null,
   location: "",
-  type: "General",
   notes: "",
 };
 
@@ -157,18 +158,6 @@ const formatDate = (date?: string | null) => {
   });
 };
 
-const isMeetingDayOrAfter = (date?: string | null) => {
-  if (!date) return false;
-
-  const today = new Date();
-  const meetingDate = new Date(`${date}T00:00:00`);
-
-  today.setHours(0, 0, 0, 0);
-  meetingDate.setHours(0, 0, 0, 0);
-
-  return today >= meetingDate;
-};
-
 const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
   const cleanSections = sections
     .map((section) => ({
@@ -186,10 +175,10 @@ const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
       const title = (section.heading || "Untitled Section").toUpperCase();
 
       const points = section.points
-        .map((point, pointIndex) => `${sectionNumber}.${pointIndex + 1} ${point.text}\n\nNotes:\nDecisions:\n`)
-        .join("\n");
+        .map((point, pointIndex) => `${sectionNumber}.${pointIndex + 1} ${point.text}\nNotes:\nDecisions:`)
+        .join("\n\n");
 
-      return `${sectionNumber}. ${title}\n\n${points}`;
+      return points ? `${sectionNumber}. ${title}\n${points}` : `${sectionNumber}. ${title}`;
     })
     .join("\n\n");
 };
@@ -202,6 +191,10 @@ const escapeHtml = (value: string) =>
 
 const renderMinutesHtml = (notes?: string | null) => {
   if (!notes) return "";
+
+  if (/<\/?[a-z][\s\S]*>/i.test(notes)) {
+    return sanitizeMinutesHtml(notes);
+  }
 
   return notes
     .split("\n")
@@ -225,18 +218,17 @@ const renderMinutesHtml = (notes?: string | null) => {
     .join("");
 };
 
-const getMinutesDocumentText = (element: HTMLDivElement | null) => {
+const sanitizeMinutesHtml = (value: string) =>
+  value
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/\son\w+="[^"]*"/gi, "")
+    .replace(/\son\w+='[^']*'/gi, "")
+    .replace(/javascript:/gi, "");
+
+const getMinutesDocumentHtml = (element: HTMLDivElement | null) => {
   if (!element) return "";
 
-  const lines = Array.from(element.childNodes).map((node) => {
-    const value = node.textContent ?? "";
-    return value.replace(/\u00a0/g, " ").trimEnd();
-  });
-
-  return lines
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trimEnd();
+  return sanitizeMinutesHtml(element.innerHTML).trim();
 };
 
 
@@ -290,6 +282,9 @@ function MeetingSourceCombobox({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const dropdownId = useRef(`meeting-source-${Math.random().toString(36).slice(2)}`);
+
   const selectedOption = options.find((option) => option.value === value);
 
   const filteredOptions = useMemo(() => {
@@ -304,12 +299,54 @@ function MeetingSourceCombobox({
     );
   }, [options, query]);
 
+  const announceOpen = () => {
+    document.dispatchEvent(
+      new CustomEvent("actsix-dropdown-open", { detail: dropdownId.current })
+    );
+  };
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!wrapperRef.current) return;
+
+      if (!wrapperRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    const handleOtherDropdownOpen = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+
+      if (customEvent.detail !== dropdownId.current) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("actsix-dropdown-open", handleOtherDropdownOpen as EventListener);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("actsix-dropdown-open", handleOtherDropdownOpen as EventListener);
+    };
+  }, []);
+
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className={`relative ${open ? "z-[300]" : "z-[20]"}`}>
       <button
         type="button"
         className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3 text-left text-sm shadow-soft transition hover:border-brand-teal/40 hover:bg-card focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (!open) {
+            announceOpen();
+            setOpen(true);
+            return;
+          }
+
+          setOpen(false);
+        }}
       >
         <span className={selectedOption ? "truncate font-semibold text-foreground" : "truncate text-muted-foreground"}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -318,12 +355,13 @@ function MeetingSourceCombobox({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[56px] z-[80] w-full overflow-hidden rounded-3xl border border-border/70 bg-card shadow-2xl">
+        <div className="absolute left-0 right-0 top-full z-[1200] mt-2 overflow-hidden rounded-3xl border border-border/70 bg-card shadow-2xl">
           <div className="border-b border-border/70 bg-card p-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
+                onFocus={announceOpen}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={searchPlaceholder}
                 className="h-11 rounded-2xl border-border/70 bg-background pl-9 pr-3 text-sm focus-visible:ring-brand-teal/40"
@@ -332,7 +370,7 @@ function MeetingSourceCombobox({
             </div>
           </div>
 
-          <div className="max-h-72 overflow-auto bg-card">
+          <div className="max-h-64 overflow-y-auto bg-card">
             {filteredOptions.length === 0 && (
               <div className="px-4 py-5 text-sm text-muted-foreground">
                 {emptyText}
@@ -379,6 +417,7 @@ function MeetingSourceCombobox({
   );
 }
 
+
 const MeetingDetail = () => {
   const minutesRef = useRef<HTMLDivElement | null>(null);
   const { meetingId } = useParams();
@@ -415,10 +454,14 @@ const MeetingDetail = () => {
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [googleMeetUrlDraft, setGoogleMeetUrlDraft] = useState("");
   const [minutesOpen, setMinutesOpen] = useState(false);
+  const [minutesToolbarOpen, setMinutesToolbarOpen] = useState(false);
   const [meetingPeopleOpen, setMeetingPeopleOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState("");
   const [chairpersonId, setChairpersonId] = useState("");
   const [minuteTakerId, setMinuteTakerId] = useState("");
   const [meetingMenuOpen, setMeetingMenuOpen] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<"people" | "actions">("people");
 
   const [meetingPeople, setMeetingPeople] = useState<any[]>([]);
   const [peopleOptions, setPeopleOptions] = useState<any[]>([]);
@@ -426,7 +469,7 @@ const MeetingDetail = () => {
   const [folderOptions, setFolderOptions] = useState<any[]>([]);
   const [meetingGroupSources, setMeetingGroupSources] = useState<any[]>([]);
   const [meetingFolderSources, setMeetingFolderSources] = useState<any[]>([]);
-  const [selectedMeetingPersonId, setSelectedMeetingPersonId] = useState("");
+  const [selectedMeetingPersonIds, setSelectedMeetingPersonIds] = useState<string[]>([]);
   const [selectedMeetingGroupId, setSelectedMeetingGroupId] = useState("");
   const [selectedMeetingFolderId, setSelectedMeetingFolderId] = useState("");
   const [selectedMeetingGroupFolderId, setSelectedMeetingGroupFolderId] = useState("");
@@ -457,10 +500,100 @@ const MeetingDetail = () => {
       .filter(Boolean) as any[];
   }, [meetingPeople]);
 
-  const showActionPoints = isMeetingDayOrAfter(meeting?.meeting_date);
-  const meetingMode = String(meeting?.type || "").trim().toLowerCase();
-  const shouldShowOnlineMeetingTools = meetingMode === "online" || meetingMode === "hybrid";
+  const chairpersonName =
+    meetingActionPeople.find((person) => person.id === chairpersonId)?.display_name ||
+    "Not assigned";
 
+  const minuteTakerName =
+    meetingActionPeople.find((person) => person.id === minuteTakerId)?.display_name ||
+    "Not assigned";
+
+  const meetingLeaderOptions = useMemo(
+    () =>
+      meetingActionPeople.map((person) => ({
+        value: person.id,
+        label: person.display_name,
+        description: person.email || "Meeting person",
+      })),
+    [meetingActionPeople]
+  );
+
+  const inviteRecipients = useMemo(() => {
+    return meetingPeople
+      .map((meetingPerson) => {
+        const person = Array.isArray(meetingPerson.people)
+          ? meetingPerson.people[0]
+          : meetingPerson.people;
+
+        if (!meetingPerson.person_id || !person?.display_name) return null;
+
+        return {
+          meetingPersonId: meetingPerson.id,
+          personId: meetingPerson.person_id,
+          displayName: person.display_name,
+          email: person.email || "",
+        };
+      })
+      .filter(Boolean) as {
+        meetingPersonId: string;
+        personId: string;
+        displayName: string;
+        email: string;
+      }[];
+  }, [meetingPeople]);
+
+  const currentUserMeetingPerson = useMemo(() => {
+    if (!currentPerson?.id) return null;
+
+    return meetingPeople.find(
+      (meetingPerson) => meetingPerson.person_id === currentPerson.id
+    );
+  }, [meetingPeople, currentPerson?.id]);
+
+  const currentUserMeetingStatus = currentUserMeetingPerson?.status || "invited";
+
+  const buildInviteMessage = () => {
+    const meetingName = meeting?.title || "this";
+    const meetingDate = meeting?.meeting_date
+      ? formatDate(meeting.meeting_date)
+      : "the scheduled date";
+    const meetingTime = meeting?.meeting_time || "the scheduled time";
+
+    return `Hey {{username}}, you have been invited to a ${meetingName} meeting. On ${meetingDate} at ${meetingTime}. Please respond with your availability.`;
+  };
+
+const openInviteModal = () => {
+  setInviteMessage(buildInviteMessage());
+  setInviteOpen(true);
+};
+
+const sendMeetingInvites = async () => {
+  if (!meeting?.id || inviteRecipients.length === 0) return;
+
+  const results = await Promise.all(
+    inviteRecipients.map((recipient) =>
+      (supabase as any)
+        .from("meeting_people")
+        .update({ status: "invite_sent" })
+        .eq("meeting_id", meeting.id)
+        .eq("person_id", recipient.personId)
+    )
+  );
+
+  const firstError = results.find((result) => result.error)?.error;
+
+  if (firstError) {
+    toast.error(firstError.message);
+    return;
+  }
+
+  toast.success("Meeting invites marked as sent");
+  setInviteOpen(false);
+  await loadMeetingPeopleSources();
+};
+
+
+  const hasOnlineMeetingTools = Boolean((meeting?.google_meet_url || googleMeetUrlDraft).trim());
   const meetingGroupFolderOptions = useMemo(
     () => [
       ...folderOptions.map((folder) => ({
@@ -553,7 +686,6 @@ const MeetingDetail = () => {
         meeting_date: editDraft.meeting_date || null,
         meeting_time: editDraft.meeting_time || null,
         location: editDraft.location || "",
-        type: editDraft.type || "General",
         updated_at: new Date().toISOString(),
       })
       .eq("id", meeting.id);
@@ -750,7 +882,7 @@ ${transcriptText.trim()}`;
   const saveMinutes = async () => {
     if (!meeting) return;
 
-    const latestMinutes = getMinutesDocumentText(minutesRef.current) || meeting.notes || "";
+    const latestMinutes = getMinutesDocumentHtml(minutesRef.current) || meeting.notes || "";
 
     const { error } = await supabase
       .from("meetings")
@@ -767,6 +899,11 @@ ${transcriptText.trim()}`;
 
     setMeeting({ ...meeting, notes: latestMinutes });
     toast.success("Minutes saved");
+  };
+
+  const runMinutesCommand = (command: string, value?: string) => {
+    minutesRef.current?.focus();
+    document.execCommand(command, false, value);
   };
 
   const saveAgenda = async () => {
@@ -874,20 +1011,28 @@ ${transcriptText.trim()}`;
     }
 
     const scopeRows = scopeResult.data || [];
+    const peopleById = new Map(
+      (peopleResult.data || []).map((person: any) => [person.id, person])
+    );
 
     setMeetingPeople(
       scopeRows
         .filter((row: any) => row.row_kind === "person")
-        .map((row: any) => ({
-          id: row.id,
-          person_id: row.person_id,
-          status: row.status,
-          people: {
-            id: row.person_id,
-            display_name: row.display_name,
-            email: row.email,
-          },
-        }))
+        .map((row: any) => {
+          const matchedPerson = peopleById.get(row.person_id) as any;
+
+          return {
+            id: row.id,
+            person_id: row.person_id,
+            status: row.status,
+            people: {
+              id: row.person_id,
+              display_name: row.display_name,
+              email: row.email,
+              avatar_url: matchedPerson?.avatar_url || row.avatar_url || null,
+            },
+          };
+        })
     );
 
     setMeetingGroupSources(
@@ -921,23 +1066,35 @@ ${transcriptText.trim()}`;
     setFolderOptions(foldersResult.data || []);
   };
 
-  const addMeetingPersonSource = async () => {
-    if (!meetingId || !selectedMeetingPersonId) return;
+  const addMeetingPeopleSources = async () => {
+    if (!meetingId || selectedMeetingPersonIds.length === 0) return;
 
-    const { error } = await (supabase as any).rpc("add_meeting_individual_person", {
-      p_meeting_id: meetingId,
-      p_person_id: selectedMeetingPersonId,
-    });
+    const results = await Promise.all(
+      selectedMeetingPersonIds.map((personId) =>
+        (supabase as any).rpc("add_meeting_individual_person", {
+          p_meeting_id: meetingId,
+          p_person_id: personId,
+        })
+      )
+    );
 
-    if (error) {
-      toast.error(error.message);
+    const firstError = results.find((result) => result.error)?.error;
+
+    if (firstError) {
+      toast.error(firstError.message);
       return;
     }
 
-    setSelectedMeetingPersonId("");
-    toast.success("Person added to meeting");
-    loadMeetingPeopleSources();
+    const addedCount = selectedMeetingPersonIds.length;
+    setSelectedMeetingPersonIds([]);
+    toast.success(
+      addedCount === 1
+        ? "Person added to meeting"
+        : `${addedCount} people added to meeting`
+    );
+    await loadMeetingPeopleSources();
   };
+
 
   const addMeetingGroupSource = async () => {
     if (!meetingId || !selectedMeetingGroupId) return;
@@ -1165,9 +1322,7 @@ ${transcriptText.trim()}`;
   }, [meetingId, user?.id, currentPerson?.workspace_id]);
 
   if (!meeting) {
-
-
-  return (
+    return (
       <div>
         <PageHeader eyebrow="ACTSIX: Meetings" title="Meeting" subtitle="Loading meeting..." />
       </div>
@@ -1189,8 +1344,8 @@ ${transcriptText.trim()}`;
         }
 
         .minutes-section-heading {
-          margin-top: 1rem;
-          margin-bottom: 0.35rem;
+          margin-top: 0.75rem;
+          margin-bottom: 0.15rem;
           font-weight: 800;
           text-transform: uppercase;
           letter-spacing: 0.04em;
@@ -1202,324 +1357,505 @@ ${transcriptText.trim()}`;
         }
 
         .minutes-agenda-point {
-          margin-top: 0.75rem;
+          margin-top: 0.45rem;
+          margin-bottom: 0.1rem;
           font-weight: 700;
           color: hsl(var(--foreground));
         }
 
-        .minutes-blank-line {
-          min-height: 0.35rem;
-          line-height: 0.35rem;
+        .minutes-document .minutes-blank-line {
+          min-height: 0.15rem;
+          line-height: 0.15rem;
         }
 
         .minutes-document div {
           min-height: 1.4em;
         }
+
+        .minutes-document h1 {
+          margin: 0.35rem 0 0.2rem;
+          font-size: 1.25rem;
+          line-height: 1.4;
+          font-weight: 800;
+          color: hsl(var(--foreground));
+        }
+
+        .minutes-document h2 {
+          margin: 0.3rem 0 0.15rem;
+          font-size: 1.05rem;
+          line-height: 1.45;
+          font-weight: 800;
+          color: hsl(var(--foreground));
+        }
+
+        .minutes-document b,
+        .minutes-document strong {
+          font-weight: 800;
+          color: hsl(var(--foreground));
+        }
+
+        .minutes-document i,
+        .minutes-document em {
+          font-style: italic;
+        }
       `}</style>
 
-      <div className="px-8 pb-12 max-w-7xl space-y-5">
-<Card className="p-5 border-border/70 bg-card shadow-card">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+      <div className="px-8 pb-12 max-w-7xl space-y-6">
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft">
+          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-2xl font-extrabold tracking-tight truncate">
-                  {meeting.title || "Untitled Meeting"}
-                </h2>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4" />
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5 text-brand-teal" />
                   {formatDate(meeting.meeting_date)}
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Clock3 className="h-4 w-4" />
+                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <Clock3 className="h-3.5 w-3.5 text-brand-teal" />
                   {meeting.meeting_time ? meeting.meeting_time.slice(0, 5) : "No time"}
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" />
+                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 text-brand-teal" />
                   {meeting.location || "No location"}
-                </span>
-                <span className="chip bg-background/70">
-                  {meeting.type || "General"}
                 </span>
               </div>
             </div>
 
-            <div className="relative flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-                onClick={() => setMeetingMenuOpen((current) => !current)}
-                aria-label="Meeting options"
-              >
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-
-              {meetingMenuOpen && (
-                <div className="absolute right-0 top-14 z-50 w-56 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
-                  <button
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              {hasOnlineMeetingTools && (
+                <>
+                  <Button
                     type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition hover:bg-muted"
-                    onClick={() => {
-                      setMeetingMenuOpen(false);
-                      openEditModal();
-                    }}
+                    variant="outline"
+                    size="sm"
+                    className="h-9 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal"
+                    onClick={openGoogleMeet}
+                    disabled={!(meeting?.google_meet_url || googleMeetUrlDraft).trim()}
                   >
-                    <Pencil className="h-4 w-4" />
-                    Edit Meeting
-                  </button>
-
-                  <button
+                    <Video className="h-4 w-4 mr-2" />
+                    Open Meet
+                  </Button>
+                  <Button
                     type="button"
-                    className="flex w-full items-center gap-3 border-t border-border/70 px-4 py-3 text-left text-sm font-semibold text-destructive transition hover:bg-destructive/10"
-                    onClick={() => {
-                      setMeetingMenuOpen(false);
-                      deleteMeeting();
-                    }}
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={copyGoogleMeetUrl}
+                    disabled={!(meeting?.google_meet_url || googleMeetUrlDraft).trim()}
+                    aria-label="Copy Google Meet link"
                   >
-                    <Trash2 className="h-4 w-4" />
-                    Delete Meeting
-                  </button>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+
+              <div className="relative">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  onClick={() => setMeetingMenuOpen((current) => !current)}
+                  aria-label="Meeting options"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+
+                {meetingMenuOpen && (
+                  <div className="absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition hover:bg-muted"
+                      onClick={() => {
+                        setMeetingMenuOpen(false);
+                        openEditModal();
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit Meeting
+                    </button>
+
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-3 border-t border-border/70 px-4 py-3 text-left text-sm font-semibold text-destructive transition hover:bg-destructive/10"
+                      onClick={() => {
+                        setMeetingMenuOpen(false);
+                        deleteMeeting();
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Meeting
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border/70 px-4 py-2 text-xs">
+            <div className="inline-flex min-w-0 items-center gap-2">
+              <span className="font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Chairperson:
+              </span>
+              <span className="truncate font-heading font-bold uppercase tracking-[0.16em] text-foreground">
+                {chairpersonName}
+              </span>
+            </div>
+
+            <div className="inline-flex min-w-0 items-center gap-2">
+              <span className="font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Minutes:
+              </span>
+              <span className="truncate font-heading font-bold uppercase tracking-[0.16em] text-foreground">
+                {minuteTakerName}
+              </span>
+            </div>
+
+            <div className="ml-auto min-w-0">
+              {currentUserMeetingPerson ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    You:
+                  </span>
+                  <div className="flex gap-1.5">
+                    <Button
+                      type="button"
+                      variant={currentUserMeetingStatus === "attended" ? "default" : "outline"}
+                      size="sm"
+                      className="h-6 rounded-md px-2 text-[11px]"
+                      onClick={() => updateMeetingPersonStatus(currentUserMeetingPerson.person_id, "attended")}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={currentUserMeetingStatus === "unavailable" ? "default" : "outline"}
+                      size="sm"
+                      className="h-6 rounded-md px-2 text-[11px]"
+                      onClick={() => updateMeetingPersonStatus(currentUserMeetingPerson.person_id, "unavailable")}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2">
+                  <span className="font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    People
+                  </span>
+                  <span className="font-semibold text-foreground">{meetingPeople.length} linked</span>
                 </div>
               )}
             </div>
           </div>
+        </section>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <UsersRound className="h-4 w-4" />
-                <span className="label-eyebrow">Attendees</span>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{linkedAttendedCount || attendeeList.length}</div>
-            </div>
-
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <UserRoundX className="h-4 w-4" />
-                <span className="label-eyebrow">Apologies</span>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{linkedApologyCount || apologies.length}</div>
-            </div>
-
-
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <ListChecks className="h-4 w-4" />
-                <span className="label-eyebrow">Actions</span>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{actions.length}</div>
-            </div>
-          </div>
-        </Card>
-
-        {shouldShowOnlineMeetingTools && (
-        <Card className="border-border/70 bg-card p-5 shadow-card">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-                  <Video className="h-5 w-5" />
+        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          {/* LEFT COLUMN: Minutes + Action Points */}
+          <div className="space-y-5">
+            {/* Minutes Card */}
+            <Card className="overflow-hidden border-border/70 bg-card shadow-card">
+              <div className="border-b border-border/70 bg-muted/20 px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-extrabold tracking-tight">Meeting Minutes</h2>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal"
+                      onClick={() => setMinutesToolbarOpen((open) => !open)}
+                    >
+                      {minutesToolbarOpen ? "Hide Format" : "Format"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal"
+                      onClick={openAgendaModal}
+                    >
+                      <FileText className="h-4 w-4 mr-1.5" />
+                      Edit Agenda
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal"
+                      onClick={() => setTranscriptOpen(true)}
+                    >
+                      <Mic className="h-4 w-4 mr-1.5" />
+                      Transcription
+                    </Button>
+                  </div>
                 </div>
-
-                <div>
-                  <p className="label-eyebrow">Online Meeting</p>
-                  <h2 className="text-xl font-extrabold tracking-tight">
-                    Google Meet
-                  </h2>
-                </div>
               </div>
 
-              <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-                Add a Google Meet link for this meeting so the online meeting workflow stays connected to the agenda, minutes, and action points.
-              </p>
+              <div className="px-5 py-4">
+                {minutesToolbarOpen && (
+                <div className="mb-3 flex flex-wrap items-center gap-1.5 border-b border-border/70 pb-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                    title="Bold"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => runMinutesCommand("bold")}
+                  >
+                    <Bold className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                    title="Italic"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => runMinutesCommand("italic")}
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Button>
 
-              <div className="mt-4 flex flex-col gap-3 md:flex-row">
-                <Input
-                  value={googleMeetUrlDraft}
-                  onChange={(event) => setGoogleMeetUrlDraft(event.target.value)}
-                  placeholder="https://meet.google.com/..."
-                  className="border-border/70 bg-background"
+                  <div className="mx-1 h-5 w-px bg-border" />
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                    title="Heading 1"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => runMinutesCommand("formatBlock", "h1")}
+                  >
+                    <Heading1 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                    title="Heading 2"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => runMinutesCommand("formatBlock", "h2")}
+                  >
+                    <Heading2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                    title="Body text"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => runMinutesCommand("formatBlock", "div")}
+                  >
+                    <Pilcrow className="h-4 w-4" />
+                  </Button>
+
+                  <select
+                    className="ml-1 h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-semibold text-muted-foreground outline-none focus:border-brand-teal/40 focus:ring-2 focus:ring-brand-teal/15"
+                    defaultValue=""
+                    aria-label="Select minutes font"
+                    onChange={(event) => {
+                      if (!event.target.value) return;
+                      runMinutesCommand("fontName", event.target.value);
+                    }}
+                  >
+                    <option value="" disabled>
+                      Font
+                    </option>
+                    <option value="Manrope">Manrope</option>
+                    <option value="Inter Tight">Inter Tight</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Courier New">Courier New</option>
+                  </select>
+                </div>
+                )}
+
+                <div
+                  ref={minutesRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="minutes-document h-[26.25rem] overflow-y-auto cursor-text rounded-2xl border border-border/70 bg-background/70 p-5 text-sm leading-7 text-foreground outline-none transition focus:border-brand-teal/35 focus:bg-background focus:ring-2 focus:ring-brand-teal/15"
+                  data-placeholder="Click here to add meeting notes, decisions, and minutes..."
+                  dangerouslySetInnerHTML={{ __html: renderMinutesHtml(meeting.notes || "") }}
+                  onKeyDown={(event) => {
+                    const isModifier = event.metaKey || event.ctrlKey;
+                    const key = event.key.toLowerCase();
+
+                    if (isModifier && key === "z") {
+                      event.preventDefault();
+                      document.execCommand(event.shiftKey ? "redo" : "undo");
+                    }
+
+                    if (isModifier && key === "y") {
+                      event.preventDefault();
+                      document.execCommand("redo");
+                    }
+                  }}
+                  onBlur={() => saveMinutes()}
                 />
+              </div>
+            </Card>
 
-                <Button
+          </div>
+
+          {/* RIGHT COLUMN: People + Action Points */}
+          <Card className="overflow-hidden border-border/70 bg-card shadow-card">
+            <div className="border-b border-border/70 bg-card px-4 pt-3">
+              <div className="flex items-end gap-5">
+                <button
                   type="button"
-                  className="actsix-btn-primary rounded-xl md:w-auto"
-                  onClick={saveGoogleMeetUrl}
+                  className={`border-b-2 pb-2 text-sm font-extrabold transition ${
+                    rightPanelTab === "people"
+                      ? "border-brand-teal text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setRightPanelTab("people")}
                 >
-                  <Save className="h-4 w-4" />
-                  Save Link
-                </Button>
+                  Meeting People
+                </button>
+                <button
+                  type="button"
+                  className={`border-b-2 pb-2 text-sm font-extrabold transition ${
+                    rightPanelTab === "actions"
+                      ? "border-brand-teal text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setRightPanelTab("actions")}
+                >
+                  Meeting Actions
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 lg:justify-end">
+            {rightPanelTab === "people" ? (
+              <MeetingPeopleSection
+                meetingPeople={meetingPeople}
+                currentUserMeetingPerson={currentUserMeetingPerson}
+                currentUserMeetingStatus={currentUserMeetingStatus}
+                inviteRecipients={inviteRecipients}
+                inviteOpen={inviteOpen}
+                inviteMessage={inviteMessage}
+                chairpersonId={chairpersonId}
+                minuteTakerId={minuteTakerId}
+                onInviteOpen={openInviteModal}
+                onInviteClose={() => setInviteOpen(false)}
+                onInviteMessageChange={setInviteMessage}
+                onSendInvites={sendMeetingInvites}
+                onOpenPeopleDialog={() => setPeopleOpen(true)}
+                onOpenMeetingPeopleDialog={() => setMeetingPeopleOpen(true)}
+                onUpdateStatus={updateMeetingPersonStatus}
+                onRemoveMeetingPerson={removeMeetingPersonFromMeeting}
+              />
+            ) : (
+              <div>
+                <div className="space-y-3 px-4 py-3">
+                  <form onSubmit={addAction} className="space-y-2 rounded-xl border border-border/70 bg-background/70 p-3">
+                    <Input
+                      value={actionTitle}
+                      onChange={(event) => setActionTitle(event.target.value)}
+                      placeholder="Action point..."
+                      className="border-border/70 bg-card"
+                    />
+
+                    <PeopleSearchSelect
+                      people={meetingActionPeople}
+                      selectedPersonId={selectedActionPersonId}
+                      onSelect={(personId) => {
+                        setSelectedActionPersonId(personId);
+                        const person = meetingActionPeople.find((option) => option.id === personId);
+                        setAssignee(person?.display_name || "");
+                      }}
+                      placeholder="Search meeting people..."
+                      emptyText="No matching meeting people found."
+                      zIndexClass="z-20"
+                      dropdownZIndexClass="z-30"
+                    />
+
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                      <Input
+                        type="date"
+                        value={due}
+                        onChange={(event) => setDue(event.target.value)}
+                        className="border-border/70 bg-card"
+                      />
+
+                      <Button type="submit" className="actsix-btn-primary rounded-xl px-3">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </form>
+
+                  <div className="max-h-[286px] space-y-2 overflow-y-auto pr-1">
+                    {actions.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-border bg-background/50 p-4 text-sm text-muted-foreground">
+                        No action points yet.
+                      </div>
+                    )}
+
+                    {actions.map((action) => (
+                      <div
+                        key={action.id}
+                        className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/65 p-3 transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-extrabold tracking-tight">{action.title}</div>
+                          <div className="mt-1 text-xs font-medium text-muted-foreground">
+                            {action.assignee || "Unassigned"}
+                            {action.due ? ` · Due ${action.due}` : ""}
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => removeAction(action.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      {transcriptOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <Card className="w-full max-w-4xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+              <div>
+                <p className="label-eyebrow">Meeting Transcription</p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                  Upload Recording
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Upload an audio recording and transcribe it locally using the ACTSIX transcriber server.
+                </p>
+              </div>
+
               <Button
                 type="button"
                 variant="outline"
                 className="rounded-xl"
-                onClick={copyGoogleMeetUrl}
-                disabled={!(meeting?.google_meet_url || googleMeetUrlDraft).trim()}
+                onClick={() => setTranscriptOpen(false)}
               >
-                <Copy className="h-4 w-4" />
-                Copy Link
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={openGoogleMeet}
-                disabled={!(meeting?.google_meet_url || googleMeetUrlDraft).trim()}
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open Meet
+                Close
               </Button>
             </div>
-          </div>
-        </Card>
-        )}
 
-        <div className="flex flex-wrap items-center justify-start gap-3">
-          <Button className="actsix-btn-soft rounded-xl" onClick={openAgendaModal}>
-            <FileText className="h-4 w-4" />
-            Edit Agenda
-          </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-full px-6 py-6"
-          onClick={() => setMeetingPeopleOpen(true)}
-        >
-          <UsersRound className="h-4 w-4 mr-2" />
-          Edit People
-        </Button>
-
-          <Button variant="outline" className="rounded-xl" onClick={() => setMinutesOpen((current) => !current)}>
-            <Save className="h-4 w-4 mr-2" />
-            {minutesOpen ? "Hide Minutes" : "Edit Minutes"}
-          </Button>
-        </div>
-      
-      <Card className="p-5 border-border/70 bg-card shadow-soft">
-        <div className="mb-4">
-          <p className="label-eyebrow">Meeting Leadership</p>
-          <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-            Chairperson and minute taker
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Select from the people already connected to this meeting.
-          </p>
-        </div>
-
-        {meetingActionPeople.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-            Add people to this meeting before assigning a chairperson or minute taker.
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-              <label className="label-eyebrow">Chairperson</label>
-              <div className="mt-2">
-                <PeopleSearchSelect
-                  people={meetingActionPeople}
-                  selectedPersonId={chairpersonId}
-                  onSelect={(personId) => {
-                    setChairpersonId(personId);
-                    updateMeetingLeadership("chairperson_id", personId);
-                  }}
-                  placeholder="Search meeting people..."
-                  emptyText="No matching meeting people found."
-                  zIndexClass="z-10"
-                  dropdownZIndexClass="z-20"
-                />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-              <label className="label-eyebrow">Minute taker</label>
-              <div className="mt-2">
-                <PeopleSearchSelect
-                  people={meetingActionPeople}
-                  selectedPersonId={minuteTakerId}
-                  onSelect={(personId) => {
-                    setMinuteTakerId(personId);
-                    updateMeetingLeadership("minute_taker_id", personId);
-                  }}
-                  placeholder="Search meeting people..."
-                  emptyText="No matching meeting people found."
-                  zIndexClass="z-10"
-                  dropdownZIndexClass="z-20"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </Card>
-
-
-
-
-        {showActionPoints && transcriptOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-            <Card className="w-full max-w-5xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="label-eyebrow">Meeting Transcription</p>
-                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                    Upload Recording
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Upload an audio recording and transcribe it locally using the ACTSIX transcriber server.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-xl"
-                    onClick={() => setTranscriptOpen(false)}
-                  >
-                    Close
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-xl"
-                    onClick={processTranscriptIntoMinutes}
-                    disabled={!transcriptText.trim() || processingTranscript}
-                  >
-                    {processingTranscript ? "Generating..." : "Generate Minutes"}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-xl"
-                    onClick={copyGeneratedMinutesToMinutes}
-                    disabled={!generatedMinutes.trim()}
-                  >
-                    Copy Generated Notes
-                  </Button>
-
-                  <Button
-                    type="button"
-                    className="actsix-btn-primary rounded-xl"
-                    onClick={transcribeAudio}
-                    disabled={!transcriptFile || transcribing}
-                  >
-                    {transcribing ? "Transcribing..." : "Transcribe"}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-xl border border-border/70 bg-background p-4">
                   <label className="label-eyebrow">Audio File</label>
 
@@ -1533,10 +1869,19 @@ ${transcriptText.trim()}`;
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
                     Supported files depend on your local ffmpeg setup. MP3, WAV, M4A, and MP4 are good starting points.
                   </p>
+
+                  <Button
+                    type="button"
+                    className="actsix-btn-primary rounded-xl mt-4 w-full"
+                    onClick={transcribeAudio}
+                    disabled={!transcriptFile || transcribing}
+                  >
+                    {transcribing ? "Transcribing..." : "Transcribe"}
+                  </Button>
                 </div>
 
                 <div className="rounded-xl border border-border/70 bg-background p-4">
-                  <div className="flex flex-wrap items-center justify-start gap-3">
+                  <div className="flex flex-wrap items-center justify-start gap-3 mb-3">
                     <label className="label-eyebrow">Transcript</label>
 
                     {transcriptText.trim() && (
@@ -1554,13 +1899,13 @@ ${transcriptText.trim()}`;
                     value={transcriptText}
                     onChange={(event) => saveTranscript(event.target.value)}
                     placeholder="Transcript will appear here..."
-                    className="mt-3 min-h-[260px] w-full resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full min-h-[240px] resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-border/70 bg-background p-4">
-                <div className="flex flex-wrap items-center justify-start gap-3">
+              <div className="rounded-xl border border-border/70 bg-background p-4">
+                <div className="flex flex-wrap items-center justify-start gap-3 mb-3">
                   <label className="label-eyebrow">Generated Meeting Notes</label>
 
                   {generatedMinutes.trim() && (
@@ -1581,7 +1926,7 @@ ${transcriptText.trim()}`;
                   value={generatedMinutes}
                   onChange={(event) => saveGeneratedMinutes(event.target.value)}
                   placeholder="Generated minutes and action points will appear here..."
-                  className="mt-3 min-h-[260px] w-full resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full min-h-[240px] resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
 
                 {generatedActionPoints.length > 0 && (
@@ -1598,97 +1943,35 @@ ${transcriptText.trim()}`;
                   </div>
                 )}
               </div>
-            </Card>
-          </div>
-        )}
 
-        <Card className="p-5 border-border/70 bg-card shadow-card">
+              <div className="flex gap-2 justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={processTranscriptIntoMinutes}
+                  disabled={!transcriptText.trim() || processingTranscript}
+                >
+                  {processingTranscript ? "Generating..." : "Generate Minutes"}
+                </Button>
 
-          <div className="mb-5 rounded-xl border border-border/70 bg-background/70 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="label-eyebrow">Meeting Day Tools</p>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  Transcription and action points are available from the day of the meeting.
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={copyGeneratedMinutesToMinutes}
+                  disabled={!generatedMinutes.trim()}
+                >
+                  Copy Generated Notes
+                </Button>
               </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setTranscriptOpen(true)}
-              >
-                Open Transcription
-              </Button>
             </div>
+          </Card>
+        </div>
+      )}
 
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span className="rounded-full border border-border bg-card px-2.5 py-1 font-bold">
-                {transcriptText.trim() ? "Transcript saved" : "No transcript yet"}
-              </span>
-
-              <span className="rounded-full border border-border bg-card px-2.5 py-1 font-bold">
-                {meeting.action_points?.length || 0} action points
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <p className="label-eyebrow">Minutes</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">Meeting Minutes</h2>
-            </div>
-            <Badge variant="outline" className="rounded-full text-muted-foreground">
-              Auto-filled from agenda
-            </Badge>
-          </div>
-
-          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="label-eyebrow">Minutes</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                Meeting minutes
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Keep the page clean by opening the full minutes editor only when needed.
-              </p>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-fit rounded-xl"
-              onClick={() => setMinutesOpen((current) => !current)}
-            >
-              {minutesOpen ? "Hide Minutes" : "Open Minutes"}
-            </Button>
-          </div>
-
-          {minutesOpen ? (
-          <div
-            ref={minutesRef}
-            contentEditable
-            suppressContentEditableWarning
-            className="minutes-document min-h-[360px] rounded-xl border border-border/70 bg-background px-4 py-4 text-sm leading-7 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            data-placeholder="Meeting notes, decisions, and minutes..."
-            dangerouslySetInnerHTML={{ __html: renderMinutesHtml(meeting.notes || "") }}
-            onBlur={(event) => {
-              setMeeting({
-                ...meeting,
-                notes: getMinutesDocumentText(event.currentTarget),
-              });
-            }}
-          />
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-background/70 p-5 text-sm text-muted-foreground">
-              Minutes are collapsed. Click <span className="font-semibold text-foreground">Open Minutes</span> to edit the full document.
-            </div>
-          )}
-        </Card>
-
-        <Dialog open={meetingPeopleOpen} onOpenChange={setMeetingPeopleOpen}>
-        <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col overflow-hidden rounded-2xl border-border/70 bg-card">
+      <Dialog open={meetingPeopleOpen} onOpenChange={setMeetingPeopleOpen}>
+        <DialogContent className="flex h-[88vh] max-w-6xl flex-col overflow-hidden rounded-2xl border-border/70 bg-card">
           <DialogHeader>
             <DialogTitle>Edit People</DialogTitle>
             <DialogDescription>
@@ -1696,7 +1979,61 @@ ${transcriptText.trim()}`;
             </DialogDescription>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+          <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-6 pr-2">
+<Card className="mb-4 border-border/70 bg-background/70 p-4 shadow-soft">
+        <div className="mb-4">
+          <p className="label-eyebrow">Meeting Leadership</p>
+          <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+            Chairperson and minute taker
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Select from the people already connected to this meeting.
+          </p>
+        </div>
+
+        {meetingActionPeople.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+            Add people to this meeting before assigning a chairperson or minute taker.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <label className="label-eyebrow">Chairperson</label>
+              <div className="mt-2">
+                <MeetingSourceCombobox
+                  value={chairpersonId}
+                  onChange={(personId) => {
+                    setChairpersonId(personId);
+                    updateMeetingLeadership("chairperson_id", personId);
+                  }}
+                  options={meetingLeaderOptions}
+                  placeholder="Select chairperson..."
+                  searchPlaceholder="Search meeting people..."
+                  emptyText="No meeting people found."
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <label className="label-eyebrow">Minute taker</label>
+              <div className="mt-2">
+                <MeetingSourceCombobox
+                  value={minuteTakerId}
+                  onChange={(personId) => {
+                    setMinuteTakerId(personId);
+                    updateMeetingLeadership("minute_taker_id", personId);
+                  }}
+                  options={meetingLeaderOptions}
+                  placeholder="Select minute taker..."
+                  searchPlaceholder="Search meeting people..."
+                  emptyText="No meeting people found."
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
             <Card className="border-0 bg-transparent p-0 shadow-none">
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
@@ -1732,10 +2069,10 @@ ${transcriptText.trim()}`;
               <label className="label-eyebrow">Add individual</label>
               <div className="mt-2 flex gap-2">
                 <div className="min-w-0 flex-1">
-                  <PeopleSearchSelect
+                  <PeopleMultiSearchSelect
                     people={peopleOptions}
-                    selectedPersonId={selectedMeetingPersonId}
-                    onSelect={setSelectedMeetingPersonId}
+                    selectedPersonIds={selectedMeetingPersonIds}
+                    onChange={setSelectedMeetingPersonIds}
                     placeholder="Search by name, email, or phone..."
                     emptyText="No matching People profiles found."
                   />
@@ -1745,8 +2082,8 @@ ${transcriptText.trim()}`;
                   type="button"
                   variant="outline"
                   className="rounded-xl"
-                  onClick={addMeetingPersonSource}
-                  disabled={!selectedMeetingPersonId}
+                  onClick={addMeetingPeopleSources}
+                  disabled={selectedMeetingPersonIds.length === 0}
                 >
                   Add
                 </Button>
@@ -1777,180 +2114,38 @@ ${transcriptText.trim()}`;
                   Add
                 </Button>
               </div>
-            </div>
+            
+                {(meetingGroupSources.length > 0 || meetingFolderSources.length > 0) && (
+                  <div className="mt-3 flex flex-wrap gap-2" aria-label="Connected source pills">
+                    {meetingGroupSources.map((source) => (
+                      <Badge
+                        key={`group-pill-${source.id}`}
+                        variant="outline"
+                        className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted-foreground"
+                      >
+                        Group: {source.people_groups?.name || "Unnamed group"}
+                      </Badge>
+                    ))}
+
+                    {meetingFolderSources.map((source) => (
+                      <Badge
+                        key={`folder-pill-${source.id}`}
+                        variant="outline"
+                        className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted-foreground"
+                      >
+                        Folder: {source.people_group_folders?.name || "Unnamed folder"}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+</div>
           </div>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-              <p className="label-eyebrow">Sources</p>
-
-              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                {meetingGroupSources.length === 0 && meetingFolderSources.length === 0 && (
-                  <p>No group or folder sources yet.</p>
-                )}
-
-                {meetingGroupSources.map((source) => (
-                  <div key={`group-${source.id}`} className="rounded-xl border border-border/70 bg-card px-3 py-2">
-                    Group: {source.people_groups?.name || "Unnamed group"}
-                  </div>
-                ))}
-
-                {meetingFolderSources.map((source) => (
-                  <div key={`folder-${source.id}`} className="rounded-xl border border-border/70 bg-card px-3 py-2">
-                    Folder: {source.people_group_folders?.name || "Unnamed folder"}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-              <p className="label-eyebrow">Meeting people</p>
-
-              <div className="mt-3 max-h-52 space-y-2 overflow-auto text-sm">
-                {meetingPeople.length === 0 && (
-                  <p className="text-muted-foreground">No people added to this meeting yet.</p>
-                )}
-
-                {meetingPeople.map((meetingPerson) => {
-                  const person = Array.isArray(meetingPerson.people)
-                    ? meetingPerson.people[0]
-                    : meetingPerson.people;
-
-                  return (
-                    <div key={meetingPerson.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-3 py-2">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{person?.display_name || "Unknown person"}</p>
-                        {person?.email && (
-                          <p className="truncate text-xs text-muted-foreground">{person.email}</p>
-                        )}
-                      </div>
-
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Badge variant="secondary" className="rounded-full">
-                          {meetingPerson.status}
-                        </Badge>
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                          title="Remove from meeting"
-                          onClick={() => removeMeetingPersonFromMeeting(meetingPerson.person_id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          
         </Card>
           </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => setMeetingPeopleOpen(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-        {showActionPoints ? (
-          <Card className="p-5 border-border/70 bg-card shadow-card">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="label-eyebrow">Action Points</p>
-                <h2 className="mt-1 text-xl font-extrabold tracking-tight">Follow-up Tasks</h2>
-              </div>
-              <Badge variant="secondary" className="rounded-full">
-                {actions.length}
-              </Badge>
-            </div>
-
-            <form onSubmit={addAction} className="mb-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_320px_150px_auto]">
-              <Input
-                value={actionTitle}
-                onChange={(event) => setActionTitle(event.target.value)}
-                placeholder="Action point..."
-                className="border-border/70 bg-background"
-              />
-
-              <PeopleSearchSelect
-                people={meetingActionPeople}
-                selectedPersonId={selectedActionPersonId}
-                onSelect={(personId) => {
-                  setSelectedActionPersonId(personId);
-                  const person = meetingActionPeople.find((option) => option.id === personId);
-                  setAssignee(person?.display_name || "");
-                }}
-                placeholder="Search meeting people..."
-                emptyText="No matching meeting people found."
-                zIndexClass="z-20"
-                dropdownZIndexClass="z-30"
-              />
-
-              <Input
-                type="date"
-                value={due}
-                onChange={(event) => setDue(event.target.value)}
-                className="border-border/70 bg-background"
-              />
-
-              <Button type="submit" className="actsix-btn-primary rounded-xl">
-                <Plus className="h-4 w-4" />
-                Add
-              </Button>
-            </form>
-
-            <div className="space-y-2">
-              {actions.length === 0 && (
-                <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-                  No action points yet. Add follow-up tasks during or after the meeting.
-                </div>
-              )}
-
-              {actions.map((action) => (
-                <div
-                  key={action.id}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-3"
-                >
-                  <div>
-                    <div className="text-sm font-semibold">{action.title}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {action.assignee || "Unassigned"}
-                      {action.due ? ` · Due ${action.due}` : ""}
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeAction(action.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ) : (
-          <Card className="p-4 border-border/70 bg-muted/20 shadow-soft">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-brand-teal" />
-              Transcription and Action Points will appear on the day of the meeting.
-            </div>
-          </Card>
-        )}
-      </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-2xl rounded-2xl border-border/70 bg-card">
@@ -2000,14 +2195,6 @@ ${transcriptText.trim()}`;
               />
             </div>
 
-            <div>
-              <label className="label-eyebrow">Type</label>
-              <Input
-                value={editDraft.type || "General"}
-                onChange={(event) => setEditDraft({ ...editDraft, type: event.target.value })}
-                className="mt-2 border-border/70 bg-background"
-              />
-            </div>
           </div>
 
           <DialogFooter>
