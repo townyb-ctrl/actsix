@@ -331,7 +331,7 @@ const PeopleGroups = () => {
         subtitle="Create folders and custom people lists for Bible studies, ministries, teams, training, and care rhythms."
       />
 
-      <div className="px-8 pb-12 max-w-7xl space-y-6">
+      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
           <div className="space-y-4">
             <Card className="border-border/70 bg-card shadow-card p-5">

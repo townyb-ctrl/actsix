@@ -13,7 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { MeetingPeopleSection } from "@/components/meeting/MeetingPeopleSection";
+import {
+  MeetingPeopleHeaderActions,
+  MeetingPeopleSection,
+} from "@/components/meeting/MeetingPeopleSection";
 import {
   Command,
   CommandEmpty,
@@ -44,6 +47,8 @@ const EMPTY_MEETING = {
   location: "",
   notes: "",
 };
+
+const TRANSCRIBER_ENABLED = import.meta.env.VITE_ACTSIX_TRANSCRIBER_ENABLED === "true";
 
 type AgendaPoint = {
   id: string;
@@ -1208,6 +1213,8 @@ ${transcriptText.trim()}`;
     if (selectedActionPersonId) {
       await createNotificationForPerson({
         personId: selectedActionPersonId,
+        currentUserId: user.id,
+        actorPersonId: currentPerson?.id || null,
         title: "Meeting action point assigned",
         message: `You have been assigned: ${actionTitle.trim()}`,
         type: "assignment",
@@ -1400,7 +1407,7 @@ ${transcriptText.trim()}`;
         }
       `}</style>
 
-      <div className="px-8 pb-12 max-w-7xl space-y-6">
+      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft">
           <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
@@ -1549,7 +1556,7 @@ ${transcriptText.trim()}`;
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           {/* LEFT COLUMN: Minutes + Action Points */}
           <div className="space-y-5">
             {/* Minutes Card */}
@@ -1579,16 +1586,18 @@ ${transcriptText.trim()}`;
                       <FileText className="h-4 w-4 mr-1.5" />
                       Edit Agenda
                     </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal"
-                      onClick={() => setTranscriptOpen(true)}
-                    >
-                      <Mic className="h-4 w-4 mr-1.5" />
-                      Transcription
-                    </Button>
+                    {TRANSCRIBER_ENABLED && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal"
+                        onClick={() => setTranscriptOpen(true)}
+                      >
+                        <Mic className="h-4 w-4 mr-1.5" />
+                        Transcription
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1681,7 +1690,7 @@ ${transcriptText.trim()}`;
                   ref={minutesRef}
                   contentEditable
                   suppressContentEditableWarning
-                  className="minutes-document h-[26.25rem] overflow-y-auto cursor-text rounded-2xl border border-border/70 bg-background/70 p-5 text-sm leading-7 text-foreground outline-none transition focus:border-brand-teal/35 focus:bg-background focus:ring-2 focus:ring-brand-teal/15"
+                  className="minutes-document min-h-[26.25rem] h-[calc(100vh-25rem)] max-h-[58rem] overflow-y-auto cursor-text rounded-2xl border border-border/70 bg-background/70 p-5 text-sm leading-7 text-foreground outline-none transition focus:border-brand-teal/35 focus:bg-background focus:ring-2 focus:ring-brand-teal/15"
                   data-placeholder="Click here to add meeting notes, decisions, and minutes..."
                   dangerouslySetInnerHTML={{ __html: renderMinutesHtml(meeting.notes || "") }}
                   onKeyDown={(event) => {
@@ -1706,31 +1715,45 @@ ${transcriptText.trim()}`;
           </div>
 
           {/* RIGHT COLUMN: People + Action Points */}
-          <Card className="overflow-hidden border-border/70 bg-card shadow-card">
+          <Card className="overflow-hidden border-border/70 bg-card shadow-card lg:min-h-[calc(100vh-18rem)]">
             <div className="border-b border-border/70 bg-card px-4 pt-3">
-              <div className="flex items-end gap-5">
-                <button
-                  type="button"
-                  className={`border-b-2 pb-2 text-sm font-extrabold transition ${
-                    rightPanelTab === "people"
-                      ? "border-brand-teal text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setRightPanelTab("people")}
-                >
-                  Meeting People
-                </button>
-                <button
-                  type="button"
-                  className={`border-b-2 pb-2 text-sm font-extrabold transition ${
-                    rightPanelTab === "actions"
-                      ? "border-brand-teal text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setRightPanelTab("actions")}
-                >
-                  Meeting Actions
-                </button>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-end gap-5">
+                  <button
+                    type="button"
+                    className={`border-b-2 pb-2 text-sm font-extrabold transition ${
+                      rightPanelTab === "people"
+                        ? "border-brand-teal text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setRightPanelTab("people")}
+                  >
+                    Meeting People
+                  </button>
+                  <button
+                    type="button"
+                    className={`border-b-2 pb-2 text-sm font-extrabold transition ${
+                      rightPanelTab === "actions"
+                        ? "border-brand-teal text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setRightPanelTab("actions")}
+                  >
+                    Meeting Actions
+                  </button>
+                </div>
+
+                {rightPanelTab === "people" && (
+                  <div className="-mt-0.5 shrink-0 pb-2">
+                    <MeetingPeopleHeaderActions
+                      meetingPeopleCount={meetingPeople.length}
+                      inviteRecipientsCount={inviteRecipients.length}
+                      onInviteOpen={openInviteModal}
+                      onOpenPeopleDialog={() => setPeopleOpen(true)}
+                      onOpenMeetingPeopleDialog={() => setMeetingPeopleOpen(true)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1752,6 +1775,7 @@ ${transcriptText.trim()}`;
                 onOpenMeetingPeopleDialog={() => setMeetingPeopleOpen(true)}
                 onUpdateStatus={updateMeetingPersonStatus}
                 onRemoveMeetingPerson={removeMeetingPersonFromMeeting}
+                showHeaderActions={false}
               />
             ) : (
               <div>
@@ -1792,7 +1816,7 @@ ${transcriptText.trim()}`;
                     </div>
                   </form>
 
-                  <div className="max-h-[286px] space-y-2 overflow-y-auto pr-1">
+                  <div className="max-h-[calc(100vh-32rem)] min-h-[18rem] space-y-2 overflow-y-auto pr-1">
                     {actions.length === 0 && (
                       <div className="rounded-2xl border border-dashed border-border bg-background/50 p-4 text-sm text-muted-foreground">
                         No action points yet.
@@ -1830,7 +1854,7 @@ ${transcriptText.trim()}`;
         </div>
       </div>
 
-      {transcriptOpen && (
+      {TRANSCRIBER_ENABLED && transcriptOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
           <Card className="w-full max-w-4xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
             <div className="flex flex-wrap items-start justify-between gap-4 mb-6">

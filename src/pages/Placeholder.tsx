@@ -5,7 +5,7 @@ import { Construction } from "lucide-react";
 export const Placeholder = ({ title, subtitle, eyebrow }: { title: string; subtitle: string; eyebrow: string }) => (
   <div>
     <PageHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
-    <div className="px-8 pb-12 max-w-3xl">
+    <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
       <Card className="p-10 shadow-card border-border/70 bg-card text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
           <Construction className="h-5 w-5" />

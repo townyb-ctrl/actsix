@@ -11,8 +11,8 @@ export const PageHeader = ({
   subtitle?: string;
   actions?: ReactNode;
 }) => (
-  <div className="px-8 pt-6 pb-3">
-    <div className="max-w-7xl">
+  <div className="px-4 pt-6 pb-3 sm:px-6 xl:px-8 2xl:px-10">
+    <div className="w-full">
       {eyebrow && <div className="label-eyebrow mb-2">{eyebrow}</div>}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>

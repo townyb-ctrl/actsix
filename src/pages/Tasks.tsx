@@ -327,7 +327,7 @@ const Tasks = () => {
         subtitle="The next thing to do, in any context."
       />
 
-      <div className="px-8 -mt-1 pb-12 max-w-5xl space-y-4">
+      <div className="-mt-1 w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

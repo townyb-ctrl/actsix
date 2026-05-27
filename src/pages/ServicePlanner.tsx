@@ -26,7 +26,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { LottieIcon } from "@/components/lottie/LottieIcon";
 import emptyServicesAnimation from "@/assets/lottie/empty-services.json";
 import scheduleAnimation from "@/assets/lottie/schedule.json";
-import plusAnimation from "@/assets/lottie/plus.json";
 
 type ServiceType = {
   id: string;
@@ -768,7 +767,7 @@ const ServicePlanner = () => {
 
   return (
     <div>
-      <div className="px-8 pt-4 pb-12 max-w-7xl space-y-4">
+      <div className="w-full space-y-4 px-4 pb-12 pt-4 sm:px-6 xl:px-8 2xl:px-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="label-eyebrow">ACTSIX: Service Planning</p>

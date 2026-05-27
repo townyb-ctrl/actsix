@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
-  ClipboardList,
   Clock,
   FolderKanban,
   Inbox,
@@ -148,13 +147,6 @@ const TasksDashboard = () => {
       to: "/tasks/someday",
       count: counts.someday,
     },
-    {
-      title: "Review",
-      description: "Weekly review, recurring rhythms, and planning reset.",
-      icon: ClipboardList,
-      to: "/tasks/review",
-      count: 0,
-    },
   ];
 
   return (
@@ -165,7 +157,7 @@ const TasksDashboard = () => {
         subtitle="Capture, clarify, organize, and act within the ACTSIX Tasks module."
       />
 
-      <div className="px-8 pb-12 max-w-7xl space-y-8">
+      <div className="w-full space-y-8 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="p-6 border-border/70 bg-card shadow-card">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             <div>

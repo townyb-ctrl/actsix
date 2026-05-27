@@ -11,6 +11,7 @@ export type CurrentPerson = {
   first_name: string;
   last_name: string | null;
   display_name: string;
+  avatar_url: string | null;
   phone_number: string | null;
   email: string | null;
   whatsapp_enabled: boolean;

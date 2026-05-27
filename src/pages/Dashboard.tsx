@@ -76,7 +76,7 @@ const Dashboard = () => {
           subtitle="Create or join a church workspace before using ACTSIX."
         />
 
-        <div className="max-w-3xl px-8 pb-12">
+        <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
           <Card className="border-border/70 bg-card p-6 shadow-card">
             <h2 className="text-2xl font-extrabold tracking-tight">
               Connect ACTSIX to your church
@@ -108,7 +108,7 @@ const Dashboard = () => {
         }
       />
 
-      <div className="px-8 pb-12 max-w-7xl space-y-8">
+      <div className="w-full space-y-8 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="p-6 border-border/70 bg-card shadow-card">
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] items-start">
             <div>

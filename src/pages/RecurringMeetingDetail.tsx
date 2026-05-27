@@ -334,6 +334,7 @@ const RecurringMeetingDetail = () => {
     const notes = generateMinutesFromAgenda(regularAgenda);
 
     const payload = {
+      id: crypto.randomUUID(),
       user_id: user.id,
       title: series.title,
       meeting_date: occurrence.date,
@@ -388,7 +389,7 @@ const RecurringMeetingDetail = () => {
           subtitle="This recurring meeting could not be found."
         />
 
-        <div className="px-8 pb-12 max-w-3xl">
+        <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
           <Card className="p-8 border-border/70 bg-card shadow-card">
 </Card>
         </div>
@@ -404,7 +405,7 @@ const RecurringMeetingDetail = () => {
         subtitle="Manage regular attendees, regular agenda, and generated meetings."
       />
 
-      <div className="px-8 pb-12 max-w-7xl space-y-6">
+      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
 <Card className="p-5 border-border/70 bg-card shadow-card">
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">

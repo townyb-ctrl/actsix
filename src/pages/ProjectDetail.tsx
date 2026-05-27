@@ -623,7 +623,7 @@ const ProjectDetail = () => {
         subtitle={project.area || "General"}
       />
 
-      <div className="px-8 pb-12 max-w-7xl space-y-6">
+      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
 <Card className="border-border/70 bg-card shadow-card overflow-hidden">
           <div className="p-6 border-b border-border/70">
             <div className="flex items-start justify-between gap-4">

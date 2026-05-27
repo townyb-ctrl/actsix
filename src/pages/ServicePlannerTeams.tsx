@@ -180,7 +180,7 @@ const ServicePlannerTeams = () => {
 
   return (
     <div>
-      <div className="px-8 pt-8 pb-12 max-w-7xl space-y-4">
+      <div className="w-full space-y-4 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
         <div>
           <p className="label-eyebrow">ACTSIX: Service Planning</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">

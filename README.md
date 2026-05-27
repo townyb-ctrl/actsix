@@ -314,6 +314,10 @@ The long-term goal of ACTSIX is to become a unified ministry operating platform 
 
 ACTSIX is under active development.
 
+The **ACTSIX Alpha** scope is focused on Homebase, Tasks, Meetings, Service Planning, and People.
+
+The local meeting transcriber is intentionally held back from Alpha. It remains in the repository as experimental local tooling, but it is hidden from the app unless `VITE_ACTSIX_TRANSCRIBER_ENABLED="true"` is set.
+
 The **ACTSIX: Tasks** module is functional and continues to expand. The Homebase and module architecture are being shaped to support the broader ACTSIX family.
 
 ---

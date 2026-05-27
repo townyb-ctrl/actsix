@@ -109,6 +109,7 @@ export function MeetingPeopleSection({
   onOpenMeetingPeopleDialog,
   onUpdateStatus,
   onRemoveMeetingPerson,
+  showHeaderActions = true,
 }: {
   meetingPeople: MeetingPerson[];
   currentUserMeetingPerson: MeetingPerson | null;
@@ -126,72 +127,22 @@ export function MeetingPeopleSection({
   onOpenMeetingPeopleDialog: () => void;
   onUpdateStatus: (personId: string, status: string) => void;
   onRemoveMeetingPerson: (personId: string) => void;
+  showHeaderActions?: boolean;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <>
       <div aria-label="Meeting people main list">
-        <div className="border-b border-border/70 px-4 py-2.5">
-          <div className="flex items-center justify-end gap-3">
-            <div className="flex shrink-0 items-center gap-2">
-              <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-semibold uppercase">
-                {meetingPeople.length} people
-              </Badge>
-              <div className="relative">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 rounded-lg"
-                  onClick={() => setMenuOpen((open) => !open)}
-                  aria-label="People actions"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-
-                {menuOpen && (
-                  <div className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-xl border border-border/70 bg-card shadow-2xl">
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onOpenMeetingPeopleDialog();
-                      }}
-                    >
-                      <UsersRound className="h-4 w-4" />
-                      Edit people
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onOpenPeopleDialog();
-                      }}
-                    >
-                      <UsersRound className="h-4 w-4" />
-                      Attendance
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-45"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onInviteOpen();
-                      }}
-                      disabled={inviteRecipients.length === 0}
-                    >
-                      <Mail className="h-4 w-4" />
-                      Mark invites sent
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+        {showHeaderActions && (
+          <div className="border-b border-border/70 px-4 py-2.5">
+            <MeetingPeopleHeaderActions
+              meetingPeopleCount={meetingPeople.length}
+              inviteRecipientsCount={inviteRecipients.length}
+              onInviteOpen={onInviteOpen}
+              onOpenPeopleDialog={onOpenPeopleDialog}
+              onOpenMeetingPeopleDialog={onOpenMeetingPeopleDialog}
+            />
           </div>
-        </div>
+        )}
 
         <div className="px-4 py-2.5">
           {meetingPeople.length === 0 ? (
@@ -199,7 +150,7 @@ export function MeetingPeopleSection({
               No people have been added to this meeting yet. Click <span className="font-semibold text-foreground">Edit People</span> to add individuals, groups, or folders.
             </div>
           ) : (
-            <div className="max-h-[286px] space-y-1.5 overflow-y-auto pr-1">
+            <div className="max-h-[calc(100vh-25rem)] min-h-[18rem] space-y-1.5 overflow-y-auto pr-1">
               {meetingPeople.map((meetingPerson) => {
                 const personInfo = getMeetingPersonInfo(meetingPerson);
                 const roleLabels = [
@@ -363,5 +314,80 @@ export function MeetingPeopleSection({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export function MeetingPeopleHeaderActions({
+  meetingPeopleCount,
+  inviteRecipientsCount,
+  onInviteOpen,
+  onOpenPeopleDialog,
+  onOpenMeetingPeopleDialog,
+}: {
+  meetingPeopleCount: number;
+  inviteRecipientsCount: number;
+  onInviteOpen: () => void;
+  onOpenPeopleDialog: () => void;
+  onOpenMeetingPeopleDialog: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-semibold uppercase">
+        {meetingPeopleCount} people
+      </Badge>
+      <div className="relative">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-lg"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-label="People actions"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+
+        {menuOpen && (
+          <div className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-xl border border-border/70 bg-card shadow-2xl">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted"
+              onClick={() => {
+                setMenuOpen(false);
+                onOpenMeetingPeopleDialog();
+              }}
+            >
+              <UsersRound className="h-4 w-4" />
+              Edit people
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted"
+              onClick={() => {
+                setMenuOpen(false);
+                onOpenPeopleDialog();
+              }}
+            >
+              <UsersRound className="h-4 w-4" />
+              Attendance
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-45"
+              onClick={() => {
+                setMenuOpen(false);
+                onInviteOpen();
+              }}
+              disabled={inviteRecipientsCount === 0}
+            >
+              <Mail className="h-4 w-4" />
+              Mark invites sent
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

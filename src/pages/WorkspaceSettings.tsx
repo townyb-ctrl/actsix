@@ -132,7 +132,7 @@ const WorkspaceSettings = () => {
           subtitle="Create or join a workspace first."
         />
 
-        <div className="px-8 pb-12">
+        <div className="px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
           <Card className="max-w-2xl border-border/70 bg-card p-6 shadow-card">
             <p className="text-sm text-muted-foreground">
               You are not connected to a church workspace yet.
@@ -151,7 +151,7 @@ const WorkspaceSettings = () => {
         subtitle="Manage your church workspace, join access, and member roles."
       />
 
-      <div className="grid max-w-7xl gap-6 px-8 pb-12 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid w-full gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] xl:px-8 2xl:px-10">
         <div className="space-y-6">
           <Card className="border-border/70 bg-card p-6 shadow-card">
             <div className="flex items-start gap-3">

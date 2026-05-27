@@ -150,7 +150,7 @@ const Meetings = () => {
         subtitle="Plan agendas, record notes, and track action points."
       />
 
-      <div className="px-8 max-w-7xl space-y-6">
+      <div className="w-full space-y-6 px-4 sm:px-6 xl:px-8 2xl:px-10">
         <div className="grid gap-px overflow-hidden rounded-2xl border border-border/70 bg-border/70 shadow-card md:grid-cols-3">
           {[
             ["Total meetings", totalCount],

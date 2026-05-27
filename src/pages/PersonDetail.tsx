@@ -479,7 +479,7 @@ const PersonDetail = () => {
 
   if (loading) {
     return (
-      <div className="px-8 py-12">
+      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
         <p className="text-sm text-muted-foreground">Loading person...</p>
       </div>
     );
@@ -487,7 +487,7 @@ const PersonDetail = () => {
 
   if (!person) {
     return (
-      <div className="px-8 py-12">
+      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="border-border/70 bg-card p-6 shadow-card">
           <p className="text-sm text-muted-foreground">Person not found.</p>
         </Card>
@@ -496,7 +496,7 @@ const PersonDetail = () => {
   }
 
   return (
-    <div className="px-8 pt-8 pb-12 max-w-7xl space-y-5">
+    <div className="w-full space-y-5 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
       <Card className="border-border/70 bg-card shadow-card overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5">
           <div className="flex min-w-0 items-start gap-4">

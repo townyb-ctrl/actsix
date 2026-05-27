@@ -124,7 +124,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
     <div>
       <PageHeader eyebrow={cfg.eyebrow} title={cfg.title} subtitle={cfg.subtitle} />
 
-      <div className="px-8 pb-12 max-w-4xl space-y-6">
+      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="p-3 shadow-card border-border/70 bg-card">
           <form onSubmit={add} className="flex gap-2 flex-wrap">
             <Input

@@ -516,7 +516,7 @@ const Projects = () => {
         subtitle="Track progress. Advance the mission."
       />
 
-      <div className="px-8 pb-12 space-y-6">
+      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
 
         <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
           <Card className="p-5 border-border/70 bg-card shadow-card">
@@ -572,7 +572,7 @@ const Projects = () => {
           </Card>
         </div>
 
-        <div className="space-y-3 max-w-7xl">
+        <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -646,7 +646,7 @@ const Projects = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl">
+        <div>
           <Card className="border-border/70 bg-card shadow-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

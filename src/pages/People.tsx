@@ -528,6 +528,7 @@ Once your account is active, ACTSIX will connect you to your People profile auto
         first_name: firstName,
         last_name: lastName || null,
         display_name: displayName || firstName,
+        avatar_url: null,
         phone_number: normalizePhoneForStorage(
           row.phone_number ||
             row.phone ||
@@ -574,7 +575,7 @@ Once your account is active, ACTSIX will connect you to your People profile auto
       return;
     }
 
-    const existingByEmail = new Map(
+    const existingByEmail = new Map<string, Person>(
       (existingPeople || [])
         .filter((person: Person) => person.email)
         .map((person: Person) => [person.email!.trim().toLowerCase(), person])
@@ -588,7 +589,7 @@ Once your account is active, ACTSIX will connect you to your People profile auto
 
       if (emailKey && existingByEmail.has(emailKey)) {
         rowsToUpdate.push({
-          existing: existingByEmail.get(emailKey),
+          existing: existingByEmail.get(emailKey)!,
           row,
         });
         return;
@@ -728,7 +729,7 @@ ${row.notes}`
         whatsapp_enabled: false,
         notes: notes.trim() || null,
       })
-      .select("first_name, last_name, display_name, phone_number, email, whatsapp_enabled, notes")
+      .select("first_name, last_name, display_name, avatar_url, phone_number, email, gender, membership_status, whatsapp_enabled, notes")
       .single();
 
     if (error) {
@@ -747,8 +748,11 @@ ${row.notes}`
           first_name: createdPerson.first_name,
           last_name: createdPerson.last_name,
           display_name: createdPerson.display_name,
+          avatar_url: createdPerson.avatar_url,
           phone_number: createdPerson.phone_number,
           email: createdPerson.email,
+          gender: createdPerson.gender,
+          membership_status: createdPerson.membership_status,
           whatsapp_enabled: createdPerson.whatsapp_enabled,
           notes: createdPerson.notes,
         },
@@ -769,7 +773,7 @@ ${row.notes}`
   }, [user, currentPerson?.workspace_id]);
 
   return (
-    <div className="px-8 pt-8 pb-12 max-w-7xl space-y-5">
+    <div className="w-full space-y-5 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="label-eyebrow">ACTSIX: People</p>

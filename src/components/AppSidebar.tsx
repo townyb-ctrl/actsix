@@ -8,13 +8,11 @@
   Sparkles,
   RotateCcw,
   ClipboardCheck,
-  Calendar,
   Users,
   BarChart3,
   Check,
   ChevronsUpDown,
   CalendarDays,
-  Repeat,
   Settings as SettingsIcon,
   Music,
 } from "lucide-react";
@@ -35,7 +33,6 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "./Logo";
-import { NotificationBell } from "./NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { isAlphaMode, isModuleEnabled, getReleaseLabel } from "@/lib/releaseMode";
@@ -61,10 +58,6 @@ const taskItems: Item[] = [
   { title: "Projects", url: "/tasks/projects", icon: FolderKanban, badgeKey: "projects" },
   { title: "Waiting For", url: "/tasks/waiting", icon: Clock, badgeKey: "waiting_items" },
   { title: "Someday / Maybe", url: "/tasks/someday", icon: Sparkles, badgeKey: "someday_items" },
-  { title: "Recurring", url: "/tasks/recurring", icon: RotateCcw },
-  { title: "Review", url: "/tasks/review", icon: ClipboardCheck, badgeKey: "review" },
-  { title: "Calendar", url: "/tasks/calendar", icon: Calendar },
-  { title: "Meetups", url: "/tasks/meetups", icon: Users },
 ];
 
 const servicePlannerItems: Item[] = [
@@ -361,10 +354,6 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupContent>
-            <div className={collapsed ? "mb-2 flex justify-center px-0" : "mb-2 px-1.5"}>
-              <NotificationBell collapsed={collapsed} />
-            </div>
-
             <SidebarMenu className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}>
               <SidebarMenuItem>
                 <SidebarMenuButton

@@ -874,6 +874,8 @@ const ServiceDetail = () => {
     if (nextPersonId) {
       await createNotificationForPerson({
         personId: nextPersonId,
+        currentUserId: user.id,
+        actorPersonId: currentPerson?.id || null,
         title: "Service assignment updated",
         message: `You have been assigned to ${roleName.trim()} for ${service?.title || "a service"}.`,
         type: "assignment",
@@ -1108,7 +1110,7 @@ const ServiceDetail = () => {
 
   if (loading) {
     return (
-      <div className="px-8 py-12">
+      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
         <p className="text-sm text-muted-foreground">Loading service...</p>
       </div>
     );
@@ -1116,7 +1118,7 @@ const ServiceDetail = () => {
 
   if (!service) {
     return (
-      <div className="px-8 py-12">
+      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="p-6 border-border/70 bg-card shadow-card">
           <p className="text-sm text-muted-foreground">Service not found.</p>
 </Card>
@@ -1126,7 +1128,7 @@ const ServiceDetail = () => {
 
   return (
     <div>
-      <div className="px-8 pt-8 pb-12 max-w-7xl space-y-5">
+      <div className="w-full space-y-5 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
 <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="label-eyebrow">ACTSIX: Service Planning</p>
