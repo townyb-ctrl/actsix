@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, Navigate, Link, useLocation, useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
   CalendarDays,
+  HelpCircle,
   Home,
   ListChecks,
   LogOut,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { GuidedTour, startGuidedTour } from "./GuidedTour";
 import actsixIconWhite from "@/assets/branding/actsix-icon-white.png";
 
 const getBackTarget = (pathname: string) => {
@@ -124,6 +126,16 @@ export default function AppLayout() {
     },
   ];
   const hexagonClipPath = "polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)";
+  const moduleMenuEase = "cubic-bezier(0.16, 1, 0.3, 1)";
+
+  const handleTourStepChange = useCallback((step: { selector: string } | null) => {
+    if (!step) return;
+
+    setModuleMenuOpen(step.selector === '[data-tour="module-menu"]');
+    if (step.selector !== '[data-tour="account-menu"]') {
+      setProfileMenuOpen(false);
+    }
+  }, []);
 
   if (loading)
     return (
@@ -164,7 +176,8 @@ export default function AppLayout() {
             >
               <button
                 type="button"
-                className="group pointer-events-auto absolute left-1/2 top-1/2 z-20 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center outline-none opacity-90 ring-brand-teal/25 transition hover:opacity-100 focus-visible:ring-4"
+                data-tour="module-menu"
+                className="group pointer-events-auto absolute left-1/2 top-1/2 z-20 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center outline-none opacity-90 ring-brand-teal/25 transition-opacity hover:opacity-100 focus-visible:ring-4"
                 onClick={() => {
                   setModuleMenuOpen(false);
                   navigate("/");
@@ -176,26 +189,45 @@ export default function AppLayout() {
                 <img
                   src={actsixIconWhite}
                   alt="ACTSIX"
-                  className={`absolute h-20 w-20 object-contain brightness-0 transition duration-200 ${
-                    moduleMenuOpen ? "scale-75 opacity-0" : "scale-100 opacity-100"
+                  className={`absolute h-20 w-20 object-contain brightness-0 transition-[filter,opacity,transform] duration-500 ${
+                    moduleMenuOpen
+                      ? "scale-[0.9] rotate-[-4deg] opacity-0 blur-[1px]"
+                      : "scale-100 rotate-0 opacity-100 blur-0"
                   }`}
+                  style={{ transitionTimingFunction: moduleMenuEase }}
                 />
                 <span
-                  className={`absolute flex h-14 w-14 items-center justify-center border border-black bg-black text-white shadow-soft transition duration-200 ${
-                    moduleMenuOpen ? "scale-100 opacity-100" : "scale-75 opacity-0"
+                  className={`absolute flex h-14 w-14 items-center justify-center border border-black bg-black text-white shadow-soft transition-[opacity,transform] duration-500 ${
+                    moduleMenuOpen
+                      ? "scale-100 rotate-0 opacity-100"
+                      : "scale-[0.88] rotate-[4deg] opacity-0"
                   }`}
-                  style={{ clipPath: hexagonClipPath }}
+                  style={{
+                    clipPath: hexagonClipPath,
+                    transitionTimingFunction: moduleMenuEase,
+                  }}
                 >
-                  <Home className="h-6 w-6" />
+                  <Home
+                    className={`h-6 w-6 transition-[opacity,stroke-dashoffset,transform] duration-500 ${
+                      moduleMenuOpen
+                        ? "scale-100 opacity-100 [stroke-dashoffset:0]"
+                        : "scale-90 opacity-0 [stroke-dashoffset:24]"
+                    }`}
+                    style={{
+                      strokeDasharray: 24,
+                      transitionTimingFunction: moduleMenuEase,
+                    }}
+                  />
                 </span>
               </button>
 
               <div
-                className={`absolute inset-0 transition duration-200 ease-out ${
+                className={`absolute inset-0 transition-opacity duration-500 ${
                   moduleMenuOpen
                     ? "pointer-events-auto opacity-100"
                     : "pointer-events-none opacity-0"
                 }`}
+                style={{ transitionTimingFunction: moduleMenuEase }}
                 aria-hidden={!moduleMenuOpen}
               >
                 <div className="relative h-full w-full">
@@ -205,8 +237,8 @@ export default function AppLayout() {
                     const distanceFromHome = Math.abs(foldPosition);
                     const openOffset =
                       foldPosition < 0
-                        ? `clamp(-10rem, ${foldPosition * 6}rem, -4.75rem)`
-                        : `clamp(4.75rem, ${foldPosition * 6}rem, 10rem)`;
+                        ? `clamp(-8.25rem, ${foldPosition * 4.5}rem, -4.5rem)`
+                        : `clamp(4.5rem, ${foldPosition * 4.5}rem, 8.25rem)`;
                     const active =
                       location.pathname === item.to ||
                       location.pathname.startsWith(`${item.to}/`);
@@ -216,7 +248,7 @@ export default function AppLayout() {
                         key={item.to}
                         type="button"
                         title={item.title}
-                        className={`group absolute left-1/2 top-1/2 flex h-12 w-12 items-center justify-center drop-shadow-sm transition-all duration-300 ease-out ${
+                        className={`group absolute left-1/2 top-1/2 flex h-12 w-12 items-center justify-center drop-shadow-sm transition-[opacity,transform] [transition-duration:560ms] ${
                           active
                             ? "text-brand-teal"
                             : "text-foreground hover:text-brand-teal"
@@ -224,11 +256,13 @@ export default function AppLayout() {
                         style={{
                           opacity: moduleMenuOpen ? 1 : 0,
                           transform: moduleMenuOpen
-                            ? `translate(calc(-50% + ${openOffset}), -50%) scale(1)`
-                            : "translate(-50%, -50%) scale(0.56)",
+                            ? `translate3d(calc(-50% + ${openOffset}), -50%, 0) scale(1)`
+                            : "translate3d(-50%, -50%, 0) scale(0.84)",
                           transitionDelay: moduleMenuOpen
-                            ? `${distanceFromHome * 85}ms`
-                            : `${(3 - distanceFromHome) * 28}ms`,
+                            ? `${distanceFromHome * 45}ms`
+                            : `${(3 - distanceFromHome) * 35}ms`,
+                          transitionTimingFunction: moduleMenuEase,
+                          willChange: "transform, opacity",
                         }}
                         aria-label={`Go to ${item.title}`}
                         onClick={() => {
@@ -259,6 +293,7 @@ export default function AppLayout() {
                   asChild
                   size="sm"
                   variant="outline"
+                  data-tour="quick-capture"
                   className="gap-1.5 rounded-full border-brand-teal/35 bg-brand-teal/10 px-3 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal sm:px-4"
                 >
                   <Link to="/tasks/inbox">
@@ -268,11 +303,14 @@ export default function AppLayout() {
                 </Button>
               )}
 
-              <NotificationBell collapsed tone="topbar" />
+              <div data-tour="notifications">
+                <NotificationBell collapsed tone="topbar" />
+              </div>
 
               <div ref={profileMenuRef} className="relative">
                 <button
                   type="button"
+                  data-tour="account-menu"
                   className="flex items-center gap-2 rounded-full border border-border/70 bg-card py-1 pl-1 pr-3 text-sm font-bold text-foreground shadow-soft outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
                   onClick={() => setProfileMenuOpen((open) => !open)}
                   title="Open account menu"
@@ -318,6 +356,18 @@ export default function AppLayout() {
 
                     <button
                       type="button"
+                      className="flex w-full items-center gap-3 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-brand-teal/5 hover:text-brand-teal"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        startGuidedTour();
+                      }}
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                      Start Tutorial
+                    </button>
+
+                    <button
+                      type="button"
                       className="flex w-full items-center gap-3 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold text-destructive transition hover:bg-destructive/10"
                       onClick={() => {
                         setProfileMenuOpen(false);
@@ -336,6 +386,10 @@ export default function AppLayout() {
           <main className="flex-1">
             <Outlet />
           </main>
+
+          <GuidedTour
+            onStepChange={handleTourStepChange}
+          />
         </div>
       </div>
     </SidebarProvider>

@@ -3,27 +3,21 @@
   Inbox,
   ListChecks,
   FolderKanban,
-  House,
   Clock,
   Sparkles,
   RotateCcw,
-  ClipboardCheck,
   Users,
-  BarChart3,
-  Check,
-  ChevronsUpDown,
   CalendarDays,
   Settings as SettingsIcon,
   Music,
 } from "lucide-react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -71,25 +65,12 @@ const peopleItems: Item[] = [
   { title: "Groups", url: "/people/groups", icon: FolderKanban },
 ];
 
-const workspaceItems = [
-  { title: "Home", url: "/", icon: House, disabled: false, moduleKey: "home" },
-  { title: "ACTSIX: Tasks", url: "/tasks", icon: ListChecks, disabled: false, moduleKey: "tasks" },
-  { title: "ACTSIX: Meetings", url: "/meetings", icon: CalendarDays, disabled: false, moduleKey: "meetings" },
-  { title: "ACTSIX: Service Planner", url: "/service-planner", icon: Music, disabled: false, moduleKey: "service_planner" },
-  { title: "ACTSIX: People", url: "/people", icon: Users, disabled: false, moduleKey: "people" },
-  { title: "Sermon Hub", url: "/sermon-hub", icon: Sparkles, disabled: false, moduleKey: "sermon_hub" },
-  { title: "Resources", url: "/resources", icon: ClipboardCheck, disabled: false, moduleKey: "resources" },
-  { title: "Media Tools", url: "/media", icon: BarChart3, disabled: false, moduleKey: "media" },
-];
-
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { workspace, role } = useCurrentWorkspace();
-  const [workspaceOpen, setWorkspaceOpen] = useState(false);
 
   const inTasksModule = pathname === "/tasks" || pathname.startsWith("/tasks/");
   const inMeetingsModule = pathname === "/meetings" || pathname.startsWith("/meetings/");
@@ -109,25 +90,6 @@ export function AppSidebar() {
     item.moduleKey ? isModuleEnabled(item.moduleKey as any) : true
   );
 
-  const visibleWorkspaceItems = workspaceItems.filter((item) =>
-    item.moduleKey ? isModuleEnabled(item.moduleKey as any) : true
-  );
-
-  const moduleValue = inPeopleModule
-    ? "/people"
-    : inServicePlannerModule
-      ? "/service-planner"
-      : inMeetingsModule
-      ? "/meetings"
-      : inTasksModule
-        ? "/tasks"
-        : "/";
-
-  const selectedWorkspace =
-    visibleWorkspaceItems.find((item) => item.url === moduleValue) || visibleWorkspaceItems[0];
-
-  const SelectedWorkspaceIcon = selectedWorkspace.icon;
-
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
 
@@ -139,10 +101,6 @@ export function AppSidebar() {
     if (p === "/people") return pathname === "/people";
     return pathname.startsWith(p);
   };
-
-  useEffect(() => {
-    setWorkspaceOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;
@@ -211,109 +169,17 @@ export function AppSidebar() {
 
       <SidebarContent className="bg-transparent">
         <SidebarGroup>
-
           <SidebarGroupContent>
-            {moduleValue !== "/" && (
-              <>
-                <div className={collapsed ? "mb-3 flex justify-center px-0" : "px-1.5 mb-3"}>
-                  {!collapsed ? (
-                    <div className="px-0">
-                      <label className="mb-1.5 block px-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/40">
-                        Workspace
-                      </label>
-
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className="grid h-11 w-full grid-cols-1 rounded-xl border border-sidebar-border bg-sidebar px-3 text-left text-sidebar-foreground outline-none transition hover:bg-sidebar-accent/45 focus:ring-2 focus:ring-sidebar-ring"
-                          onClick={() => setWorkspaceOpen((open) => !open)}
-                        >
-                          <span className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 pr-7">
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-teal-bright">
-                              <SelectedWorkspaceIcon className="h-3.5 w-3.5" />
-                            </span>
-                            <span className="block truncate text-sm font-bold">
-                              {selectedWorkspace.title}
-                            </span>
-                          </span>
-
-                          <ChevronsUpDown className="col-start-1 row-start-1 h-4 w-4 self-center justify-self-end text-sidebar-foreground/45" />
-                        </button>
-
-                        {workspaceOpen && (
-                          <div className="absolute left-0 right-0 top-12 z-50 max-h-80 overflow-auto rounded-2xl border border-sidebar-border bg-sidebar p-1.5 shadow-xl">
-                            {visibleWorkspaceItems.map((item) => {
-                              const active = item.url === moduleValue;
-                              const WorkspaceIcon = item.icon;
-
-                              return (
-                                <button
-                                  key={item.url}
-                                  type="button"
-                                  disabled={item.disabled}
-                                  className={`group flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition ${
-                                    active
-                                      ? "bg-sidebar-accent text-sidebar-foreground"
-                                      : item.disabled
-                                        ? "cursor-not-allowed text-sidebar-foreground/30"
-                                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-                                  }`}
-                                  onClick={() => {
-                                    if (item.disabled) return;
-                                    setWorkspaceOpen(false);
-                                    navigate(item.url);
-                                  }}
-                                >
-                                  <span
-                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                                      active
-                                        ? "bg-brand-teal/20 text-brand-teal-bright"
-                                        : "bg-sidebar-accent/35 text-sidebar-foreground/55"
-                                    }`}
-                                  >
-                                    <WorkspaceIcon className="h-3.5 w-3.5" />
-                                  </span>
-
-                                  <span className="min-w-0 flex-1 truncate text-sm font-bold">
-                                    {item.title}
-                                  </span>
-
-                                  {active && (
-                                    <Check className="h-4 w-4 shrink-0 text-brand-teal-bright" />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => navigate("/")}
-                      title="Go to Homebase"
-                      aria-label="Go to Homebase"
-                      className="flex h-11 w-11 items-center justify-center rounded-xl bg-sidebar-accent/60 p-0 text-sidebar-foreground hover:bg-sidebar-accent"
-                    >
-                      <House className="h-5 w-5 shrink-0" />
-                    </button>
-                  )}
-                </div>
-
-                {!collapsed && (
-                  <div className="mx-3 mb-3 border-t border-sidebar-border/70" />
-                )}
-              </>
-            )}
-
             {!collapsed && isAlphaMode && (
               <div className="mx-1.5 mb-3 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal-bright">
                 {getReleaseLabel()} Mode
               </div>
             )}
 
-            <SidebarMenu className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}>
+            <SidebarMenu
+              data-tour="sidebar-primary-nav"
+              className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}
+            >
               {items.map((item) => {
                 const active = isActive(item.url);
 
