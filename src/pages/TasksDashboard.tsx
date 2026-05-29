@@ -15,7 +15,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CompactTaskRow from "@/components/CompactTaskRow";
-import { syncProjectStats } from "@/lib/syncProjectStats";
+import TaskEditorModal from "@/components/TaskEditorModal";
+import { QuickCaptureDialog } from "@/components/QuickCaptureDialog";
+import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
 import { toast } from "sonner";
 
 const priorityWeight: Record<string, number> = {
@@ -37,6 +39,9 @@ const TasksDashboard = () => {
   });
 
   const [tasks, setTasks] = useState<any[]>([]);
+  const [editingTask, setEditingTask] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -111,6 +116,46 @@ const TasksDashboard = () => {
     load();
   };
 
+  const saveTask = async () => {
+    if (!editingTask) return;
+
+    const previousProject = tasks.find((task) => task.id === editingTask.id)?.project || "";
+    setSaving(true);
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: editingTask.title || "",
+        notes: editingTask.notes || "",
+        project: editingTask.project || "",
+        context: editingTask.context || "General",
+        priority: editingTask.priority || "Medium",
+        energy: editingTask.energy || "Medium",
+        minutes: Number(editingTask.minutes) || 15,
+        due: editingTask.due || null,
+        tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
+        assigned_person_id: editingTask.assigned_person_id || null,
+        complete: Boolean(editingTask.complete),
+        completed_at: editingTask.complete
+          ? editingTask.completed_at || new Date().toISOString()
+          : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", editingTask.id);
+
+    setSaving(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    toast.success("Task updated");
+    setEditingTask(null);
+    load();
+  };
+
   const taskAreas = [
     {
       title: "Inbox",
@@ -177,8 +222,12 @@ const TasksDashboard = () => {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button asChild className="actsix-btn-primary rounded-xl">
-                <Link to="/tasks/inbox">Quick Capture</Link>
+              <Button
+                type="button"
+                className="actsix-btn-primary rounded-xl"
+                onClick={() => setQuickCaptureOpen(true)}
+              >
+                Quick Capture
               </Button>
 
               <Button asChild variant="outline" className="rounded-xl">
@@ -243,6 +292,7 @@ const TasksDashboard = () => {
                   key={task.id}
                   task={task}
                   onToggle={toggleTask}
+                  onEdit={(task) => setEditingTask({ ...task })}
                 />
               ))}
             </div>
@@ -283,6 +333,21 @@ const TasksDashboard = () => {
           </div>
         </div>
       </div>
+
+      <TaskEditorModal
+        task={editingTask}
+        saving={saving}
+        eyebrow="Edit Next Action"
+        description="Select a project and context from your ACTSIX lists."
+        onChange={setEditingTask}
+        onClose={() => setEditingTask(null)}
+        onSave={saveTask}
+        onRefreshOptions={load}
+      />
+      <QuickCaptureDialog
+        open={quickCaptureOpen}
+        onOpenChange={setQuickCaptureOpen}
+      />
     </div>
   );
 };

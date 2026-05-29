@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Outlet, Navigate, Link, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,9 @@ import {
 import { NotificationBell } from "./NotificationBell";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { GuidedTour, startGuidedTour } from "./GuidedTour";
+import { FeedbackBubble } from "./FeedbackBubble";
+import { QuickCaptureDialog } from "./QuickCaptureDialog";
+import actsixLogo from "@/assets/actsix-logo.png";
 import actsixIconWhite from "@/assets/branding/actsix-icon-white.png";
 
 const getBackTarget = (pathname: string) => {
@@ -58,6 +61,7 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [moduleMenuOpen, setModuleMenuOpen] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const moduleMenuRef = useRef<HTMLDivElement | null>(null);
   const backTarget = getBackTarget(location.pathname);
@@ -126,12 +130,12 @@ export default function AppLayout() {
     },
   ];
   const hexagonClipPath = "polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)";
-  const moduleMenuEase = "cubic-bezier(0.16, 1, 0.3, 1)";
+  const moduleMenuEase = "cubic-bezier(0.22, 1, 0.36, 1)";
 
   const handleTourStepChange = useCallback((step: { selector: string } | null) => {
     if (!step) return;
 
-    setModuleMenuOpen(step.selector === '[data-tour="module-menu"]');
+    setModuleMenuOpen(false);
     if (step.selector !== '[data-tour="account-menu"]') {
       setProfileMenuOpen(false);
     }
@@ -186,36 +190,54 @@ export default function AppLayout() {
                 aria-label="Go home"
                 aria-expanded={moduleMenuOpen}
               >
-                <img
-                  src={actsixIconWhite}
-                  alt="ACTSIX"
-                  className={`absolute h-20 w-20 object-contain brightness-0 transition-[filter,opacity,transform] duration-500 ${
-                    moduleMenuOpen
-                      ? "scale-[0.9] rotate-[-4deg] opacity-0 blur-[1px]"
-                      : "scale-100 rotate-0 opacity-100 blur-0"
-                  }`}
-                  style={{ transitionTimingFunction: moduleMenuEase }}
-                />
                 <span
-                  className={`absolute flex h-14 w-14 items-center justify-center border border-black bg-black text-white shadow-soft transition-[opacity,transform] duration-500 ${
+                  className={`absolute h-16 w-16 border border-black bg-black shadow-soft transition-[filter,opacity,transform] [transition-duration:780ms] ${
                     moduleMenuOpen
-                      ? "scale-100 rotate-0 opacity-100"
-                      : "scale-[0.88] rotate-[4deg] opacity-0"
+                      ? "scale-100 opacity-100 blur-0"
+                      : "scale-[1.22] opacity-0 blur-[4px]"
                   }`}
                   style={{
                     clipPath: hexagonClipPath,
                     transitionTimingFunction: moduleMenuEase,
+                    willChange: "transform, opacity, filter",
+                  }}
+                />
+                <img
+                  src={actsixIconWhite}
+                  alt="ACTSIX"
+                  className={`absolute h-20 w-20 transform-gpu object-contain brightness-0 transition-[filter,opacity,transform] [transition-duration:780ms] ${
+                    moduleMenuOpen
+                      ? "scale-[0.52] opacity-0 blur-[2px]"
+                      : "scale-100 opacity-100 blur-0"
+                  }`}
+                  style={{
+                    transitionTimingFunction: moduleMenuEase,
+                    willChange: "transform, opacity, filter",
+                  }}
+                />
+                <span
+                  className={`absolute flex h-16 w-16 transform-gpu items-center justify-center text-white transition-[opacity,transform] [transition-duration:780ms] ${
+                    moduleMenuOpen
+                      ? "scale-100 opacity-100"
+                      : "scale-[0.68] opacity-0"
+                  }`}
+                  style={{
+                    clipPath: hexagonClipPath,
+                    transitionTimingFunction: moduleMenuEase,
+                    willChange: "transform, opacity",
                   }}
                 >
                   <Home
-                    className={`h-6 w-6 transition-[opacity,stroke-dashoffset,transform] duration-500 ${
+                    className={`h-6 w-6 transition-[opacity,stroke-dashoffset,transform] [transition-duration:820ms] ${
                       moduleMenuOpen
                         ? "scale-100 opacity-100 [stroke-dashoffset:0]"
-                        : "scale-90 opacity-0 [stroke-dashoffset:24]"
+                        : "scale-[0.82] opacity-0 [stroke-dashoffset:42]"
                     }`}
                     style={{
-                      strokeDasharray: 24,
+                      strokeDasharray: 42,
                       transitionTimingFunction: moduleMenuEase,
+                      transitionDelay: moduleMenuOpen ? "90ms" : "0ms",
+                      willChange: "transform, opacity, stroke-dashoffset",
                     }}
                   />
                 </span>
@@ -288,20 +310,23 @@ export default function AppLayout() {
             </div>
 
             <div className="ml-auto flex min-w-0 items-center gap-2">
-              {inTasksArea && (
-                <Button
-                  asChild
-                  size="sm"
-                  variant="outline"
-                  data-tour="quick-capture"
-                  className="gap-1.5 rounded-full border-brand-teal/35 bg-brand-teal/10 px-3 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal sm:px-4"
-                >
-                  <Link to="/tasks/inbox">
-                    <Zap className="h-3.5 w-3.5 shrink-0" />
-                    <span className="hidden sm:inline">Quick Capture</span>
-                  </Link>
-                </Button>
-              )}
+              <Button
+                type="button"
+                size={inTasksArea ? "sm" : "icon"}
+                variant="outline"
+                data-tour="quick-capture"
+                className={
+                  inTasksArea
+                    ? "gap-1.5 rounded-full border-brand-teal/35 bg-brand-teal/10 px-3 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal sm:px-4"
+                    : "h-9 w-9 rounded-full border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white"
+                }
+                onClick={() => setQuickCaptureOpen(true)}
+                title="Quick Capture"
+                aria-label="Quick Capture"
+              >
+                <Zap className={inTasksArea ? "h-3.5 w-3.5 shrink-0" : "h-[18px] w-[18px] shrink-0"} />
+                {inTasksArea && <span className="hidden sm:inline">Quick Capture</span>}
+              </Button>
 
               <div data-tour="notifications">
                 <NotificationBell collapsed tone="topbar" />
@@ -311,7 +336,7 @@ export default function AppLayout() {
                 <button
                   type="button"
                   data-tour="account-menu"
-                  className="flex items-center gap-2 rounded-full border border-border/70 bg-card py-1 pl-1 pr-3 text-sm font-bold text-foreground shadow-soft outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-card p-1 text-foreground shadow-soft outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
                   onClick={() => setProfileMenuOpen((open) => !open)}
                   title="Open account menu"
                   aria-label="Open account menu"
@@ -323,9 +348,6 @@ export default function AppLayout() {
                     size="md"
                     className="ring-1 ring-border"
                   />
-                  <span className="hidden max-w-36 truncate sm:inline">
-                    {accountName}
-                  </span>
                 </button>
 
                 {profileMenuOpen && (
@@ -387,9 +409,20 @@ export default function AppLayout() {
             <Outlet />
           </main>
 
+          <footer className="flex min-h-16 items-center justify-center border-t border-border/70 bg-background/85 px-4 py-3 text-sm text-muted-foreground backdrop-blur sm:px-6 xl:px-8 2xl:px-10">
+            <div className="flex items-center justify-center gap-3 text-center">
+              <img src={actsixLogo} alt="ACTSIX" className="h-11 w-auto object-contain brightness-0" />
+            </div>
+          </footer>
+
           <GuidedTour
             onStepChange={handleTourStepChange}
           />
+          <QuickCaptureDialog
+            open={quickCaptureOpen}
+            onOpenChange={setQuickCaptureOpen}
+          />
+          <FeedbackBubble />
         </div>
       </div>
     </SidebarProvider>

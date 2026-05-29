@@ -169,17 +169,14 @@ export function AppSidebar() {
 
       <SidebarContent className="bg-transparent">
         <SidebarGroup>
-          <SidebarGroupContent>
+          <SidebarGroupContent data-tour="sidebar-primary-nav">
             {!collapsed && isAlphaMode && (
               <div className="mx-1.5 mb-3 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal-bright">
                 {getReleaseLabel()} Mode
               </div>
             )}
 
-            <SidebarMenu
-              data-tour="sidebar-primary-nav"
-              className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}
-            >
+            <SidebarMenu className={collapsed ? "items-center gap-2 px-0" : "gap-1 px-1.5"}>
               {items.map((item) => {
                 const active = isActive(item.url);
 

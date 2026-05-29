@@ -47,19 +47,40 @@ const CompactTaskRow = ({
   const context = task.context || "General";
   const priority = task.priority || "Medium";
   const minutes = task.minutes || 15;
+  const clickable = Boolean(onEdit);
+
+  const openEditor = () => {
+    onEdit?.(task);
+  };
 
   return (
     <div
       className={`action-row group flex items-start gap-3 px-3.5 py-2.5 ${
+        clickable ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40" : ""
+      } ${
         isComplete ? "opacity-70" : ""
       }`}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={clickable ? openEditor : undefined}
+      onKeyDown={
+        clickable
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openEditor();
+              }
+            }
+          : undefined
+      }
     >
       {showCheckbox && (
-        <Checkbox
-          checked={isComplete}
-          onCheckedChange={() => onToggle?.(task)}
-          className="mt-0.5 shrink-0"
-        />
+        <span onClick={(event) => event.stopPropagation()} className="mt-0.5 shrink-0">
+          <Checkbox
+            checked={isComplete}
+            onCheckedChange={() => onToggle?.(task)}
+          />
+        </span>
       )}
 
       <div className="min-w-0 flex-1">
@@ -123,7 +144,10 @@ const CompactTaskRow = ({
             className="h-7 w-7"
             title="Edit"
             aria-label="Edit"
-            onClick={() => onEdit(task)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit(task);
+            }}
           >
             <Edit3 className="h-3.5 w-3.5" />
           </Button>
@@ -136,7 +160,10 @@ const CompactTaskRow = ({
             className="h-7 w-7 text-muted-foreground hover:text-destructive"
             title="Delete"
             aria-label="Delete"
-            onClick={() => onDelete(task)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(task);
+            }}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

@@ -35,7 +35,7 @@ const tourSteps: TourStep[] = [
   {
     selector: '[data-tour="quick-capture"]',
     title: "Capture loose thoughts fast",
-    body: "Quick Capture sends ideas straight to the inbox so you can process them later.",
+    body: "Quick Capture opens a small brain-dump popup and sends ideas straight to the inbox without moving you away.",
     path: "/tasks",
     placement: "bottom",
   },
@@ -62,6 +62,7 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [targetRadius, setTargetRadius] = useState(18);
 
   const step = active ? tourSteps[stepIndex] : null;
 
@@ -115,10 +116,14 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
 
       if (target) {
         const rect = target.getBoundingClientRect();
+        const styles = window.getComputedStyle(target);
+        const radius = Number.parseFloat(styles.borderTopLeftRadius) || 18;
         setTargetRect(rect);
+        setTargetRadius(radius);
         target.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
       } else {
         setTargetRect(null);
+        setTargetRadius(18);
       }
     };
 
@@ -171,12 +176,18 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
 
   if (!active || !step) return null;
 
+  const padding = step.selector === '[data-tour="sidebar-primary-nav"]' ? 12 : 10;
+  const highlightRadius = Math.max(12, Math.min(28, targetRadius + padding));
   const highlightStyle = targetRect
     ? {
-        left: targetRect.left - 10,
-        top: targetRect.top - 10,
-        width: targetRect.width + 20,
-        height: targetRect.height + 20,
+        left: clamp(targetRect.left - padding, 0, window.innerWidth),
+        top: clamp(targetRect.top - padding, 0, window.innerHeight),
+        width:
+          clamp(targetRect.right + padding, 0, window.innerWidth) -
+          clamp(targetRect.left - padding, 0, window.innerWidth),
+        height:
+          clamp(targetRect.bottom + padding, 0, window.innerHeight) -
+          clamp(targetRect.top - padding, 0, window.innerHeight),
       }
     : {
         left: 16,
@@ -191,12 +202,37 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
 
   return (
     <div className="fixed inset-0 z-[2000] pointer-events-none">
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden="true"
+      >
+        <defs>
+          <mask id="tour-spotlight-mask">
+            <rect x="0" y="0" width="100%" height="100%" fill="white" />
+            <rect
+              x={overlayHole.left}
+              y={overlayHole.top}
+              width={overlayHole.width}
+              height={overlayHole.height}
+              rx={highlightRadius}
+              ry={highlightRadius}
+              fill="black"
+            />
+          </mask>
+        </defs>
+        <rect
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          fill="rgba(0,0,0,0.35)"
+          mask="url(#tour-spotlight-mask)"
+        />
+      </svg>
+
+      <div className="pointer-events-auto absolute left-0 right-0 top-0" style={{ height: overlayHole.top }} />
       <div
-        className="absolute left-0 right-0 top-0 bg-black/55 backdrop-blur-[1px]"
-        style={{ height: overlayHole.top }}
-      />
-      <div
-        className="absolute left-0 bg-black/55 backdrop-blur-[1px]"
+        className="pointer-events-auto absolute left-0"
         style={{
           top: overlayHole.top,
           width: overlayHole.left,
@@ -204,7 +240,7 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
         }}
       />
       <div
-        className="absolute right-0 bg-black/55 backdrop-blur-[1px]"
+        className="pointer-events-auto absolute right-0"
         style={{
           top: overlayHole.top,
           left: overlayHole.left + overlayHole.width,
@@ -212,12 +248,12 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
         }}
       />
       <div
-        className="absolute bottom-0 left-0 right-0 bg-black/55 backdrop-blur-[1px]"
+        className="pointer-events-auto absolute bottom-0 left-0 right-0"
         style={{ top: overlayHole.top + overlayHole.height }}
       />
       <div
-        className="absolute rounded-2xl border-2 border-brand-teal-bright bg-transparent shadow-[0_0_34px_rgba(45,140,140,0.42)] transition-all duration-300"
-        style={highlightStyle}
+        className="absolute border-2 border-brand-teal-bright bg-transparent shadow-[0_0_22px_rgba(45,140,140,0.35)] transition-all duration-300"
+        style={{ ...highlightStyle, borderRadius: highlightRadius }}
       />
 
       <section

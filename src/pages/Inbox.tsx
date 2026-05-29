@@ -360,7 +360,16 @@ const Inbox = () => {
           {items.map((item) => (
             <div
               key={item.id}
-              className="action-row group flex items-center gap-3 px-4 py-3"
+              className="action-row group flex cursor-pointer items-center gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+              role="button"
+              tabIndex={0}
+              onClick={() => openEditor(item)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openEditor(item);
+                }
+              }}
             >
               <div className="h-1.5 w-1.5 rounded-full bg-brand-teal shrink-0" />
 
@@ -383,7 +392,10 @@ const Inbox = () => {
                   className="h-7 w-7"
                   title="Clarify"
                   aria-label="Clarify"
-                  onClick={() => openEditor(item)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openEditor(item);
+                  }}
                 >
                   <Edit3 className="h-3.5 w-3.5" />
                 </Button>
@@ -394,7 +406,10 @@ const Inbox = () => {
                   className="h-7 w-7 text-muted-foreground hover:text-destructive"
                   title="Delete"
                   aria-label="Delete"
-                  onClick={() => quickDelete(item)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    quickDelete(item);
+                  }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
