@@ -198,7 +198,7 @@ export function NotificationBell({
         return;
 
       case "task":
-        navigate("/tasks");
+        navigate("/tasks/next");
         return;
 
       case "service":

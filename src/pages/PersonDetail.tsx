@@ -488,7 +488,7 @@ const PersonDetail = () => {
   if (!person) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="border-border/70 bg-card p-6 shadow-card">
+        <Card className="border-border/70 bg-card p-5 shadow-soft">
           <p className="text-sm text-muted-foreground">Person not found.</p>
         </Card>
       </div>
@@ -496,8 +496,8 @@ const PersonDetail = () => {
   }
 
   return (
-    <div className="w-full space-y-5 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
-      <Card className="border-border/70 bg-card shadow-card overflow-hidden">
+    <div className="w-full space-y-5 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
+      <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5">
           <div className="flex min-w-0 items-start gap-4">
             <PersonAvatar
@@ -509,12 +509,12 @@ const PersonDetail = () => {
             />
 
             <div className="min-w-0">
-              <p className="label-eyebrow">ACTSIX: People</p>
-              <h1 className="mt-3 truncate text-4xl font-extrabold tracking-tight md:text-5xl">
+              <p className="label-eyebrow">People</p>
+              <h1 className="mt-1.5 truncate text-2xl font-extrabold leading-tight md:text-3xl">
                 {person.display_name}
               </h1>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {person.phone_number && (
                 <span className="inline-flex items-center gap-2">
                   <Phone className="h-3.5 w-3.5" />
@@ -549,7 +549,7 @@ const PersonDetail = () => {
                 href={getWhatsappHref(person.phone_number)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-brand-teal bg-brand-teal/10 px-4 text-sm font-bold text-brand-teal transition hover:bg-brand-teal/15"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-brand-teal bg-brand-teal/10 px-3 text-sm font-bold text-brand-teal transition hover:bg-brand-teal/15"
               >
                 <Send className="h-4 w-4" />
                 Message
@@ -1084,13 +1084,13 @@ const PersonDetail = () => {
       </Card>
 
       {editing && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
             <form onSubmit={updatePerson} className="space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="label-eyebrow">ACTSIX: People</p>
-                  <h2 className="text-xl font-extrabold tracking-tight">
+                  <p className="label-eyebrow">People</p>
+                  <h2 className="text-xl font-extrabold leading-tight">
                     Edit Profile
                   </h2>
                 </div>

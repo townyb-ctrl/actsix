@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   CalendarDays,
+  ChevronDown,
   Clock3,
   GripVertical,
   History,
@@ -183,6 +184,7 @@ const ServiceDetail = () => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [roleRequirements, setRoleRequirements] = useState<ServiceTeamRoleRequirement[]>([]);
   const [serviceTeamRoles, setServiceTeamRoles] = useState<ServiceTeamRole[]>([]);
   const [selectedAssignmentTeamId, setSelectedAssignmentTeamId] = useState("");
@@ -1119,7 +1121,7 @@ const ServiceDetail = () => {
   if (!service) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="p-6 border-border/70 bg-card shadow-card">
+        <Card className="border-border/70 bg-card p-5 shadow-soft">
           <p className="text-sm text-muted-foreground">Service not found.</p>
 </Card>
       </div>
@@ -1128,15 +1130,15 @@ const ServiceDetail = () => {
 
   return (
     <div>
-      <div className="w-full space-y-5 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
-<div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="label-eyebrow">ACTSIX: Service Planning</p>
-            <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+      <div className="w-full space-y-5 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="label-eyebrow">Service Planner</p>
+            <h1 className="mt-1.5 text-2xl font-extrabold leading-tight md:text-3xl">
               {service.title || serviceType?.name || "Service"}
             </h1>
 
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">
                 <CalendarDays className="h-3.5 w-3.5" />
                 {formatDate(service.service_date)}
@@ -1165,7 +1167,8 @@ const ServiceDetail = () => {
 
           <Button
             type="button"
-            className="actsix-btn-primary rounded-xl"
+            size="sm"
+            className="actsix-btn-primary rounded-lg"
             onClick={() => setReminderCenterOpen(true)}
           >
             <MessageCircle className="h-4 w-4" />
@@ -1174,12 +1177,12 @@ const ServiceDetail = () => {
         </div>
 
         {reminderCenterOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-            <Card className="w-full max-w-3xl border-border/70 bg-card p-6 shadow-card">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+            <Card className="w-full max-w-3xl border-border/70 bg-card p-5 shadow-card">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="label-eyebrow">WhatsApp Reminder</p>
-                  <h2 className="text-xl font-extrabold tracking-tight">
+                  <h2 className="text-xl font-extrabold leading-tight">
                     Service Reminder Center
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -1190,14 +1193,14 @@ const ServiceDetail = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="rounded-lg"
                   onClick={() => setReminderCenterOpen(false)}
                 >
                   Close
                 </Button>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4">
+              <div className="mt-5 rounded-lg border border-border/70 bg-background/70 p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                   Message Preview
                 </p>
@@ -1212,7 +1215,7 @@ const ServiceDetail = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="rounded-lg"
                   onClick={() => setReminderCenterOpen(false)}
                 >
                   Cancel
@@ -1220,7 +1223,7 @@ const ServiceDetail = () => {
 
                 <Button
                   type="button"
-                  className="actsix-btn-primary rounded-xl"
+                  className="actsix-btn-primary rounded-lg"
                   onClick={copyTeamWhatsAppMessage}
                   disabled={teamAssignments.length === 0}
                 >
@@ -1233,11 +1236,11 @@ const ServiceDetail = () => {
         )}
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.75fr)]">
-          <Card className="border-border/70 bg-card shadow-card overflow-hidden">
+          <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4">
               <div>
                 <p className="label-eyebrow">Service Flow</p>
-                <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                <h2 className="mt-1 text-xl font-extrabold leading-tight">
                   Order of Service
                 </h2>
               </div>
@@ -1245,7 +1248,7 @@ const ServiceDetail = () => {
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
-                  className="actsix-btn-primary h-11 w-11 rounded-full p-0"
+                  className="actsix-btn-primary h-9 w-9 rounded-lg p-0"
                   onClick={() => setAddOrderOpen(true)}
                   title="Add service element"
                 >
@@ -1256,7 +1259,7 @@ const ServiceDetail = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="rounded-lg"
                   onClick={applyTemplateToService}
                   disabled={!templateItems.length || applyingTemplate}
                 >
@@ -1572,12 +1575,12 @@ const ServiceDetail = () => {
 
 
       {whatsAppAssignment && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">WhatsApp Reminder</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight">
                   Message {whatsAppAssignment.person_name}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1598,7 +1601,7 @@ const ServiceDetail = () => {
               </Button>
             </div>
 
-            <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4">
+            <div className="mt-5 rounded-lg border border-border/70 bg-background/70 p-4">
               <p className="label-eyebrow">Recipient</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-bold text-muted-foreground">
@@ -1653,12 +1656,12 @@ const ServiceDetail = () => {
       )}
 
       {addTeamAssignmentOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Team</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight">
                   Add Team Member
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1677,7 +1680,7 @@ const ServiceDetail = () => {
             </div>
 
             <form onSubmit={addTeamAssignment} className="mt-6 space-y-4">
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <div className="rounded-lg border border-border/70 bg-background/70 p-4">
                 <p className="label-eyebrow">Selected Position</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   {selectedTeamId && (
@@ -1697,7 +1700,7 @@ const ServiceDetail = () => {
               <div>
                 <p className="label-eyebrow">Choose Person</p>
 
-                <div className="mt-2 overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+                <div className="mt-2 overflow-hidden rounded-lg border border-border/70 bg-background/70">
                   {availableSelectedTeamMembers.length === 0 && (
                     <div className="p-5 text-sm text-muted-foreground">
                       No available people found for this position.
@@ -1808,21 +1811,32 @@ const ServiceDetail = () => {
               Activity Log
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Recent changes made to this service plan.
+              {activityLogs.length} recent change{activityLogs.length === 1 ? "" : "s"} recorded.
             </p>
           </div>
 
-          <History className="h-4 w-4 text-muted-foreground" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-lg px-2.5"
+            aria-expanded={isActivityOpen}
+            onClick={() => setIsActivityOpen((open) => !open)}
+          >
+            <History className="h-3.5 w-3.5" />
+            {isActivityOpen ? "Hide" : "Show"}
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isActivityOpen ? "rotate-180" : ""}`} />
+          </Button>
         </div>
 
-        {activityLogs.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+        {isActivityOpen && activityLogs.length === 0 && (
+          <div className="rounded-lg border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
             No activity recorded yet.
           </div>
         )}
 
-        {activityLogs.length > 0 && (
-          <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70 bg-background">
+        {isActivityOpen && activityLogs.length > 0 && (
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border/70 bg-background">
             {activityLogs.map((activity) => (
               <div key={activity.id} className="flex gap-3 px-4 py-3">
                 <PersonAvatar
@@ -1855,12 +1869,12 @@ const ServiceDetail = () => {
       </Card>
 
       {addOrderOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Order of Service</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight">
                   Add Service Element
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">

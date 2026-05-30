@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Edit3, Folder, Plus, Save, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ArrowUpRight, Edit3, Folder, Plus, Save, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
-import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 
 type Person = {
   id: string;
@@ -48,9 +45,7 @@ type PeopleGroupMember = {
 
 const PeopleGroups = () => {
   const { user } = useAuth();
-  const { person: currentPerson } = useCurrentPerson();
 
-  const [people, setPeople] = useState<Person[]>([]);
   const [folders, setFolders] = useState<PeopleGroupFolder[]>([]);
   const [groups, setGroups] = useState<PeopleGroup[]>([]);
   const [members, setMembers] = useState<PeopleGroupMember[]>([]);
@@ -63,28 +58,18 @@ const PeopleGroups = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupFolderId, setNewGroupFolderId] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
-
-  const [addMemberGroupId, setAddMemberGroupId] = useState<string | null>(null);
-  const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
-  const [memberRole, setMemberRole] = useState("");
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
 
   const load = async () => {
-    if (!user || !currentPerson?.workspace_id) return;
+    if (!user) return;
 
     setLoading(true);
 
     const [
-      { data: peopleData, error: peopleError },
       { data: folderData, error: folderError },
       { data: groupData, error: groupError },
       { data: memberData, error: memberError },
     ] = await Promise.all([
-      (supabase as any)
-        .from("people")
-        .select("id, display_name, avatar_url, email, phone_number")
-        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
-        .order("display_name", { ascending: true }),
-
       (supabase as any)
         .from("people_group_folders")
         .select("*")
@@ -104,12 +89,10 @@ const PeopleGroups = () => {
         .order("created_at", { ascending: true }),
     ]);
 
-    if (peopleError) toast.error(peopleError.message);
     if (folderError) toast.error(folderError.message);
     if (groupError) toast.error(groupError.message);
     if (memberError) toast.error(memberError.message);
 
-    setPeople(peopleData || []);
     setFolders(folderData || []);
     setGroups(groupData || []);
     setMembers(memberData || []);
@@ -118,7 +101,7 @@ const PeopleGroups = () => {
 
   useEffect(() => {
     load();
-  }, [user, currentPerson?.workspace_id]);
+  }, [user]);
 
   const filteredGroups = useMemo(() => {
     if (selectedFolderId === "all") return groups;
@@ -136,11 +119,6 @@ const PeopleGroups = () => {
 
   const membersForGroup = (groupId: string) => {
     return members.filter((member) => member.group_id === groupId);
-  };
-
-  const availablePeopleForGroup = (groupId: string) => {
-    const groupPersonIds = new Set(membersForGroup(groupId).map((member) => member.person_id));
-    return people.filter((person) => !groupPersonIds.has(person.id));
   };
 
   const startEditingFolder = (folderItem: PeopleGroupFolder) => {
@@ -221,55 +199,7 @@ const PeopleGroups = () => {
     setNewGroupName("");
     setNewGroupFolderId("");
     setNewGroupDescription("");
-    load();
-  };
-
-  const addMember = async (event: FormEvent) => {
-    event.preventDefault();
-
-    if (!user || !addMemberGroupId || selectedPersonIds.length === 0) return;
-
-    const { error } = await (supabase as any)
-      .from("people_group_members")
-      .insert(
-        selectedPersonIds.map((personId) => ({
-          user_id: user.id,
-          group_id: addMemberGroupId,
-          person_id: personId,
-          role: memberRole.trim() || null,
-        }))
-      );
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success(
-      selectedPersonIds.length === 1
-        ? "Person added to group"
-        : `${selectedPersonIds.length} people added to group`
-    );
-
-    setSelectedPersonIds([]);
-    setMemberRole("");
-    setAddMemberGroupId(null);
-    load();
-  };
-
-  const deleteMember = async (memberId: string) => {
-    const { error } = await (supabase as any)
-      .from("people_group_members")
-      .delete()
-      .eq("id", memberId)
-      .eq("user_id", user?.id);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success("Person removed from group");
+    setCreateGroupOpen(false);
     load();
   };
 
@@ -315,37 +245,47 @@ const PeopleGroups = () => {
     load();
   };
 
-  const activeGroup = addMemberGroupId
-    ? groups.find((group) => group.id === addMemberGroupId)
-    : null;
-
-  const availablePeople = addMemberGroupId
-    ? availablePeopleForGroup(addMemberGroupId)
-    : [];
-
   return (
     <div>
-      <PageHeader
-        eyebrow="ACTSIX: People"
-        title="Groups"
-        subtitle="Create folders and custom people lists for Bible studies, ministries, teams, training, and care rhythms."
-      />
+      <div className="w-full space-y-4 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="label-eyebrow">People</p>
+            <h1 className="mt-1.5 text-2xl font-extrabold leading-tight md:text-3xl">
+              Groups
+            </h1>
+            <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">
+              Build custom people lists for Bible studies, ministries, teams, training, and care rhythms.
+            </p>
+          </div>
 
-      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-          <div className="space-y-4">
-            <Card className="border-border/70 bg-card shadow-card p-5">
-              <div className="flex items-center gap-2">
-                <Folder className="h-4 w-4 text-brand-teal" />
-                <h2 className="font-extrabold tracking-tight">Folders</h2>
+          <Button
+            type="button"
+            size="sm"
+            className="actsix-btn-primary shrink-0 rounded-lg"
+            onClick={() => setCreateGroupOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Create Group
+          </Button>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="space-y-4">
+            <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
+              <div className="border-b border-border/70 bg-brand-sage-soft px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Folder className="h-4 w-4 text-brand-sage" />
+                  <h2 className="font-extrabold tracking-tight">Folders</h2>
+                </div>
               </div>
 
-              <div className="mt-4 space-y-2">
+              <div className="space-y-1 p-2">
                 <button
                   type="button"
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-bold transition ${
                     selectedFolderId === "all"
-                      ? "bg-brand-teal/10 text-brand-teal"
+                      ? "bg-brand-sage/10 text-brand-sage"
                       : "text-muted-foreground hover:bg-muted"
                   }`}
                   onClick={() => setSelectedFolderId("all")}
@@ -356,9 +296,9 @@ const PeopleGroups = () => {
 
                 <button
                   type="button"
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-bold transition ${
                     selectedFolderId === "uncategorized"
-                      ? "bg-brand-teal/10 text-brand-teal"
+                      ? "bg-brand-sage/10 text-brand-sage"
                       : "text-muted-foreground hover:bg-muted"
                   }`}
                   onClick={() => setSelectedFolderId("uncategorized")}
@@ -377,7 +317,7 @@ const PeopleGroups = () => {
                           <Input
                             value={editingFolderName}
                             onChange={(event) => setEditingFolderName(event.target.value)}
-                            className="h-9 rounded-xl border-border/70 bg-background text-sm"
+                            className="h-8 rounded-lg border-border/70 bg-background text-sm"
                             autoFocus
                           />
 
@@ -403,9 +343,9 @@ const PeopleGroups = () => {
                         <>
                           <button
                             type="button"
-                            className={`flex min-w-0 flex-1 items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
+                            className={`flex min-w-0 flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm font-bold transition ${
                               selectedFolderId === folderItem.id
-                                ? "bg-brand-teal/10 text-brand-teal"
+                                ? "bg-brand-sage/10 text-brand-sage"
                                 : "text-muted-foreground hover:bg-muted"
                             }`}
                             onClick={() => setSelectedFolderId(folderItem.id)}
@@ -438,84 +378,31 @@ const PeopleGroups = () => {
                 })}
               </div>
 
-              <form onSubmit={createFolder} className="mt-4 flex gap-2">
+              <form onSubmit={createFolder} className="flex gap-2 border-t border-border/70 p-3">
                 <Input
                   value={newFolderName}
                   onChange={(event) => setNewFolderName(event.target.value)}
                   placeholder="New folder..."
-                  className="border-border/70 bg-background"
+                  className="h-9 rounded-lg border-border/70 bg-background"
                 />
-                <Button type="submit" size="icon" className="actsix-btn-primary rounded-xl shrink-0">
+                <Button type="submit" size="icon" className="h-9 w-9 shrink-0 rounded-lg bg-brand-sage text-white hover:bg-brand-sage/90">
                   <Plus className="h-4 w-4" />
                 </Button>
               </form>
             </Card>
 
-            <Card className="border-border/70 bg-card shadow-card p-5">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-brand-teal" />
-                <h2 className="font-extrabold tracking-tight">Create Group</h2>
-              </div>
+          </aside>
 
-              <form onSubmit={createGroup} className="mt-4 space-y-3">
-                <div>
-                  <label className="label-eyebrow">Group Name</label>
-                  <Input
-                    value={newGroupName}
-                    onChange={(event) => setNewGroupName(event.target.value)}
-                    placeholder="Brandon’s Bible Study"
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Folder</label>
-                  <select
-                    value={newGroupFolderId}
-                    onChange={(event) => setNewGroupFolderId(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                  >
-                    <option value="">Uncategorized</option>
-                    {folders.map((folderItem) => (
-                      <option key={folderItem.id} value={folderItem.id}>
-                        {folderItem.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Description</label>
-                  <Input
-                    value={newGroupDescription}
-                    onChange={(event) => setNewGroupDescription(event.target.value)}
-                    placeholder="Optional notes..."
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="actsix-btn-primary w-full rounded-xl"
-                  disabled={!newGroupName.trim()}
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Group
-                </Button>
-              </form>
-            </Card>
-          </div>
-
-          <div className="space-y-4">
+          <div>
             {loading && (
-              <Card className="border-border/70 bg-card shadow-card p-6">
+              <Card className="border-border/70 bg-card p-5 shadow-soft">
                 <p className="text-sm text-muted-foreground">Loading groups...</p>
               </Card>
             )}
 
             {!loading && filteredGroups.length === 0 && (
-              <Card className="border-border/70 bg-card shadow-card p-8 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+              <Card className="border-border/70 bg-card p-8 text-center shadow-soft">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-brand-sage/10 text-brand-sage">
                   <Users className="h-5 w-5" />
                 </div>
                 <h2 className="mt-4 text-lg font-extrabold tracking-tight">
@@ -527,182 +414,183 @@ const PeopleGroups = () => {
               </Card>
             )}
 
-            {!loading && filteredGroups.map((group) => {
-              const groupMembers = membersForGroup(group.id);
+            {!loading && filteredGroups.length > 0 && (
+              <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {filteredGroups.map((group) => {
+                  const groupMembers = membersForGroup(group.id);
+                  const leaders = groupMembers.filter((member) =>
+                    (member.role || "").toLowerCase().includes("leader")
+                  );
+                  const displayedLeaders = leaders.slice(0, 3);
 
-              return (
-                <Card key={group.id} className="border-border/70 bg-card shadow-card overflow-hidden">
-                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/70 p-5">
-                    <div>
-                      <p className="label-eyebrow">{folderName(group.folder_id)}</p>
+                  return (
+                    <Card
+                      key={group.id}
+                      className="group flex min-h-44 flex-col overflow-hidden border-border/70 bg-card shadow-soft transition hover:-translate-y-0.5 hover:border-brand-sage/40 hover:shadow-card"
+                    >
                       <Link
                         to={`/people/groups/${group.id}`}
-                        className="mt-1 block text-xl font-extrabold tracking-tight transition hover:text-brand-teal"
+                        className="flex min-h-0 flex-1 flex-col p-3"
                       >
-                        {group.name}
-                      </Link>
-                      {group.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {group.description}
-                        </p>
-                      )}
-                    </div>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="inline-flex rounded-md bg-brand-sage-soft px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-sage">
+                            {folderName(group.folder_id)}
+                          </span>
+                          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-brand-teal" />
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-xl"
-                        onClick={() => {
-                          setAddMemberGroupId(group.id);
-                          setSelectedPersonIds([]);
-                          setMemberRole("");
-                        }}
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        Add Person
-                      </Button>
+                        <div className="mt-3 min-w-0">
+                          <h2 className="truncate text-lg font-extrabold tracking-tight text-foreground transition group-hover:text-brand-teal">
+                            {group.name}
+                          </h2>
+                          <p className="mt-0.5 line-clamp-1 text-xs leading-5 text-muted-foreground">
+                            {group.description || "Open group details to add people and manage roles."}
+                          </p>
+                        </div>
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteGroup(group)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                        <div className="mt-3 rounded-lg border border-border/70 bg-background/45 px-3 py-2">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                            People
+                          </p>
+                          <p className="mt-1 text-xl font-extrabold leading-none text-foreground">
+                            {groupMembers.length}
+                          </p>
+                        </div>
 
-                  <div className="p-5">
-                    {groupMembers.length === 0 && (
-                      <div className="rounded-xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-                        No people added to this group yet.
-                      </div>
-                    )}
-
-                    {groupMembers.length > 0 && (
-                      <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70">
-                        {groupMembers.map((member) => (
-                          <div key={member.id} className="flex items-center gap-3 bg-background px-4 py-3">
-                            <PersonAvatar
-                              name={member.people?.display_name}
-                              avatarUrl={member.people?.avatar_url}
-                              size="md"
-                            />
-
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-extrabold tracking-tight">
-                                {member.people?.display_name || "Person"}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {member.role || member.people?.email || "Group member"}
-                              </p>
+                        <div className="mt-auto pt-3">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                            Group Leader{leaders.length === 1 ? "" : "s"}
+                          </p>
+                          {leaders.length === 0 ? (
+                            <p className="mt-1.5 text-xs font-medium text-muted-foreground">
+                              No leader assigned
+                            </p>
+                          ) : (
+                            <div className="mt-1.5 flex min-w-0 flex-wrap gap-1.5">
+                              {displayedLeaders.map((leader) => (
+                                <div key={leader.id} className="flex min-w-0 items-center gap-1.5 rounded-full bg-muted/45 py-0.5 pl-0.5 pr-2">
+                                  <PersonAvatar
+                                    name={leader.people?.display_name}
+                                    avatarUrl={leader.people?.avatar_url}
+                                    size="xs"
+                                  />
+                                  <span className="max-w-28 truncate text-xs font-bold">
+                                    {leader.people?.display_name || "Leader"}
+                                  </span>
+                                </div>
+                              ))}
+                              {leaders.length > displayedLeaders.length && (
+                                <p className="text-xs font-semibold text-muted-foreground">
+                                  +{leaders.length - displayedLeaders.length} more
+                                </p>
+                              )}
                             </div>
+                          )}
+                        </div>
+                      </Link>
 
-                            <button
-                              type="button"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition hover:bg-muted hover:text-destructive"
-                              onClick={() => deleteMember(member.id)}
-                              aria-label="Remove person from group"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ))}
+                      <div className="flex items-center justify-between border-t border-border/70 px-3 py-1.5">
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          Open to manage people
+                        </span>
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition hover:bg-muted hover:text-destructive"
+                          onClick={() => deleteGroup(group)}
+                          aria-label="Delete group"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {addMemberGroupId && activeGroup && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-visible border-border/70 bg-card shadow-card">
-            <form onSubmit={addMember} className="flex min-h-0 flex-1 flex-col">
-              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-6">
+      {createGroupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-xl border-border/70 bg-card p-5 shadow-card">
+            <form onSubmit={createGroup} className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="label-eyebrow">People Group</p>
                   <h2 className="text-xl font-extrabold tracking-tight">
-                    Add Person to {activeGroup.name}
+                    Create Group
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Choose People profiles and an optional role for this group.
+                    Add a new group, then open it to add people and assign leaders.
                   </p>
                 </div>
 
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
-                  onClick={() => {
-                    setAddMemberGroupId(null);
-                    setSelectedPersonIds([]);
-                    setMemberRole("");
-                  }}
+                  className="rounded-lg"
+                  onClick={() => setCreateGroupOpen(false)}
                 >
+                  <X className="h-4 w-4" />
                   Close
                 </Button>
               </div>
 
-              <div className="min-h-0 flex-1 space-y-4 overflow-visible p-6">
-                <div>
-                  <label className="label-eyebrow">People</label>
-                  <div className="mt-2">
-                    <PeopleMultiSearchSelect
-                      people={availablePeople}
-                      selectedPersonIds={selectedPersonIds}
-                      onChange={setSelectedPersonIds}
-                      placeholder="Search by name, email, or phone..."
-                      emptyText="No available people found."
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Role / Note</label>
-                  <Input
-                    value={memberRole}
-                    onChange={(event) => setMemberRole(event.target.value)}
-                    placeholder="Leader, member, host..."
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                {availablePeople.length === 0 && (
-                  <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-                    Everyone in People is already in this group.
-                  </div>
-                )}
+              <div>
+                <label className="label-eyebrow">Group Name</label>
+                <Input
+                  value={newGroupName}
+                  onChange={(event) => setNewGroupName(event.target.value)}
+                  placeholder="Brandon’s Bible Study"
+                  className="mt-1.5 h-10 rounded-lg border-border/70 bg-background"
+                  autoFocus
+                />
               </div>
 
-              <div className="flex shrink-0 justify-end gap-2 border-t border-border/70 bg-card p-6">
+              <div>
+                <label className="label-eyebrow">Folder</label>
+                <select
+                  value={newGroupFolderId}
+                  onChange={(event) => setNewGroupFolderId(event.target.value)}
+                  className="mt-1.5 h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                >
+                  <option value="">Uncategorized</option>
+                  {folders.map((folderItem) => (
+                    <option key={folderItem.id} value={folderItem.id}>
+                      {folderItem.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Description</label>
+                <Input
+                  value={newGroupDescription}
+                  onChange={(event) => setNewGroupDescription(event.target.value)}
+                  placeholder="Optional notes..."
+                  className="mt-1.5 h-10 rounded-lg border-border/70 bg-background"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-border/70 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
-                  onClick={() => {
-                    setAddMemberGroupId(null);
-                    setSelectedPersonIds([]);
-                    setMemberRole("");
-                  }}
+                  className="rounded-lg"
+                  onClick={() => setCreateGroupOpen(false)}
                 >
                   Cancel
                 </Button>
 
                 <Button
                   type="submit"
-                  className="actsix-btn-primary rounded-xl"
-                  disabled={selectedPersonIds.length === 0}
+                  className="actsix-btn-primary rounded-lg"
+                  disabled={!newGroupName.trim()}
                 >
-                  <UserPlus className="h-4 w-4" />
-                  {selectedPersonIds.length > 1 ? `Add ${selectedPersonIds.length} People` : "Add Person"}
+                  <Plus className="h-4 w-4" />
+                  Create Group
                 </Button>
               </div>
             </form>

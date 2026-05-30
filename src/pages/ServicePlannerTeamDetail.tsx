@@ -891,7 +891,7 @@ const ServicePlannerTeamDetail = () => {
           <div className="border-b border-border p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="label-eyebrow">ACTSIX: Service Team</p>
+                <p className="label-eyebrow">Service Team</p>
                 <h1 className="mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
                   {team.name}
                 </h1>

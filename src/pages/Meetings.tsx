@@ -145,13 +145,13 @@ const Meetings = () => {
   return (
     <div className="pb-12">
       <PageHeader
-        eyebrow="ACTSIX: Meetings"
+        eyebrow="Meetings"
         title="Meetings"
         subtitle="Plan agendas, record notes, and track action points."
       />
 
-      <div className="w-full space-y-6 px-4 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border/70 bg-border/70 shadow-card md:grid-cols-3">
+      <div className="w-full space-y-5 px-4 sm:px-6 xl:px-8 2xl:px-10">
+        <div data-tour="meetings-stats" className="grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 shadow-soft md:grid-cols-3">
           {[
             ["Total meetings", totalCount],
             ["Scheduled", upcomingCount],
@@ -164,7 +164,7 @@ const Meetings = () => {
           ))}
         </div>
 
-        <div className="rounded-2xl border border-border/70 bg-card shadow-card">
+        <div data-tour="meetings-actions" className="rounded-lg border border-border/70 bg-card shadow-soft">
           <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -186,7 +186,7 @@ const Meetings = () => {
             </Button>
           </div>
 
-          <div className="divide-y divide-border/70">
+          <div data-tour="meetings-list" className="divide-y divide-border/70">
               {filteredMeetings.length === 0 && (
                 <div className="p-8 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">

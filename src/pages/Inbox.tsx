@@ -343,7 +343,7 @@ const Inbox = () => {
 
             <Button
               type="submit"
-              className="actsix-btn-primary rounded-full px-5"
+              className="actsix-btn-primary rounded-lg px-5"
             >
               <Plus className="h-4 w-4" />
             </Button>

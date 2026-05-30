@@ -11,13 +11,13 @@ export const Logo = ({ compact = false }: { compact?: boolean }) => (
       <img
         src={logoIconWhite}
         alt="ACTSIX"
-        className="h-7 w-7 object-contain shrink-0"
+        className="h-6 w-6 object-contain shrink-0 2xl:h-7 2xl:w-7"
       />
     ) : (
       <img
         src={logoFullWhite}
         alt="ACTSIX"
-        className="h-20 w-auto max-w-[340px] object-contain"
+        className="h-16 w-auto max-w-[260px] object-contain"
       />
     )}
   </div>

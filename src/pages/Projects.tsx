@@ -511,65 +511,61 @@ const Projects = () => {
   return (
     <div>
       <PageHeader
-        eyebrow="Workflow"
+        eyebrow="Tasks"
         title="Projects"
-        subtitle="Track progress. Advance the mission."
+        subtitle="Track progress and keep every outcome moving."
       />
 
       <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
 
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+        <div className="grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 shadow-soft md:grid-cols-2 xl:grid-cols-4">
+          <div className="bg-card px-4 py-3">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-brand-teal/10 text-brand-teal flex items-center justify-center">
-                <FolderKanban className="h-6 w-6" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+                <FolderKanban className="h-4 w-4" />
               </div>
               <div>
                 <p className="label-eyebrow">Total Projects</p>
-                <div className="text-3xl font-extrabold tracking-tight mt-1">{totalProjects}</div>
-                <p className="text-sm text-muted-foreground">All ministry initiatives</p>
+                <div className="mt-1 text-2xl font-extrabold">{totalProjects}</div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="bg-card px-4 py-3">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-brand-sage/10 text-brand-sage flex items-center justify-center">
-                <BarChart3 className="h-6 w-6" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-sage/10 text-brand-sage">
+                <BarChart3 className="h-4 w-4" />
               </div>
               <div>
                 <p className="label-eyebrow">Active Projects</p>
-                <div className="text-3xl font-extrabold tracking-tight mt-1">{activeProjects}</div>
-                <p className="text-sm text-muted-foreground">In progress</p>
+                <div className="mt-1 text-2xl font-extrabold">{activeProjects}</div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="bg-card px-4 py-3">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-brand-amber/10 text-brand-amber flex items-center justify-center">
-                <Clock3 className="h-6 w-6" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-amber/10 text-brand-amber">
+                <Clock3 className="h-4 w-4" />
               </div>
               <div>
                 <p className="label-eyebrow">Needs Action</p>
-                <div className="text-3xl font-extrabold tracking-tight mt-1">{needsActionProjects}</div>
-                <p className="text-sm text-muted-foreground">No next action</p>
+                <div className="mt-1 text-2xl font-extrabold">{needsActionProjects}</div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="bg-card px-4 py-3">
             <div className="flex items-center gap-4">
-              <div className="relative h-14 w-14 rounded-full bg-brand-teal/10 flex items-center justify-center">
-                <Activity className="h-6 w-6 text-brand-teal" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+                <Activity className="h-4 w-4" />
               </div>
               <div>
                 <p className="label-eyebrow">Completion Rate</p>
-                <div className="text-3xl font-extrabold tracking-tight mt-1">{averageProgress}%</div>
-                <p className="text-sm text-muted-foreground">Avg. completion</p>
+                <div className="mt-1 text-2xl font-extrabold">{averageProgress}%</div>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -647,7 +643,7 @@ const Projects = () => {
         </div>
 
         <div>
-          <Card className="border-border/70 bg-card shadow-card overflow-hidden">
+          <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

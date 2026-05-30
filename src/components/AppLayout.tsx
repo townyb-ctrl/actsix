@@ -1,21 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
-  CalendarDays,
   HelpCircle,
-  Home,
-  ListChecks,
   LogOut,
-  Music,
   Settings,
   UserRound,
-  Users,
   Zap,
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
@@ -24,7 +20,15 @@ import { GuidedTour, startGuidedTour } from "./GuidedTour";
 import { FeedbackBubble } from "./FeedbackBubble";
 import { QuickCaptureDialog } from "./QuickCaptureDialog";
 import actsixLogo from "@/assets/actsix-logo.png";
-import actsixIconWhite from "@/assets/branding/actsix-icon-white.png";
+import { Card } from "@/components/ui/card";
+import { useUserSettings, type TourKey } from "@/hooks/useUserSettings";
+import {
+  type ActiveModuleKey,
+  getModuleKeyForPath,
+  isRequiredModule,
+  MODULE_DESCRIPTIONS,
+  MODULE_LABELS,
+} from "@/lib/modules";
 
 const getBackTarget = (pathname: string) => {
   if (pathname.startsWith("/service-planner/teams/")) {
@@ -54,17 +58,57 @@ const getBackTarget = (pathname: string) => {
   return null;
 };
 
+const ModuleActivationPrompt = ({
+  moduleKey,
+  activating,
+  onActivate,
+}: {
+  moduleKey: ActiveModuleKey;
+  activating: boolean;
+  onActivate: () => void;
+}) => (
+  <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 xl:px-8 2xl:px-10">
+    <Card className="w-full max-w-xl border-border/70 bg-card p-6 text-center shadow-soft">
+      <p className="label-eyebrow">Optional Module</p>
+      <h1 className="mt-2 text-2xl font-extrabold tracking-tight">
+        Activate {MODULE_LABELS[moduleKey]}
+      </h1>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+        {MODULE_DESCRIPTIONS[moduleKey]} Turn it on for your account when you are ready to use it.
+      </p>
+      <Button
+        type="button"
+        className="mt-5 rounded-lg bg-brand-teal px-4 font-bold text-white hover:bg-brand-teal/90"
+        onClick={onActivate}
+        disabled={activating}
+      >
+        {activating ? "Activating..." : `Activate ${MODULE_LABELS[moduleKey]}`}
+      </Button>
+    </Card>
+  </main>
+);
+
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
   const { person: currentPerson, displayName } = useCurrentPerson();
+  const { workspace, loading: workspaceLoading } = useCurrentWorkspace();
+  const {
+    settings: userSettings,
+    loading: userSettingsLoading,
+    isModuleActive,
+    setModuleActive,
+    completeTour,
+  } = useUserSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [moduleMenuOpen, setModuleMenuOpen] = useState(false);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
+  const [activatingModule, setActivatingModule] = useState<ActiveModuleKey | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
-  const moduleMenuRef = useRef<HTMLDivElement | null>(null);
+  const startedToursRef = useRef<Set<TourKey>>(new Set());
   const backTarget = getBackTarget(location.pathname);
+  const routeModuleKey = getModuleKeyForPath(location.pathname);
+  const routeModuleActive = isModuleActive(routeModuleKey);
   const profilePath = currentPerson?.id ? `/people/${currentPerson.id}` : "/settings";
   const accountName = currentPerson?.display_name || displayName || user?.email || "Profile";
   const inTasksArea =
@@ -73,7 +117,7 @@ export default function AppLayout() {
     ["/inbox", "/projects", "/waiting", "/someday"].includes(location.pathname);
 
   useEffect(() => {
-    if (!profileMenuOpen && !moduleMenuOpen) return;
+    if (!profileMenuOpen) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -81,16 +125,11 @@ export default function AppLayout() {
       if (!profileMenuRef.current?.contains(target)) {
         setProfileMenuOpen(false);
       }
-
-      if (!moduleMenuRef.current?.contains(target)) {
-        setModuleMenuOpen(false);
-      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setProfileMenuOpen(false);
-        setModuleMenuOpen(false);
       }
     };
 
@@ -101,45 +140,47 @@ export default function AppLayout() {
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [profileMenuOpen, moduleMenuOpen]);
-
-  const moduleItems = [
-    {
-      title: "Tasks",
-      description: "Capture and organize",
-      to: "/tasks",
-      icon: ListChecks,
-    },
-    {
-      title: "Meetings",
-      description: "Agendas and minutes",
-      to: "/meetings",
-      icon: CalendarDays,
-    },
-    {
-      title: "Service Planner",
-      description: "Services and teams",
-      to: "/service-planner",
-      icon: Music,
-    },
-    {
-      title: "People",
-      description: "Directory and groups",
-      to: "/people",
-      icon: Users,
-    },
-  ];
-  const hexagonClipPath = "polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)";
-  const moduleMenuEase = "cubic-bezier(0.22, 1, 0.36, 1)";
+  }, [profileMenuOpen]);
 
   const handleTourStepChange = useCallback((step: { selector: string } | null) => {
     if (!step) return;
 
-    setModuleMenuOpen(false);
     if (step.selector !== '[data-tour="account-menu"]') {
       setProfileMenuOpen(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (loading || userSettingsLoading || workspaceLoading || !user || !routeModuleActive) return;
+
+    const tourKey = getModuleKeyForPath(location.pathname);
+    if (tourKey === "home" && location.pathname !== "/") return;
+    if (tourKey === "home" && !workspace) return;
+
+    const isComplete =
+      tourKey === "home"
+        ? userSettings.onboarding.homeTourComplete
+        : Boolean(userSettings.onboarding.completedModuleTours[tourKey]);
+
+    if (isComplete || startedToursRef.current.has(tourKey)) return;
+
+    const timer = window.setTimeout(() => {
+      startedToursRef.current.add(tourKey);
+      startGuidedTour(tourKey);
+    }, 650);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    loading,
+    location.pathname,
+    routeModuleActive,
+    user,
+    userSettings.onboarding.completedModuleTours,
+    userSettings.onboarding.homeTourComplete,
+    userSettingsLoading,
+    workspace,
+    workspaceLoading,
+  ]);
 
   if (loading)
     return (
@@ -150,164 +191,35 @@ export default function AppLayout() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
+  const activateRouteModule = async () => {
+    setActivatingModule(routeModuleKey);
+    await setModuleActive(routeModuleKey, true);
+    startedToursRef.current.delete(routeModuleKey);
+    setActivatingModule(null);
+  };
+
+  const showModuleActivation =
+    !userSettingsLoading && !routeModuleActive && !isRequiredModule(routeModuleKey);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-content">
         <AppSidebar />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-10 flex min-h-24 items-center gap-3 border-b border-border bg-background/80 px-3 py-3 pr-7 backdrop-blur sm:px-4 sm:pr-8 xl:pr-10">
-            <SidebarTrigger />
-
+          <header className="sticky top-0 z-10 flex min-h-16 items-center gap-3 border-b border-border bg-background/80 px-3 py-1.5 pr-7 backdrop-blur sm:px-4 sm:pr-8 xl:pr-10">
             {backTarget && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="min-w-0 rounded-full text-muted-foreground hover:text-foreground"
+                className="min-w-0 rounded-lg text-muted-foreground hover:text-foreground"
                 onClick={() => navigate(backTarget.to)}
               >
                 <ArrowLeft className="h-4 w-4 shrink-0" />
                 <span className="hidden truncate sm:inline">{backTarget.label}</span>
               </Button>
             )}
-
-            <div
-              ref={moduleMenuRef}
-              className="pointer-events-none absolute left-1/2 top-1/2 z-20 h-20 w-[min(32rem,calc(100vw-1rem))] -translate-x-1/2 -translate-y-1/2"
-              onMouseEnter={() => setModuleMenuOpen(true)}
-              onMouseLeave={() => setModuleMenuOpen(false)}
-            >
-              <button
-                type="button"
-                data-tour="module-menu"
-                className="group pointer-events-auto absolute left-1/2 top-1/2 z-20 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center outline-none opacity-90 ring-brand-teal/25 transition-opacity hover:opacity-100 focus-visible:ring-4"
-                onClick={() => {
-                  setModuleMenuOpen(false);
-                  navigate("/");
-                }}
-                onFocus={() => setModuleMenuOpen(true)}
-                aria-label="Go home"
-                aria-expanded={moduleMenuOpen}
-              >
-                <span
-                  className={`absolute h-16 w-16 border border-black bg-black shadow-soft transition-[filter,opacity,transform] [transition-duration:780ms] ${
-                    moduleMenuOpen
-                      ? "scale-100 opacity-100 blur-0"
-                      : "scale-[1.22] opacity-0 blur-[4px]"
-                  }`}
-                  style={{
-                    clipPath: hexagonClipPath,
-                    transitionTimingFunction: moduleMenuEase,
-                    willChange: "transform, opacity, filter",
-                  }}
-                />
-                <img
-                  src={actsixIconWhite}
-                  alt="ACTSIX"
-                  className={`absolute h-20 w-20 transform-gpu object-contain brightness-0 transition-[filter,opacity,transform] [transition-duration:780ms] ${
-                    moduleMenuOpen
-                      ? "scale-[0.52] opacity-0 blur-[2px]"
-                      : "scale-100 opacity-100 blur-0"
-                  }`}
-                  style={{
-                    transitionTimingFunction: moduleMenuEase,
-                    willChange: "transform, opacity, filter",
-                  }}
-                />
-                <span
-                  className={`absolute flex h-16 w-16 transform-gpu items-center justify-center text-white transition-[opacity,transform] [transition-duration:780ms] ${
-                    moduleMenuOpen
-                      ? "scale-100 opacity-100"
-                      : "scale-[0.68] opacity-0"
-                  }`}
-                  style={{
-                    clipPath: hexagonClipPath,
-                    transitionTimingFunction: moduleMenuEase,
-                    willChange: "transform, opacity",
-                  }}
-                >
-                  <Home
-                    className={`h-6 w-6 transition-[opacity,stroke-dashoffset,transform] [transition-duration:820ms] ${
-                      moduleMenuOpen
-                        ? "scale-100 opacity-100 [stroke-dashoffset:0]"
-                        : "scale-[0.82] opacity-0 [stroke-dashoffset:42]"
-                    }`}
-                    style={{
-                      strokeDasharray: 42,
-                      transitionTimingFunction: moduleMenuEase,
-                      transitionDelay: moduleMenuOpen ? "90ms" : "0ms",
-                      willChange: "transform, opacity, stroke-dashoffset",
-                    }}
-                  />
-                </span>
-              </button>
-
-              <div
-                className={`absolute inset-0 transition-opacity duration-500 ${
-                  moduleMenuOpen
-                    ? "pointer-events-auto opacity-100"
-                    : "pointer-events-none opacity-0"
-                }`}
-                style={{ transitionTimingFunction: moduleMenuEase }}
-                aria-hidden={!moduleMenuOpen}
-              >
-                <div className="relative h-full w-full">
-                  {moduleItems.map((item, index) => {
-                    const Icon = item.icon;
-                    const foldPosition = index < 2 ? index - 2 : index - 1;
-                    const distanceFromHome = Math.abs(foldPosition);
-                    const openOffset =
-                      foldPosition < 0
-                        ? `clamp(-8.25rem, ${foldPosition * 4.5}rem, -4.5rem)`
-                        : `clamp(4.5rem, ${foldPosition * 4.5}rem, 8.25rem)`;
-                    const active =
-                      location.pathname === item.to ||
-                      location.pathname.startsWith(`${item.to}/`);
-
-                    return (
-                      <button
-                        key={item.to}
-                        type="button"
-                        title={item.title}
-                        className={`group absolute left-1/2 top-1/2 flex h-12 w-12 items-center justify-center drop-shadow-sm transition-[opacity,transform] [transition-duration:560ms] ${
-                          active
-                            ? "text-brand-teal"
-                            : "text-foreground hover:text-brand-teal"
-                        }`}
-                        style={{
-                          opacity: moduleMenuOpen ? 1 : 0,
-                          transform: moduleMenuOpen
-                            ? `translate3d(calc(-50% + ${openOffset}), -50%, 0) scale(1)`
-                            : "translate3d(-50%, -50%, 0) scale(0.84)",
-                          transitionDelay: moduleMenuOpen
-                            ? `${distanceFromHome * 45}ms`
-                            : `${(3 - distanceFromHome) * 35}ms`,
-                          transitionTimingFunction: moduleMenuEase,
-                          willChange: "transform, opacity",
-                        }}
-                        aria-label={`Go to ${item.title}`}
-                        onClick={() => {
-                          setModuleMenuOpen(false);
-                          navigate(item.to);
-                        }}
-                      >
-                        <span
-                          className={`flex h-12 w-12 shrink-0 items-center justify-center border backdrop-blur transition group-hover:-translate-y-0.5 ${
-                            active
-                              ? "border-brand-teal/35 bg-brand-teal/15 text-brand-teal shadow-card"
-                              : "border-border/75 bg-card/95 text-muted-foreground shadow-soft group-hover:border-brand-teal/35 group-hover:bg-brand-teal/10 group-hover:text-brand-teal"
-                          }`}
-                          style={{ clipPath: hexagonClipPath }}
-                        >
-                          <Icon className="h-5 w-5" />
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
 
             <div className="ml-auto flex min-w-0 items-center gap-2">
               <Button
@@ -317,8 +229,8 @@ export default function AppLayout() {
                 data-tour="quick-capture"
                 className={
                   inTasksArea
-                    ? "gap-1.5 rounded-full border-brand-teal/35 bg-brand-teal/10 px-3 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal sm:px-4"
-                    : "h-9 w-9 rounded-full border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white"
+                    ? "gap-1.5 rounded-lg border-brand-teal/35 bg-brand-teal/10 px-3 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal sm:px-4"
+                    : "h-9 w-9 rounded-lg border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white"
                 }
                 onClick={() => setQuickCaptureOpen(true)}
                 title="Quick Capture"
@@ -336,7 +248,7 @@ export default function AppLayout() {
                 <button
                   type="button"
                   data-tour="account-menu"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-card p-1 text-foreground shadow-soft outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-card p-0 text-foreground shadow-soft outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
                   onClick={() => setProfileMenuOpen((open) => !open)}
                   title="Open account menu"
                   aria-label="Open account menu"
@@ -381,7 +293,7 @@ export default function AppLayout() {
                       className="flex w-full items-center gap-3 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-brand-teal/5 hover:text-brand-teal"
                       onClick={() => {
                         setProfileMenuOpen(false);
-                        startGuidedTour();
+                        startGuidedTour(getModuleKeyForPath(location.pathname));
                       }}
                     >
                       <HelpCircle className="h-4 w-4" />
@@ -405,9 +317,17 @@ export default function AppLayout() {
             </div>
           </header>
 
-          <main className="flex-1">
-            <Outlet />
-          </main>
+          {showModuleActivation ? (
+            <ModuleActivationPrompt
+              moduleKey={routeModuleKey}
+              activating={activatingModule === routeModuleKey}
+              onActivate={activateRouteModule}
+            />
+          ) : (
+            <main className="flex-1">
+              <Outlet />
+            </main>
+          )}
 
           <footer className="flex min-h-16 items-center justify-center border-t border-border/70 bg-background/85 px-4 py-3 text-sm text-muted-foreground backdrop-blur sm:px-6 xl:px-8 2xl:px-10">
             <div className="flex items-center justify-center gap-3 text-center">
@@ -417,6 +337,7 @@ export default function AppLayout() {
 
           <GuidedTour
             onStepChange={handleTourStepChange}
+            onComplete={completeTour}
           />
           <QuickCaptureDialog
             open={quickCaptureOpen}

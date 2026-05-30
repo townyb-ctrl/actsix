@@ -237,7 +237,7 @@ const RecurringMeetings = () => {
       <div className="w-full space-y-4 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="label-eyebrow">ACTSIX: Meetings</p>
+            <p className="label-eyebrow">Meetings</p>
             <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
               Recurring Meetings
             </h1>

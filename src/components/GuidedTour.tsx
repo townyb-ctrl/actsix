@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "reac
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import type { TourKey } from "@/hooks/useUserSettings";
 
 type TourStep = {
   selector: string;
@@ -13,82 +14,176 @@ type TourStep = {
 
 type GuidedTourProps = {
   onStepChange?: (step: TourStep | null) => void;
+  onComplete?: (tourKey: TourKey) => void;
 };
 
-const TOUR_STORAGE_KEY = "actsix:onboarding-tour-complete";
 const START_TOUR_EVENT = "actsix:start-tour";
 
-const tourSteps: TourStep[] = [
-  {
-    selector: '[data-tour="module-menu"]',
-    title: "Start with the module switcher",
-    body: "Use the top-center ACTSIX icon to move between Tasks, Meetings, Service Planner, and People.",
-    placement: "bottom",
-  },
-  {
-    selector: '[data-tour="sidebar-primary-nav"]',
-    title: "Then work inside a module",
-    body: "The sidebar changes to the tools for the module you are in, so the next action is always nearby.",
-    path: "/tasks",
-    placement: "right",
-  },
-  {
-    selector: '[data-tour="quick-capture"]',
-    title: "Capture loose thoughts fast",
-    body: "Quick Capture opens a small brain-dump popup and sends ideas straight to the inbox without moving you away.",
-    path: "/tasks",
-    placement: "bottom",
-  },
-  {
-    selector: '[data-tour="notifications"]',
-    title: "Watch for what needs attention",
-    body: "Notifications collect updates from across ACTSIX without making you leave your current flow.",
-    placement: "bottom",
-  },
-  {
-    selector: '[data-tour="account-menu"]',
-    title: "Finish in your account menu",
-    body: "Profile, settings, and this tutorial live here when you need to tune the workspace.",
-    placement: "left",
-  },
-];
+const tours: Record<TourKey, TourStep[]> = {
+  home: [
+    {
+      selector: '[data-tour="home-overview"]',
+      title: "Home is your daily command center",
+      body: "Start here to see what needs attention today, the next service, active projects, meetings, and your calendar.",
+      path: "/",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="module-menu"]',
+      title: "Switch modules from the left menu",
+      body: "This selector stays with you across ACTSIX. Use it to move between Home, Tasks, People, and any optional modules you activate.",
+      path: "/",
+      placement: "right",
+    },
+    {
+      selector: '[data-tour="quick-capture"]',
+      title: "Capture work without leaving the page",
+      body: "Quick Capture is for loose thoughts, follow-ups, and tasks that need to land somewhere quickly.",
+      path: "/",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="account-menu"]',
+      title: "Profile and settings live here",
+      body: "Open your profile, settings, module activation, and tutorials from the account menu.",
+      path: "/",
+      placement: "left",
+    },
+  ],
+  tasks: [
+    {
+      selector: '[data-tour="sidebar-primary-nav"]',
+      title: "Tasks has its own tools",
+      body: "The left menu now shows task views: Inbox, Next Actions, Projects, Waiting For, and Someday.",
+      path: "/tasks/next",
+      placement: "right",
+    },
+    {
+      selector: '[data-tour="quick-capture"]',
+      title: "Use Quick Capture for fast inboxing",
+      body: "Capture an idea first, then clarify it into a next action, project, waiting item, or someday item.",
+      path: "/tasks/next",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="tasks-filters"]',
+      title: "Shape the list to the moment",
+      body: "Filter by date, project, context, priority, energy, or search when the action list gets busy.",
+      path: "/tasks/next",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="tasks-list"]',
+      title: "Work from Next Actions",
+      body: "This is the active list of things that can move forward. Open a row to edit details, assign, schedule, or complete it.",
+      path: "/tasks/next",
+      placement: "top",
+    },
+  ],
+  people: [
+    {
+      selector: '[data-tour="people-actions"]',
+      title: "People starts with the directory",
+      body: "Add one person at a time, import a CSV, or send welcome messages when your workspace is ready.",
+      path: "/people",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="people-search"]',
+      title: "Find and filter quickly",
+      body: "Search by name, phone, email, gender, or notes. Filters help you spot incomplete profiles.",
+      path: "/people",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="people-list"]',
+      title: "Profiles connect the rest of ACTSIX",
+      body: "People profiles can connect to task assignments, service teams, meeting roles, and groups.",
+      path: "/people",
+      placement: "top",
+    },
+  ],
+  meetings: [
+    {
+      selector: '[data-tour="meetings-stats"]',
+      title: "Meetings gives you the current shape",
+      body: "See total, scheduled, and unscheduled meetings before you drill into the list.",
+      path: "/meetings",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="meetings-actions"]',
+      title: "Create or find a meeting",
+      body: "Search existing meetings or add a new one with date, time, location, and online meeting details.",
+      path: "/meetings",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="meetings-list"]',
+      title: "Open a meeting to plan details",
+      body: "Meeting detail pages hold agenda, notes, people roles, and action points.",
+      path: "/meetings",
+      placement: "top",
+    },
+  ],
+  service_planner: [
+    {
+      selector: '[data-tour="service-planner-actions"]',
+      title: "Start with service types",
+      body: "Create a service type, then add dates underneath it for individual services.",
+      path: "/service-planner",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="service-planner-search"]',
+      title: "Find services as the list grows",
+      body: "Search service types, dates, and locations from the top of the planner.",
+      path: "/service-planner",
+      placement: "bottom",
+    },
+    {
+      selector: '[data-tour="service-planner-list"]',
+      title: "Open dates to build the plan",
+      body: "Each service date opens into order of service, team assignments, reminders, and activity history.",
+      path: "/service-planner",
+      placement: "top",
+    },
+  ],
+};
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
-export function GuidedTour({ onStepChange }: GuidedTourProps) {
+export function GuidedTour({ onStepChange, onComplete }: GuidedTourProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [active, setActive] = useState(false);
+  const [activeTourKey, setActiveTourKey] = useState<TourKey | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [targetRadius, setTargetRadius] = useState(18);
 
-  const step = active ? tourSteps[stepIndex] : null;
+  const tourSteps = activeTourKey ? tours[activeTourKey] : [];
+  const step = activeTourKey ? tourSteps[stepIndex] : null;
 
   const finishTour = useCallback(() => {
-    localStorage.setItem(TOUR_STORAGE_KEY, "true");
-    setActive(false);
+    if (activeTourKey) {
+      onComplete?.(activeTourKey);
+    }
+
+    setActiveTourKey(null);
     setStepIndex(0);
     onStepChange?.(null);
-  }, [onStepChange]);
+  }, [activeTourKey, onComplete, onStepChange]);
 
-  const startTour = useCallback(() => {
+  const startTour = useCallback((tourKey: TourKey = "home") => {
     setStepIndex(0);
-    setActive(true);
+    setActiveTourKey(tourKey);
   }, []);
 
   useEffect(() => {
-    if (!localStorage.getItem(TOUR_STORAGE_KEY)) {
-      const timer = window.setTimeout(startTour, 700);
-      return () => window.clearTimeout(timer);
-    }
-  }, [startTour]);
-
-  useEffect(() => {
-    const handleStartTour = () => {
-      localStorage.removeItem(TOUR_STORAGE_KEY);
-      startTour();
+    const handleStartTour = (event: Event) => {
+      const tourKey = (event as CustomEvent<TourKey>).detail || "home";
+      startTour(tourKey);
     };
 
     window.addEventListener(START_TOUR_EVENT, handleStartTour);
@@ -174,7 +269,7 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
     };
   }, [targetRect, step]);
 
-  if (!active || !step) return null;
+  if (!activeTourKey || !step) return null;
 
   const padding = step.selector === '[data-tour="sidebar-primary-nav"]' ? 12 : 10;
   const highlightRadius = Math.max(12, Math.min(28, targetRadius + padding));
@@ -341,6 +436,6 @@ export function GuidedTour({ onStepChange }: GuidedTourProps) {
   );
 }
 
-export const startGuidedTour = () => {
-  window.dispatchEvent(new Event(START_TOUR_EVENT));
+export const startGuidedTour = (tourKey: TourKey = "home") => {
+  window.dispatchEvent(new CustomEvent(START_TOUR_EVENT, { detail: tourKey }));
 };

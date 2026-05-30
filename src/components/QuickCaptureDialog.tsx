@@ -69,7 +69,7 @@ export function QuickCaptureDialog({ open, onOpenChange }: QuickCaptureDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl rounded-lg border-border/70 bg-card">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-md bg-brand-teal/10 text-brand-teal">
             <Inbox className="h-5 w-5" />
@@ -92,14 +92,14 @@ export function QuickCaptureDialog({ open, onOpenChange }: QuickCaptureDialogPro
           <Button
             type="button"
             variant="outline"
-            className="rounded-full"
+            className="rounded-lg"
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
           <Button
             type="button"
-            className="rounded-full bg-brand-teal px-4 font-bold hover:bg-brand-teal/90"
+            className="rounded-lg bg-brand-teal px-4 font-bold hover:bg-brand-teal/90"
             onClick={saveCapture}
             disabled={!canSave}
           >

@@ -404,7 +404,7 @@ const RecurringMeetingDetail = () => {
     return (
       <div>
         <PageHeader
-          eyebrow="ACTSIX: Meetings"
+          eyebrow="Meetings"
           title="Recurring Meeting"
           subtitle="This recurring meeting could not be found."
         />
@@ -420,7 +420,7 @@ const RecurringMeetingDetail = () => {
   return (
     <div>
       <PageHeader
-        eyebrow="ACTSIX: Meetings"
+        eyebrow="Meetings"
         title={series.title}
         subtitle="Manage regular attendees, regular agenda, and generated meetings."
       />

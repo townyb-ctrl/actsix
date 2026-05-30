@@ -1,5 +1,5 @@
 ﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +7,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
-import TasksDashboard from "./pages/TasksDashboard";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Inbox from "./pages/Inbox";
@@ -48,7 +47,7 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
 
-              <Route path="/tasks" element={<TasksDashboard />} />
+              <Route path="/tasks" element={<Navigate to="/tasks/next" replace />} />
               <Route path="/tasks/next" element={<Tasks />} />
               <Route path="/tasks/projects" element={<Projects />} />
               <Route path="/tasks/projects/:projectId" element={<ProjectDetail />} />
@@ -95,7 +94,6 @@ const App = () => (
 );
 
 export default App;
-
 
 
 

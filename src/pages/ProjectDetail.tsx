@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  ChevronDown,
   CheckCircle2,
   Clock3,
   History,
@@ -85,6 +86,7 @@ const ProjectDetail = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [newActionTitle, setNewActionTitle] = useState("");
   const [newActionDue, setNewActionDue] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
@@ -610,7 +612,7 @@ const ProjectDetail = () => {
   if (!project) {
     return (
       <div>
-        <PageHeader eyebrow="ACTSIX: Tasks" title="Project" subtitle="Loading project..." />
+        <PageHeader eyebrow="Tasks" title="Project" subtitle="Loading project..." />
       </div>
     );
   }
@@ -618,24 +620,20 @@ const ProjectDetail = () => {
   return (
     <div>
       <PageHeader
-        eyebrow="ACTSIX: Tasks"
+        eyebrow="Tasks"
         title={project.name}
         subtitle={project.area || "General"}
       />
 
-      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-<Card className="border-border/70 bg-card shadow-card overflow-hidden">
-          <div className="p-6 border-b border-border/70">
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
+          <div className="border-b border-border/70 p-5">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                   <UserRound className="h-4 w-4" />
-                  {project.area || "General"}
+                  Project Summary
                 </div>
-
-                <h2 className="text-3xl font-extrabold tracking-tight mt-3 leading-tight">
-                  {project.name}
-                </h2>
 
                 <div className="mt-3">
                   <span className={`chip ${statusClass(project.status)}`}>
@@ -668,17 +666,17 @@ const ProjectDetail = () => {
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               {project.notes || "Add notes to describe this project, its goal, and what success looks like."}
             </p>
 
             <div className="mt-5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-extrabold tracking-tight">Progress</p>
-                <p className="font-extrabold tracking-tight">{stats.progress}%</p>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="font-extrabold">Progress</p>
+                <p className="font-extrabold">{stats.progress}%</p>
               </div>
 
-              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full bg-brand-teal rounded-full"
                   style={{ width: `${stats.progress}%` }}
@@ -686,20 +684,20 @@ const ProjectDetail = () => {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-3 mt-5">
-              <div className="rounded-lg border border-border/70 p-3 text-center">
+            <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 md:grid-cols-3">
+              <div className="bg-card p-3 text-center">
                 <CheckCircle2 className="h-5 w-5 text-brand-teal mx-auto mb-1" />
                 <div className="text-xl font-extrabold">{stats.openTasks.length}</div>
                 <p className="text-[11px] text-muted-foreground">Open Actions</p>
               </div>
 
-              <div className="rounded-lg border border-border/70 p-3 text-center">
+              <div className="bg-card p-3 text-center">
                 <CheckCircle2 className="h-5 w-5 text-brand-sage mx-auto mb-1" />
                 <div className="text-xl font-extrabold">{stats.completedTasks.length}</div>
                 <p className="text-[11px] text-muted-foreground">Completed</p>
               </div>
 
-              <div className="rounded-lg border border-border/70 p-3 text-center">
+              <div className="bg-card p-3 text-center">
                 <Clock3 className="h-5 w-5 text-brand-amber mx-auto mb-1" />
                 <div className="text-xl font-extrabold">{stats.dueSoon}</div>
                 <p className="text-[11px] text-muted-foreground">Due Soon</p>
@@ -707,10 +705,10 @@ const ProjectDetail = () => {
             </div>
           </div>
 
-          <div className="p-5 border-b border-border/70">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div className="border-b border-border/70 p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="font-extrabold tracking-tight">Collaborators</h3>
+                <h3 className="font-extrabold">Collaborators</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Link People profiles to this project.
                 </p>
@@ -720,7 +718,7 @@ const ProjectDetail = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-xl"
+                className="rounded-lg"
                 onClick={() => setAddCollaboratorOpen(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -729,7 +727,7 @@ const ProjectDetail = () => {
             </div>
 
             {collaborators.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+              <div className="rounded-lg border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
                 No collaborators added yet.
               </div>
             )}
@@ -769,11 +767,11 @@ const ProjectDetail = () => {
             )}
 
             {collaborators.length > 0 && (
-              <div className="mt-5 rounded-2xl border border-border/70 bg-muted/10 p-4">
+              <div className="mt-5 rounded-lg border border-border/70 bg-muted/10 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="label-eyebrow">Messaging</p>
-                    <h4 className="mt-1 font-extrabold tracking-tight">
+                    <h4 className="mt-1 font-extrabold">
                       Message collaborators
                     </h4>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -791,7 +789,7 @@ const ProjectDetail = () => {
                   onChange={(event) => setCollaboratorMessage(event.target.value)}
                   rows={3}
                   placeholder={`Hi team, quick update on ${project.name}...`}
-                  className="mt-4 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-4 w-full rounded-lg border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 />
 
                 {nonMessageableCollaborators.length > 0 && (
@@ -803,7 +801,7 @@ const ProjectDetail = () => {
                 <div className="mt-4 flex justify-end">
                   <Button
                     type="button"
-                    className="actsix-btn-primary rounded-xl"
+                    className="actsix-btn-primary rounded-lg"
                     onClick={messageProjectCollaborators}
                     disabled={messageableCollaborators.length === 0}
                   >
@@ -815,15 +813,15 @@ const ProjectDetail = () => {
             )}
           </div>
 
-          <div className="p-5 border-b border-border/70">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-extrabold tracking-tight">Next Actions</h3>
+          <div className="border-b border-border/70 p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-extrabold">Next Actions</h3>
               <span className="text-xs text-brand-teal font-bold">
                 {stats.openTasks.length} open
               </span>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-muted/10 p-2 space-y-1.5">
+            <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/10 p-2">
               {tasks.length === 0 && (
                 <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
                   <ListChecks className="h-4 w-4" />
@@ -844,7 +842,7 @@ const ProjectDetail = () => {
 
             <form
               onSubmit={addProjectAction}
-              className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto] mt-4"
+              className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]"
             >
               <Input
                 value={newActionTitle}
@@ -860,32 +858,43 @@ const ProjectDetail = () => {
                 className="border-border/70 bg-background"
               />
 
-              <Button type="submit" className="actsix-btn-primary rounded-xl px-4">
+              <Button type="submit" className="actsix-btn-primary rounded-lg px-4">
                 Add
               </Button>
             </form>
           </div>
 
-          <div className="p-5 border-b border-border/70">
+          <div className="border-b border-border/70 p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h3 className="font-extrabold tracking-tight">Activity Log</h3>
+                <h3 className="font-extrabold">Activity Log</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Recent changes made to this collaborative project.
+                  {activityLogs.length} recent change{activityLogs.length === 1 ? "" : "s"} recorded.
                 </p>
               </div>
 
-              <History className="h-4 w-4 text-muted-foreground" />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-lg px-2.5"
+                aria-expanded={isActivityOpen}
+                onClick={() => setIsActivityOpen((open) => !open)}
+              >
+                <History className="h-3.5 w-3.5" />
+                {isActivityOpen ? "Hide" : "Show"}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isActivityOpen ? "rotate-180" : ""}`} />
+              </Button>
             </div>
 
-            {activityLogs.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+            {isActivityOpen && activityLogs.length === 0 && (
+              <div className="rounded-lg border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
                 No activity recorded yet.
               </div>
             )}
 
-            {activityLogs.length > 0 && (
-              <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70 bg-background">
+            {isActivityOpen && activityLogs.length > 0 && (
+              <div className="overflow-hidden rounded-lg border border-border/70 bg-background">
                 {activityLogs.map((activity) => (
                   <div key={activity.id} className="flex gap-3 px-4 py-3">
                     <PersonAvatar
@@ -896,7 +905,7 @@ const ProjectDetail = () => {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <p className="truncate text-sm font-extrabold tracking-tight">
+                        <p className="truncate text-sm font-extrabold">
                           {activity.title}
                         </p>
 
@@ -918,8 +927,8 @@ const ProjectDetail = () => {
           </div>
 
           <div className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-extrabold tracking-tight">Notes</h3>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-extrabold">Notes</h3>
               <Button variant="ghost" size="sm" className="text-brand-teal" onClick={saveNotes}>
                 Save
               </Button>
@@ -936,13 +945,13 @@ const ProjectDetail = () => {
       </div>
 
       {addCollaboratorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
           <Card className="relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-visible border-border/70 bg-card shadow-card">
             <form onSubmit={addCollaborator} className="flex min-h-0 flex-1 flex-col">
               <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-6">
                 <div>
                   <p className="label-eyebrow">Project Collaborators</p>
-                  <h2 className="text-xl font-extrabold tracking-tight">
+                  <h2 className="text-xl font-extrabold leading-tight">
                     Add Collaborators
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">

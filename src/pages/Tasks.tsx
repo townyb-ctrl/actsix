@@ -328,7 +328,7 @@ const Tasks = () => {
       />
 
       <div className="-mt-1 w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="space-y-2">
+        <div data-tour="tasks-filters" className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -500,7 +500,7 @@ const Tasks = () => {
             </h2>
           </div>
 
-          <Card className="p-2 space-y-1.5 shadow-card border-border/70 bg-card">
+          <Card data-tour="tasks-list" className="p-2 space-y-1.5 shadow-card border-border/70 bg-card">
             {filteredOpen.length === 0 && (
               <div className="p-6 text-sm text-muted-foreground">
                 No open actions match this view.

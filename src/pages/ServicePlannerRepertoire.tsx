@@ -7,7 +7,7 @@ const ServicePlannerRepertoire = () => {
     <div>
       <div className="w-full space-y-4 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
         <div>
-          <p className="label-eyebrow">ACTSIX: Service Planning</p>
+          <p className="label-eyebrow">Service Planner</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
             Repertoire
           </h1>

@@ -256,7 +256,7 @@ export function FeedbackBubble() {
               <span className="text-xs font-semibold text-muted-foreground">{message.length}/1200</span>
               <Button
                 type="button"
-                className="rounded-full bg-brand-teal px-4 font-bold hover:bg-brand-teal/90"
+                className="rounded-lg bg-brand-teal px-4 font-bold hover:bg-brand-teal/90"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
               >

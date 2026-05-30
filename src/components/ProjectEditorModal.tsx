@@ -23,34 +23,34 @@ const ProjectEditorModal = ({
   if (!project) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl shadow-card border-border/70 bg-card max-h-[88vh] flex flex-col overflow-hidden">
-        <div className="flex items-start justify-between gap-4 p-6 border-b border-border/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 p-4 backdrop-blur-sm">
+      <Card className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden border-border/70 bg-card shadow-card">
+        <div className="flex items-start justify-between gap-4 border-b border-border/70 p-5">
           <div>
             <p className="label-eyebrow">Edit Project</p>
-            <h2 className="text-2xl font-extrabold tracking-tight mt-1">
+            <h2 className="mt-1 text-xl font-extrabold leading-tight">
               Project details
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="mt-1 text-sm text-muted-foreground">
               Update the project name, area, status, and notes.
             </p>
           </div>
 
-          <Button variant="outline" className="rounded-xl" onClick={onClose}>
-            <X className="h-4 w-4 mr-2" />
-            Close
+          <Button variant="ghost" size="icon" className="rounded-lg text-muted-foreground" onClick={onClose}>
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
           </Button>
         </div>
 
-        <div className="flex-1 p-6 overflow-y-auto space-y-5">
+        <div className="flex-1 space-y-5 overflow-y-auto p-5">
           <section>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <FolderKanban className="h-4 w-4 text-brand-teal" />
-              <h3 className="font-extrabold tracking-tight">Project identity</h3>
+              <h3 className="font-extrabold">Project identity</h3>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft md:col-span-2">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-border/70 bg-background/45 p-3 md:col-span-2">
                 <label className="label-eyebrow">Project name</label>
                 <Input
                   value={project.name ?? ""}
@@ -60,12 +60,12 @@ const ProjectEditorModal = ({
                   className="mt-2 border-border/70 bg-background"
                   placeholder="Project name"
                 />
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="mt-2 text-xs text-muted-foreground">
                   Renaming this project will also update linked tasks.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+              <div className="rounded-lg border border-border/70 bg-background/45 p-3">
                 <label className="label-eyebrow">Area</label>
                 <Input
                   value={project.area ?? "General"}
@@ -77,7 +77,7 @@ const ProjectEditorModal = ({
                 />
               </div>
 
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+              <div className="rounded-lg border border-border/70 bg-background/45 p-3">
                 <label className="label-eyebrow">Status</label>
                 <select
                   value={project.status ?? "In Progress"}
@@ -96,7 +96,7 @@ const ProjectEditorModal = ({
           </section>
 
           <section>
-            <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+            <div className="rounded-lg border border-border/70 bg-background/45 p-3">
               <label className="label-eyebrow">Notes</label>
               <textarea
                 value={project.notes ?? ""}
@@ -109,11 +109,11 @@ const ProjectEditorModal = ({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-border/70 bg-muted/30 p-4">
+          <section className="rounded-lg border border-border/70 bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="font-extrabold tracking-tight">Advanced</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h3 className="font-extrabold">Advanced</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Created:{" "}
                   {project.created_at
                     ? new Date(project.created_at).toLocaleDateString()
@@ -135,20 +135,20 @@ const ProjectEditorModal = ({
           </section>
         </div>
 
-        <div className="shrink-0 flex items-center justify-between gap-3 p-4 border-t border-border/70 bg-card/95">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/70 bg-card/95 p-4">
           <p className="text-xs text-muted-foreground">
             Save changes to update this project.
           </p>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="rounded-xl" onClick={onClose}>
+            <Button variant="outline" className="rounded-lg" onClick={onClose}>
               Cancel
             </Button>
 
             <Button
               disabled={saving}
               variant="outline"
-              className="rounded-xl actsix-btn-soft font-bold"
+              className="actsix-btn-soft rounded-lg font-bold"
               onClick={onSave}
             >
               <Save className="h-4 w-4 mr-2" />

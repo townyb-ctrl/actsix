@@ -1,11 +1,13 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  ArrowUpRight,
   CalendarDays,
   Clock3,
   MapPin,
   MoreHorizontal,
   Plus,
+  Search,
   Settings,
   Trash2,
   Users,
@@ -767,37 +769,50 @@ const ServicePlanner = () => {
 
   return (
     <div>
-      <div className="w-full space-y-4 px-4 pb-12 pt-4 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="w-full space-y-4 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
+        <div data-tour="service-planner-actions" className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="label-eyebrow">ACTSIX: Service Planning</p>
-            <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+            <p className="label-eyebrow">Service Planner</p>
+            <h1 className="mt-1.5 text-2xl font-extrabold leading-tight md:text-3xl">
               Services
             </h1>
-            <p className="mt-2 text-base text-muted-foreground">
+            <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">
               Create service types, add service dates, and open each service to build the order and serving team.
             </p>
           </div>
 
           <Button
             type="button"
-            className="actsix-btn-primary rounded-xl shrink-0"
+            size="sm"
+            className="shrink-0 rounded-lg bg-brand-sage px-4 font-bold text-white shadow-soft hover:bg-brand-sage/90 hover:text-white"
             onClick={() => setAddTypeOpen(true)}
           >
-            <Plus className="h-6 w-6" strokeWidth={3} />
+            <Plus className="h-4 w-4" />
             Add Service Type
           </Button>
         </div>
 
-        <div className="space-y-5">
+        <div data-tour="service-planner-search" className="rounded-lg border border-border/70 bg-card p-3 shadow-soft">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-1.5">
+            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search service types, dates, or locations..."
+              className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+            />
+          </div>
+        </div>
+
+        <div data-tour="service-planner-list" className="space-y-6">
           {loading && (
-            <Card className="p-6 border-border/70 bg-card shadow-card">
+            <Card className="border-border/70 bg-card p-5 shadow-soft">
               <p className="text-sm text-muted-foreground">Loading services...</p>
             </Card>
           )}
 
           {!loading && filteredServiceTypes.length === 0 && (
-            <Card className="p-6 border-border/70 bg-card shadow-card">
+            <Card className="border-border/70 bg-card p-5 shadow-soft">
               <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
                 <LottieIcon
                   animationData={emptyServicesAnimation}
@@ -1020,19 +1035,19 @@ const ServicePlanner = () => {
   return (
                 <Card
                   key={type.id}
-                  className="border-border/70 bg-card shadow-card overflow-hidden"
+                  className="overflow-hidden border-border/70 bg-card shadow-soft"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-teal/20 bg-brand-teal px-4 py-3 text-white">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-sage/25 bg-brand-sage-soft px-4 py-3 shadow-[inset_3px_0_0_hsl(var(--brand-sage))]">
                     <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/65">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-sage">
                         Service Type
                       </p>
-                      <h2 className="mt-0.5 text-2xl font-extrabold tracking-tight text-white">
+                      <h2 className="mt-0.5 truncate text-2xl font-black leading-tight text-foreground">
                         {type.name}
                       </h2>
 
                       {type.description && (
-                        <p className="mt-1 text-xs text-white/75">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {type.description}
                         </p>
                       )}
@@ -1041,21 +1056,22 @@ const ServicePlanner = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent p-0 text-white shadow-none transition hover:bg-white/10 hover:text-white"
+                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-brand-sage/30 bg-card/70 px-2.5 text-xs font-bold text-brand-sage transition hover:bg-brand-sage/10"
                         onClick={() => openAddService(type)}
                         aria-label="Add service date"
                       >
-                        <Plus className="h-5 w-5" strokeWidth={2.6} />
+                        <Plus className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Add Date</span>
                       </button>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent p-0 text-white shadow-none transition hover:bg-white/10 hover:text-white"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 bg-background p-0 text-muted-foreground shadow-none transition hover:bg-muted/70 hover:text-foreground"
                           aria-label="Service type options"
                         >
-                          <MoreHorizontal className="h-5 w-5" strokeWidth={2.6} />
+                          <MoreHorizontal className="h-4 w-4" />
                         </button>
                       </DropdownMenuTrigger>
 
@@ -1084,12 +1100,12 @@ const ServicePlanner = () => {
                     </div>
                   </div>
 
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-border/60 bg-background/30">
                     {servicesForType.length === 0 && (
-                      <div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 px-3 py-3 text-sm text-muted-foreground">
                         <LottieIcon
                           animationData={scheduleAnimation}
-                          className="h-8 w-8 shrink-0"
+                          className="h-6 w-6 shrink-0 opacity-80"
                         />
 
                         <div>
@@ -1106,45 +1122,52 @@ const ServicePlanner = () => {
                     {servicesForType.map((service) => (
                       <div
                         key={service.id}
-                        className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors"
+                        className="grid items-center gap-2.5 px-3 py-2 transition-colors hover:bg-muted/30 sm:grid-cols-[1.25rem_minmax(0,1fr)_auto_auto]"
                       >
-                        <div className="h-10 w-10 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
-                          <CalendarDays className="h-5 w-5" />
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-brand-teal/10 text-brand-teal">
+                          <CalendarDays className="h-3 w-3" />
                         </div>
 
-                        <div className="flex-1 min-w-0">
+                        <div className="min-w-0 flex-1">
                           <Link
                             to={`/service-planner/services/${service.id}`}
-                            className="font-extrabold tracking-tight truncate hover:text-brand-teal transition-colors"
+                            className="truncate text-sm font-extrabold transition-colors hover:text-brand-teal"
                           >
                             {formatServiceTitleDate(service.service_date)}
                           </Link>
 
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                             <span className="inline-flex items-center gap-1">
-                              <CalendarDays className="h-3.5 w-3.5" />
+                              <CalendarDays className="h-3 w-3" />
                               {formatDate(service.service_date)}
                             </span>
 
                             {service.start_time && (
                               <span className="inline-flex items-center gap-1">
-                                <Clock3 className="h-3.5 w-3.5" />
+                                <Clock3 className="h-3 w-3" />
                                 {service.start_time.slice(0, 5)}
                               </span>
                             )}
 
                             {service.location && (
                               <span className="inline-flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5" />
+                                <MapPin className="h-3 w-3" />
                                 {service.location}
                               </span>
                             )}
                           </div>
                         </div>
 
+                        <Button asChild variant="outline" size="sm" className="h-7 shrink-0 rounded-lg px-2 text-xs">
+                          <Link to={`/service-planner/services/${service.id}`}>
+                            Open
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                          </Link>
+                        </Button>
+
                         <button
                             type="button"
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground/55 transition hover:bg-muted/40 hover:text-destructive"
                             onClick={() => deleteServiceInstance(service)}
                             aria-label="Delete service date"
                           >
@@ -1160,12 +1183,12 @@ const ServicePlanner = () => {
       </div>
 
       {addTypeOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Type</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight">
                   Add Service Type
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1176,7 +1199,7 @@ const ServicePlanner = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-lg"
                 onClick={() => setAddTypeOpen(false)}
               >
                 Close
@@ -1231,13 +1254,13 @@ const ServicePlanner = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="rounded-lg"
                   onClick={() => setAddTypeOpen(false)}
                 >
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary rounded-lg">
                   <Plus className="h-4 w-4" />
                   Create Service Type
                 </Button>
@@ -1248,12 +1271,12 @@ const ServicePlanner = () => {
       )}
 
       {addServiceOpen && selectedServiceType && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Date</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight">
                   Add {selectedServiceType.name}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1264,7 +1287,7 @@ const ServicePlanner = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-lg"
                 onClick={() => setAddServiceOpen(false)}
               >
                 Close
@@ -1318,13 +1341,13 @@ const ServicePlanner = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="rounded-lg"
                   onClick={() => setAddServiceOpen(false)}
                 >
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary rounded-lg">
                   <Plus className="h-4 w-4" />
                   Create Service
                 </Button>
@@ -1335,12 +1358,12 @@ const ServicePlanner = () => {
       )}
 
       {templateOpen && templateServiceType && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-5xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="max-h-[86vh] w-full max-w-5xl overflow-auto border-border/70 bg-card p-5 shadow-card">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Template</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight">
                   Edit Service Template
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1351,7 +1374,7 @@ const ServicePlanner = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-lg"
                 onClick={() => setTemplateOpen(false)}
               >
                 Close
@@ -1364,7 +1387,7 @@ const ServicePlanner = () => {
               ) : (
                 <>
                   {templateItems.length === 0 && (
-                    <div className="rounded-xl border border-border/70 bg-background p-4 text-sm text-muted-foreground">
+                    <div className="rounded-lg border border-border/70 bg-background p-4 text-sm text-muted-foreground">
                       No template items yet. Add your standard welcome, songs, sermon, notices, and other recurring service elements.
                     </div>
                   )}
@@ -1372,7 +1395,7 @@ const ServicePlanner = () => {
                   {templateItems.map((item, index) => (
                     <div
                       key={`${item.id || "new"}-${index}`}
-                      className="grid gap-2 rounded-xl border border-border/70 bg-background p-3 md:grid-cols-[140px_minmax(0,1fr)_100px_auto]"
+                      className="grid gap-2 rounded-lg border border-border/70 bg-background p-3 md:grid-cols-[140px_minmax(0,1fr)_100px_auto]"
                     >
                       <select
                         value={item.item_type}
@@ -1408,7 +1431,7 @@ const ServicePlanner = () => {
                       <Button
                         type="button"
                         variant="outline"
-                        className="rounded-xl text-destructive"
+                        className="rounded-lg text-destructive"
                         onClick={() => removeTemplateItem(index)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -1430,7 +1453,7 @@ const ServicePlanner = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-lg"
                 onClick={addTemplateItem}
               >
                 <Plus className="h-4 w-4" />
@@ -1439,7 +1462,7 @@ const ServicePlanner = () => {
 
               <Button
                 type="button"
-                className="actsix-btn-primary rounded-xl"
+                className="actsix-btn-primary rounded-lg"
                 onClick={saveTemplateItems}
                 disabled={templateLoading}
               >
@@ -1452,12 +1475,12 @@ const ServicePlanner = () => {
 
 
       {teamLinkOpen && teamLinkServiceType && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Assign Teams to Service Type</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight">
                   {teamLinkServiceType.name}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1468,7 +1491,7 @@ const ServicePlanner = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-lg"
                 onClick={() => setTeamLinkOpen(false)}
               >
                 Close
@@ -1477,8 +1500,8 @@ const ServicePlanner = () => {
 
             <div className="mt-6 space-y-2">
               {teams.length === 0 && (
-                <div className="rounded-xl border border-border/70 bg-background p-4 text-sm text-muted-foreground">
-                  No teams created yet. Create teams from Service Planning ? Teams first.
+                <div className="rounded-lg border border-border/70 bg-background p-4 text-sm text-muted-foreground">
+                  No teams created yet. Create teams from Service Planner &gt; Teams first.
                 </div>
               )}
 
@@ -1494,7 +1517,7 @@ const ServicePlanner = () => {
                     key={team.id}
                     type="button"
                     onClick={() => toggleServiceTypeTeam(team)}
-                    className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                    className={`w-full rounded-lg border px-4 py-3 text-left transition ${
                       linked
                         ? "border-brand-teal bg-brand-teal/10"
                         : "border-border/70 bg-background hover:bg-muted/30"
@@ -1502,7 +1525,7 @@ const ServicePlanner = () => {
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="font-extrabold tracking-tight">
+                        <div className="font-extrabold">
                           {team.name}
                         </div>
                         {team.description && (

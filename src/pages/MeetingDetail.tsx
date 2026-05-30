@@ -1331,7 +1331,7 @@ ${transcriptText.trim()}`;
   if (!meeting) {
     return (
       <div>
-        <PageHeader eyebrow="ACTSIX: Meetings" title="Meeting" subtitle="Loading meeting..." />
+        <PageHeader eyebrow="Meetings" title="Meeting" subtitle="Loading meeting..." />
       </div>
     );
   }
@@ -1339,7 +1339,7 @@ ${transcriptText.trim()}`;
   return (
     <div>
       <PageHeader
-        eyebrow="ACTSIX: Meetings"
+        eyebrow="Meetings"
         title={meeting.title || "Meeting"}
         subtitle="Agenda, minutes, attendees, apologies, and action points."
       />

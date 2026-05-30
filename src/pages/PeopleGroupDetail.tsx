@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Edit3, Folder, MessageCircle, Save, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ArrowLeft, Crown, Edit3, Folder, MessageCircle, Save, Trash2, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
 import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
@@ -49,11 +48,29 @@ type PeopleGroupMember = {
   people?: Person | null;
 };
 
+const roleParts = (role: string | null) =>
+  (role || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+const isLeaderRole = (role: string | null) =>
+  roleParts(role).some((part) => part.toLowerCase().includes("leader"));
+
+const getLeaderRole = (role: string | null, shouldBeLeader: boolean) => {
+  const partsWithoutLeader = roleParts(role).filter(
+    (part) => !part.toLowerCase().includes("leader")
+  );
+
+  if (!shouldBeLeader) return partsWithoutLeader.join(", ") || null;
+
+  return ["Leader", ...partsWithoutLeader].join(", ");
+};
+
 const PeopleGroupDetail = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { person: currentPerson } = useCurrentPerson();
 
   const [group, setGroup] = useState<PeopleGroup | null>(null);
   const [folders, setFolders] = useState<PeopleGroupFolder[]>([]);
@@ -104,7 +121,7 @@ const PeopleGroupDetail = () => {
       (supabase as any)
         .from("people_group_members")
         .select("id, user_id, group_id, person_id, role, created_at, people(id, display_name, avatar_url, email, phone_number)")
-        .eq("workspace_id", currentPerson.workspace_id)
+        .eq("user_id", user.id)
         .eq("group_id", groupId)
         .order("created_at", { ascending: true }),
     ]);
@@ -252,6 +269,36 @@ const PeopleGroupDetail = () => {
 
     toast.success("Person removed from group");
     load();
+  };
+
+  const updateMemberLeader = async (
+    member: PeopleGroupMember,
+    shouldBeLeader: boolean
+  ) => {
+    if (!user) return;
+
+    const nextRole = getLeaderRole(member.role, shouldBeLeader);
+
+    const { error } = await (supabase as any)
+      .from("people_group_members")
+      .update({ role: nextRole })
+      .eq("id", member.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setMembers((currentMembers) =>
+      currentMembers.map((currentMember) =>
+        currentMember.id === member.id
+          ? { ...currentMember, role: nextRole }
+          : currentMember
+      )
+    );
+
+    toast.success(shouldBeLeader ? "Leader assigned" : "Leader removed");
   };
 
   if (loading) {
@@ -417,50 +464,83 @@ const PeopleGroupDetail = () => {
 
         {members.length > 0 && (
           <div className="divide-y divide-border">
-            {members.map((member) => (
-              <div key={member.id} className="flex items-center gap-3 px-5 py-4">
-                <PersonAvatar
-                  name={member.people?.display_name}
-                  avatarUrl={member.people?.avatar_url}
-                  size="md"
-                />
+            {members.map((member) => {
+              const isLeader = isLeaderRole(member.role);
 
-                <div className="min-w-0 flex-1">
-                  {member.people?.id ? (
-                    <Link
-                      to={`/people/${member.people.id}`}
-                      className="truncate text-sm font-extrabold tracking-tight transition hover:text-brand-teal"
+              return (
+                <div
+                  key={member.id}
+                  className="flex flex-wrap items-center gap-3 px-5 py-4"
+                >
+                  <PersonAvatar
+                    name={member.people?.display_name}
+                    avatarUrl={member.people?.avatar_url}
+                    size="md"
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      {member.people?.id ? (
+                        <Link
+                          to={`/people/${member.people.id}`}
+                          className="truncate text-sm font-extrabold tracking-tight transition hover:text-brand-teal"
+                        >
+                          {member.people.display_name}
+                        </Link>
+                      ) : (
+                        <p className="truncate text-sm font-extrabold tracking-tight">
+                          Person
+                        </p>
+                      )}
+
+                      {isLeader && (
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-brand-sage/15 px-2 py-0.5 text-[11px] font-bold text-brand-sage">
+                          <Crown className="h-3 w-3" />
+                          Leader
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      {member.role && <span>{member.role}</span>}
+                      {member.people?.email && (
+                        <>
+                          {member.role && <span>·</span>}
+                          <span>{member.people.email}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant={isLeader ? "outline" : "ghost"}
+                      size="sm"
+                      className={
+                        isLeader
+                          ? "h-8 rounded-lg border-brand-sage/35 bg-brand-sage/10 px-2.5 text-xs font-bold text-brand-sage hover:bg-brand-sage/15 hover:text-brand-sage"
+                          : "h-8 rounded-lg px-2.5 text-xs font-bold text-muted-foreground hover:text-brand-sage"
+                      }
+                      onClick={() => updateMemberLeader(member, !isLeader)}
                     >
-                      {member.people.display_name}
-                    </Link>
-                  ) : (
-                    <p className="truncate text-sm font-extrabold tracking-tight">
-                      Person
-                    </p>
-                  )}
+                      <Crown className="h-3.5 w-3.5" />
+                      {isLeader ? "Leader" : "Make Leader"}
+                    </Button>
 
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                    {member.role && <span>{member.role}</span>}
-                    {member.people?.email && (
-                      <>
-                        {member.role && <span>·</span>}
-                        <span>{member.people.email}</span>
-                      </>
-                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeMember(member)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={() => removeMember(member)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

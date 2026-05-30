@@ -5,7 +5,6 @@ import {
   Clock,
   FolderKanban,
   Inbox,
-  LayoutDashboard,
   ListChecks,
   Sparkles,
 } from "lucide-react";
@@ -197,81 +196,63 @@ const TasksDashboard = () => {
   return (
     <div>
       <PageHeader
-        eyebrow="ACTSIX: Tasks"
-        title="Tasks Dashboard"
-        subtitle="Capture, clarify, organize, and act within the ACTSIX Tasks module."
+        eyebrow="Tasks"
+        title="Task Dashboard"
+        subtitle="Capture, clarify, and move the next right thing forward."
+        actions={
+          <>
+            <Button
+              type="button"
+              size="sm"
+              className="actsix-btn-primary rounded-lg"
+              onClick={() => setQuickCaptureOpen(true)}
+            >
+              Quick Capture
+            </Button>
+
+            <Button asChild variant="outline" size="sm" className="rounded-lg">
+              <Link to="/tasks/next">Next Actions</Link>
+            </Button>
+          </>
+        }
       />
 
-      <div className="w-full space-y-8 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="p-6 border-border/70 bg-card shadow-card">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div>
-              <div className="flex items-center gap-2 text-brand-teal font-bold text-sm">
-                <LayoutDashboard className="h-4 w-4" />
-                ACTSIX: Tasks
-              </div>
-
-              <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
-                Your ministry work dashboard
-              </h2>
-
-              <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
-                This is the dedicated command center for everything related to
-                tasks, projects, next actions, waiting items, and weekly review.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                className="actsix-btn-primary rounded-xl"
-                onClick={() => setQuickCaptureOpen(true)}
-              >
-                Quick Capture
-              </Button>
-
-              <Button asChild variant="outline" className="rounded-xl">
-                <Link to="/tasks/next">Open Next Actions</Link>
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 shadow-soft sm:grid-cols-2 lg:grid-cols-5">
+          <div className="bg-card px-4 py-3">
             <p className="label-eyebrow">Inbox</p>
-            <div className="mt-2 text-3xl font-extrabold">{counts.inbox}</div>
-          </Card>
+            <div className="mt-1 text-2xl font-extrabold">{counts.inbox}</div>
+          </div>
 
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="bg-card px-4 py-3">
             <p className="label-eyebrow">Next Actions</p>
-            <div className="mt-2 text-3xl font-extrabold">{counts.next}</div>
-          </Card>
+            <div className="mt-1 text-2xl font-extrabold">{counts.next}</div>
+          </div>
 
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="bg-card px-4 py-3">
             <p className="label-eyebrow">Projects</p>
-            <div className="mt-2 text-3xl font-extrabold">{counts.projects}</div>
-          </Card>
+            <div className="mt-1 text-2xl font-extrabold">{counts.projects}</div>
+          </div>
 
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="bg-card px-4 py-3">
             <p className="label-eyebrow">Waiting</p>
-            <div className="mt-2 text-3xl font-extrabold">{counts.waiting}</div>
-          </Card>
+            <div className="mt-1 text-2xl font-extrabold">{counts.waiting}</div>
+          </div>
 
-          <Card className="p-5 border-border/70 bg-card shadow-card">
+          <div className="bg-card px-4 py-3">
             <p className="label-eyebrow">Someday</p>
-            <div className="mt-2 text-3xl font-extrabold">{counts.someday}</div>
-          </Card>
+            <div className="mt-1 text-2xl font-extrabold">{counts.someday}</div>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card className="p-6 border-border/70 bg-card shadow-card">
-            <div className="flex items-start justify-between mb-4">
+          <Card className="border-border/70 bg-card p-4 shadow-soft">
+            <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-extrabold tracking-tight">
+                <h2 className="text-lg font-extrabold">
                   Highest Priority
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="mt-1 text-sm text-muted-foreground">
                   The most important active next actions.
                 </p>
               </div>
@@ -280,7 +261,7 @@ const TasksDashboard = () => {
               </span>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-muted/10 p-2 space-y-1.5">
+            <div className="space-y-1.5 rounded-md border border-border/70 bg-muted/10 p-2">
               {topTasks.length === 0 && (
                 <div className="p-6 text-sm text-muted-foreground text-center">
                   No active next actions yet.
@@ -304,9 +285,9 @@ const TasksDashboard = () => {
 
               return (
                 <Link key={area.title} to={area.to}>
-                  <Card className="p-4 border-border/70 bg-card shadow-card hover:border-brand-teal/40 transition-colors group">
+                  <Card className="border-border/70 bg-card p-3 shadow-soft transition-colors hover:border-brand-teal/40 group">
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-2xl bg-brand-teal/10 text-brand-teal flex items-center justify-center">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
                         <Icon className="h-5 w-5" />
                       </div>
 

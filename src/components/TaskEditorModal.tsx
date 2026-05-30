@@ -40,33 +40,33 @@ const TaskEditorModal = ({
   if (!task) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl shadow-card border-border/70 bg-card h-[88vh] flex flex-col overflow-hidden">
-        <div className="flex items-start justify-between gap-4 p-6 border-b border-border/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 p-4 backdrop-blur-sm">
+      <Card className="flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden border-border/70 bg-card shadow-card">
+        <div className="flex items-start justify-between gap-4 border-b border-border/70 p-5">
           <div>
             <p className="label-eyebrow">{eyebrow}</p>
-            <h2 className="text-2xl font-extrabold tracking-tight mt-1">
+            <h2 className="mt-1 text-xl font-extrabold leading-tight">
               {title}
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="mt-1 text-sm text-muted-foreground">
               {description}
             </p>
           </div>
 
-          <Button variant="outline" className="rounded-xl" onClick={onClose}>
-            <X className="h-4 w-4 mr-2" />
-            Close
+          <Button variant="ghost" size="icon" className="rounded-lg text-muted-foreground" onClick={onClose}>
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
           </Button>
         </div>
 
-        <div className="flex-1 p-6 overflow-y-auto space-y-5">
+        <div className="flex-1 space-y-5 overflow-y-auto p-5">
           <section>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <Archive className="h-4 w-4 text-brand-teal" />
-              <h3 className="font-extrabold tracking-tight">Destination</h3>
+              <h3 className="font-extrabold">Destination</h3>
             </div>
 
-            <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/5 p-4 shadow-soft">
+            <div className="rounded-lg border border-brand-teal/25 bg-brand-teal/5 p-3">
               <label className="label-eyebrow">Where does this belong?</label>
               <select
                 value="task"
@@ -76,14 +76,14 @@ const TaskEditorModal = ({
                 <option value="task">Next Action</option>
               </select>
 
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="mt-2 text-xs text-muted-foreground">
                 This item is already a Next Action.
               </p>
             </div>
           </section>
 
           <section className="grid gap-3">
-            <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+            <div className="rounded-lg border border-border/70 bg-background/45 p-3">
               <label className="label-eyebrow">Title</label>
               <Input
                 value={task.title ?? ""}
@@ -95,7 +95,7 @@ const TaskEditorModal = ({
               />
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+            <div className="rounded-lg border border-border/70 bg-background/45 p-3">
               <label className="label-eyebrow flex items-center gap-2">
                 <FileText className="h-3.5 w-3.5" />
                 Notes
@@ -117,11 +117,11 @@ const TaskEditorModal = ({
             onRefreshOptions={onRefreshOptions}
           />
 
-          <section className="rounded-2xl border border-border/70 bg-muted/30 p-4">
+          <section className="rounded-lg border border-border/70 bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="font-extrabold tracking-tight">Advanced</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h3 className="font-extrabold">Advanced</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Created:{" "}
                   {task.created_at
                     ? new Date(task.created_at).toLocaleDateString()
@@ -143,20 +143,20 @@ const TaskEditorModal = ({
           </section>
         </div>
 
-        <div className="shrink-0 flex items-center justify-between gap-3 p-4 border-t border-border/70 bg-card/95">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/70 bg-card/95 p-4">
           <p className="text-xs text-muted-foreground">
             Save changes to update this Next Action.
           </p>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="rounded-xl" onClick={onClose}>
+            <Button variant="outline" className="rounded-lg" onClick={onClose}>
               Cancel
             </Button>
 
             <Button
               disabled={saving}
               variant="outline"
-              className="rounded-xl border-brand-teal/50 bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal font-bold"
+              className="rounded-lg border-brand-teal/50 bg-brand-teal/10 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal"
               onClick={onSave}
             >
               <Save className="h-4 w-4 mr-2" />

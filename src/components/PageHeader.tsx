@@ -11,17 +11,17 @@ export const PageHeader = ({
   subtitle?: string;
   actions?: ReactNode;
 }) => (
-  <div className="px-4 pt-6 pb-3 sm:px-6 xl:px-8 2xl:px-10">
+  <div className="px-4 pb-3 pt-5 sm:px-6 xl:px-8 2xl:px-10">
     <div className="w-full">
-      {eyebrow && <div className="label-eyebrow mb-2">{eyebrow}</div>}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-balance leading-[0.98]">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          {eyebrow && <div className="label-eyebrow mb-1.5">{eyebrow}</div>}
+          <h1 className="text-2xl font-extrabold leading-tight md:text-3xl">
             {title}
           </h1>
-          {subtitle && <p className="mt-2 text-muted-foreground max-w-2xl">{subtitle}</p>}
+          {subtitle && <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">{subtitle}</p>}
         </div>
-        {actions}
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
     </div>
   </div>
