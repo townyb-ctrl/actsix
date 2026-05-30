@@ -111,11 +111,6 @@ export default function AppLayout() {
   const routeModuleActive = isModuleActive(routeModuleKey);
   const profilePath = currentPerson?.id ? `/people/${currentPerson.id}` : "/settings";
   const accountName = currentPerson?.display_name || displayName || user?.email || "Profile";
-  const inTasksArea =
-    location.pathname === "/tasks" ||
-    location.pathname.startsWith("/tasks/") ||
-    ["/inbox", "/projects", "/waiting", "/someday"].includes(location.pathname);
-
   useEffect(() => {
     if (!profileMenuOpen) return;
 
@@ -221,23 +216,18 @@ export default function AppLayout() {
               </Button>
             )}
 
-            <div className="ml-auto flex min-w-0 items-center gap-2">
+            <div className="ml-auto flex min-w-0 items-center gap-2.5">
               <Button
                 type="button"
-                size={inTasksArea ? "sm" : "icon"}
+                size="icon"
                 variant="outline"
                 data-tour="quick-capture"
-                className={
-                  inTasksArea
-                    ? "gap-1.5 rounded-lg border-brand-teal/35 bg-brand-teal/10 px-3 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal sm:px-4"
-                    : "h-9 w-9 rounded-lg border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white"
-                }
+                className="h-10 w-10 rounded-full border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white"
                 onClick={() => setQuickCaptureOpen(true)}
                 title="Quick Capture"
                 aria-label="Quick Capture"
               >
-                <Zap className={inTasksArea ? "h-3.5 w-3.5 shrink-0" : "h-[18px] w-[18px] shrink-0"} />
-                {inTasksArea && <span className="hidden sm:inline">Quick Capture</span>}
+                <Zap className="h-[18px] w-[18px] shrink-0" />
               </Button>
 
               <div data-tour="notifications">

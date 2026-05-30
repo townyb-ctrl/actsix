@@ -17,6 +17,23 @@ const EDGE_GAP = 16;
 const POSITION_STORAGE_KEY = "actsix:feedback-bubble-position";
 const FEEDBACK_RATE_LIMIT = 5;
 const FEEDBACK_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const FEEDBACK_PROMPT_INITIAL_DELAY_MS = 90 * 1000;
+const FEEDBACK_PROMPT_INTERVAL_MS = 3 * 60 * 1000;
+const FEEDBACK_PROMPT_VISIBLE_MS = 14 * 1000;
+const FEEDBACK_INTRO_DELAY_MS = 10 * 1000;
+const FEEDBACK_INTRO_VISIBLE_MS = 18 * 1000;
+const FEEDBACK_PROMPTS = [
+  "Don't forget to give me feedback.",
+  "Hope you're having a great day.",
+  "What's frustrating about this page?",
+  "What do you wish this app could do?",
+  "Anything feel confusing here?",
+  "What would make this workflow smoother?",
+  "Tell me what's missing.",
+  "What feels slower than it should?",
+  "Is anything getting in your way?",
+  "What should Brandon improve next?",
+];
 
 type BubblePosition = {
   x: number;
@@ -58,6 +75,12 @@ export function FeedbackBubble() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [position, setPosition] = useState<BubblePosition>(getInitialPosition);
+  const [promptIndex, setPromptIndex] = useState(() =>
+    Math.floor(Math.random() * FEEDBACK_PROMPTS.length)
+  );
+  const [promptVisible, setPromptVisible] = useState(false);
+  const [introVisible, setIntroVisible] = useState(false);
+  const lastPromptIndexRef = useRef(promptIndex);
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -69,9 +92,16 @@ export function FeedbackBubble() {
 
   const feedbackAvatarUrl = feedbackAvatar;
   const accountName = currentPerson?.display_name || displayName || user?.email || "Alpha tester";
+  const firstName = accountName.split(/[ @]/)[0] || "there";
   const canSubmit = message.trim().length > 0 && !submitting;
   const panelOpensBelow = position.y < 260;
   const panelAlignsLeft = typeof window !== "undefined" && position.x < window.innerWidth / 2;
+  const promptAlignsLeft =
+    typeof window !== "undefined"
+      ? position.x + BUBBLE_SIZE + 252 + 16 <= window.innerWidth
+      : panelAlignsLeft;
+  const introPrompt = `Hey ${firstName}, I'm here for quick feedback. Tap me anytime, or drag me wherever works best for you.`;
+  const activePromptText = introVisible ? introPrompt : FEEDBACK_PROMPTS[promptIndex];
 
   const pageLabel = useMemo(() => {
     if (location.pathname === "/") return "Homebase";
@@ -91,6 +121,65 @@ export function FeedbackBubble() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    if (open) {
+      setIntroVisible(false);
+      return;
+    }
+
+    const showIntroTimer = window.setTimeout(() => {
+      setIntroVisible(true);
+    }, FEEDBACK_INTRO_DELAY_MS);
+
+    const hideIntroTimer = window.setTimeout(() => {
+      setIntroVisible(false);
+    }, FEEDBACK_INTRO_DELAY_MS + FEEDBACK_INTRO_VISIBLE_MS);
+
+    return () => {
+      window.clearTimeout(showIntroTimer);
+      window.clearTimeout(hideIntroTimer);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (open || introVisible) {
+      setPromptVisible(false);
+      return;
+    }
+
+    let hideTimer: number | undefined;
+
+    const showPrompt = () => {
+      setPromptIndex(() => {
+        let nextIndex = Math.floor(Math.random() * FEEDBACK_PROMPTS.length);
+
+        if (FEEDBACK_PROMPTS.length > 1) {
+          while (nextIndex === lastPromptIndexRef.current) {
+            nextIndex = Math.floor(Math.random() * FEEDBACK_PROMPTS.length);
+          }
+        }
+
+        lastPromptIndexRef.current = nextIndex;
+        return nextIndex;
+      });
+
+      setPromptVisible(true);
+      window.clearTimeout(hideTimer);
+      hideTimer = window.setTimeout(() => {
+        setPromptVisible(false);
+      }, FEEDBACK_PROMPT_VISIBLE_MS);
+    };
+
+    const initialTimer = window.setTimeout(showPrompt, FEEDBACK_PROMPT_INITIAL_DELAY_MS);
+    const intervalTimer = window.setInterval(showPrompt, FEEDBACK_PROMPT_INTERVAL_MS);
+
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(intervalTimer);
+      window.clearTimeout(hideTimer);
+    };
+  }, [introVisible, open]);
+
   const moveBubble = (nextPosition: BubblePosition) => {
     const clampedPosition = clampPosition(nextPosition);
     setPosition(clampedPosition);
@@ -98,6 +187,8 @@ export function FeedbackBubble() {
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    setPromptVisible(false);
+    setIntroVisible(false);
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = {
       pointerId: event.pointerId,
@@ -266,6 +357,31 @@ export function FeedbackBubble() {
             </div>
           </div>
         </section>
+      )}
+
+      {(introVisible || promptVisible) && !open && (
+        <button
+          type="button"
+          className={`absolute bottom-5 hidden w-[min(15.75rem,calc(100vw-8rem))] rounded-lg border border-border/70 bg-card px-3.5 py-2.5 text-left text-xs font-bold leading-5 text-foreground shadow-soft transition hover:border-brand-teal/30 hover:bg-card sm:block ${
+            promptAlignsLeft ? "left-[calc(100%+0.875rem)]" : "right-[calc(100%+0.875rem)]"
+          }`}
+          onClick={() => {
+            setPromptVisible(false);
+            setIntroVisible(false);
+            setOpen(true);
+          }}
+          aria-label="Open feedback prompt"
+        >
+          {activePromptText}
+          <span
+            className={`absolute bottom-6 h-3 w-3 rotate-45 border-border/70 bg-card ${
+              promptAlignsLeft
+                ? "-left-1.5 border-b border-l"
+                : "-right-1.5 border-r border-t"
+            }`}
+            aria-hidden="true"
+          />
+        </button>
       )}
 
       <button

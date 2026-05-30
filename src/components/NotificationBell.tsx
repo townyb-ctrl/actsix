@@ -95,14 +95,15 @@ export function NotificationBell({
       const rect = buttonRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      const panelWidth = 360;
-      const panelHeight = Math.min(448, window.innerHeight - 32);
-      const opensRight = rect.right + panelWidth + 12 <= window.innerWidth;
-      const left = opensRight
-        ? rect.right + 10
-        : Math.max(12, rect.left - panelWidth - 10);
+      const panelWidth = 340;
+      const panelHeight = Math.min(336, window.innerHeight - 88);
+      const horizontalOffset = tone === "topbar" ? 64 : 0;
+      const left = Math.min(
+        Math.max(12, rect.right - panelWidth + horizontalOffset),
+        Math.max(12, window.innerWidth - panelWidth - 12)
+      );
       const top = Math.min(
-        Math.max(12, rect.top - 8),
+        rect.bottom + 14,
         Math.max(12, window.innerHeight - panelHeight - 12)
       );
 
@@ -138,7 +139,7 @@ export function NotificationBell({
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, tone]);
 
   const markAsRead = async (notificationId: string) => {
     const { error } = await (supabase as any)
@@ -223,7 +224,7 @@ export function NotificationBell({
         type="button"
         className={
           tone === "topbar"
-            ? "relative flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card text-muted-foreground shadow-soft transition hover:border-brand-teal/35 hover:bg-brand-teal/10 hover:text-brand-teal"
+            ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground transition hover:border-brand-teal/30 hover:bg-brand-teal/5 hover:text-brand-teal"
             : `relative flex items-center justify-center rounded-xl transition ${
                 collapsed
                   ? "h-11 w-11 bg-sidebar-accent/60 text-sidebar-foreground hover:bg-sidebar-accent"
@@ -240,7 +241,7 @@ export function NotificationBell({
         <span
           className={`relative flex items-center justify-center ${
             tone === "topbar"
-              ? "h-8 w-8"
+              ? "h-9 w-9"
               : "h-7 w-7 rounded-md bg-sidebar-accent/40"
           }`}
         >
@@ -258,7 +259,7 @@ export function NotificationBell({
       {open && createPortal(
         <div
           ref={panelRef}
-          className="fixed z-[1000] w-[min(22.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-border/70 bg-card text-foreground shadow-card"
+          className="fixed z-[1000] flex max-h-[21rem] w-[min(21.25rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-border/70 bg-card text-foreground shadow-card"
           style={{
             left: panelPosition.left,
             top: panelPosition.top,
@@ -294,7 +295,7 @@ export function NotificationBell({
           )}
 
           {notifications.length > 0 && (
-            <div className="max-h-96 divide-y divide-border/70 overflow-auto bg-card">
+            <div className="min-h-0 flex-1 divide-y divide-border/70 overflow-y-auto bg-card">
               {notifications.map((notification) => (
                 <button
                   key={notification.id}
