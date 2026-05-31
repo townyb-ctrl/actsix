@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation, useNavigate, Link } from "react-router-dom"; // <-- Added Link
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
@@ -34,27 +35,21 @@ const getBackTarget = (pathname: string) => {
   if (pathname.startsWith("/service-planner/teams/")) {
     return { label: "Back to Teams", to: "/service-planner/teams" };
   }
-
   if (pathname.startsWith("/service-planner/services/")) {
     return { label: "Back to Services", to: "/service-planner/services" };
   }
-
   if (pathname.startsWith("/meetings/recurring/")) {
     return { label: "Back to Recurring Meetings", to: "/meetings/recurring" };
   }
-
   if (pathname.startsWith("/meetings/") && pathname !== "/meetings") {
     return { label: "Back to Meetings", to: "/meetings" };
   }
-
   if (pathname.startsWith("/people/")) {
     return { label: "Back to People", to: "/people" };
   }
-
   if (pathname.startsWith("/tasks/projects/")) {
     return { label: "Back to Projects", to: "/tasks/projects" };
   }
-
   return null;
 };
 
@@ -111,12 +106,12 @@ export default function AppLayout() {
   const routeModuleActive = isModuleActive(routeModuleKey);
   const profilePath = currentPerson?.id ? `/people/${currentPerson.id}` : "/settings";
   const accountName = currentPerson?.display_name || displayName || user?.email || "Profile";
+
   useEffect(() => {
     if (!profileMenuOpen) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
-
       if (!profileMenuRef.current?.contains(target)) {
         setProfileMenuOpen(false);
       }
@@ -139,7 +134,6 @@ export default function AppLayout() {
 
   const handleTourStepChange = useCallback((step: { selector: string } | null) => {
     if (!step) return;
-
     if (step.selector !== '[data-tour="account-menu"]') {
       setProfileMenuOpen(false);
     }
@@ -199,10 +193,19 @@ export default function AppLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-content">
-        <AppSidebar />
+        
+        <div className="hidden md:flex">
+          <AppSidebar />
+        </div>
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
           <header className="sticky top-0 z-10 flex min-h-16 items-center gap-3 border-b border-border bg-background/80 px-3 py-1.5 pr-7 backdrop-blur sm:px-4 sm:pr-8 xl:pr-10">
+            
+            {/* FULL TEXT LOGO IN HEADER (Mobile Only) */}
+            <Link to="/" className="flex items-center md:hidden shrink-0 mr-1">
+              <img src={actsixLogo} alt="ACTSIX" className="h-12 w-auto object-contain brightness-0 dark:invert" />
+            </Link>
+
             {backTarget && (
               <Button
                 type="button"
@@ -335,6 +338,9 @@ export default function AppLayout() {
           />
           <FeedbackBubble />
         </div>
+        
+        <MobileBottomNav />
+
       </div>
     </SidebarProvider>
   );

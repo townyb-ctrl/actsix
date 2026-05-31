@@ -1,113 +1,83 @@
 import { useState } from "react";
 import { Inbox, Send } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 
-type QuickCaptureDialogProps = {
+interface QuickCaptureDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-};
+}
 
-const buildCaptureItems = (value: string, userId: string) => {
-  const cleaned = value.trim();
-  const parts = cleaned
-    .split(/[,\r\n]+/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  const captures = parts.length > 0 ? parts : [cleaned];
-
-  return captures.map((capture) => ({
-    id: crypto.randomUUID(),
-    title: capture.slice(0, 140),
-    user_id: userId,
-    notes: captures.length === 1 ? cleaned : "",
-  }));
-};
-
-export function QuickCaptureDialog({ open, onOpenChange }: QuickCaptureDialogProps) {
+export function QuickCaptureDialog({
+  open,
+  onOpenChange,
+}: QuickCaptureDialogProps) {
   const { user } = useAuth();
-  const [capture, setCapture] = useState("");
-  const [saving, setSaving] = useState(false);
-  const canSave = capture.trim().length > 0 && !saving;
+  const [content, setContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const saveCapture = async () => {
-    if (!user || !canSave) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim() || !user) return;
 
-    const captureItems = buildCaptureItems(capture, user.id);
-    setSaving(true);
+    setIsSubmitting(true);
+    try {
+      // Added id: crypto.randomUUID() to satisfy the strict type requirements
+      const { error } = await supabase.from("inbox_items").insert({
+        id: crypto.randomUUID(), 
+        title: content.trim(),
+        user_id: user.id,
+      });
 
-    const { error } = await supabase.from("inbox_items").insert(captureItems);
+      if (error) throw error;
 
-    setSaving(false);
-
-    if (error) {
-      toast.error(error.message);
-      return;
+      toast.success("Added to inbox");
+      setContent("");
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error creating inbox item:", error);
+      toast.error("Failed to add to inbox");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setCapture("");
-    onOpenChange(false);
-    toast.success(
-      captureItems.length === 1
-        ? "Captured to inbox"
-        : `${captureItems.length} items captured to inbox`,
-    );
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-md bg-brand-teal/10 text-brand-teal">
-            <Inbox className="h-5 w-5" />
-          </div>
-          <DialogTitle>Quick Capture</DialogTitle>
-          <DialogDescription>
-            Drop thoughts here and keep working. Separate multiple inbox items with commas or new lines.
-          </DialogDescription>
-        </DialogHeader>
-
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Quick Capture"
+      description="Capture a quick thought or task."
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Textarea
-          value={capture}
-          onChange={(event) => setCapture(event.target.value)}
-          placeholder="Call Sarah, prep Sunday notes, review HBC flyer..."
-          className="min-h-36 resize-none rounded-md"
+          placeholder="What's on your mind?..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="min-h-[120px] resize-none text-base" 
           autoFocus
         />
-
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-lg"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
+        <div className="flex justify-between items-center pt-2">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Inbox className="w-4 h-4 mr-2" />
+            Saves to Inbox
+          </div>
+          <Button type="submit" disabled={!content.trim() || isSubmitting} className="min-w-[100px]">
+            {isSubmitting ? (
+              "Saving..."
+            ) : (
+              <>
+                Save <Send className="w-4 h-4 ml-2" />
+              </>
+            )}
           </Button>
-          <Button
-            type="button"
-            className="rounded-lg bg-brand-teal px-4 font-bold hover:bg-brand-teal/90"
-            onClick={saveCapture}
-            disabled={!canSave}
-          >
-            <Send className="h-4 w-4" />
-            {saving ? "Capturing" : "Capture"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </form>
+    </ResponsiveModal>
   );
 }
