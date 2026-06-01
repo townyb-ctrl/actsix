@@ -322,7 +322,7 @@ export default function AppLayout() {
             </main>
           )}
 
-          <footer className="flex min-h-16 items-center justify-center border-t border-border/70 bg-background/85 px-4 py-3 text-sm text-muted-foreground backdrop-blur sm:px-6 xl:px-8 2xl:px-10">
+          <footer className="hidden min-h-16 items-center justify-center border-t border-border/70 bg-background/85 px-4 py-3 text-sm text-muted-foreground backdrop-blur md:flex sm:px-6 xl:px-8 2xl:px-10">
             <div className="flex items-center justify-center gap-3 text-center">
               <img src={actsixLogo} alt="ACTSIX" className="h-11 w-auto object-contain brightness-0" />
             </div>

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
   CalendarDays,
-  CheckCircle2,
+  ChevronRight,
   Clock3,
-  FolderKanban,
   ListChecks,
   Music,
+  Sparkles,
   UsersRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -150,6 +151,16 @@ const formatShortDate = (value?: string | null) => {
   });
 };
 
+const formatAgendaDate = (value?: string | null) => {
+  if (!value) return "No date";
+
+  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+};
+
 const formatTime = (value?: string | null) => {
   if (!value) return null;
 
@@ -197,7 +208,9 @@ const getServiceCountdownLabel = (service: ServiceInstance | null, now: Date) =>
 };
 
 const priorityClass = (priority?: string | null) => {
-  return "bg-brand-teal/10 text-brand-teal";
+  if (priority === "Urgent") return "bg-brand-danger/10 text-brand-danger border-brand-danger/20";
+  if (priority === "High") return "bg-brand-bronze/10 text-brand-bronze border-brand-bronze/20";
+  return "bg-brand-teal/10 text-brand-teal border-brand-teal/20";
 };
 
 const projectProgress = (project: Project, tasks: Task[]) => {
@@ -218,13 +231,83 @@ const projectProgress = (project: Project, tasks: Task[]) => {
 };
 
 const EmptyState = ({ children }: { children: string }) => (
-  <div className="rounded-lg border border-dashed border-border/80 bg-background/45 px-3 py-3 text-center text-xs text-muted-foreground">
+  <div className="rounded-2xl border border-dashed border-border/80 bg-background/55 px-4 py-5 text-center text-xs font-medium text-muted-foreground">
     {children}
   </div>
 );
 
-const sectionHeadingClass =
-  "text-xs font-extrabold uppercase tracking-wide text-muted-foreground";
+const SectionHeader = ({
+  eyebrow,
+  title,
+  action,
+}: {
+  eyebrow: string;
+  title: string;
+  action?: ReactNode;
+}) => (
+  <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3.5 sm:px-5">
+    <div className="min-w-0">
+      <p className="label-eyebrow">{eyebrow}</p>
+      <h2 className="mt-0.5 truncate text-[17px] font-extrabold tracking-tight text-foreground sm:text-lg">
+        {title}
+      </h2>
+    </div>
+    {action && <div className="shrink-0">{action}</div>}
+  </div>
+);
+
+const TaskRow = ({ task, compact = false }: { task: Task; compact?: boolean }) => (
+  <Link
+    to="/tasks/next"
+    className="group flex min-h-[52px] items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/40 px-3 py-2.5 transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
+  >
+    <div className="min-w-0 flex-1">
+      <div className="truncate text-sm font-bold text-foreground group-hover:text-brand-teal">
+        {task.title}
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-medium text-muted-foreground">
+        <span>{task.due ? formatShortDate(task.due) : "No due date"}</span>
+        {(task.context || task.project) && <span>•</span>}
+        {task.context && <span className="truncate">{task.context}</span>}
+        {!task.context && task.project && <span className="truncate">{task.project}</span>}
+        {task.minutes && !compact && <span>• {task.minutes} min</span>}
+      </div>
+    </div>
+    <span
+      className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-extrabold ${priorityClass(
+        task.priority
+      )}`}
+    >
+      {task.priority || "Medium"}
+    </span>
+  </Link>
+);
+
+const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
+  const Icon = item.icon;
+
+  return (
+    <Link
+      to={item.to}
+      className="group flex min-h-[56px] items-center gap-3 rounded-2xl border border-border/60 bg-card px-3 py-2.5 shadow-soft transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
+    >
+      <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-extrabold text-foreground group-hover:text-brand-teal">
+          {item.title}
+        </div>
+        <div className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] font-medium text-muted-foreground">
+          <span>{formatAgendaDate(item.date)}</span>
+          {formatTime(item.time) && <span>{formatTime(item.time)}</span>}
+          <span>{item.label}</span>
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </Link>
+  );
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -373,7 +456,6 @@ const Dashboard = () => {
       .slice(0, 4);
   }, [projects, projectTasks]);
 
-  const overdueCount = tasks.filter((task) => task.due && task.due < todayKey).length;
   const dueTodayCount = tasks.filter((task) => task.due === todayKey).length;
   const activeProjectCount = projects.filter(
     (project) => !project.status?.toLowerCase().includes("complete")
@@ -510,6 +592,13 @@ const Dashboard = () => {
 
   const visibleCalendarDays = calendarView === "week" ? weekDays : calendarDays;
 
+  const mobileAgendaItems = useMemo(() => {
+    const endKey = toDateKey(addDays(startOfToday(), 6));
+    return calendarItems
+      .filter((item) => item.date && item.date >= todayKey && item.date <= endKey)
+      .slice(0, 8);
+  }, [calendarItems, todayKey]);
+
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
 
@@ -545,6 +634,8 @@ const Dashboard = () => {
     return getServiceCountdownLabel(nextService, now);
   }, [nextService, now]);
 
+  const nextServiceTitle = nextService?.title || nextService?.service_types?.name || "Upcoming service";
+
   if (!workspaceLoading && !workspace) {
     return (
       <div>
@@ -576,300 +667,309 @@ const Dashboard = () => {
   }
 
   return (
-    <div>
-      <div className="px-4 pb-5 pt-4 text-center sm:px-6 xl:px-8 2xl:px-10">
-        <p className="label-eyebrow mb-1">Home</p>
-        <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">
-          {greeting}, {firstName}
-        </h1>
-        <p className="mt-1.5 text-[15px] font-light leading-tight text-foreground/55 md:text-lg">
-          {clockLabel} · {dateLabel}
-        </p>
-      </div>
+    <div className="overflow-x-hidden">
+      <div
+        data-tour="home-overview"
+        className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:px-10"
+      >
+        <section className="relative overflow-hidden rounded-[1.4rem] border border-border/70 bg-card p-4 shadow-card sm:p-5 md:p-6">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-brand-teal/10 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-16 left-6 h-28 w-28 rounded-full bg-brand-sand/25 blur-2xl" />
 
-      <div data-tour="home-overview" className="w-full space-y-4 px-4 pb-10 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-          <Card className="border-border/60 bg-card/95 shadow-soft">
-            <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
-              <div>
-                <p className="label-eyebrow">Attention</p>
-                <h2 className="text-lg font-extrabold tracking-tight">Today</h2>
-              </div>
-              <span className="rounded-full bg-brand-teal/10 px-2.5 py-1 text-xs font-bold text-brand-teal">
-                {dueTodayCount} today
-              </span>
+          <div className="relative min-w-0">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-teal/15 bg-brand-teal/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-brand-teal">
+              <Sparkles className="h-3.5 w-3.5" />
+              Home command centre
             </div>
+            <h1 className="text-balance text-[2rem] font-extrabold leading-[1.02] tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              {greeting}, {firstName}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
+              {dateLabel} · {clockLabel}
+              {workspace?.name ? ` · ${workspace.name}` : ""}
+            </p>
+          </div>
+        </section>
 
-            <div className="grid gap-4 p-4 md:grid-cols-2">
-              <section>
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <h3 className={sectionHeadingClass}>Due today</h3>
-                  <span className="rounded-full bg-brand-teal/10 px-2 py-0.5 text-[11px] font-semibold text-brand-teal">
-                    {dueTodayCount}
-                  </span>
-                </div>
-                <div className="overflow-hidden rounded-md border border-border/60 bg-background/35">
-                  {todaysTasks.length === 0 && <EmptyState>No tasks due today.</EmptyState>}
-                  {todaysTasks.slice(0, 4).map((task) => (
-                    <Link
-                      key={task.id}
-                      to="/tasks/next"
-                      className="block border-b border-border/60 px-3 py-2 transition last:border-b-0 hover:bg-brand-teal/5"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="min-w-0 truncate text-sm font-medium">{task.title}</span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                        {task.minutes ? `${task.minutes} min` : task.context || "Today"}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
 
-              <section>
-                <h3 className={`${sectionHeadingClass} mb-2`}>High Priority</h3>
-                <div className="overflow-hidden rounded-md border border-border/60 bg-background/35">
-                  {importantTasks.length === 0 && <EmptyState>No important open tasks yet.</EmptyState>}
-                  {importantTasks.slice(0, 3).map((task) => (
-                    <Link
-                      key={task.id}
-                      to="/tasks/next"
-                      className="block border-b border-border/60 px-3 py-2 transition last:border-b-0 hover:bg-brand-teal/5"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="min-w-0 truncate text-sm font-medium">{task.title}</span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${priorityClass(task.priority)}`}>
-                          {task.priority || "Medium"} {task.minutes ? `- ${task.minutes}m` : ""}
-                        </span>
-                      </div>
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+          <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card">
+            <SectionHeader
+              eyebrow="Tasks"
+              title="Due Today"
+              action={
+                <span className="rounded-full bg-brand-teal/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-teal">
+                  {dueTodayCount}
+                </span>
+              }
+            />
+            <div className="space-y-3 p-4 sm:p-5">
+              {todaysTasks.length === 0 && <EmptyState>No tasks due today.</EmptyState>}
+              {todaysTasks.slice(0, 5).map((task) => (
+                <TaskRow key={task.id} task={task} />
+              ))}
+
+              {importantTasks.length > 0 && (
+                <div className="pt-2">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground">
+                      High priority
+                    </p>
+                    <Link to="/tasks/next" className="text-[11px] font-extrabold text-brand-teal">
+                      Open tasks
                     </Link>
-                  ))}
+                  </div>
+                  <div className="space-y-2">
+                    {importantTasks.slice(0, 2).map((task) => (
+                      <TaskRow key={`important-${task.id}`} task={task} compact />
+                    ))}
+                  </div>
                 </div>
-              </section>
+              )}
             </div>
           </Card>
 
-          <Card className="border-border/60 bg-card/95 shadow-soft">
-            <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
-              <div>
-                <p className="label-eyebrow">Service Planner</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-extrabold tracking-tight">Next Service</h2>
-                  {serviceCountdownLabel && (
-                    <span className="rounded-full bg-brand-teal/10 px-2 py-0.5 text-[11px] font-bold text-brand-teal">
-                      {serviceCountdownLabel}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <Button asChild variant="outline" size="sm" className="h-8 rounded-lg px-3">
-                <Link to={nextService ? `/service-planner/services/${nextService.id}` : "/service-planner"}>
-                  Open
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </div>
+          <Card className="min-w-0 overflow-hidden rounded-[1.25rem] border-border/70 bg-card shadow-card">
+            <SectionHeader
+              eyebrow="Service Planner"
+              title="Next Service"
+              action={
+                nextService && serviceCountdownLabel ? (
+                  <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-teal">
+                    {serviceCountdownLabel}
+                  </span>
+                ) : null
+              }
+            />
 
             {!nextService ? (
-              <div className="p-4">
+              <div className="p-3 sm:p-4">
                 <EmptyState>No upcoming service dates found.</EmptyState>
               </div>
             ) : (
-              <div className="grid gap-3 p-4">
-                <div className="min-w-0 text-center">
-                  <div className="min-w-0">
-                    <div className="truncate text-lg font-extrabold leading-tight tracking-tight">
-                      {nextService.title || nextService.service_types?.name || "Upcoming service"}
-                    </div>
-                    <div className="mt-1 flex flex-wrap justify-center gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
+              <div className="space-y-2.5 p-3 sm:p-4">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-teal/15 bg-brand-teal/5 px-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-base font-extrabold leading-tight tracking-tight text-foreground">
+                      {nextServiceTitle}
+                    </h3>
+                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3" />
+                        <CalendarDays className="h-3.5 w-3.5 text-brand-teal" />
                         {formatDate(nextService.service_date)}
                       </span>
                       {formatTime(nextService.start_time) && (
                         <span className="inline-flex items-center gap-1">
-                          <Clock3 className="h-3 w-3" />
+                          <Clock3 className="h-3.5 w-3.5 text-brand-teal" />
                           {formatTime(nextService.start_time)}
                         </span>
                       )}
                     </div>
                   </div>
+
+                  <Button asChild className="actsix-btn-primary h-9 shrink-0 rounded-xl px-3 text-xs">
+                    <Link to={`/service-planner/services/${nextService.id}`}>
+                      Open
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
                 </div>
 
-                <section>
-                  <div className="mb-2 flex rounded-lg border border-border/70 bg-background/45 p-0.5">
-                    {(["plan", "team"] as const).map((view) => (
-                      <button
-                        key={view}
-                        type="button"
-                        onClick={() => setServiceView(view)}
-                        className={`h-7 flex-1 rounded-md px-3 text-xs font-extrabold capitalize transition ${
-                          serviceView === view
-                            ? "bg-brand-teal text-white"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
+                <div className="grid grid-cols-2 rounded-xl border border-border/70 bg-background/55 p-1">
+                  {(["plan", "team"] as const).map((view) => (
+                    <button
+                      key={view}
+                      type="button"
+                      onClick={() => setServiceView(view)}
+                      className={`min-h-[34px] flex-1 rounded-lg px-2 text-xs font-extrabold transition ${
+                        serviceView === view
+                          ? "bg-brand-teal text-white shadow-soft"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {view === "plan" ? "Plan" : "Team"}
+                    </button>
+                  ))}
+                </div>
+
+                {serviceView === "plan" ? (
+                  <div className="space-y-1.5">
+                    {serviceOrderItems.length === 0 && (
+                      <EmptyState>No order items added for this service yet.</EmptyState>
+                    )}
+                    {serviceOrderItems.slice(0, 2).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex min-h-[38px] items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/45 px-2.5 py-1.5"
                       >
-                        {view === "plan" ? "Service Plan" : "Team"}
-                      </button>
+                        <span className="min-w-0 truncate text-xs font-bold">{item.title}</span>
+                        <span className="shrink-0 rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-extrabold capitalize text-brand-teal">
+                          {item.duration_minutes ? `${item.duration_minutes}m` : item.item_type}
+                        </span>
+                      </div>
                     ))}
                   </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {serviceTeamAssignments.length === 0 && (
+                      <EmptyState>No team assignments added yet.</EmptyState>
+                    )}
+                    {serviceTeamAssignments.slice(0, 2).map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className="flex min-h-[38px] items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/45 px-2.5 py-1.5"
+                      >
+                        <span className="min-w-0 truncate text-xs font-bold">
+                          {assignment.role_name}
+                        </span>
+                        <span className="shrink-0 max-w-[52%] truncate text-right text-[11px] font-semibold text-muted-foreground">
+                          {assignment.person_name || "Unassigned"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                  {serviceView === "plan" ? (
-                    <div className="overflow-hidden rounded-md border border-border/60 bg-background/35">
-                      {serviceOrderItems.length === 0 && (
-                        <EmptyState>No order items added for this service yet.</EmptyState>
-                      )}
-                      {serviceOrderItems.slice(0, 6).map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between gap-3 border-b border-border/60 px-3 py-2 last:border-b-0"
-                        >
-                          <span className="min-w-0 truncate text-sm font-medium">{item.title}</span>
-                          <span className="shrink-0 text-xs capitalize text-muted-foreground">
-                            {item.duration_minutes ? `${item.duration_minutes}m` : item.item_type}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="overflow-hidden rounded-md border border-border/60 bg-background/35">
-                      {serviceTeamAssignments.length === 0 && (
-                        <EmptyState>No team assignments added yet.</EmptyState>
-                      )}
-                      {serviceTeamAssignments.slice(0, 7).map((assignment) => (
-                        <div
-                          key={assignment.id}
-                          className="border-b border-border/60 px-3 py-2 last:border-b-0"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="min-w-0 truncate text-sm font-medium">
-                              {assignment.role_name}:
-                            </span>
-                            <span className="shrink-0 text-xs text-muted-foreground">
-                              {assignment.person_name || "Unassigned"}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </section>
+                <Link
+                  to={`/service-planner/services/${nextService.id}`}
+                  className="inline-flex min-h-[34px] w-full items-center justify-center gap-1.5 rounded-xl border border-brand-teal/20 bg-brand-teal/10 px-3 text-xs font-extrabold text-brand-teal transition hover:bg-brand-teal/15 sm:w-auto"
+                >
+                  View full service
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
               </div>
             )}
           </Card>
-        </div>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <Card className="border-border/60 bg-card/80 shadow-soft">
-            <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
-              <div>
-                <p className="label-eyebrow">Projects</p>
-                <h2 className="text-lg font-extrabold tracking-tight">Active project momentum</h2>
-              </div>
-              <span className="rounded-full bg-brand-teal/10 px-2.5 py-1 text-xs font-bold text-brand-teal">
-                {activeProjectCount} active
-              </span>
-            </div>
 
-            <div className="divide-y divide-border/60">
-              {activeProjects.length === 0 && (
-                <div className="p-4">
-                  <EmptyState>No active projects yet.</EmptyState>
-                </div>
-              )}
+          <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card">
+            <SectionHeader
+              eyebrow="Projects"
+              title="Active Momentum"
+              action={
+                <span className="rounded-full bg-brand-sage/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-sage">
+                  {activeProjectCount} active
+                </span>
+              }
+            />
+            <div className="space-y-3 p-4 sm:p-5">
+              {activeProjects.length === 0 && <EmptyState>No active projects yet.</EmptyState>}
               {activeProjects.slice(0, 4).map((project) => {
                 const stats = projectProgress(project, projectTasks);
+                const progress = Math.min(Math.max(stats.progress, 0), 100);
+
                 return (
                   <Link
                     key={project.id}
                     to={`/tasks/projects/${project.id}`}
-                    className="block px-4 py-3 transition hover:bg-brand-teal/5"
+                    className="group block rounded-2xl border border-border/60 bg-background/45 p-3 transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold">{project.name}</div>
-                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-extrabold text-foreground group-hover:text-brand-teal">
+                          {project.name}
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-muted-foreground">
                           {stats.nextAction}
-                        </div>
+                        </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-                          <div
-                            className="h-full rounded-full bg-brand-teal"
-                            style={{ width: `${Math.min(Math.max(stats.progress, 0), 100)}%` }}
-                          />
-                        </div>
-                        <span className="w-8 text-right text-xs font-bold text-brand-teal">
-                          {stats.progress}%
-                        </span>
-                      </div>
+                      <span className="shrink-0 font-mono text-xs font-extrabold text-brand-teal">
+                        {progress}%
+                      </span>
                     </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-brand-teal" style={{ width: `${progress}%` }} />
+                    </div>
+                    <p className="mt-2 text-[11px] font-bold text-muted-foreground">
+                      {stats.openTasks} open task{stats.openTasks === 1 ? "" : "s"}
+                    </p>
                   </Link>
                 );
               })}
             </div>
           </Card>
 
-          <Card className="border-border/60 bg-card/80 shadow-soft">
-            <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
-              <div>
-                <p className="label-eyebrow">Meetings</p>
-                <h2 className="text-lg font-extrabold tracking-tight">Upcoming Meetings</h2>
-              </div>
-              <span className="rounded-full bg-brand-teal/10 px-2.5 py-1 text-xs font-bold text-brand-teal">
-                {upcomingMeetings.length}
-              </span>
-            </div>
-
-            <div className="divide-y divide-border/60">
+          <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card">
+            <SectionHeader
+              eyebrow="Meetings"
+              title="Upcoming Meetings"
+              action={
+                <span className="rounded-full bg-brand-bronze/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-bronze">
+                  {upcomingMeetings.length}
+                </span>
+              }
+            />
+            <div className="space-y-3 p-4 sm:p-5">
               {upcomingMeetings.length === 0 && (
-                <div className="p-4">
-                  <EmptyState>No meetings in the next 6 days.</EmptyState>
-                </div>
+                <EmptyState>No meetings in the next 6 days.</EmptyState>
               )}
               {upcomingMeetings.map((meeting) => (
                 <Link
                   key={meeting.id}
                   to={`/meetings/${meeting.id}`}
-                  className="block px-4 py-3 transition hover:bg-brand-teal/5"
+                  className="group flex min-h-[56px] items-center gap-3 rounded-2xl border border-border/60 bg-background/45 px-3 py-2.5 transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">{meeting.title}</div>
-                      <div className="mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-xs text-muted-foreground">
-                        <span>{formatShortDate(meeting.meeting_date)}</span>
-                        {formatTime(meeting.meeting_time) && (
-                          <span>{formatTime(meeting.meeting_time)}</span>
-                        )}
-                      </div>
-                    </div>
-                    <CalendarDays className="h-4 w-4 shrink-0 text-brand-teal" />
+                  <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-bronze/10 text-brand-bronze">
+                    <CalendarDays className="h-4 w-4" />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-extrabold text-foreground group-hover:text-brand-teal">
+                      {meeting.title}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] font-medium text-muted-foreground">
+                      <span>{formatAgendaDate(meeting.meeting_date)}</span>
+                      {formatTime(meeting.meeting_time) && (
+                        <span>{formatTime(meeting.meeting_time)}</span>
+                      )}
+                      {meeting.location && <span className="truncate">{meeting.location}</span>}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </Link>
               ))}
             </div>
           </Card>
-        </div>
+        </section>
 
-        <Card className="border-border/60 bg-card/95 shadow-soft">
-          <div className="flex flex-col gap-3 border-b border-border/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card md:hidden">
+          <SectionHeader
+            eyebrow="Calendar"
+            title="Upcoming Agenda"
+            action={
+              <Button asChild variant="outline" size="sm" className="h-9 rounded-xl px-3 text-xs">
+                <Link to="/meetings">
+                  Meetings
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            }
+          />
+          <div className="space-y-3 p-4">
+            {mobileAgendaItems.length === 0 && <EmptyState>No dated items in the next 7 days.</EmptyState>}
+            {mobileAgendaItems.map((item) => (
+              <AgendaItemRow key={item.id} item={item} />
+            ))}
+          </div>
+        </Card>
+
+        <Card className="hidden min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card md:block">
+          <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="label-eyebrow">Calendar</p>
-              <h2 className="text-lg font-extrabold tracking-tight">
+              <h2 className="mt-0.5 text-lg font-extrabold tracking-tight">
                 {calendarView === "week" ? currentWeekLabel : currentMonthLabel}
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex rounded-lg border border-border/70 bg-card p-0.5">
+              <div className="flex rounded-xl border border-border/70 bg-background/55 p-1">
                 {(["month", "week"] as const).map((view) => (
                   <button
                     key={view}
                     type="button"
                     onClick={() => setCalendarView(view)}
-                    className={`h-7 rounded-md px-3 text-xs font-extrabold capitalize transition ${
+                    className={`h-8 rounded-lg px-3 text-xs font-extrabold capitalize transition ${
                       calendarView === view
-                        ? "bg-brand-teal text-white"
+                        ? "bg-brand-teal text-white shadow-soft"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -877,7 +977,7 @@ const Dashboard = () => {
                   </button>
                 ))}
               </div>
-              <Button asChild variant="outline" size="sm" className="h-8 rounded-lg px-3">
+              <Button asChild variant="outline" size="sm" className="h-9 rounded-xl px-3">
                 <Link to="/meetings">
                   Meetings
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -886,7 +986,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto p-4">
+          <div className="w-full overflow-x-auto p-5">
             <div className="mb-2 grid min-w-[720px] grid-cols-7 gap-2 px-1">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((weekday) => (
                 <div
@@ -902,20 +1002,18 @@ const Dashboard = () => {
               {visibleCalendarDays.map((day) => (
                 <div
                   key={day.key}
-                  className={`rounded-md border px-2.5 py-2 ${
+                  className={`h-36 rounded-2xl border px-2.5 py-2 ${
                     !day.inMonth
                       ? "border-border/40 bg-background/20"
                       : day.key === todayKey
                         ? "border-brand-teal/45 bg-brand-teal/10"
                         : "border-border/70 bg-background/45"
-                  } h-36`}
+                  }`}
                 >
                   {day.inMonth && (
                     <>
                       <div className="mb-2 flex items-start justify-between gap-2">
-                        <div>
-                          <span className="text-sm font-semibold">{day.day}</span>
-                        </div>
+                        <span className="text-sm font-extrabold">{day.day}</span>
                         {day.key === todayKey && (
                           <span className="rounded-full bg-brand-teal px-2 py-0.5 text-[10px] font-semibold text-white">
                             Today
