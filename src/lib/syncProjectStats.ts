@@ -25,20 +25,29 @@ export const syncProjectStats = async (
 
   if (!project) return;
 
-  const taskQuery = userId
-    ? supabase
-        .from("tasks")
-        .select("title, complete, created_at")
-        .eq("project", name)
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-    : supabase
-        .from("tasks")
-        .select("title, complete, created_at")
-        .eq("project", name)
-        .order("created_at", { ascending: false });
+  await syncProjectStatsById(project.id);
+};
 
-  const { data: taskData, error: taskError } = await taskQuery;
+export const syncProjectStatsById = async (projectId?: string | null) => {
+  if (!projectId) return;
+
+  const { data: projectData, error: projectError } = await supabase
+    .from("projects")
+    .select("id, name")
+    .eq("id", projectId)
+    .limit(1);
+
+  if (projectError) throw projectError;
+
+  const project = projectData?.[0];
+
+  if (!project) return;
+
+  const { data: taskData, error: taskError } = await supabase
+    .from("tasks")
+    .select("title, complete, created_at")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: false });
 
   if (taskError) throw taskError;
 
@@ -75,4 +84,14 @@ export const syncProjectStatsForNames = async (
   ) as string[];
 
   await Promise.all(uniqueNames.map((name) => syncProjectStats(name, userId)));
+};
+
+export const syncProjectStatsForIds = async (
+  projectIds: Array<string | null | undefined>
+) => {
+  const uniqueIds = Array.from(
+    new Set(projectIds.map((projectId) => projectId?.trim()).filter(Boolean))
+  ) as string[];
+
+  await Promise.all(uniqueIds.map((projectId) => syncProjectStatsById(projectId)));
 };

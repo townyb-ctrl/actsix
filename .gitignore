@@ -32,3 +32,4 @@ dist/
 **/.DS_Store
 transcriber/.venv/
 transcriber/.env
+supabase/.temp/

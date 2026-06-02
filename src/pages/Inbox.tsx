@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { syncProjectStats } from "@/lib/syncProjectStats";
+import { syncProjectStatsById } from "@/lib/syncProjectStats";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
 import NextActionFields from "@/components/NextActionFields";
@@ -36,6 +36,7 @@ type InboxItem = {
   energy?: string | null;
   notes?: string | null;
   project?: string | null;
+  project_id?: string | null;
   assigned_person_id?: string | null;
   tags?: string[] | null;
   due?: string | null;
@@ -253,6 +254,7 @@ const Inbox = () => {
           minutes: editingItem.minutes || 15,
           notes: editingItem.notes || "",
           project: editingItem.project || "",
+          project_id: editingItem.project_id || null,
           tags: editingItem.tags || [],
           assigned_person_id: editingItem.assigned_person_id || null,
           due: editingItem.due || null,
@@ -261,7 +263,7 @@ const Inbox = () => {
 
         if (error) throw error;
 
-        await syncProjectStats(editingItem.project, user.id);
+        await syncProjectStatsById(editingItem.project_id);
       }
 
       if (processTarget === "project") {
@@ -562,6 +564,13 @@ const Inbox = () => {
                         value={editingItem.project ?? ""}
                         onChange={(project) =>
                           setEditingItem({ ...editingItem, project })
+                        }
+                        onProjectChange={(project) =>
+                          setEditingItem({
+                            ...editingItem,
+                            project: project?.name ?? editingItem.project ?? "",
+                            project_id: project?.id ?? null,
+                          })
                         }
                         onCreated={load}
                       />

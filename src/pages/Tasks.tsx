@@ -16,7 +16,9 @@ import {
 import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import CompactTaskRow from "@/components/CompactTaskRow";
-import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
+import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { personalNextActionFilter } from "@/lib/taskVisibility";
 
 const priorityWeight: Record<string, number> = {
   Urgent: 4,
@@ -69,6 +71,7 @@ const isOverdue = (value?: string | null) => {
 
 const Tasks = () => {
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [editingTask, setEditingTask] = useState<any | null>(null);
@@ -90,6 +93,7 @@ const Tasks = () => {
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
+      .or(personalNextActionFilter(currentPerson?.id))
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -102,7 +106,7 @@ const Tasks = () => {
 
   useEffect(() => {
     if (user) load();
-  }, [user]);
+  }, [user, currentPerson?.id]);
 
   const uniqueProjects = useMemo(() => {
     return Array.from(
@@ -243,7 +247,7 @@ const Tasks = () => {
       return;
     }
 
-    await syncProjectStats(task.project, user?.id);
+    await syncProjectStatsById(task.project_id);
     load();
   };
 
@@ -258,7 +262,7 @@ const Tasks = () => {
       return;
     }
 
-    await syncProjectStats(targetTask?.project, user?.id);
+    await syncProjectStatsById(targetTask?.project_id);
     toast.success("Task deleted");
     load();
   };
@@ -266,8 +270,7 @@ const Tasks = () => {
   const saveTask = async () => {
     if (!editingTask) return;
 
-    const previousProject =
-      tasks.find((task) => task.id === editingTask.id)?.project || "";
+    const previousTask = tasks.find((task) => task.id === editingTask.id);
 
     setSaving(true);
 
@@ -277,6 +280,7 @@ const Tasks = () => {
         title: editingTask.title || "",
         notes: editingTask.notes || "",
         project: editingTask.project || "",
+        project_id: editingTask.project_id || null,
         context: editingTask.context || "General",
         priority: editingTask.priority || "Medium",
         energy: editingTask.energy || "Medium",
@@ -299,7 +303,7 @@ const Tasks = () => {
       return;
     }
 
-    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    await syncProjectStatsForIds([previousTask?.project_id, editingTask.project_id]);
     toast.success("Task updated");
     setEditingTask(null);
     load();

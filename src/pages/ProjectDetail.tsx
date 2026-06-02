@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
+import { PeopleSearchSelect, type PeopleSearchPerson } from "@/components/people/PeopleSearchSelect";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -24,9 +25,8 @@ import { Input } from "@/components/ui/input";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/components/ProjectEditorModal";
-import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
+import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { logActivity } from "@/lib/activityLog";
-import { createNotificationForPerson } from "@/lib/notifications";
 import { toast } from "sonner";
 import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
 
@@ -89,6 +89,7 @@ const ProjectDetail = () => {
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [newActionTitle, setNewActionTitle] = useState("");
   const [newActionDue, setNewActionDue] = useState("");
+  const [newActionAssignedPersonId, setNewActionAssignedPersonId] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [savingTask, setSavingTask] = useState(false);
@@ -122,7 +123,7 @@ const ProjectDetail = () => {
       supabase
         .from("tasks")
         .select("*")
-        .eq("project", projectData.name)
+        .eq("project_id", projectData.id)
         .order("created_at", { ascending: false }),
 
       (supabase as any)
@@ -134,7 +135,6 @@ const ProjectDetail = () => {
       (supabase as any)
         .from("project_collaborators")
         .select("id, user_id, project_id, person_id, role, created_at, people(id, user_id, display_name, avatar_url, email, phone_number)")
-        .eq("user_id", user.id)
         .eq("project_id", projectId)
         .order("created_at", { ascending: true }),
 
@@ -168,6 +168,17 @@ const ProjectDetail = () => {
       return;
     }
 
+    const peopleById = new Map(
+      (peopleData ?? []).map((person: Person) => [person.id, person])
+    );
+
+    const enrichedTasks = (taskData ?? []).map((task: any) => ({
+      ...task,
+      assignedPersonName: task.assigned_person_id
+        ? peopleById.get(task.assigned_person_id)?.display_name || ""
+        : "",
+    }));
+
     const actorPersonIds = Array.from(
       new Set(
         (activityData ?? [])
@@ -200,7 +211,7 @@ const ProjectDetail = () => {
 
     setProject(projectData);
     setNotesDraft(projectData.notes || "");
-    setTasks(taskData ?? []);
+    setTasks(enrichedTasks);
     setPeople(peopleData ?? []);
     setCollaborators(collaboratorData ?? []);
     setActivityLogs(enrichedActivityLogs);
@@ -219,6 +230,12 @@ const ProjectDetail = () => {
 
     return { openTasks, completedTasks, dueSoon, progress };
   }, [tasks, project]);
+
+  const assignableProjectPeople = useMemo(() => {
+    return collaborators
+      .map((collaborator) => collaborator.people)
+      .filter(Boolean) as PeopleSearchPerson[];
+  }, [collaborators]);
 
   const logProjectActivity = async (
     actionType: string,
@@ -250,6 +267,7 @@ const ProjectDetail = () => {
       title: newActionTitle.trim(),
       user_id: user.id,
       project: project.name,
+      project_id: project.id,
       context: "General",
       priority: "Medium",
       energy: "Medium",
@@ -259,7 +277,7 @@ const ProjectDetail = () => {
       person: "",
       location: "",
       tags: [],
-      assigned_person_id: null,
+      assigned_person_id: newActionAssignedPersonId || null,
       due: newActionDue || null,
     });
 
@@ -268,7 +286,7 @@ const ProjectDetail = () => {
       return;
     }
 
-    await syncProjectStats(project.name, user.id);
+    await syncProjectStatsById(project.id);
     await logProjectActivity(
       "task_added",
       "Task added",
@@ -277,6 +295,7 @@ const ProjectDetail = () => {
     );
     setNewActionTitle("");
     setNewActionDue("");
+    setNewActionAssignedPersonId("");
     toast.success("Next action added");
     load();
   };
@@ -298,7 +317,7 @@ const ProjectDetail = () => {
       return;
     }
 
-    await syncProjectStats(task.project, user?.id);
+    await syncProjectStatsById(task.project_id);
     await logProjectActivity(
       nextComplete ? "task_completed" : "task_reopened",
       nextComplete ? "Task completed" : "Task reopened",
@@ -319,7 +338,7 @@ const ProjectDetail = () => {
       return;
     }
 
-    await syncProjectStats(targetTask?.project, user?.id);
+    await syncProjectStatsById(targetTask?.project_id);
     await logProjectActivity(
       "task_deleted",
       "Task deleted",
@@ -333,7 +352,8 @@ const ProjectDetail = () => {
   const saveTask = async () => {
     if (!editingTask) return;
 
-    const previousProject = tasks.find((task) => task.id === editingTask.id)?.project || "";
+    const previousTask = tasks.find((task) => task.id === editingTask.id);
+    const previousProjectId = previousTask?.project_id || project?.id || null;
 
     setSavingTask(true);
 
@@ -343,6 +363,7 @@ const ProjectDetail = () => {
         title: editingTask.title || "",
         notes: editingTask.notes || "",
         project: editingTask.project || "",
+        project_id: editingTask.project_id || project?.id || null,
         context: editingTask.context || "General",
         priority: editingTask.priority || "Medium",
         energy: editingTask.energy || "Medium",
@@ -365,30 +386,14 @@ const ProjectDetail = () => {
       return;
     }
 
-    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    await syncProjectStatsForIds([previousProjectId, editingTask.project_id || project?.id]);
     await logProjectActivity(
       "task_updated",
       "Task updated",
       editingTask.title || "Project task updated",
-      { task_id: editingTask.id, previous_project: previousProject, next_project: editingTask.project }
+      { task_id: editingTask.id, previous_project: previousTask?.project || "", next_project: editingTask.project }
     );
 
-    const previousAssignedPersonId =
-      tasks.find((task) => task.id === editingTask.id)?.assigned_person_id || null;
-    const nextAssignedPersonId = editingTask.assigned_person_id || null;
-
-    if (nextAssignedPersonId && nextAssignedPersonId !== previousAssignedPersonId) {
-      await createNotificationForPerson({
-        personId: nextAssignedPersonId,
-        currentUserId: user.id,
-        actorPersonId: currentPerson?.id || null,
-        title: "A task was assigned to you",
-        message: `${editingTask.title || "A project task"} was assigned to you in ${editingTask.project || project.name}.`,
-        type: "task",
-        entityType: "project",
-        entityId: project.id,
-      });
-    }
     toast.success("Task updated");
     setEditingTask(null);
     load();
@@ -459,21 +464,6 @@ const ProjectDetail = () => {
         ? "One collaborator was added to this project"
         : `${selectedPersonIds.length} collaborators were added to this project`,
       { person_ids: selectedPersonIds, role: collaboratorRole.trim() || "Collaborator" }
-    );
-
-    await Promise.all(
-      selectedPersonIds.map((personId) =>
-        createNotificationForPerson({
-          personId,
-          currentUserId: user.id,
-          actorPersonId: currentPerson?.id || null,
-          title: "You were added to a project",
-          message: `You were added to ${project.name} as ${collaboratorRole.trim() || "Collaborator"}.`,
-          type: "project",
-          entityType: "project",
-          entityId: project.id,
-        })
-      )
     );
 
     toast.success(
@@ -584,13 +574,12 @@ const ProjectDetail = () => {
             project: nextName,
             updated_at: new Date().toISOString(),
           })
-          .eq("project", previousName)
-          .eq("user_id", user.id);
+          .eq("project_id", project.id);
 
         if (taskError) throw taskError;
       }
 
-      await syncProjectStats(nextName, user.id);
+      await syncProjectStatsById(project.id);
       await logProjectActivity(
         "project_updated",
         "Project details updated",
@@ -833,6 +822,7 @@ const ProjectDetail = () => {
                 <CompactTaskRow
                   key={task.id}
                   task={task}
+                  showAssignee
                   onToggle={toggleTask}
                   onEdit={(task) => setEditingTask({ ...task })}
                   onDelete={(task) => removeTask(task.id)}
@@ -842,13 +832,24 @@ const ProjectDetail = () => {
 
             <form
               onSubmit={addProjectAction}
-              className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]"
+              className="mt-4 grid gap-2 lg:grid-cols-[minmax(0,1fr)_220px_150px_auto]"
             >
               <Input
                 value={newActionTitle}
                 onChange={(event) => setNewActionTitle(event.target.value)}
                 placeholder="What needs to be done?"
                 className="border-border/70 bg-background"
+              />
+
+              <PeopleSearchSelect
+                people={assignableProjectPeople}
+                selectedPersonId={newActionAssignedPersonId}
+                onSelect={setNewActionAssignedPersonId}
+                placeholder="Assign to collaborator..."
+                emptyText="No project collaborators found."
+                zIndexClass="z-[80]"
+                dropdownZIndexClass="z-[900]"
+                showAllOnFocus
               />
 
               <Input
@@ -984,6 +985,7 @@ const ProjectDetail = () => {
                     onChange={setSelectedPersonIds}
                     placeholder="Search by name, email, or phone..."
                     emptyText="No available collaborators found."
+                    showAllOnFocus
                   />
                 </div>
               </div>

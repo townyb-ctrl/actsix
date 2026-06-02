@@ -38,12 +38,13 @@ const NextActionFields = ({
   const [loadingCollaborators, setLoadingCollaborators] = useState(false);
 
   const selectedProjectName = item?.project || "";
+  const selectedProjectId = item?.project_id || "";
 
   useEffect(() => {
     const loadProjectCollaborators = async () => {
       const cleanProjectName = String(selectedProjectName || "").trim();
 
-      if (!user || !cleanProjectName) {
+      if (!user || (!cleanProjectName && !selectedProjectId)) {
         setCurrentProject(null);
         setProjectCollaborators([]);
         return;
@@ -51,13 +52,17 @@ const NextActionFields = ({
 
       setLoadingCollaborators(true);
 
-      const { data: projectRows, error: projectError } = await (supabase as any)
+      let projectQuery = (supabase as any)
         .from("projects")
         .select("id, name, user_id")
-        .eq("user_id", user.id)
-        .ilike("name", cleanProjectName)
         .order("updated_at", { ascending: false })
         .limit(1);
+
+      projectQuery = selectedProjectId
+        ? projectQuery.eq("id", selectedProjectId)
+        : projectQuery.ilike("name", cleanProjectName);
+
+      const { data: projectRows, error: projectError } = await projectQuery;
 
       const projectData = projectRows?.[0] || null;
 
@@ -73,7 +78,6 @@ const NextActionFields = ({
       const { data: collaboratorData, error: collaboratorError } = await (supabase as any)
         .from("project_collaborators")
         .select("person_id, people(id, display_name, avatar_url, email, phone_number)")
-        .eq("user_id", user.id)
         .eq("project_id", projectData.id);
 
       if (collaboratorError) {
@@ -87,7 +91,7 @@ const NextActionFields = ({
     };
 
     loadProjectCollaborators();
-  }, [user?.id, selectedProjectName]);
+  }, [user?.id, selectedProjectName, selectedProjectId]);
 
   const assignablePeople = useMemo(() => {
     return projectCollaborators
@@ -132,6 +136,17 @@ const NextActionFields = ({
                   project,
                   assigned_person_id:
                     String(project || "").trim() === String(item.project || "").trim()
+                      ? item.assigned_person_id ?? null
+                      : null,
+                })
+              }
+              onProjectChange={(project) =>
+                onChange({
+                  ...item,
+                  project: project?.name ?? item.project ?? "",
+                  project_id: project?.id ?? null,
+                  assigned_person_id:
+                    project?.id === item.project_id
                       ? item.assigned_person_id ?? null
                       : null,
                 })
@@ -186,6 +201,7 @@ const NextActionFields = ({
                   }
                   placeholder="Search project collaborators..."
                   emptyText="No matching project collaborators found."
+                  showAllOnFocus
                 />
               </div>
               <p className="mt-2 text-xs text-muted-foreground">

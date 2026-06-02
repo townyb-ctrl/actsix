@@ -1,10 +1,12 @@
-import { CalendarDays, Edit3, FolderKanban, Trash2 } from "lucide-react";
+import { CalendarDays, Edit3, FolderKanban, Trash2, UserRound } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 
 type CompactTaskRowProps = {
   task: any;
   showCheckbox?: boolean;
+  showAssignee?: boolean;
   onToggle?: (task: any) => void;
   onEdit?: (task: any) => void;
   onDelete?: (task: any) => void;
@@ -35,10 +37,13 @@ const priorityClass = (priority?: string | null) => {
 const CompactTaskRow = ({
   task,
   showCheckbox = true,
+  showAssignee = false,
   onToggle,
   onEdit,
   onDelete,
 }: CompactTaskRowProps) => {
+  const { person: currentPerson } = useCurrentPerson();
+
   if (!task) return null;
 
   const dueLabel = formatShortDate(task.due);
@@ -48,6 +53,16 @@ const CompactTaskRow = ({
   const priority = task.priority || "Medium";
   const minutes = task.minutes || 15;
   const clickable = Boolean(onEdit);
+  const assignedTo =
+    task.assignedPersonName ||
+    task.assigned_person?.display_name ||
+    task.assignee?.display_name ||
+    task.assignee ||
+    task.assigned_to ||
+    "";
+  const isAssignedToMe =
+    Boolean(task.assigned_person_id) && task.assigned_person_id === currentPerson?.id;
+  const assignedLabel = isAssignedToMe ? "ME" : assignedTo;
 
   const openEditor = () => {
     onEdit?.(task);
@@ -120,6 +135,22 @@ const CompactTaskRow = ({
           <span className="text-muted-foreground">·</span>
 
           <span className="font-mono text-muted-foreground">{minutes}m</span>
+
+          {showAssignee && assignedLabel && (
+            <>
+              <span className="text-muted-foreground">Â·</span>
+              <span
+                className={`inline-flex max-w-[180px] items-center gap-1 truncate rounded-full border px-2 py-1 font-semibold ${
+                  isAssignedToMe
+                    ? "border-brand-teal/40 bg-brand-teal text-white shadow-sm"
+                    : "border-brand-sage/20 bg-brand-sage/10 text-brand-sage"
+                }`}
+              >
+                <UserRound className="h-3 w-3 shrink-0" />
+                <span className="truncate">{assignedLabel}</span>
+              </span>
+            </>
+          )}
 
           {task.energy && (
             <>

@@ -2,10 +2,23 @@ import { FolderKanban, Save, Trash2, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
+
+type PersonOption = {
+  id: string;
+  display_name: string;
+  email?: string | null;
+  phone_number?: string | null;
+  avatar_url?: string | null;
+};
 
 type ProjectEditorModalProps = {
   project: any;
   saving?: boolean;
+  people?: PersonOption[];
+  selectedCollaboratorIds?: string[];
+  onCollaboratorChange?: (personIds: string[]) => void;
+  showCollaborators?: boolean;
   onChange: (project: any) => void;
   onClose: () => void;
   onSave: () => void;
@@ -15,6 +28,10 @@ type ProjectEditorModalProps = {
 const ProjectEditorModal = ({
   project,
   saving = false,
+  people = [],
+  selectedCollaboratorIds = [],
+  onCollaboratorChange,
+  showCollaborators = false,
   onChange,
   onClose,
   onSave,
@@ -108,6 +125,25 @@ const ProjectEditorModal = ({
               />
             </div>
           </section>
+
+          {showCollaborators && (
+            <section>
+              <div className="rounded-lg border border-border/70 bg-background/45 p-3">
+                <label className="label-eyebrow">Collaborators</label>
+                <div className="mt-2">
+                  <PeopleMultiSearchSelect
+                    people={people}
+                    selectedPersonIds={selectedCollaboratorIds}
+                    onChange={onCollaboratorChange || (() => undefined)}
+                    placeholder="Search People to add as collaborators..."
+                    emptyText="No matching People profiles found."
+                    disabled={!onCollaboratorChange}
+                    showAllOnFocus
+                  />
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="rounded-lg border border-border/70 bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-4">

@@ -14,10 +14,11 @@ type Project = {
 type ProjectSelectProps = {
   value: string;
   onChange: (value: string) => void;
+  onProjectChange?: (project: Project | null) => void;
   onCreated?: () => void | Promise<void>;
 };
 
-const ProjectSelect = ({ value, onChange, onCreated }: ProjectSelectProps) => {
+const ProjectSelect = ({ value, onChange, onProjectChange, onCreated }: ProjectSelectProps) => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [creating, setCreating] = useState(false);
@@ -51,17 +52,23 @@ const ProjectSelect = ({ value, onChange, onCreated }: ProjectSelectProps) => {
 
     const projectName = newProjectName.trim();
 
-    const { error } = await supabase.from("projects").insert({
-      id: crypto.randomUUID(),
-      name: projectName,
-      user_id: user.id,
-      area: "General",
-      status: "In Progress",
-      progress: 0,
-      open_tasks: 0,
-      next_action: "",
-      notes: "",
-    });
+    const newProjectId = crypto.randomUUID();
+
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({
+        id: newProjectId,
+        name: projectName,
+        user_id: user.id,
+        area: "General",
+        status: "In Progress",
+        progress: 0,
+        open_tasks: 0,
+        next_action: "",
+        notes: "",
+      })
+      .select("id, name")
+      .single();
 
     setSaving(false);
 
@@ -72,6 +79,7 @@ const ProjectSelect = ({ value, onChange, onCreated }: ProjectSelectProps) => {
 
     toast.success("Project created");
     onChange(projectName);
+    onProjectChange?.(data ?? { id: newProjectId, name: projectName });
     setNewProjectName("");
     setCreating(false);
     await loadProjects();
@@ -89,7 +97,10 @@ const ProjectSelect = ({ value, onChange, onCreated }: ProjectSelectProps) => {
           }
 
           setCreating(false);
+          const selectedProject =
+            projects.find((project) => project.name === event.target.value) || null;
           onChange(event.target.value);
+          onProjectChange?.(selectedProject);
         }}
         className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
       >

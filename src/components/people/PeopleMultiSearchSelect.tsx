@@ -16,6 +16,7 @@ type PeopleMultiSearchSelectProps = {
   placeholder?: string;
   emptyText?: string;
   disabled?: boolean;
+  showAllOnFocus?: boolean;
 };
 
 function getInitials(name: string) {
@@ -34,6 +35,7 @@ export function PeopleMultiSearchSelect({
   placeholder = "Search people...",
   emptyText = "No matching People profiles found.",
   disabled = false,
+  showAllOnFocus = false,
 }: PeopleMultiSearchSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -48,7 +50,9 @@ export function PeopleMultiSearchSelect({
   const filteredPeople = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    if (normalizedQuery.length < 2) return [];
+    if (normalizedQuery.length < 2) {
+      return showAllOnFocus ? people.filter((person) => !selectedPersonIds.includes(person.id)) : [];
+    }
 
     return people
       .filter((person) => !selectedPersonIds.includes(person.id))
@@ -58,7 +62,7 @@ export function PeopleMultiSearchSelect({
           .toLowerCase()
           .includes(normalizedQuery)
       );
-  }, [people, query, selectedPersonIds]);
+  }, [people, query, selectedPersonIds, showAllOnFocus]);
 
   const announceOpen = () => {
     document.dispatchEvent(
@@ -168,7 +172,7 @@ export function PeopleMultiSearchSelect({
         </div>
       </div>
 
-      {open && query.trim().length >= 2 && (
+      {open && (showAllOnFocus || query.trim().length >= 2) && (
         <div className="absolute left-0 right-0 top-full z-[1200] mt-2 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
           <div className="max-h-72 overflow-y-auto">
             {filteredPeople.length === 0 ? (
@@ -204,7 +208,7 @@ export function PeopleMultiSearchSelect({
         </div>
       )}
 
-      {open && query.trim().length > 0 && query.trim().length < 2 && (
+      {open && !showAllOnFocus && query.trim().length > 0 && query.trim().length < 2 && (
         <div className="absolute left-0 right-0 top-full z-[1200] mt-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm text-muted-foreground shadow-2xl">
           Type at least 2 letters to search.
         </div>

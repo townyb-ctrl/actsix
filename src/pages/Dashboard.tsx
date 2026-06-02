@@ -19,6 +19,7 @@ import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { personalNextActionFilter } from "@/lib/taskVisibility";
 
 type Task = {
   id: string;
@@ -26,6 +27,7 @@ type Task = {
   due?: string | null;
   priority?: string | null;
   project?: string | null;
+  project_id?: string | null;
   context?: string | null;
   minutes?: number | null;
   complete?: boolean | null;
@@ -214,7 +216,9 @@ const priorityClass = (priority?: string | null) => {
 };
 
 const projectProgress = (project: Project, tasks: Task[]) => {
-  const projectTasks = tasks.filter((task) => task.project === project.name);
+  const projectTasks = tasks.filter(
+    (task) => task.project_id === project.id || (!task.project_id && task.project === project.name)
+  );
   const openTasks = projectTasks.filter((task) => !task.complete);
   const completedTasks = projectTasks.filter((task) => task.complete);
 
@@ -311,7 +315,7 @@ const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { displayName } = useCurrentPerson();
+  const { displayName, person: currentPerson } = useCurrentPerson();
   const { workspace, loading: workspaceLoading } = useCurrentWorkspace();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -349,11 +353,12 @@ const Dashboard = () => {
         supabase
           .from("tasks")
           .select("*")
+          .or(personalNextActionFilter(currentPerson?.id))
           .eq("complete", false)
           .order("due", { ascending: true, nullsFirst: false }),
         supabase
           .from("tasks")
-          .select("id, title, project, complete")
+          .select("id, title, project, project_id, complete")
           .not("project", "is", null),
         supabase
           .from("projects")
@@ -408,7 +413,7 @@ const Dashboard = () => {
 
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, currentPerson?.id]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);

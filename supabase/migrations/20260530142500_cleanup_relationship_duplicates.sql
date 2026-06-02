@@ -6,7 +6,7 @@ with valid_projects as (
   select id::uuid as id
   from public.projects
   where id is not null
-    and id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+    and id::text ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
 ),
 orphaned_collaborators as (
   select pc.id

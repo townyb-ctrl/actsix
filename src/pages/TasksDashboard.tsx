@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import { QuickCaptureDialog } from "@/components/QuickCaptureDialog";
-import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
+import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { personalNextActionFilter } from "@/lib/taskVisibility";
 import { toast } from "sonner";
 
 const priorityWeight: Record<string, number> = {
@@ -28,6 +30,7 @@ const priorityWeight: Record<string, number> = {
 
 const TasksDashboard = () => {
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
 
   const [counts, setCounts] = useState({
     inbox: 0,
@@ -51,6 +54,7 @@ const TasksDashboard = () => {
         supabase
           .from("tasks")
           .select("id", { count: "exact", head: true })
+          .or(personalNextActionFilter(currentPerson?.id))
           .eq("complete", false),
         supabase.from("projects").select("id", { count: "exact", head: true }),
         supabase.from("waiting_items").select("id", { count: "exact", head: true }),
@@ -58,6 +62,7 @@ const TasksDashboard = () => {
         supabase
           .from("tasks")
           .select("*")
+          .or(personalNextActionFilter(currentPerson?.id))
           .eq("complete", false)
           .order("created_at", { ascending: false }),
       ]);
@@ -75,7 +80,7 @@ const TasksDashboard = () => {
 
   useEffect(() => {
     if (user) load();
-  }, [user]);
+  }, [user, currentPerson?.id]);
 
   const topTasks = useMemo(() => {
     return [...tasks]
@@ -111,14 +116,14 @@ const TasksDashboard = () => {
       return;
     }
 
-    await syncProjectStats(task.project, user?.id);
+    await syncProjectStatsById(task.project_id);
     load();
   };
 
   const saveTask = async () => {
     if (!editingTask) return;
 
-    const previousProject = tasks.find((task) => task.id === editingTask.id)?.project || "";
+    const previousTask = tasks.find((task) => task.id === editingTask.id);
     setSaving(true);
 
     const { error } = await supabase
@@ -127,6 +132,7 @@ const TasksDashboard = () => {
         title: editingTask.title || "",
         notes: editingTask.notes || "",
         project: editingTask.project || "",
+        project_id: editingTask.project_id || null,
         context: editingTask.context || "General",
         priority: editingTask.priority || "Medium",
         energy: editingTask.energy || "Medium",
@@ -149,7 +155,7 @@ const TasksDashboard = () => {
       return;
     }
 
-    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    await syncProjectStatsForIds([previousTask?.project_id, editingTask.project_id]);
     toast.success("Task updated");
     setEditingTask(null);
     load();

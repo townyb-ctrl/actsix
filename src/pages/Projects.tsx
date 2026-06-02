@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,7 @@ import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/components/ProjectEditorModal";
 import CompactTaskRow from "@/components/CompactTaskRow";
-import { syncProjectStats, syncProjectStatsForNames } from "@/lib/syncProjectStats";
+import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 
 type Project = {
   id: string;
@@ -52,11 +53,22 @@ type Task = {
   energy?: string | null;
   minutes?: number | null;
   notes?: string | null;
+  project_id?: string | null;
   tags?: string[] | null;
   due?: string | null;
   complete?: boolean | null;
   completed_at?: string | null;
   created_at?: string | null;
+  assigned_person_id?: string | null;
+  assignedPersonName?: string;
+};
+
+type PersonOption = {
+  id: string;
+  display_name: string;
+  email?: string | null;
+  phone_number?: string | null;
+  avatar_url?: string | null;
 };
 
 const statusClass = (status?: string | null) => {
@@ -104,7 +116,9 @@ const formatDate = (date?: string | null) => {
 };
 
 const getProjectStats = (project: Project, tasks: Task[]) => {
-  const projectTasks = tasks.filter((task) => task.project === project.name);
+  const projectTasks = tasks.filter(
+    (task) => task.project_id === project.id || (!task.project_id && task.project === project.name)
+  );
   const openTasks = projectTasks.filter((task) => !task.complete);
   const completedTasks = projectTasks.filter((task) => task.complete);
   const dueSoon = openTasks.filter((task) => Boolean(task.due)).length;
@@ -126,10 +140,12 @@ const getProjectStats = (project: Project, tasks: Task[]) => {
 
 const Projects = () => {
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
   const navigate = useNavigate();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [people, setPeople] = useState<PersonOption[]>([]);
   const [newActionTitle, setNewActionTitle] = useState("");
   const [newActionDue, setNewActionDue] = useState("");
   const [search, setSearch] = useState("");
@@ -140,6 +156,7 @@ const Projects = () => {
   const [savingTask, setSavingTask] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [savingProject, setSavingProject] = useState(false);
+  const [newProjectCollaboratorIds, setNewProjectCollaboratorIds] = useState<string[]>([]);
 
   const projectStats = useMemo(() => {
     return projects.reduce<Record<string, ReturnType<typeof getProjectStats>>>(
@@ -230,10 +247,19 @@ const Projects = () => {
   const load = async () => {
     if (!user) return;
 
-    const [{ data: projectData, error: projectError }, { data: taskData, error: taskError }] =
+    const [
+      { data: projectData, error: projectError },
+      { data: taskData, error: taskError },
+      { data: peopleData, error: peopleError },
+    ] =
       await Promise.all([
         supabase.from("projects").select("*").order("updated_at", { ascending: false }),
         supabase.from("tasks").select("*").order("created_at", { ascending: false }),
+        (supabase as any)
+          .from("people")
+          .select("id, display_name, avatar_url, email, phone_number")
+          .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
+          .order("display_name", { ascending: true }),
       ]);
 
     if (projectError) {
@@ -246,8 +272,25 @@ const Projects = () => {
       return;
     }
 
+    if (peopleError) {
+      toast.error(peopleError.message);
+      return;
+    }
+
+    const peopleById = new Map(
+      (peopleData ?? []).map((person: PersonOption) => [person.id, person])
+    );
+
+    const enrichedTasks = (taskData ?? []).map((task: Task) => ({
+      ...task,
+      assignedPersonName: task.assigned_person_id
+        ? peopleById.get(task.assigned_person_id)?.display_name || ""
+        : "",
+    }));
+
     setProjects(projectData ?? []);
-    setTasks(taskData ?? []);
+    setTasks(enrichedTasks);
+    setPeople(peopleData ?? []);
 
     if (!selectedProjectId && projectData && projectData.length > 0) {
       setSelectedProjectId(projectData[0].id);
@@ -256,7 +299,7 @@ const Projects = () => {
 
   useEffect(() => {
     if (user) load();
-  }, [user]);
+  }, [user, currentPerson?.workspace_id]);
 
   const addProjectAction = async (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -268,6 +311,7 @@ const Projects = () => {
       title: newActionTitle.trim(),
       user_id: user.id,
       project: selectedProject.name,
+      project_id: selectedProject.id,
       context: "General",
       priority: "Medium",
       energy: "Medium",
@@ -286,7 +330,7 @@ const Projects = () => {
       return;
     }
 
-    await syncProjectStats(selectedProject.name, user.id);
+    await syncProjectStatsById(selectedProject.id);
     setNewActionTitle("");
     setNewActionDue("");
     toast.success("Next action added");
@@ -310,7 +354,7 @@ const Projects = () => {
       return;
     }
 
-    await syncProjectStats(task.project, user?.id);
+    await syncProjectStatsById(task.project_id);
     load();
   };
 
@@ -325,7 +369,7 @@ const Projects = () => {
       return;
     }
 
-    await syncProjectStats(targetTask?.project, user?.id);
+    await syncProjectStatsById(targetTask?.project_id);
     toast.success("Action deleted");
     load();
   };
@@ -370,7 +414,8 @@ const Projects = () => {
   const saveTask = async () => {
     if (!editingTask) return;
 
-    const previousProject = tasks.find((task) => task.id === editingTask.id)?.project || "";
+    const previousTask = tasks.find((task) => task.id === editingTask.id);
+    const previousProjectId = previousTask?.project_id || null;
 
     setSavingTask(true);
 
@@ -380,6 +425,7 @@ const Projects = () => {
         title: editingTask.title || "",
         notes: editingTask.notes || "",
         project: editingTask.project || "",
+        project_id: editingTask.project_id || null,
         context: editingTask.context || "General",
         priority: editingTask.priority || "Medium",
         energy: editingTask.energy || "Medium",
@@ -402,7 +448,8 @@ const Projects = () => {
       return;
     }
 
-    await syncProjectStatsForNames([previousProject, editingTask.project], user?.id);
+    await syncProjectStatsForIds([previousProjectId, editingTask.project_id]);
+
     toast.success("Task updated");
     setEditingTask(null);
     load();
@@ -453,6 +500,21 @@ const Projects = () => {
 
       if (error) throw error;
 
+      if (isNewProject && newProjectCollaboratorIds.length > 0) {
+        const { error: collaboratorError } = await (supabase as any)
+          .from("project_collaborators")
+          .insert(
+            newProjectCollaboratorIds.map((personId) => ({
+              user_id: user.id,
+              project_id: editingProject.id,
+              person_id: personId,
+              role: "Collaborator",
+            }))
+          );
+
+        if (collaboratorError) throw collaboratorError;
+      }
+
       if (!isNewProject && previousName && previousName !== nextName) {
         const { error: taskError } = await supabase
           .from("tasks")
@@ -460,17 +522,17 @@ const Projects = () => {
             project: nextName,
             updated_at: new Date().toISOString(),
           })
-          .eq("project", previousName)
-          .eq("user_id", user.id);
+          .eq("project_id", editingProject.id);
 
         if (taskError) throw taskError;
       }
 
-      await syncProjectStats(nextName, user.id);
+      await syncProjectStatsById(editingProject.id);
 
       toast.success(previousProject ? "Project updated" : "Project created");
       setSelectedProjectId(editingProject.id);
       setEditingProject(null);
+      setNewProjectCollaboratorIds([]);
       await load();
     } catch (error) {
       const message =
@@ -499,6 +561,7 @@ const Projects = () => {
       created_at: now,
       updated_at: now,
     });
+    setNewProjectCollaboratorIds([]);
   };
 
   const projectViews = [
@@ -756,6 +819,10 @@ const Projects = () => {
       <ProjectEditorModal
         project={editingProject}
         saving={savingProject}
+        people={people.filter((person) => person.id !== currentPerson?.id)}
+        selectedCollaboratorIds={newProjectCollaboratorIds}
+        onCollaboratorChange={setNewProjectCollaboratorIds}
+        showCollaborators={Boolean(editingProject && !projects.some((project) => project.id === editingProject.id))}
         onChange={setEditingProject}
         onClose={() => setEditingProject(null)}
         onSave={saveProject}

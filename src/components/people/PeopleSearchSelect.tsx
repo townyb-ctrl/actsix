@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ type PeopleSearchSelectProps = {
   onCreatePerson?: (displayName: string) => Promise<void> | void;
   zIndexClass?: string;
   dropdownZIndexClass?: string;
+  showAllOnFocus?: boolean;
 };
 
 export function PeopleSearchSelect({
@@ -33,11 +34,13 @@ export function PeopleSearchSelect({
   onCreatePerson,
   zIndexClass = "z-[100]",
   dropdownZIndexClass = "z-[999]",
+  showAllOnFocus = false,
 }: PeopleSearchSelectProps) {
   const inputId = useId();
   const peopleSearchSelectRef = useRef<HTMLDivElement | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const selectedPerson = people.find((person) => person.id === selectedPersonId) || null;
 
@@ -46,7 +49,7 @@ export function PeopleSearchSelect({
   const results = useMemo(() => {
     const query = cleanSearch.toLowerCase();
 
-    if (query.length < 2) return [];
+    if (query.length < 2) return showAllOnFocus ? people.slice(0, 8) : [];
 
     return people
       .filter((person) => {
@@ -62,8 +65,26 @@ export function PeopleSearchSelect({
       .slice(0, 8);
   }, [people, cleanSearch]);
 
-  const showDropdown = cleanSearch.length > 0 && !selectedPerson;
+  const showDropdown = open && (showAllOnFocus || cleanSearch.length > 0) && !selectedPerson;
   const canCreate = Boolean(onCreatePerson && cleanSearch.length >= 2);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!peopleSearchSelectRef.current) return;
+
+      if (!peopleSearchSelectRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, []);
 
   const createPerson = async () => {
     if (!onCreatePerson || !cleanSearch) return;
@@ -73,6 +94,7 @@ export function PeopleSearchSelect({
     try {
       await onCreatePerson(cleanSearch);
       setSearchTerm("");
+      setOpen(false);
     } finally {
       setCreating(false);
     }
@@ -122,7 +144,12 @@ export function PeopleSearchSelect({
             name={`actsix-people-search-${inputId}`}
             type="search"
             value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
+            onFocus={() => setOpen(true)}
+            onClick={() => setOpen(true)}
+            onChange={(event) => {
+              setSearchTerm(event.target.value);
+              setOpen(true);
+            }}
             placeholder={placeholder}
             autoComplete="new-password"
             autoCorrect="off"
@@ -133,19 +160,19 @@ export function PeopleSearchSelect({
 
           {showDropdown && (
             <div className={`absolute left-0 right-0 top-14 ${dropdownZIndexClass} overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl`}>
-              {cleanSearch.length < 2 && (
+              {!showAllOnFocus && cleanSearch.length < 2 && (
                 <div className="px-4 py-3 text-sm text-muted-foreground">
                   Type at least 2 characters to search.
                 </div>
               )}
 
-              {cleanSearch.length >= 2 && results.length === 0 && (
+              {(showAllOnFocus || cleanSearch.length >= 2) && results.length === 0 && (
                 <div className="px-4 py-3 text-sm text-muted-foreground">
                   {emptyText}
                 </div>
               )}
 
-              {cleanSearch.length >= 2 && results.length > 0 && (
+              {(showAllOnFocus || cleanSearch.length >= 2) && results.length > 0 && (
                 <div className="max-h-72 divide-y divide-border overflow-auto">
                   {results.map((person) => (
                     <button
@@ -155,6 +182,7 @@ export function PeopleSearchSelect({
                       onClick={() => {
                         onSelect(person.id);
                         setSearchTerm("");
+                        setOpen(false);
                       }}
                     >
                       <PersonAvatar

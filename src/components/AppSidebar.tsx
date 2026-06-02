@@ -33,9 +33,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { isAlphaMode, isModuleEnabled, getReleaseLabel } from "@/lib/releaseMode";
 import { type ActiveModuleKey, getModuleKeyForPath, isRequiredModule } from "@/lib/modules";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { personalNextActionFilter } from "@/lib/taskVisibility";
 
 type Item = { title: string; url: string; icon: any; badgeKey?: string; moduleKey?: string };
 
@@ -130,6 +132,7 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
   const { workspace, role } = useCurrentWorkspace();
   const { isModuleActive, setModuleActive } = useUserSettings();
   const [recurringSidebarMeetings, setRecurringSidebarMeetings] = useState<RecurringSidebarMeeting[]>([]);
@@ -243,6 +246,7 @@ export function AppSidebar() {
           supabase
             .from("tasks")
             .select("id", { count: "exact", head: true })
+            .or(personalNextActionFilter(currentPerson?.id))
             .eq("complete", false),
           supabase.from("projects").select("id", { count: "exact", head: true }),
           supabase.from("waiting_items").select("id", { count: "exact", head: true }),
@@ -267,7 +271,7 @@ export function AppSidebar() {
         total: reviewAll.count ?? 0,
       });
     })();
-  }, [user, pathname]);
+  }, [user, pathname, currentPerson?.id]);
 
   const renderBadge = (item: Item) => {
     if (collapsed) return null;
