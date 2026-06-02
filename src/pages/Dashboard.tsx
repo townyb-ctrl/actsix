@@ -642,7 +642,7 @@ const Dashboard = () => {
         <PageHeader
           eyebrow="ACTSIX"
           title="Workspace Setup"
-          subtitle="Create or join a church workspace before using ACTSIX."
+          subtitle="Join the Alpha Testing Workspace before using ACTSIX."
         />
 
         <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
@@ -657,7 +657,7 @@ const Dashboard = () => {
 
             <div className="mt-5">
               <Button asChild className="actsix-btn-primary rounded-xl">
-                <Link to="/workspace-setup">Set Up Workspace</Link>
+                <Link to="/workspace-setup">Join Alpha Workspace</Link>
               </Button>
             </div>
           </Card>

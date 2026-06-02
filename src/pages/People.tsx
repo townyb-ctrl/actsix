@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
 
@@ -52,6 +53,7 @@ type CsvPersonRow = {
 const People = () => {
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
+  const { workspace, canEditPeopleDirectory } = useCurrentWorkspace();
 
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,7 @@ const People = () => {
   };
 
   const mergeDuplicateEmailProfiles = async () => {
-    if (!user) return;
+    if (!user || !workspace?.id) return;
 
     if (duplicateEmailGroups.length === 0) {
       toast.success("No duplicate email profiles found.");
@@ -227,7 +229,7 @@ const People = () => {
       const { error: clearAuthError } = await (supabase as any)
         .from("people")
         .update({ auth_user_id: null, updated_at: new Date().toISOString() })
-        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
+        .eq("workspace_id", workspace?.id ?? "00000000-0000-0000-0000-000000000000")
         .in("id", allGroupIds);
 
       if (clearAuthError) {
@@ -247,7 +249,7 @@ const People = () => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id)
-        .eq("user_id", user.id);
+        .eq("workspace_id", workspace?.id);
 
       if (updatePrimaryError) {
         toast.error(updatePrimaryError.message);
@@ -257,7 +259,7 @@ const People = () => {
       const { error: teamMemberError } = await (supabase as any)
         .from("service_team_members")
         .update({ person_id: primary.id })
-        .eq("user_id", user.id)
+        .eq("workspace_id", workspace?.id)
         .in("person_id", duplicateIds);
 
       if (teamMemberError) {
@@ -268,7 +270,7 @@ const People = () => {
       const { error: assignmentError } = await (supabase as any)
         .from("service_team_assignments")
         .update({ person_id: primary.id })
-        .eq("user_id", user.id)
+        .eq("workspace_id", workspace?.id)
         .in("person_id", duplicateIds);
 
       if (assignmentError) {
@@ -279,7 +281,7 @@ const People = () => {
       const { error: deleteError } = await (supabase as any)
         .from("people")
         .delete()
-        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
+        .eq("workspace_id", workspace?.id ?? "00000000-0000-0000-0000-000000000000")
         .in("id", duplicateIds);
 
       if (deleteError) {
@@ -295,14 +297,14 @@ const People = () => {
   };
 
   const fetchPeople = async () => {
-    if (!user || !currentPerson?.workspace_id) return;
+    if (!user || !workspace?.id) return;
 
     setLoading(true);
 
     const { data, error } = await (supabase as any)
       .from("people")
       .select("*")
-      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
+      .eq("workspace_id", workspace?.id ?? "00000000-0000-0000-0000-000000000000")
       .order("display_name", { ascending: true });
 
     if (error) {
@@ -317,7 +319,7 @@ const People = () => {
 
   useEffect(() => {
     fetchPeople();
-  }, [user, currentPerson?.id, currentPerson?.workspace_id]);
+  }, [user, workspace?.id]);
 
   const parseCsvLine = (line: string) => {
     const values: string[] = [];
@@ -379,12 +381,12 @@ const People = () => {
   };
 
   const findExistingPersonByEmail = async (emailToCheck: string) => {
-    if (!currentPerson?.workspace_id) return null;
+    if (!workspace?.id) return null;
 
     const { data, error } = await (supabase as any)
       .from("people")
       .select("id, display_name, email")
-      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
+      .eq("workspace_id", workspace?.id ?? "00000000-0000-0000-0000-000000000000")
       .ilike("email", emailToCheck)
       .maybeSingle();
 
@@ -555,7 +557,7 @@ Once your account is active, ACTSIX will connect you to your People profile auto
   };
 
   const importCsvPeople = async () => {
-    if (!user || !currentPerson?.workspace_id || csvRows.length === 0) return;
+    if (!user || !workspace?.id || csvRows.length === 0) return;
 
     setImportingCsv(true);
 
@@ -566,7 +568,7 @@ Once your account is active, ACTSIX will connect you to your People profile auto
     const { data: existingPeople, error: existingPeopleError } = await (supabase as any)
       .from("people")
       .select("*")
-      .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000")
+      .eq("workspace_id", workspace?.id ?? "00000000-0000-0000-0000-000000000000")
       .in("email", emails.length > 0 ? emails : ["__no_email_matches__"]);
 
     if (existingPeopleError) {
@@ -621,7 +623,7 @@ ${row.notes}`
         .from("people")
         .update(updatePayload)
         .eq("id", existing.id)
-        .eq("workspace_id", currentPerson?.workspace_id ?? "00000000-0000-0000-0000-000000000000");
+        .eq("workspace_id", workspace?.id ?? "00000000-0000-0000-0000-000000000000");
 
       if (updateError) {
         toast.error(updateError.message);
@@ -634,7 +636,7 @@ ${row.notes}`
       const { error: createError } = await (supabase as any).from("people").insert(
         rowsToCreate.map((row) => ({
           user_id: user.id,
-          workspace_id: currentPerson.workspace_id,
+          workspace_id: workspace.id,
           first_name: row.first_name,
           last_name: row.last_name,
           display_name: row.display_name,
@@ -683,7 +685,7 @@ ${row.notes}`
   const createPerson = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!user || !currentPerson?.workspace_id) {
+    if (!user || !workspace?.id) {
       toast.error("Workspace is still loading. Please try again.");
       return;
     }
@@ -718,7 +720,7 @@ ${row.notes}`
       .from("people")
       .insert({
         user_id: user.id,
-        workspace_id: currentPerson.workspace_id,
+        workspace_id: workspace.id,
         first_name: cleanFirstName,
         last_name: cleanLastName || null,
         display_name: displayName,
@@ -767,10 +769,10 @@ ${row.notes}`
   };
 
   useEffect(() => {
-    if (user && currentPerson?.workspace_id) {
+    if (user && workspace?.id) {
       fetchWorkspaceInvite();
     }
-  }, [user, currentPerson?.workspace_id]);
+  }, [user, workspace?.id]);
 
   return (
     <div className="w-full space-y-4 px-4 pb-10 pt-5 sm:px-6 xl:px-8 2xl:px-10">
@@ -781,12 +783,12 @@ ${row.notes}`
             People
           </h1>
           <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">
-            Store individual profiles once, then connect people to teams, roles, services, and future care workflows.
+            Alpha workspace users appear here automatically. Everyone can view the directory; only admins/editors can manage profiles.
           </p>
         </div>
 
         <div data-tour="people-actions" className="flex items-center gap-2">
-          {duplicateEmailGroups.length > 0 && (
+          {canEditPeopleDirectory && duplicateEmailGroups.length > 0 && (
             <Button
               type="button"
               variant="outline"
@@ -799,30 +801,34 @@ ${row.notes}`
             </Button>
           )}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-lg"
-            onClick={() => {
-              setCsvRows([]);
-              setCsvError("");
-              setImportOpen(true);
-            }}
-          >
-            <Upload className="h-4 w-4" />
-            Import CSV
-          </Button>
+          {canEditPeopleDirectory && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => {
+                  setCsvRows([]);
+                  setCsvError("");
+                  setImportOpen(true);
+                }}
+              >
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </Button>
 
-          <Button
-            type="button"
-            size="sm"
-            className="actsix-btn-primary rounded-lg"
-            onClick={() => setAddPersonOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Person
-          </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="actsix-btn-primary rounded-lg"
+                onClick={() => setAddPersonOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Add Person
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -985,7 +991,7 @@ ${row.notes}`
               No people found
             </h2>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              Add your first person profile so ACTSIX can connect individuals across teams and services.
+              People who join this workspace will appear here automatically.
             </p>
           </div>
         </Card>

@@ -180,6 +180,16 @@ export default function AppLayout() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
+  if (workspaceLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-content font-extrabold tracking-wider text-foreground">
+        ACT<span className="text-brand-teal">SIX</span>
+      </div>
+    );
+  }
+
+  if (!workspace) return <Navigate to="/workspace-setup" replace state={{ from: location.pathname }} />;
+
   const activateRouteModule = async () => {
     setActivatingModule(routeModuleKey);
     await setModuleActive(routeModuleKey, true);

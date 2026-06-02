@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-export type WorkspaceRole = "admin" | "scheduler" | "editor" | "viewer" | "member";
+export type WorkspaceRole = "admin" | "editor" | "group_leader" | "viewer" | "member";
 
 export type Workspace = {
   id: string;
@@ -125,6 +125,25 @@ export function useCurrentWorkspace() {
     return { error: null };
   };
 
+  const leaveWorkspace = async (targetWorkspaceId?: string) => {
+    const workspaceId = targetWorkspaceId || workspace?.id;
+
+    if (!workspaceId) {
+      return {
+        error: new Error("No active workspace found."),
+      };
+    }
+
+    const { error } = await (supabase as any).rpc("leave_current_workspace", {
+      target_workspace_id: workspaceId,
+    });
+
+    if (error) return { error };
+
+    await loadWorkspace();
+    return { error: null };
+  };
+
   useEffect(() => {
     loadWorkspace();
   }, [user?.id]);
@@ -138,10 +157,13 @@ export function useCurrentWorkspace() {
     reloadWorkspace: loadWorkspace,
     createWorkspace,
     joinWorkspace,
+    leaveWorkspace,
     role,
     isAdmin: role === "admin",
-    isScheduler: role === "scheduler",
     isEditor: role === "editor",
+    isGroupLeader: role === "group_leader",
+    canManageWorkspace: role === "admin",
+    canEditPeopleDirectory: role === "admin" || role === "editor",
     isViewer: role === "viewer",
     isMember: role === "member",
   };

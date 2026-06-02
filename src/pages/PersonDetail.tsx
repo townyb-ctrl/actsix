@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { Link, useParams } from "react-router-dom";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
 import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
@@ -135,6 +136,7 @@ const PersonDetail = () => {
   const { personId } = useParams();
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
+  const { canEditPeopleDirectory } = useCurrentWorkspace();
 
   const [person, setPerson] = useState<Person | null>(null);
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
@@ -154,6 +156,10 @@ const PersonDetail = () => {
   const [gender, setGender] = useState("");
   const [membershipStatus, setMembershipStatus] = useState("Member");
   const [notes, setNotes] = useState("");
+
+  const canEditProfile =
+    Boolean(person?.auth_user_id && person.auth_user_id === user?.id) ||
+    canEditPeopleDirectory;
 
   const fetchPerson = async () => {
     if (!user || !personId || !currentPerson?.workspace_id) return;
@@ -314,7 +320,7 @@ const PersonDetail = () => {
   const updatePerson = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!user || !person) return;
+    if (!user || !person || !canEditProfile) return;
 
     const cleanFirstName = firstName.trim();
     const cleanLastName = lastName.trim();
@@ -325,22 +331,16 @@ const PersonDetail = () => {
       return;
     }
 
-    const { error } = await (supabase as any)
-      .from("people")
-      .update({
-        first_name: cleanFirstName,
-        last_name: cleanLastName || null,
-        display_name: displayName,
-        phone_number: normalizePhoneForStorage(phoneNumber),
-        email: normalizeEmail(email),
-        gender: gender.trim() || null,
-        membership_status: membershipStatus,
-        whatsapp_enabled: false,
-        notes: notes.trim() || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", person.id)
-      .eq("user_id", user.id);
+    const { error } = await (supabase as any).rpc("update_workspace_person_profile", {
+      target_person_id: person.id,
+      next_first_name: cleanFirstName,
+      next_last_name: cleanLastName || "",
+      next_phone_number: normalizePhoneForStorage(phoneNumber) || "",
+      next_email: normalizeEmail(email) || "",
+      next_gender: gender.trim() || "",
+      next_membership_status: membershipStatus,
+      next_notes: notes.trim() || "",
+    });
 
     if (error) {
       toast.error(error.message);
@@ -389,7 +389,7 @@ const PersonDetail = () => {
   };
 
   const uploadAvatar = async (file?: File | null) => {
-    if (!user || !person || !file) return;
+    if (!user || !person || !file || !canEditProfile) return;
 
     if (!file.type.startsWith("image/")) {
       toast.error("Please choose an image file.");
@@ -448,7 +448,7 @@ const PersonDetail = () => {
   };
 
   const removeAvatar = async () => {
-    if (!user || !person) return;
+    if (!user || !person || !canEditProfile) return;
 
     const confirmed = window.confirm("Remove this profile picture?");
     if (!confirmed) return;
@@ -567,13 +567,14 @@ const PersonDetail = () => {
               </Button>
             )}
 
-            <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition hover:bg-muted">
+            <label className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition ${canEditProfile ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed opacity-50"}`}>
               <Camera className="h-4 w-4" />
               Upload Photo
               <input
                 type="file"
                 accept="image/*"
                 className="hidden"
+                disabled={!canEditProfile}
                 onChange={(event) => {
                   uploadAvatar(event.target.files?.[0]).finally(() => {
                     event.currentTarget.value = "";
@@ -582,7 +583,7 @@ const PersonDetail = () => {
               />
             </label>
 
-            {person.avatar_url && (
+            {canEditProfile && person.avatar_url && (
               <Button
                 type="button"
                 variant="outline"
@@ -594,10 +595,17 @@ const PersonDetail = () => {
               </Button>
             )}
 
+            {!canEditProfile && (
+              <p className="max-w-xs text-xs font-medium leading-5 text-muted-foreground">
+                You can view this profile, but only admins/editors can edit other people.
+              </p>
+            )}
+
             <Button
               type="button"
               className="actsix-btn-primary rounded-xl"
               onClick={() => setEditing(true)}
+              disabled={!canEditProfile}
             >
               Edit Profile
             </Button>

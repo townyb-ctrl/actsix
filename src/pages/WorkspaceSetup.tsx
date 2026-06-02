@@ -1,7 +1,8 @@
-﻿import { useMemo, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { Building2, KeyRound, LogIn, Plus } from "lucide-react";
+import { useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { KeyRound, LogIn, UsersRound } from "lucide-react";
 import { toast } from "sonner";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { Button } from "@/components/ui/button";
@@ -10,80 +11,51 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 
+const ALPHA_WORKSPACE_NAME = "Alpha Testing Workspace";
+const ALPHA_JOIN_CODE = "ACTSIX-ALPHA";
+
 const WorkspaceSetup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo =
+    (location.state as { from?: string } | null)?.from || "/";
   const { user, loading: authLoading } = useAuth();
-  const { workspace, loading, createWorkspace, joinWorkspace } = useCurrentWorkspace();
+  const { workspace, loading, joinWorkspace } = useCurrentWorkspace();
 
-  const [mode, setMode] = useState<"create" | "join">("join");
-  const [churchName, setChurchName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
   const [joinPhrase, setJoinPhrase] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const suggestedJoinCode = useMemo(() => {
-    return churchName
-      .trim()
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 18);
-  }, [churchName]);
-
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
-  if (!loading && workspace) return <Navigate to="/" replace />;
+  if (!loading && workspace) return <Navigate to={redirectTo} replace />;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!joinPhrase.trim()) {
+      toast.error("Please enter the Alpha Testing secret phrase.");
+      return;
+    }
+
     setBusy(true);
 
-    if (mode === "create") {
-      if (!churchName.trim() || !joinPhrase.trim()) {
-        toast.error("Church name and join phrase are required.");
-        setBusy(false);
-        return;
-      }
-
-      const { error } = await createWorkspace({
-        name: churchName.trim(),
-        joinCode: joinCode.trim() || suggestedJoinCode,
-        joinPhrase: joinPhrase.trim(),
-      });
-
-      if (error) {
-        toast.error(error.message);
-        setBusy(false);
-        return;
-      }
-
-      toast.success("Church workspace created");
-      navigate("/");
-      return;
-    }
-
-    if (!joinCode.trim() || !joinPhrase.trim()) {
-      toast.error("Join code and secret phrase are required.");
-      setBusy(false);
-      return;
-    }
-
     const { error } = await joinWorkspace({
-      joinCode: joinCode.trim(),
+      joinCode: ALPHA_JOIN_CODE,
       joinPhrase: joinPhrase.trim(),
     });
 
+    setBusy(false);
+
     if (error) {
       toast.error(error.message);
-      setBusy(false);
       return;
     }
 
-    toast.success("Joined workspace");
-    navigate("/");
+    toast.success("Joined the Alpha Testing Workspace");
+    navigate(redirectTo);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-content px-6 py-10">
+    <div className="min-h-screen bg-gradient-content px-5 py-8 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
           <Logo />
@@ -91,110 +63,67 @@ const WorkspaceSetup = () => {
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <Card className="border-border/70 bg-card p-6 shadow-card">
-            <p className="label-eyebrow">ACTSIX Workspace</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
+              <UsersRound className="h-6 w-6" />
+            </div>
+
+            <p className="label-eyebrow mt-6">ACTSIX Alpha</p>
+
             <h1 className="mt-3 text-4xl font-extrabold tracking-tight">
-              Connect to your church
+              Join the Alpha Testing Workspace
             </h1>
+
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              ACTSIX is organized around a church workspace. Create a workspace
-              if you are setting up ACTSIX for your church, or join one using
-              the code and secret phrase from your admin.
+              For the Alpha phase, all testers are joining one shared ACTSIX workspace.
+              This helps us test the same workflows, find friction quickly, and keep feedback focused.
             </p>
 
-            <div className="mt-6 grid gap-3">
-              <button
-                type="button"
-                onClick={() => setMode("join")}
-                className={`rounded-2xl border p-4 text-left transition ${
-                  mode === "join"
-                    ? "border-brand-teal bg-brand-teal/10"
-                    : "border-border bg-background hover:bg-muted/40"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <KeyRound className="h-5 w-5 text-brand-teal" />
-                  <div>
-                    <p className="font-extrabold tracking-tight">Join a church</p>
-                    <p className="text-xs text-muted-foreground">
-                      Use a join code and secret phrase.
-                    </p>
-                  </div>
+            <div className="mt-6 rounded-2xl border border-brand-teal/15 bg-brand-teal/8 p-4">
+              <div className="flex items-start gap-3">
+                <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" />
+                <div>
+                  <p className="font-extrabold tracking-tight">
+                    Workspace access is controlled
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Your Alpha link lets testers sign up. The secret phrase confirms they belong in the Alpha group.
+                  </p>
                 </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode("create")}
-                className={`rounded-2xl border p-4 text-left transition ${
-                  mode === "create"
-                    ? "border-brand-teal bg-brand-teal/10"
-                    : "border-border bg-background hover:bg-muted/40"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-5 w-5 text-brand-teal" />
-                  <div>
-                    <p className="font-extrabold tracking-tight">Create a church workspace</p>
-                    <p className="text-xs text-muted-foreground">
-                      For admins setting up ACTSIX.
-                    </p>
-                  </div>
-                </div>
-              </button>
+              </div>
             </div>
           </Card>
 
           <Card className="border-border/70 bg-card p-6 shadow-card">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <p className="label-eyebrow">
-                  {mode === "create" ? "Create Workspace" : "Join Workspace"}
-                </p>
+                <p className="label-eyebrow">Join Workspace</p>
                 <h2 className="mt-2 text-2xl font-extrabold tracking-tight">
-                  {mode === "create" ? "Register your church" : "Enter church access details"}
+                  Enter Alpha access details
                 </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You are joining <span className="font-bold text-foreground">{ALPHA_WORKSPACE_NAME}</span>.
+                </p>
               </div>
-
-              {mode === "create" && (
-                <div className="space-y-2">
-                  <Label htmlFor="churchName">Church / Organization Name</Label>
-                  <Input
-                    id="churchName"
-                    value={churchName}
-                    onChange={(event) => {
-                      setChurchName(event.target.value);
-                      setJoinCode("");
-                    }}
-                    placeholder="Somerset West Baptist Church"
-                    required={mode === "create"}
-                  />
-                </div>
-              )}
 
               <div className="space-y-2">
                 <Label htmlFor="joinCode">Join Code</Label>
                 <Input
                   id="joinCode"
-                  value={joinCode || (mode === "create" ? suggestedJoinCode : "")}
-                  onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
-                  placeholder="SWBC-CPT"
-                  required
+                  value={ALPHA_JOIN_CODE}
+                  readOnly
+                  className="font-bold tracking-wide text-muted-foreground"
                 />
-                {mode === "create" && (
-                  <p className="text-xs text-muted-foreground">
-                    Share this with people who need to join your church workspace.
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="joinPhrase">Secret Phrase</Label>
+                <Label htmlFor="joinPhrase">Alpha Secret Phrase</Label>
                 <Input
                   id="joinPhrase"
                   value={joinPhrase}
                   onChange={(event) => setJoinPhrase(event.target.value)}
-                  placeholder="Chosen by the church admin"
+                  placeholder="Enter the phrase Brandon gave you"
                   required
+                  autoFocus
                 />
               </div>
 
@@ -203,13 +132,13 @@ const WorkspaceSetup = () => {
                 className="actsix-btn-primary w-full rounded-xl"
                 disabled={busy}
               >
-                {mode === "create" ? <Plus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
-                {busy
-                  ? "Working..."
-                  : mode === "create"
-                    ? "Create Workspace"
-                    : "Join Workspace"}
+                <LogIn className="h-4 w-4" />
+                {busy ? "Joining..." : "Join Alpha Workspace"}
               </Button>
+
+              <p className="text-center text-xs leading-5 text-muted-foreground">
+                If you do not have the secret phrase, ask Brandon before continuing.
+              </p>
             </form>
           </Card>
         </div>

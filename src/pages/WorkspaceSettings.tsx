@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { Copy, KeyRound, ShieldCheck, UsersRound } from "lucide-react";
+import { Copy, KeyRound, LogOut, ShieldCheck, UsersRound } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { PageHeader } from "@/components/PageHeader";
@@ -21,13 +22,21 @@ type WorkspaceMemberRow = {
   person_email: string | null;
 };
 
-const roleOptions = ["admin", "scheduler", "editor", "viewer", "member"];
+const roleOptions = ["admin", "editor", "group_leader", "member", "viewer"];
+
+const formatRoleLabel = (role: string) =>
+  role
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
 const WorkspaceSettings = () => {
-  const { workspace, role, isAdmin, loading } = useCurrentWorkspace();
+  const navigate = useNavigate();
+  const { workspace, role, isAdmin, loading, leaveWorkspace } = useCurrentWorkspace();
   const [members, setMembers] = useState<WorkspaceMemberRow[]>([]);
   const [joinPhrase, setJoinPhrase] = useState("");
   const [busy, setBusy] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const joinCode = workspace?.join_code || "";
 
@@ -111,6 +120,30 @@ const WorkspaceSettings = () => {
     loadMembers();
   };
 
+  const handleLeaveWorkspace = async () => {
+    if (!workspace) return;
+
+    const confirmed = window.confirm(
+      `Leave ${workspace.name}? You will lose access to this workspace unless an admin invites you again.`
+    );
+
+    if (!confirmed) return;
+
+    setLeaving(true);
+
+    const { error } = await leaveWorkspace(workspace.id);
+
+    setLeaving(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("You left the workspace");
+    navigate("/workspace-setup", { replace: true });
+  };
+
   if (loading) {
     return (
       <div>
@@ -148,7 +181,7 @@ const WorkspaceSettings = () => {
       <PageHeader
         eyebrow="ACTSIX Admin"
         title="Workspace Settings"
-        subtitle="Manage your church workspace, join access, and member roles."
+        subtitle="Manage Alpha workspace access, secret phrase, and workspace roles."
       />
 
       <div className="grid w-full gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] xl:px-8 2xl:px-10">
@@ -240,17 +273,51 @@ const WorkspaceSettings = () => {
               )}
             </form>
           </Card>
+
+          <Card className="border-border/70 bg-card p-6 shadow-card">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl bg-destructive/10 p-3 text-destructive">
+                <LogOut className="h-5 w-5" />
+              </div>
+
+              <div>
+                <p className="label-eyebrow">Workspace Access</p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                  Leave this workspace
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  This removes your access to the current workspace. Your previous activity and records remain in the workspace history.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleLeaveWorkspace}
+              disabled={leaving}
+            >
+              <LogOut className="h-4 w-4" />
+              {leaving ? "Leaving..." : "Leave Workspace"}
+            </Button>
+
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
+              Workspace owners and the last active admin cannot leave until ownership/admin coverage is handled.
+            </p>
+          </Card>
+
         </div>
 
         <Card className="border-border/70 bg-card p-6 shadow-card">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <p className="label-eyebrow">Members</p>
+              <p className="label-eyebrow">Workspace Roles</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                Workspace Members
+                Workspace Roles
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Review who has joined and assign the correct access level.
+                Assign admin, editor, group leader, member, or viewer access for the Alpha workspace.
               </p>
             </div>
 
@@ -261,13 +328,13 @@ const WorkspaceSettings = () => {
 
           {!isAdmin && (
             <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-              Only workspace admins can view and manage members.
+              Only workspace admins can view and manage workspace roles.
             </div>
           )}
 
           {isAdmin && members.length === 0 && (
             <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-              No members found yet.
+              No workspace users found yet.
             </div>
           )}
 
@@ -297,7 +364,7 @@ const WorkspaceSettings = () => {
                   >
                     {roleOptions.map((option) => (
                       <option key={option} value={option}>
-                        {option}
+                        {formatRoleLabel(option)}
                       </option>
                     ))}
                   </select>
