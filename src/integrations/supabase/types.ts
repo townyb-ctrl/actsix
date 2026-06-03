@@ -641,6 +641,60 @@ export type Database = {
           },
         ]
       }
+      project_sections: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          leader_person_id: string | null
+          name: string
+          project_id: string
+          sort_order: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          leader_person_id?: string | null
+          name: string
+          project_id: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          leader_person_id?: string | null
+          name?: string
+          project_id?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_sections_leader_person_id_fkey"
+            columns: ["leader_person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_sections_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           area: string
@@ -1307,6 +1361,7 @@ export type Database = {
           priority: string
           project: string
           project_id: string | null
+          section_id: string | null
           start_time: string | null
           tags: string[]
           title: string
@@ -1330,6 +1385,7 @@ export type Database = {
           priority?: string
           project?: string
           project_id?: string | null
+          section_id?: string | null
           start_time?: string | null
           tags?: string[]
           title: string
@@ -1353,6 +1409,7 @@ export type Database = {
           priority?: string
           project?: string
           project_id?: string | null
+          section_id?: string | null
           start_time?: string | null
           tags?: string[]
           title?: string
@@ -1365,6 +1422,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "project_sections"
             referencedColumns: ["id"]
           },
         ]

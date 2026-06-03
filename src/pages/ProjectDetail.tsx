@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Trash2,
   UserRound,
+  Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,6 +50,19 @@ type ProjectCollaborator = {
   people?: Person | null;
 };
 
+type ProjectSection = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  name: string;
+  description: string;
+  leader_person_id: string | null;
+  status: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 type ActivityLog = {
   id: string;
   actor_person_id: string | null;
@@ -75,6 +89,17 @@ const statusClass = (status?: string | null) => {
   return "bg-brand-teal/15 text-brand-teal";
 };
 
+const isMissingProjectSectionsSchema = (error?: { message?: string; code?: string } | null) => {
+  const message = error?.message || "";
+
+  return (
+    error?.code === "PGRST205" ||
+    error?.code === "42P01" ||
+    message.includes("project_sections") ||
+    message.includes("section_id")
+  );
+};
+
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
@@ -83,20 +108,23 @@ const ProjectDetail = () => {
 
   const [project, setProject] = useState<any | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [sections, setSections] = useState<ProjectSection[]>([]);
+  const [projectSectionsAvailable, setProjectSectionsAvailable] = useState(true);
   const [people, setPeople] = useState<Person[]>([]);
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [isMessagingOpen, setIsMessagingOpen] = useState(false);
-  const [isCompletedTasksOpen, setIsCompletedTasksOpen] = useState(false);
-  const [newActionTitle, setNewActionTitle] = useState("");
-  const [newActionDue, setNewActionDue] = useState("");
-  const [newActionAssignedPersonId, setNewActionAssignedPersonId] = useState("");
+  const [openCompletedSectionIds, setOpenCompletedSectionIds] = useState<Record<string, boolean>>({});
+  const [isUnsectionedOpen, setIsUnsectionedOpen] = useState(false);
+  const [sectionTaskDrafts, setSectionTaskDrafts] = useState<Record<string, { title: string; due: string; assigned_person_id: string }>>({});
   const [notesDraft, setNotesDraft] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [savingTask, setSavingTask] = useState(false);
   const [editingProject, setEditingProject] = useState<any | null>(null);
   const [savingProject, setSavingProject] = useState(false);
+  const [editingSection, setEditingSection] = useState<Partial<ProjectSection> | null>(null);
+  const [savingSection, setSavingSection] = useState(false);
   const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
@@ -120,6 +148,7 @@ const ProjectDetail = () => {
       { data: taskData, error: taskError },
       { data: peopleData, error: peopleError },
       { data: collaboratorData, error: collaboratorError },
+      { data: sectionData, error: sectionError },
       { data: activityData, error: activityError },
     ] = await Promise.all([
       supabase
@@ -138,6 +167,13 @@ const ProjectDetail = () => {
         .from("project_collaborators")
         .select("id, user_id, project_id, person_id, role, created_at, people(id, user_id, display_name, avatar_url, email, phone_number)")
         .eq("project_id", projectId)
+        .order("created_at", { ascending: true }),
+
+      (supabase as any)
+        .from("project_sections")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true }),
 
       (supabase as any)
@@ -163,6 +199,19 @@ const ProjectDetail = () => {
     if (collaboratorError) {
       toast.error(collaboratorError.message);
       return;
+    }
+
+    if (sectionError) {
+      if (isMissingProjectSectionsSchema(sectionError)) {
+        setProjectSectionsAvailable(false);
+        setSections([]);
+        setIsUnsectionedOpen(true);
+      } else {
+        toast.error(sectionError.message);
+        return;
+      }
+    } else {
+      setProjectSectionsAvailable(true);
     }
 
     if (activityError) {
@@ -214,9 +263,17 @@ const ProjectDetail = () => {
     setProject(projectData);
     setNotesDraft(projectData.notes || "");
     setTasks(enrichedTasks);
+    setSections(sectionError ? [] : sectionData ?? []);
     setPeople(peopleData ?? []);
     setCollaborators(collaboratorData ?? []);
     setActivityLogs(enrichedActivityLogs);
+  };
+
+  const toggleCompletedSection = (sectionId: string) => {
+    setOpenCompletedSectionIds((current) => ({
+      ...current,
+      [sectionId]: !current[sectionId],
+    }));
   };
 
   useEffect(() => {
@@ -239,6 +296,54 @@ const ProjectDetail = () => {
       .filter(Boolean) as PeopleSearchPerson[];
   }, [collaborators]);
 
+  const collaboratorPeopleById = useMemo(() => {
+    return new Map(
+      assignableProjectPeople.map((person) => [person.id, person])
+    );
+  }, [assignableProjectPeople]);
+
+  const sectionGroups = useMemo(() => {
+    return sections.map((section) => {
+      const sectionTasks = tasks.filter((task) => task.section_id === section.id);
+      const openTasks = sectionTasks.filter((task) => !task.complete);
+      const completedTasks = sectionTasks.filter((task) => task.complete);
+
+      return {
+        section,
+        leader: section.leader_person_id
+          ? collaboratorPeopleById.get(section.leader_person_id) || null
+          : null,
+        tasks: sectionTasks,
+        openTasks,
+        completedTasks,
+        progress:
+          sectionTasks.length === 0
+            ? 0
+            : Math.round((completedTasks.length / sectionTasks.length) * 100),
+      };
+    });
+  }, [sections, tasks, collaboratorPeopleById]);
+
+  const unsectionedTasks = useMemo(() => {
+    return tasks.filter((task) => !task.section_id);
+  }, [tasks]);
+
+  const updateSectionTaskDraft = (
+    sectionId: string,
+    patch: Partial<{ title: string; due: string; assigned_person_id: string }>
+  ) => {
+    setSectionTaskDrafts((current) => ({
+      ...current,
+      [sectionId]: {
+        title: "",
+        due: "",
+        assigned_person_id: "",
+        ...(current[sectionId] || {}),
+        ...patch,
+      },
+    }));
+  };
+
   const logProjectActivity = async (
     actionType: string,
     title: string,
@@ -259,17 +364,125 @@ const ProjectDetail = () => {
     });
   };
 
-  const addProjectAction = async (event?: React.FormEvent) => {
+  const openNewSection = () => {
+    if (!projectSectionsAvailable) {
+      toast.error("Project Sections need the new Supabase migration before they can be added.");
+      return;
+    }
+
+    setEditingSection({
+      name: "",
+      description: "",
+      leader_person_id: null,
+      status: "Active",
+      sort_order: sections.length,
+    });
+  };
+
+  const saveSection = async () => {
+    if (!editingSection || !project || !user) return;
+
+    if (!projectSectionsAvailable) {
+      toast.error("Project Sections need the new Supabase migration before they can be saved.");
+      return;
+    }
+
+    const nextName = editingSection.name?.trim() || "";
+
+    if (!nextName) {
+      toast.error("Section name is required");
+      return;
+    }
+
+    setSavingSection(true);
+
+    const payload = {
+      name: nextName,
+      description: editingSection.description || "",
+      leader_person_id: editingSection.leader_person_id || null,
+      status: editingSection.status || "Active",
+      sort_order: Number(editingSection.sort_order) || 0,
+      updated_at: new Date().toISOString(),
+    };
+
+    const request = editingSection.id
+      ? (supabase as any)
+          .from("project_sections")
+          .update(payload)
+          .eq("id", editingSection.id)
+      : (supabase as any).from("project_sections").insert({
+          ...payload,
+          user_id: user.id,
+          project_id: project.id,
+        });
+
+    const { error } = await request;
+
+    setSavingSection(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await logProjectActivity(
+      editingSection.id ? "section_updated" : "section_added",
+      editingSection.id ? "Section updated" : "Section added",
+      nextName,
+      { section_id: editingSection.id || null }
+    );
+
+    toast.success(editingSection.id ? "Section updated" : "Section added");
+    setEditingSection(null);
+    load();
+  };
+
+  const deleteSection = async (section: ProjectSection) => {
+    const confirmed = window.confirm(
+      `Delete "${section.name}"? Its tasks will stay on the project without a section.`
+    );
+
+    if (!confirmed) return;
+
+    const { error } = await (supabase as any)
+      .from("project_sections")
+      .delete()
+      .eq("id", section.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await logProjectActivity(
+      "section_deleted",
+      "Section deleted",
+      section.name,
+      { section_id: section.id }
+    );
+
+    toast.success("Section deleted");
+    load();
+  };
+
+  const addProjectAction = async (sectionId: string, event?: React.FormEvent) => {
     event?.preventDefault();
 
-    if (!newActionTitle.trim() || !user || !project) return;
+    const draft = sectionTaskDrafts[sectionId] || {
+      title: "",
+      due: "",
+      assigned_person_id: "",
+    };
+
+    if (!draft.title.trim() || !user || !project) return;
 
     const { error } = await supabase.from("tasks").insert({
       id: crypto.randomUUID(),
-      title: newActionTitle.trim(),
+      title: draft.title.trim(),
       user_id: user.id,
       project: project.name,
       project_id: project.id,
+      section_id: sectionId,
       context: "General",
       priority: "Medium",
       energy: "Medium",
@@ -279,8 +492,8 @@ const ProjectDetail = () => {
       person: "",
       location: "",
       tags: [],
-      assigned_person_id: newActionAssignedPersonId || null,
-      due: newActionDue || null,
+      assigned_person_id: draft.assigned_person_id || null,
+      due: draft.due || null,
     });
 
     if (error) {
@@ -292,12 +505,13 @@ const ProjectDetail = () => {
     await logProjectActivity(
       "task_added",
       "Task added",
-      newActionTitle.trim(),
-      { due: newActionDue || null }
+      draft.title.trim(),
+      { due: draft.due || null, section_id: sectionId }
     );
-    setNewActionTitle("");
-    setNewActionDue("");
-    setNewActionAssignedPersonId("");
+    setSectionTaskDrafts((current) => ({
+      ...current,
+      [sectionId]: { title: "", due: "", assigned_person_id: "" },
+    }));
     toast.success("Next action added");
     load();
   };
@@ -359,26 +573,32 @@ const ProjectDetail = () => {
 
     setSavingTask(true);
 
+    const taskPayload: Record<string, unknown> = {
+      title: editingTask.title || "",
+      notes: editingTask.notes || "",
+      project: editingTask.project || "",
+      project_id: editingTask.project_id || project?.id || null,
+      context: editingTask.context || "General",
+      priority: editingTask.priority || "Medium",
+      energy: editingTask.energy || "Medium",
+      minutes: Number(editingTask.minutes) || 15,
+      due: editingTask.due || null,
+      tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
+      assigned_person_id: editingTask.assigned_person_id || null,
+      complete: Boolean(editingTask.complete),
+      completed_at: editingTask.complete
+        ? editingTask.completed_at || new Date().toISOString()
+        : null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (projectSectionsAvailable) {
+      taskPayload.section_id = editingTask.section_id || null;
+    }
+
     const { error } = await supabase
       .from("tasks")
-      .update({
-        title: editingTask.title || "",
-        notes: editingTask.notes || "",
-        project: editingTask.project || "",
-        project_id: editingTask.project_id || project?.id || null,
-        context: editingTask.context || "General",
-        priority: editingTask.priority || "Medium",
-        energy: editingTask.energy || "Medium",
-        minutes: Number(editingTask.minutes) || 15,
-        due: editingTask.due || null,
-        tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
-        assigned_person_id: editingTask.assigned_person_id || null,
-        complete: Boolean(editingTask.complete),
-        completed_at: editingTask.complete
-          ? editingTask.completed_at || new Date().toISOString()
-          : null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(taskPayload)
       .eq("id", editingTask.id);
 
     setSavingTask(false);
@@ -817,93 +1037,250 @@ const ProjectDetail = () => {
           </div>
 
           <div className="border-b border-border/70 p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-extrabold">Next Actions</h3>
-              <span className="text-xs text-brand-teal font-bold">
-                {stats.openTasks.length} open
-              </span>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-extrabold">Sections & Tasks</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Group project actions by workstream and assign a leader from collaborators.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+                  {sections.length} section{sections.length === 1 ? "" : "s"}
+                </span>
+                <Button
+                  type="button"
+                  className="actsix-btn-primary rounded-lg"
+                  onClick={openNewSection}
+                  disabled={!projectSectionsAvailable}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Section
+                </Button>
+              </div>
             </div>
 
-            <form
-              onSubmit={addProjectAction}
-              className="mb-4 grid gap-2 lg:grid-cols-[minmax(0,1fr)_220px_150px_auto]"
-            >
-              <Input
-                value={newActionTitle}
-                onChange={(event) => setNewActionTitle(event.target.value)}
-                placeholder="What needs to be done?"
-                className="border-border/70 bg-background"
-              />
+            {!projectSectionsAvailable && (
+              <div className="mb-4 rounded-lg border border-brand-amber/30 bg-brand-amber/10 p-4 text-sm text-brand-amber">
+                Project Sections are ready in the app, but the Supabase migration has not been applied to this database yet.
+                Existing project tasks are shown below.
+              </div>
+            )}
 
-              <PeopleSearchSelect
-                people={assignableProjectPeople}
-                selectedPersonId={newActionAssignedPersonId}
-                onSelect={setNewActionAssignedPersonId}
-                placeholder="Assign to collaborator..."
-                emptyText="No project collaborators found."
-                showAllOnFocus
-              />
-
-              <Input
-                type="date"
-                value={newActionDue}
-                onChange={(event) => setNewActionDue(event.target.value)}
-                className="border-border/70 bg-background"
-              />
-
-              <Button type="submit" className="actsix-btn-primary rounded-lg px-4">
-                Add
-              </Button>
-            </form>
-
-            <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/10 p-2">
-              {tasks.length === 0 && (
-                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-                  <ListChecks className="h-4 w-4" />
-                  No actions attached yet.
+            {sections.length === 0 && (
+              <div className="rounded-lg border border-dashed border-border bg-muted/10 p-5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 font-semibold text-foreground">
+                  <ListChecks className="h-4 w-4 text-brand-teal" />
+                  No project sections yet.
                 </div>
-              )}
+                <p className="mt-2">
+                  Add sections like Worship, Media, Logistics, or Follow-up, then add tasks inside each section.
+                </p>
+              </div>
+            )}
 
-              {tasks.length > 0 && stats.openTasks.length === 0 && (
-                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-brand-sage" />
-                  No open actions. Completed work is tucked below.
-                </div>
-              )}
+            {sectionGroups.length > 0 && (
+              <div className="grid gap-3 lg:grid-cols-2">
+                {sectionGroups.map(({ section, leader, openTasks, completedTasks, progress }) => {
+                  const draft = sectionTaskDrafts[section.id] || {
+                    title: "",
+                    due: "",
+                    assigned_person_id: "",
+                  };
 
-              {stats.openTasks.map((task) => (
-                <CompactTaskRow
-                  key={task.id}
-                  task={task}
-                  showAssignee
-                  onToggle={toggleTask}
-                  onEdit={(task) => setEditingTask({ ...task })}
-                  onDelete={(task) => removeTask(task.id)}
-                />
-              ))}
-            </div>
+                  return (
+                    <div
+                      key={section.id}
+                      className="rounded-lg border border-border/70 bg-background p-4 shadow-soft"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="truncate font-extrabold">{section.name}</h4>
+                            <span className={`chip ${statusClass(section.status)}`}>
+                              {section.status || "Active"}
+                            </span>
+                          </div>
 
-            {stats.completedTasks.length > 0 && (
-              <div className="mt-3 rounded-lg border border-border/70 bg-background">
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>{openTasks.length} open</span>
+                            <span>·</span>
+                            <span>{completedTasks.length} complete</span>
+                            <span>·</span>
+                            <span>{progress}%</span>
+                          </div>
+
+                          {leader && (
+                            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-sage/20 bg-brand-sage/10 px-2.5 py-1 text-xs font-bold text-brand-sage">
+                              <PersonAvatar
+                                name={leader.display_name}
+                                avatarUrl={leader.avatar_url}
+                                size="xs"
+                              />
+                              <span className="max-w-[160px] truncate">{leader.display_name}</span>
+                            </div>
+                          )}
+
+                          {!leader && (
+                            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                              <Users className="h-3 w-3" />
+                              No leader
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            title="Edit section"
+                            aria-label="Edit section"
+                            onClick={() => setEditingSection({ ...section })}
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            title="Delete section"
+                            aria-label="Delete section"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteSection(section)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {section.description && (
+                        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+                          {section.description}
+                        </p>
+                      )}
+
+                      <form
+                        onSubmit={(event) => addProjectAction(section.id, event)}
+                        className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] xl:grid-cols-[minmax(0,1fr)_180px_140px_auto]"
+                      >
+                        <Input
+                          value={draft.title}
+                          onChange={(event) =>
+                            updateSectionTaskDraft(section.id, { title: event.target.value })
+                          }
+                          placeholder={`Add task to ${section.name}...`}
+                          className="border-border/70 bg-card"
+                        />
+
+                        <PeopleSearchSelect
+                          people={assignableProjectPeople}
+                          selectedPersonId={draft.assigned_person_id}
+                          onSelect={(personId) =>
+                            updateSectionTaskDraft(section.id, {
+                              assigned_person_id: personId,
+                            })
+                          }
+                          placeholder="Assign..."
+                          emptyText="No project collaborators found."
+                          showAllOnFocus
+                        />
+
+                        <Input
+                          type="date"
+                          value={draft.due}
+                          onChange={(event) =>
+                            updateSectionTaskDraft(section.id, { due: event.target.value })
+                          }
+                          className="border-border/70 bg-card"
+                        />
+
+                        <Button type="submit" className="actsix-btn-primary rounded-lg px-4">
+                          Add
+                        </Button>
+                      </form>
+
+                      <div className="mt-4 space-y-1.5 rounded-lg border border-border/70 bg-muted/10 p-2">
+                        {openTasks.length === 0 && completedTasks.length === 0 && (
+                          <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+                            <ListChecks className="h-4 w-4" />
+                            No tasks in this section yet.
+                          </div>
+                        )}
+
+                        {openTasks.map((task) => (
+                          <CompactTaskRow
+                            key={task.id}
+                            task={task}
+                            showAssignee
+                            onToggle={toggleTask}
+                            onEdit={(task) => setEditingTask({ ...task })}
+                            onDelete={(task) => removeTask(task.id)}
+                          />
+                        ))}
+
+                        {completedTasks.length > 0 && (
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              className="flex min-h-9 w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-xs font-extrabold text-muted-foreground transition hover:bg-brand-teal/5"
+                              aria-expanded={Boolean(openCompletedSectionIds[section.id])}
+                              onClick={() => toggleCompletedSection(section.id)}
+                            >
+                              <span className="inline-flex items-center gap-2">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-brand-sage" />
+                                Completed
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                {completedTasks.length}
+                                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openCompletedSectionIds[section.id] ? "rotate-180" : ""}`} />
+                              </span>
+                            </button>
+
+                            {openCompletedSectionIds[section.id] && (
+                              <div className="mt-1 space-y-1.5">
+                                {completedTasks.map((task) => (
+                                  <CompactTaskRow
+                                    key={task.id}
+                                    task={task}
+                                    showAssignee
+                                    onToggle={toggleTask}
+                                    onEdit={(task) => setEditingTask({ ...task })}
+                                    onDelete={(task) => removeTask(task.id)}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {unsectionedTasks.length > 0 && (
+              <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/10 p-3">
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-brand-teal/5"
-                  aria-expanded={isCompletedTasksOpen}
-                  onClick={() => setIsCompletedTasksOpen((open) => !open)}
+                  className="flex min-h-10 w-full items-center justify-between gap-3 text-left"
+                  aria-expanded={isUnsectionedOpen}
+                  onClick={() => setIsUnsectionedOpen((open) => !open)}
                 >
                   <span className="inline-flex items-center gap-2 text-sm font-extrabold">
-                    <CheckCircle2 className="h-4 w-4 text-brand-sage" />
-                    Completed actions
+                    <ListChecks className="h-4 w-4 text-brand-teal" />
+                    Tasks without a section
                   </span>
-                  <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                    {stats.completedTasks.length}
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isCompletedTasksOpen ? "rotate-180" : ""}`} />
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {unsectionedTasks.length}
                   </span>
                 </button>
 
-                {isCompletedTasksOpen && (
-                  <div className="space-y-1.5 border-t border-border/70 bg-muted/10 p-2">
-                    {stats.completedTasks.map((task) => (
+                {isUnsectionedOpen && (
+                  <div className="mt-2 space-y-1.5">
+                    {unsectionedTasks.map((task) => (
                       <CompactTaskRow
                         key={task.id}
                         task={task}
@@ -1085,6 +1462,130 @@ const ProjectDetail = () => {
                 </Button>
               </div>
             </form>
+          </Card>
+        </div>
+      )}
+
+      {editingSection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl overflow-hidden border-border/70 bg-card shadow-card">
+            <div className="flex items-start justify-between gap-4 border-b border-border/70 p-6">
+              <div>
+                <p className="label-eyebrow">Project Sections</p>
+                <h2 className="text-xl font-extrabold leading-tight">
+                  {editingSection.id ? "Edit Section" : "Add Section"}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Sections group related tasks and can have one leader from the project collaborators.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setEditingSection(null)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <div className="space-y-4 p-6">
+              <div>
+                <label className="label-eyebrow">Section name</label>
+                <Input
+                  value={editingSection.name || ""}
+                  onChange={(event) =>
+                    setEditingSection({ ...editingSection, name: event.target.value })
+                  }
+                  placeholder="Worship, Media, Logistics..."
+                  className="mt-2 border-border/70 bg-background"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label-eyebrow">Leader</label>
+                  <select
+                    value={editingSection.leader_person_id || ""}
+                    onChange={(event) =>
+                      setEditingSection({
+                        ...editingSection,
+                        leader_person_id: event.target.value || null,
+                      })
+                    }
+                    className="mt-2 h-11 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                  >
+                    <option value="">No leader</option>
+                    {assignableProjectPeople.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.display_name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Add someone as a collaborator before making them a section leader.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Status</label>
+                  <select
+                    value={editingSection.status || "Active"}
+                    onChange={(event) =>
+                      setEditingSection({ ...editingSection, status: event.target.value })
+                    }
+                    className="mt-2 h-11 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                  >
+                    <option>Not started</option>
+                    <option>Active</option>
+                    <option>Blocked</option>
+                    <option>Complete</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="label-eyebrow">Description</label>
+                <textarea
+                  value={editingSection.description || ""}
+                  onChange={(event) =>
+                    setEditingSection({
+                      ...editingSection,
+                      description: event.target.value,
+                    })
+                  }
+                  rows={4}
+                  placeholder="Optional notes for this workstream..."
+                  className="mt-2 w-full rounded-lg border border-border/70 bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-border/70 bg-card p-6">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setEditingSection(null)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                className="actsix-btn-primary rounded-xl"
+                onClick={saveSection}
+                disabled={savingSection}
+              >
+                <Plus className="h-4 w-4" />
+                {savingSection
+                  ? "Saving..."
+                  : editingSection.id
+                    ? "Save Section"
+                    : "Add Section"}
+              </Button>
+            </div>
           </Card>
         </div>
       )}
