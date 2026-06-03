@@ -111,7 +111,7 @@ export function PeopleMultiSearchSelect({
   };
 
   return (
-    <div ref={wrapperRef} className={`relative space-y-2 ${open ? "z-[300]" : "z-[20]"}`}>
+    <div ref={wrapperRef} className={`relative space-y-2 ${open ? "z-30" : "z-10"}`}>
       <div className="min-h-12 rounded-2xl border border-border/70 bg-background px-3 py-2 transition focus-within:border-brand-teal/50 focus-within:ring-2 focus-within:ring-brand-teal/20">
         <div className="flex flex-wrap items-center gap-2">
           {selectedPeople.map((person) => (
@@ -173,7 +173,7 @@ export function PeopleMultiSearchSelect({
       </div>
 
       {open && (showAllOnFocus || query.trim().length >= 2) && (
-        <div className="absolute left-0 right-0 top-full z-[1200] mt-2 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
+        <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
           <div className="max-h-72 overflow-y-auto">
             {filteredPeople.length === 0 ? (
               <div className="px-4 py-4 text-sm text-muted-foreground">
@@ -209,7 +209,7 @@ export function PeopleMultiSearchSelect({
       )}
 
       {open && !showAllOnFocus && query.trim().length > 0 && query.trim().length < 2 && (
-        <div className="absolute left-0 right-0 top-full z-[1200] mt-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm text-muted-foreground shadow-2xl">
+        <div className="absolute left-0 right-0 top-full z-40 mt-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm text-muted-foreground shadow-2xl">
           Type at least 2 letters to search.
         </div>
       )}

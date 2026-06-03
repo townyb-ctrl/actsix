@@ -32,8 +32,8 @@ export function PeopleSearchSelect({
   placeholder = "Search people...",
   emptyText = "No people found.",
   onCreatePerson,
-  zIndexClass = "z-[100]",
-  dropdownZIndexClass = "z-[999]",
+  zIndexClass = "z-20",
+  dropdownZIndexClass = "z-30",
   showAllOnFocus = false,
 }: PeopleSearchSelectProps) {
   const inputId = useId();

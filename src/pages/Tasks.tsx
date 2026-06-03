@@ -9,6 +9,8 @@ import {
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
+  Inbox,
+  Plus,
   Search,
   SlidersHorizontal,
   X,
@@ -19,6 +21,7 @@ import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { personalNextActionFilter } from "@/lib/taskVisibility";
+import { QuickCaptureDialog } from "@/components/QuickCaptureDialog";
 
 const priorityWeight: Record<string, number> = {
   Urgent: 4,
@@ -78,6 +81,7 @@ const Tasks = () => {
   const [saving, setSaving] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
 
   const [search, setSearch] = useState("");
   const [dateView, setDateView] = useState("all");
@@ -332,6 +336,60 @@ const Tasks = () => {
       />
 
       <div className="-mt-1 w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        {tasks.length === 0 && (
+          <Card
+            data-tour="tasks-gtd-primer"
+            className="overflow-hidden border-brand-teal/25 bg-card shadow-card"
+          >
+            <div className="grid gap-px bg-border/70 md:grid-cols-[minmax(0,1fr)_minmax(20rem,0.55fr)]">
+              <div className="bg-card p-5 md:p-6">
+                <p className="label-eyebrow">GTD Starter</p>
+                <h2 className="mt-2 text-2xl font-extrabold tracking-tight">
+                  Build your trusted task system
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
+                  GTD starts by capturing what has your attention, then clarifying it into the next physical action. ACTSIX keeps raw thoughts in Inbox and keeps actionable work here in Next Actions.
+                </p>
+
+                <div data-tour="tasks-clarify" className="mt-5 grid gap-3 sm:grid-cols-3">
+                  {[
+                    ["Capture", "Put the thought somewhere trusted."],
+                    ["Clarify", "Decide the next visible action."],
+                    ["Engage", "Work from context, time, energy, and priority."],
+                  ].map(([title, body]) => (
+                    <div key={title} className="rounded-xl border border-border/80 bg-background/70 p-3">
+                      <p className="text-sm font-extrabold">{title}</p>
+                      <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{body}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-between bg-brand-teal/10 p-5 md:p-6">
+                <div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal text-white shadow-soft">
+                    <Inbox className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-extrabold">Add your first task</h3>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-muted-foreground">
+                    Start with one real thing. You can clean it up later.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  data-tour="tasks-first-capture"
+                  className="mt-5 rounded-xl bg-brand-teal text-white shadow-soft hover:bg-brand-teal-dark"
+                  onClick={() => setQuickCaptureOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Capture first task
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div data-tour="tasks-filters" className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -590,6 +648,13 @@ const Tasks = () => {
             : undefined
         }
         onRefreshOptions={load}
+      />
+      <QuickCaptureDialog
+        open={quickCaptureOpen}
+        onOpenChange={(open) => {
+          setQuickCaptureOpen(open);
+          if (!open) load();
+        }}
       />
     </div>
   );

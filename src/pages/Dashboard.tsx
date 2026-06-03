@@ -235,7 +235,7 @@ const projectProgress = (project: Project, tasks: Task[]) => {
 };
 
 const EmptyState = ({ children }: { children: string }) => (
-  <div className="rounded-2xl border border-dashed border-border/80 bg-background/55 px-4 py-5 text-center text-xs font-medium text-muted-foreground">
+  <div className="rounded-2xl border border-dashed border-border bg-background/70 px-4 py-5 text-center text-sm font-semibold text-muted-foreground">
     {children}
   </div>
 );
@@ -252,7 +252,7 @@ const SectionHeader = ({
   <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3.5 sm:px-5">
     <div className="min-w-0">
       <p className="label-eyebrow">{eyebrow}</p>
-      <h2 className="mt-0.5 truncate text-[17px] font-extrabold tracking-tight text-foreground sm:text-lg">
+      <h2 className="mt-0.5 truncate text-lg font-extrabold tracking-tight text-foreground sm:text-xl">
         {title}
       </h2>
     </div>
@@ -263,13 +263,13 @@ const SectionHeader = ({
 const TaskRow = ({ task, compact = false }: { task: Task; compact?: boolean }) => (
   <Link
     to="/tasks/next"
-    className="group flex min-h-[52px] items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/40 px-3 py-2.5 transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
+    className="group flex min-h-[58px] items-center justify-between gap-3 rounded-2xl border border-border/80 bg-background/70 px-3.5 py-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
   >
     <div className="min-w-0 flex-1">
-      <div className="truncate text-sm font-bold text-foreground group-hover:text-brand-teal">
+      <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
         {task.title}
       </div>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-medium text-muted-foreground">
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold text-muted-foreground">
         <span>{task.due ? formatShortDate(task.due) : "No due date"}</span>
         {(task.context || task.project) && <span>•</span>}
         {task.context && <span className="truncate">{task.context}</span>}
@@ -292,17 +292,17 @@ const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
 
   return (
     <Link
-      to={item.to}
-      className="group flex min-h-[56px] items-center gap-3 rounded-2xl border border-border/60 bg-card px-3 py-2.5 shadow-soft transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
+    to={item.to}
+      className="group flex min-h-[62px] items-center gap-3 rounded-2xl border border-border/80 bg-card px-3.5 py-3 shadow-soft transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
     >
       <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-extrabold text-foreground group-hover:text-brand-teal">
+        <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
           {item.title}
         </div>
-        <div className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] font-medium text-muted-foreground">
+        <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs font-semibold text-muted-foreground">
           <span>{formatAgendaDate(item.date)}</span>
           {formatTime(item.time) && <span>{formatTime(item.time)}</span>}
           <span>{item.label}</span>
@@ -675,7 +675,7 @@ const Dashboard = () => {
     <div className="overflow-x-hidden">
       <div
         data-tour="home-overview"
-        className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:px-10"
+        className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10"
       >
         <section className="relative overflow-hidden rounded-[1.4rem] border border-border/70 bg-card p-4 shadow-card sm:p-5 md:p-6">
           <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-brand-teal/10 blur-2xl" />
@@ -697,13 +697,13 @@ const Dashboard = () => {
         </section>
 
 
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(390px,0.8fr)] 2xl:grid-cols-[minmax(0,1.25fr)_minmax(430px,0.75fr)]">
           <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card">
             <SectionHeader
               eyebrow="Tasks"
               title="Due Today"
               action={
-                <span className="rounded-full bg-brand-teal/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-teal">
+                <span className="rounded-full bg-brand-teal/15 px-2.5 py-1 text-xs font-extrabold text-brand-teal">
                   {dueTodayCount}
                 </span>
               }
@@ -717,10 +717,10 @@ const Dashboard = () => {
               {importantTasks.length > 0 && (
                 <div className="pt-2">
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground">
+                    <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
                       High priority
                     </p>
-                    <Link to="/tasks/next" className="text-[11px] font-extrabold text-brand-teal">
+                    <Link to="/tasks/next" className="text-xs font-extrabold text-brand-teal">
                       Open tasks
                     </Link>
                   </div>
@@ -740,7 +740,7 @@ const Dashboard = () => {
               title="Next Service"
               action={
                 nextService && serviceCountdownLabel ? (
-                  <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-teal">
+                  <span className="rounded-full border border-brand-teal/25 bg-brand-teal/15 px-2.5 py-1 text-xs font-extrabold text-brand-teal">
                     {serviceCountdownLabel}
                   </span>
                 ) : null
@@ -758,7 +758,7 @@ const Dashboard = () => {
                     <h3 className="truncate text-base font-extrabold leading-tight tracking-tight text-foreground">
                       {nextServiceTitle}
                     </h3>
-                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold text-muted-foreground">
+                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="h-3.5 w-3.5 text-brand-teal" />
                         {formatDate(nextService.service_date)}
@@ -780,13 +780,13 @@ const Dashboard = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 rounded-xl border border-border/70 bg-background/55 p-1">
+                <div className="grid grid-cols-2 rounded-xl border border-border bg-background/70 p-1">
                   {(["plan", "team"] as const).map((view) => (
                     <button
                       key={view}
                       type="button"
                       onClick={() => setServiceView(view)}
-                      className={`min-h-[34px] flex-1 rounded-lg px-2 text-xs font-extrabold transition ${
+                      className={`min-h-[36px] flex-1 rounded-lg px-2 text-sm font-extrabold transition ${
                         serviceView === view
                           ? "bg-brand-teal text-white shadow-soft"
                           : "text-muted-foreground hover:text-foreground"
@@ -805,9 +805,9 @@ const Dashboard = () => {
                     {serviceOrderItems.slice(0, 2).map((item) => (
                       <div
                         key={item.id}
-                        className="flex min-h-[38px] items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/45 px-2.5 py-1.5"
+                        className="flex min-h-[42px] items-center justify-between gap-2 rounded-xl border border-border/80 bg-background/70 px-3 py-2"
                       >
-                        <span className="min-w-0 truncate text-xs font-bold">{item.title}</span>
+                        <span className="min-w-0 truncate text-sm font-bold">{item.title}</span>
                         <span className="shrink-0 rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-extrabold capitalize text-brand-teal">
                           {item.duration_minutes ? `${item.duration_minutes}m` : item.item_type}
                         </span>
@@ -822,12 +822,12 @@ const Dashboard = () => {
                     {serviceTeamAssignments.slice(0, 2).map((assignment) => (
                       <div
                         key={assignment.id}
-                        className="flex min-h-[38px] items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/45 px-2.5 py-1.5"
+                        className="flex min-h-[42px] items-center justify-between gap-2 rounded-xl border border-border/80 bg-background/70 px-3 py-2"
                       >
-                        <span className="min-w-0 truncate text-xs font-bold">
+                        <span className="min-w-0 truncate text-sm font-bold">
                           {assignment.role_name}
                         </span>
-                        <span className="shrink-0 max-w-[52%] truncate text-right text-[11px] font-semibold text-muted-foreground">
+                        <span className="shrink-0 max-w-[52%] truncate text-right text-xs font-semibold text-muted-foreground">
                           {assignment.person_name || "Unassigned"}
                         </span>
                       </div>
@@ -837,7 +837,7 @@ const Dashboard = () => {
 
                 <Link
                   to={`/service-planner/services/${nextService.id}`}
-                  className="inline-flex min-h-[34px] w-full items-center justify-center gap-1.5 rounded-xl border border-brand-teal/20 bg-brand-teal/10 px-3 text-xs font-extrabold text-brand-teal transition hover:bg-brand-teal/15 sm:w-auto"
+                  className="inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl border border-brand-teal/25 bg-brand-teal/15 px-3 text-sm font-extrabold text-brand-teal transition hover:bg-brand-teal/20 sm:w-auto"
                 >
                   View full service
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -852,7 +852,7 @@ const Dashboard = () => {
               eyebrow="Projects"
               title="Active Momentum"
               action={
-                <span className="rounded-full bg-brand-sage/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-sage">
+                <span className="rounded-full bg-brand-sage/15 px-2.5 py-1 text-xs font-extrabold text-brand-sage">
                   {activeProjectCount} active
                 </span>
               }
@@ -867,25 +867,25 @@ const Dashboard = () => {
                   <Link
                     key={project.id}
                     to={`/tasks/projects/${project.id}`}
-                    className="group block rounded-2xl border border-border/60 bg-background/45 p-3 transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
+                    className="group block rounded-2xl border border-border/80 bg-background/70 p-3.5 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-extrabold text-foreground group-hover:text-brand-teal">
+                        <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
                           {project.name}
                         </div>
-                        <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-muted-foreground">
+                        <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-muted-foreground">
                           {stats.nextAction}
                         </p>
                       </div>
-                      <span className="shrink-0 font-mono text-xs font-extrabold text-brand-teal">
+                      <span className="shrink-0 font-mono text-sm font-extrabold text-brand-teal">
                         {progress}%
                       </span>
                     </div>
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-brand-teal" style={{ width: `${progress}%` }} />
                     </div>
-                    <p className="mt-2 text-[11px] font-bold text-muted-foreground">
+                    <p className="mt-2 text-xs font-bold text-muted-foreground">
                       {stats.openTasks} open task{stats.openTasks === 1 ? "" : "s"}
                     </p>
                   </Link>
@@ -899,7 +899,7 @@ const Dashboard = () => {
               eyebrow="Meetings"
               title="Upcoming Meetings"
               action={
-                <span className="rounded-full bg-brand-bronze/10 px-2.5 py-1 text-[11px] font-extrabold text-brand-bronze">
+                <span className="rounded-full bg-brand-bronze/15 px-2.5 py-1 text-xs font-extrabold text-brand-bronze">
                   {upcomingMeetings.length}
                 </span>
               }
@@ -912,16 +912,16 @@ const Dashboard = () => {
                 <Link
                   key={meeting.id}
                   to={`/meetings/${meeting.id}`}
-                  className="group flex min-h-[56px] items-center gap-3 rounded-2xl border border-border/60 bg-background/45 px-3 py-2.5 transition hover:border-brand-teal/25 hover:bg-brand-teal/5"
+                  className="group flex min-h-[62px] items-center gap-3 rounded-2xl border border-border/80 bg-background/70 px-3.5 py-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
                 >
                   <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-bronze/10 text-brand-bronze">
                     <CalendarDays className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-extrabold text-foreground group-hover:text-brand-teal">
+                    <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
                       {meeting.title}
                     </div>
-                    <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] font-medium text-muted-foreground">
+                    <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs font-semibold text-muted-foreground">
                       <span>{formatAgendaDate(meeting.meeting_date)}</span>
                       {formatTime(meeting.meeting_time) && (
                         <span>{formatTime(meeting.meeting_time)}</span>

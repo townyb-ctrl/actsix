@@ -450,12 +450,12 @@ export function AppSidebar() {
 
           <SidebarGroupContent data-tour="sidebar-primary-nav">
             {!collapsed && isAlphaMode && (
-              <div className="mx-1.5 mb-3 rounded-xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-bold text-brand-teal-bright">
+              <div className="mx-1.5 mb-3 rounded-xl border border-brand-teal/35 bg-brand-teal/15 px-3 py-2 text-sm font-bold text-brand-teal-bright">
                 {getReleaseLabel()} Mode
               </div>
             )}
 
-            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-0.5 px-1"}>
+            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 px-1"}>
               {items.map((item) => {
                 const active = isActive(item.url);
 
@@ -463,7 +463,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`${collapsed ? "mx-auto h-10 w-10 justify-center rounded-xl p-0" : "h-9 rounded-lg"} transition-colors ${
+                      className={`${collapsed ? "mx-auto h-10 w-10 justify-center rounded-xl p-0" : "h-10 rounded-lg"} transition-colors ${
                         active
                           ? "bg-sidebar-accent text-sidebar-foreground font-semibold"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
@@ -483,7 +483,7 @@ export function AppSidebar() {
                           <item.icon className={collapsed ? "h-[18px] w-[18px]" : "h-3.5 w-3.5"} />
                         </span>
 
-                        {!collapsed && <span className="text-sm">{item.title}</span>}
+                        {!collapsed && <span className="text-[15px] font-semibold">{item.title}</span>}
                         {renderBadge(item)}
                       </NavLink>
                     </SidebarMenuButton>
@@ -525,11 +525,11 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-0.5 px-1"}>
+            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 px-1"}>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  className={`${collapsed ? "mx-auto h-10 w-10 justify-center rounded-xl p-0" : "h-9 rounded-lg"} ${
+                  className={`${collapsed ? "mx-auto h-10 w-10 justify-center rounded-xl p-0" : "h-10 rounded-lg"} ${
                     isActive("/settings")
                       ? "bg-sidebar-accent text-sidebar-foreground"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60"
@@ -539,7 +539,7 @@ export function AppSidebar() {
                     <span className="flex h-6 w-6 items-center justify-center rounded-md bg-sidebar-accent/40">
                       <SettingsIcon className={collapsed ? "h-[18px] w-[18px]" : "h-3.5 w-3.5"} />
                     </span>
-                    {!collapsed && <span className="text-sm">Settings</span>}
+                    {!collapsed && <span className="text-[15px] font-semibold">Settings</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

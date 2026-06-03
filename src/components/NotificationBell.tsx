@@ -4,7 +4,14 @@ import { Bell, CheckCheck, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 
 type Notification = {
   id: string;
@@ -22,14 +29,18 @@ export function NotificationBell({
   tone = "sidebar",
 }: {
   collapsed?: boolean;
-  tone?: "sidebar" | "topbar";
+  tone?: "sidebar" | "topbar" | "dock";
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const channelNameRef = useRef(
+    `notifications:${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`
+  );
   const [panelPosition, setPanelPosition] = useState({ left: 0, top: 0 });
 
   const unreadCount = useMemo(() => {
@@ -67,7 +78,7 @@ export function NotificationBell({
     }, 5000);
 
     const channel = supabase
-      .channel(`notifications:${user.id}`)
+      .channel(`${channelNameRef.current}:${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -217,6 +228,57 @@ export function NotificationBell({
     }
   };
 
+  const notificationRows = (
+    <>
+      {notifications.length === 0 && (
+        <div className="p-4 text-sm text-muted-foreground">
+          No notifications yet.
+        </div>
+      )}
+
+      {notifications.length > 0 && (
+        <div className="min-h-0 flex-1 divide-y divide-border/70 overflow-y-auto bg-card">
+          {notifications.map((notification) => (
+            <button
+              key={notification.id}
+              type="button"
+              className={`flex w-full gap-3 p-3 text-left transition hover:bg-brand-teal/5 ${
+                notification.read_at ? "opacity-75" : ""
+              }`}
+              onClick={() => openEntity(notification)}
+            >
+              <span
+                className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                  notification.read_at ? "bg-border" : "bg-brand-teal"
+                }`}
+              />
+
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-extrabold text-foreground">
+                  {notification.title}
+                </span>
+
+                {notification.message && (
+                  <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-muted-foreground">
+                    {notification.message}
+                  </span>
+                )}
+
+                <span className="mt-1 block text-[11px] font-medium text-muted-foreground/75">
+                  {new Date(notification.created_at).toLocaleString()}
+                </span>
+              </span>
+
+              {notification.entity_id && (
+                <ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="relative">
       <button
@@ -225,6 +287,8 @@ export function NotificationBell({
         className={
           tone === "topbar"
             ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground transition hover:border-brand-teal/30 hover:bg-brand-teal/5 hover:text-brand-teal"
+            : tone === "dock"
+              ? "group flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-[1.35rem] px-1 text-[10px] font-extrabold text-muted-foreground transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/25"
             : `relative flex items-center justify-center rounded-xl transition ${
                 collapsed
                   ? "h-11 w-11 bg-sidebar-accent/60 text-sidebar-foreground hover:bg-sidebar-accent"
@@ -242,6 +306,8 @@ export function NotificationBell({
           className={`relative flex items-center justify-center ${
             tone === "topbar"
               ? "h-9 w-9"
+              : tone === "dock"
+                ? "h-9 w-9 rounded-2xl transition group-hover:bg-brand-teal/5"
               : "h-7 w-7 rounded-md bg-sidebar-accent/40"
           }`}
         >
@@ -254,9 +320,48 @@ export function NotificationBell({
         </span>
 
         {!collapsed && tone === "sidebar" && <span className="text-sm">Notifications</span>}
+        {tone === "dock" && <span className="max-w-[58px] truncate leading-none">Alerts</span>}
       </button>
 
-      {open && createPortal(
+      {isMobile && (
+        <Drawer open={open} onOpenChange={setOpen}>
+          <DrawerContent className="max-h-[82svh] border-border/70 bg-background">
+            <DrawerHeader className="px-5 pb-2 text-left">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="label-eyebrow">Notifications</p>
+                  <DrawerTitle className="text-2xl font-extrabold tracking-tight">
+                    Activity alerts
+                  </DrawerTitle>
+                  <p className="mt-1 text-sm font-medium text-muted-foreground">
+                    {unreadCount} unread
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 rounded-xl text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                  onClick={markAllAsRead}
+                  disabled={unreadCount === 0}
+                  title="Mark all as read"
+                >
+                  <CheckCheck className="h-4 w-4" />
+                </Button>
+              </div>
+            </DrawerHeader>
+
+            <div className="min-h-0 flex-1 overflow-hidden px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
+              <div className="flex max-h-[55svh] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-soft">
+                {notificationRows}
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
+
+      {!isMobile && open && createPortal(
         <div
           ref={panelRef}
           className="fixed z-[1000] flex max-h-[21rem] w-[min(21.25rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-border/70 bg-card text-foreground shadow-card"
@@ -287,53 +392,7 @@ export function NotificationBell({
               <CheckCheck className="h-4 w-4" />
             </Button>
           </div>
-
-          {notifications.length === 0 && (
-            <div className="p-4 text-sm text-muted-foreground">
-              No notifications yet.
-            </div>
-          )}
-
-          {notifications.length > 0 && (
-            <div className="min-h-0 flex-1 divide-y divide-border/70 overflow-y-auto bg-card">
-              {notifications.map((notification) => (
-                <button
-                  key={notification.id}
-                  type="button"
-                  className={`flex w-full gap-3 p-3 text-left transition hover:bg-brand-teal/5 ${
-                    notification.read_at ? "opacity-75" : ""
-                  }`}
-                  onClick={() => openEntity(notification)}
-                >
-                  <span
-                    className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
-                      notification.read_at ? "bg-border" : "bg-brand-teal"
-                    }`}
-                  />
-
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-extrabold text-foreground">
-                      {notification.title}
-                    </span>
-
-                    {notification.message && (
-                      <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-muted-foreground">
-                        {notification.message}
-                      </span>
-                    )}
-
-                    <span className="mt-1 block text-[11px] font-medium text-muted-foreground/75">
-                      {new Date(notification.created_at).toLocaleString()}
-                    </span>
-                  </span>
-
-                  {notification.entity_id && (
-                    <ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          {notificationRows}
         </div>,
         document.body
       )}

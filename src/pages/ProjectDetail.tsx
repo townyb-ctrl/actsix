@@ -87,6 +87,8 @@ const ProjectDetail = () => {
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
+  const [isMessagingOpen, setIsMessagingOpen] = useState(false);
+  const [isCompletedTasksOpen, setIsCompletedTasksOpen] = useState(false);
   const [newActionTitle, setNewActionTitle] = useState("");
   const [newActionDue, setNewActionDue] = useState("");
   const [newActionAssignedPersonId, setNewActionAssignedPersonId] = useState("");
@@ -726,29 +728,23 @@ const ProjectDetail = () => {
                 {collaborators.map((collaborator) => (
                   <div
                     key={collaborator.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-2.5 py-1.5 text-sm"
+                    className="group relative rounded-full"
+                    title={`${collaborator.people?.display_name || "Person"} - ${collaborator.role || "Collaborator"}`}
                   >
                     <PersonAvatar
                       name={collaborator.people?.display_name}
                       avatarUrl={collaborator.people?.avatar_url}
-                      size="xs"
+                      size="md"
+                      className="border-2 border-background shadow-soft ring-1 ring-border"
                     />
-
-                    <span className="font-bold">
-                      {collaborator.people?.display_name || "Person"}
-                    </span>
-
-                    <span className="text-xs text-muted-foreground">
-                      {collaborator.role || "Collaborator"}
-                    </span>
 
                     <button
                       type="button"
-                      className="ml-1 text-muted-foreground/60 transition hover:text-destructive"
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-soft transition hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/25"
                       onClick={() => removeCollaborator(collaborator.id)}
                       aria-label="Remove collaborator"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 ))}
@@ -768,36 +764,54 @@ const ProjectDetail = () => {
                     </p>
                   </div>
 
-                  <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
-                    {messageableCollaborators.length} messageable
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+                      {messageableCollaborators.length} messageable
+                    </span>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg px-2.5"
+                      aria-expanded={isMessagingOpen}
+                      onClick={() => setIsMessagingOpen((open) => !open)}
+                    >
+                      {isMessagingOpen ? "Hide" : "Show"}
+                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isMessagingOpen ? "rotate-180" : ""}`} />
+                    </Button>
+                  </div>
                 </div>
 
-                <textarea
-                  value={collaboratorMessage}
-                  onChange={(event) => setCollaboratorMessage(event.target.value)}
-                  rows={3}
-                  placeholder={`Hi team, quick update on ${project.name}...`}
-                  className="mt-4 w-full rounded-lg border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                />
+                {isMessagingOpen && (
+                  <>
+                    <textarea
+                      value={collaboratorMessage}
+                      onChange={(event) => setCollaboratorMessage(event.target.value)}
+                      rows={3}
+                      placeholder={`Hi team, quick update on ${project.name}...`}
+                      className="mt-4 w-full rounded-lg border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    />
 
-                {nonMessageableCollaborators.length > 0 && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {nonMessageableCollaborators.length} collaborator{nonMessageableCollaborators.length === 1 ? "" : "s"} will be skipped because they do not have a valid phone number.
-                  </p>
+                    {nonMessageableCollaborators.length > 0 && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {nonMessageableCollaborators.length} collaborator{nonMessageableCollaborators.length === 1 ? "" : "s"} will be skipped because they do not have a valid phone number.
+                      </p>
+                    )}
+
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        type="button"
+                        className="actsix-btn-primary rounded-lg"
+                        onClick={messageProjectCollaborators}
+                        disabled={messageableCollaborators.length === 0}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        Message Collaborators
+                      </Button>
+                    </div>
+                  </>
                 )}
-
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    type="button"
-                    className="actsix-btn-primary rounded-lg"
-                    onClick={messageProjectCollaborators}
-                    disabled={messageableCollaborators.length === 0}
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    Message Collaborators
-                  </Button>
-                </div>
               </div>
             )}
           </div>
@@ -810,29 +824,9 @@ const ProjectDetail = () => {
               </span>
             </div>
 
-            <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/10 p-2">
-              {tasks.length === 0 && (
-                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-                  <ListChecks className="h-4 w-4" />
-                  No actions attached yet.
-                </div>
-              )}
-
-              {tasks.map((task) => (
-                <CompactTaskRow
-                  key={task.id}
-                  task={task}
-                  showAssignee
-                  onToggle={toggleTask}
-                  onEdit={(task) => setEditingTask({ ...task })}
-                  onDelete={(task) => removeTask(task.id)}
-                />
-              ))}
-            </div>
-
             <form
               onSubmit={addProjectAction}
-              className="mt-4 grid gap-2 lg:grid-cols-[minmax(0,1fr)_220px_150px_auto]"
+              className="mb-4 grid gap-2 lg:grid-cols-[minmax(0,1fr)_220px_150px_auto]"
             >
               <Input
                 value={newActionTitle}
@@ -847,8 +841,6 @@ const ProjectDetail = () => {
                 onSelect={setNewActionAssignedPersonId}
                 placeholder="Assign to collaborator..."
                 emptyText="No project collaborators found."
-                zIndexClass="z-[80]"
-                dropdownZIndexClass="z-[900]"
                 showAllOnFocus
               />
 
@@ -863,6 +855,68 @@ const ProjectDetail = () => {
                 Add
               </Button>
             </form>
+
+            <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/10 p-2">
+              {tasks.length === 0 && (
+                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                  <ListChecks className="h-4 w-4" />
+                  No actions attached yet.
+                </div>
+              )}
+
+              {tasks.length > 0 && stats.openTasks.length === 0 && (
+                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-brand-sage" />
+                  No open actions. Completed work is tucked below.
+                </div>
+              )}
+
+              {stats.openTasks.map((task) => (
+                <CompactTaskRow
+                  key={task.id}
+                  task={task}
+                  showAssignee
+                  onToggle={toggleTask}
+                  onEdit={(task) => setEditingTask({ ...task })}
+                  onDelete={(task) => removeTask(task.id)}
+                />
+              ))}
+            </div>
+
+            {stats.completedTasks.length > 0 && (
+              <div className="mt-3 rounded-lg border border-border/70 bg-background">
+                <button
+                  type="button"
+                  className="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-brand-teal/5"
+                  aria-expanded={isCompletedTasksOpen}
+                  onClick={() => setIsCompletedTasksOpen((open) => !open)}
+                >
+                  <span className="inline-flex items-center gap-2 text-sm font-extrabold">
+                    <CheckCircle2 className="h-4 w-4 text-brand-sage" />
+                    Completed actions
+                  </span>
+                  <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                    {stats.completedTasks.length}
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isCompletedTasksOpen ? "rotate-180" : ""}`} />
+                  </span>
+                </button>
+
+                {isCompletedTasksOpen && (
+                  <div className="space-y-1.5 border-t border-border/70 bg-muted/10 p-2">
+                    {stats.completedTasks.map((task) => (
+                      <CompactTaskRow
+                        key={task.id}
+                        task={task}
+                        showAssignee
+                        onToggle={toggleTask}
+                        onEdit={(task) => setEditingTask({ ...task })}
+                        onDelete={(task) => removeTask(task.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="border-b border-border/70 p-5">

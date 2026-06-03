@@ -22,6 +22,7 @@ import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import actsixIcon from "@/assets/branding/actsix-icon-black.png";
+import { NotificationBell } from "@/components/NotificationBell";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -470,11 +471,16 @@ export function MobileBottomNav() {
     <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] md:hidden">
       <div className="relative mx-auto max-w-md">
         <div
+          data-open={switcherOpen}
+          className="mobile-switcher-seed pointer-events-none absolute left-1/2 bottom-[4.05rem] z-10 h-3 w-3 rounded-full bg-brand-teal shadow-[0_10px_26px_rgba(45,140,140,0.28)]"
+        />
+
+        <div
           className={cn(
-            "absolute left-1/2 bottom-[5.35rem] z-20 flex w-[92%] max-w-[350px] -translate-x-1/2 items-center justify-between gap-1 rounded-full border border-brand-teal/15 bg-brand-teal px-3 py-2 shadow-[0_14px_34px_rgba(45,140,140,0.24)] transition-all duration-200",
+            "absolute left-1/2 bottom-[5.85rem] z-20 flex w-[min(82%,19.5rem)] origin-bottom -translate-x-1/2 items-center justify-between gap-1 rounded-full border border-white/10 bg-brand-teal px-3 py-2 shadow-[0_16px_36px_rgba(45,140,140,0.34)] transition-all duration-300 ease-out",
             switcherOpen
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-3 scale-95 opacity-0"
+              ? "pointer-events-auto translate-y-0 scale-100 opacity-100 delay-75"
+              : "pointer-events-none translate-y-5 scale-50 opacity-0 delay-0"
           )}
         >
           {moduleSwitcherItems.map((module) => {
@@ -490,7 +496,7 @@ export function MobileBottomNav() {
                   navigate(module.path);
                 }}
                 className={cn(
-                  "flex h-11 min-w-0 flex-1 items-center justify-center rounded-full text-white/85 transition active:scale-95",
+                  "flex h-10 min-w-0 flex-1 items-center justify-center rounded-full text-white/85 transition active:scale-95",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
                   active && "bg-white/15 text-white ring-1 ring-white/25"
                 )}
@@ -502,29 +508,38 @@ export function MobileBottomNav() {
           })}
         </div>
 
-        <div className="relative overflow-visible rounded-[1.9rem] border border-border/75 bg-white/95 px-2 pb-2 pt-3 shadow-[0_-10px_30px_rgba(30,30,27,0.11)] backdrop-blur-xl before:absolute before:left-1/2 before:top-0 before:h-16 before:w-24 before:-translate-x-1/2 before:-translate-y-[42%] before:rounded-full before:bg-white/95 before:shadow-[0_0_0_1px_rgba(227,222,211,0.72)] before:content-['']">
+        <div className="relative overflow-visible rounded-[1.55rem] border border-border/75 bg-white/95 px-2 pb-2 pt-3 shadow-[0_-10px_30px_rgba(30,30,27,0.11)] backdrop-blur-xl before:absolute before:left-1/2 before:top-0 before:h-16 before:w-24 before:-translate-x-1/2 before:-translate-y-[42%] before:rounded-full before:bg-white/95 before:shadow-[0_0_0_1px_rgba(227,222,211,0.72)] before:content-['']">
           <div className="relative z-10 grid grid-cols-[1fr_1fr_68px_1fr_1fr] items-end gap-1">
             <DockLink
               item={{ icon: Home, label: "Home", path: "/" }}
               active={location.pathname === "/"}
             />
 
-            <DockLink
-              item={currentConfig.primary}
-              active={isActivePath(location.pathname, currentConfig.primary.path)}
-            />
+            <div className="min-w-0">
+              <NotificationBell collapsed tone="dock" />
+            </div>
 
             <div className="relative flex h-[58px] items-end justify-center">
               <button
                 type="button"
                 onClick={() => setSwitcherOpen((open) => !open)}
-                className="absolute left-1/2 top-[-3.55rem] flex h-[70px] w-[70px] -translate-x-1/2 items-center justify-center rounded-full border-[7px] border-white bg-white shadow-[0_10px_26px_rgba(30,30,27,0.13)] transition active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-teal/25"
+                className={cn(
+                  "absolute left-1/2 top-[-3.55rem] flex h-[70px] w-[70px] -translate-x-1/2 items-center justify-center rounded-full border-[7px] border-white bg-white shadow-[0_10px_26px_rgba(30,30,27,0.13)] transition active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-teal/25",
+                  switcherOpen && "shadow-[0_16px_34px_rgba(45,140,140,0.24)]"
+                )}
                 aria-label="Switch ACTSIX module"
                 aria-expanded={switcherOpen}
               >
-                <span className="flex h-[48px] w-[48px] items-center justify-center rounded-[1rem] bg-brand-teal/[0.07] ring-1 ring-brand-teal/10">
+                <span
+                  className={cn(
+                    "flex h-[48px] w-[48px] items-center justify-center rounded-[1rem] ring-1 transition",
+                    switcherOpen
+                      ? "bg-brand-teal text-white ring-brand-teal"
+                      : "bg-brand-teal/[0.07] ring-brand-teal/10"
+                  )}
+                >
                   {switcherOpen ? (
-                    <X className="h-6 w-6 text-brand-teal" />
+                    <X className="h-6 w-6 text-white" />
                   ) : (
                     <img
                       src={actsixIcon}
@@ -538,7 +553,7 @@ export function MobileBottomNav() {
 
             <DockButton
               icon={currentConfig.menuIcon}
-              label={currentConfig.menuLabel}
+              label="Menu"
               active={Boolean(activeMenuItem)}
               onClick={() => {
                 setSwitcherOpen(false);

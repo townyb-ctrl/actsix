@@ -104,6 +104,7 @@ export default function AppLayout() {
   const backTarget = getBackTarget(location.pathname);
   const routeModuleKey = getModuleKeyForPath(location.pathname);
   const routeModuleActive = isModuleActive(routeModuleKey);
+  const isHomeRoute = location.pathname === "/";
   const profilePath = currentPerson?.id ? `/people/${currentPerson.id}` : "/settings";
   const accountName = currentPerson?.display_name || displayName || user?.email || "Profile";
 
@@ -235,7 +236,7 @@ export default function AppLayout() {
                 size="icon"
                 variant="outline"
                 data-tour="quick-capture"
-                className="h-10 w-10 rounded-full border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white"
+                className="hidden h-10 w-10 rounded-full border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white md:inline-flex"
                 onClick={() => setQuickCaptureOpen(true)}
                 title="Quick Capture"
                 aria-label="Quick Capture"
@@ -243,7 +244,7 @@ export default function AppLayout() {
                 <Zap className="h-[18px] w-[18px] shrink-0" />
               </Button>
 
-              <div data-tour="notifications">
+              <div className="hidden md:block" data-tour="notifications">
                 <NotificationBell collapsed tone="topbar" />
               </div>
 
@@ -327,7 +328,7 @@ export default function AppLayout() {
               onActivate={activateRouteModule}
             />
           ) : (
-            <main className="flex-1">
+            <main className={`flex-1 ${isHomeRoute ? "" : "md:px-4 xl:px-6 2xl:px-8"}`}>
               <Outlet />
             </main>
           )}
