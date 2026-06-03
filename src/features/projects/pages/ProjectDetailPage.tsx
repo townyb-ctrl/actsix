@@ -11,7 +11,6 @@ import {
   MessageCircle,
   Trash2,
   UserRound,
-  Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -135,6 +134,7 @@ const ProjectDetailPage = () => {
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [isMessagingOpen, setIsMessagingOpen] = useState(false);
+  const [openSectionIds, setOpenSectionIds] = useState<Record<string, boolean>>({});
   const [openCompletedSectionIds, setOpenCompletedSectionIds] = useState<Record<string, boolean>>({});
   const [isUnsectionedOpen, setIsUnsectionedOpen] = useState(false);
   const [sectionTaskDrafts, setSectionTaskDrafts] = useState<Record<string, { title: string; due: string; assigned_person_id: string }>>({});
@@ -151,7 +151,7 @@ const ProjectDetailPage = () => {
   const [collaboratorMessage, setCollaboratorMessage] = useState("");
 
   const load = async () => {
-    if (!user || !projectId) return;
+    if (!user || !projectId || !currentPerson?.workspace_id) return;
 
     const { data: projectData, error: projectError } = await getProject(projectId);
 
@@ -258,6 +258,13 @@ const ProjectDetailPage = () => {
 
   const toggleCompletedSection = (sectionId: string) => {
     setOpenCompletedSectionIds((current) => ({
+      ...current,
+      [sectionId]: !current[sectionId],
+    }));
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setOpenSectionIds((current) => ({
       ...current,
       [sectionId]: !current[sectionId],
     }));
@@ -996,22 +1003,22 @@ const ProjectDetailPage = () => {
             )}
           </div>
 
-          <div className="border-b border-border/70 p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
+          <div className="border-b border-border/70 p-4 sm:p-5">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <h3 className="font-extrabold">Sections & Tasks</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Group project actions by workstream and assign a leader from collaborators.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="grid w-full grid-cols-[1fr_auto] items-center gap-2 sm:w-auto sm:flex">
                 <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
                   {sections.length} section{sections.length === 1 ? "" : "s"}
                 </span>
                 <Button
                   type="button"
-                  className="actsix-btn-primary rounded-lg"
+                  className="actsix-btn-primary rounded-lg sm:w-auto"
                   onClick={openNewSection}
                   disabled={!projectSectionsAvailable}
                 >
@@ -1048,53 +1055,66 @@ const ProjectDetailPage = () => {
                     due: "",
                     assigned_person_id: "",
                   };
+                  const isSectionOpen = Boolean(openSectionIds[section.id]);
+                  const taskCount = openTasks.length + completedTasks.length;
 
                   return (
                     <div
                       key={section.id}
-                      className="rounded-lg border border-border/70 bg-background p-4 shadow-soft"
+                      className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft transition hover:border-brand-teal/25"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="truncate font-extrabold">{section.name}</h4>
-                            <span className={`chip ${statusClass(section.status)}`}>
-                              {section.status || "Active"}
-                            </span>
+                      <div className="flex items-center gap-2 p-3">
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left"
+                          aria-expanded={isSectionOpen}
+                          onClick={() => toggleSection(section.id)}
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
+                            <ListChecks className="h-4 w-4" />
                           </div>
 
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <span>{openTasks.length} open</span>
-                            <span>·</span>
-                            <span>{completedTasks.length} complete</span>
-                            <span>·</span>
-                            <span>{progress}%</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <h4 className="truncate font-extrabold">{section.name}</h4>
+                              <span className={`chip shrink-0 ${statusClass(section.status)}`}>
+                                {section.status || "Active"}
+                              </span>
+                            </div>
+
+                            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-muted-foreground">
+                              <span>{openTasks.length} open</span>
+                              <span>{completedTasks.length} done</span>
+                              <span>{progress}%</span>
+                              {leader && (
+                                <span className="inline-flex min-w-0 items-center gap-1">
+                                  <PersonAvatar
+                                    name={leader.display_name}
+                                    avatarUrl={leader.avatar_url}
+                                    size="xs"
+                                  />
+                                  <span className="max-w-[120px] truncate">{leader.display_name}</span>
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          {leader && (
-                            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-sage/20 bg-brand-sage/10 px-2.5 py-1 text-xs font-bold text-brand-sage">
-                              <PersonAvatar
-                                name={leader.display_name}
-                                avatarUrl={leader.avatar_url}
-                                size="xs"
-                              />
-                              <span className="max-w-[160px] truncate">{leader.display_name}</span>
-                            </div>
-                          )}
-
-                          {!leader && (
-                            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                              <Users className="h-3 w-3" />
-                              No leader
-                            </div>
-                          )}
-                        </div>
+                          <ChevronDown
+                            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                              isSectionOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
 
                         <div className="flex shrink-0 items-center gap-1">
+                          <span className="hidden rounded-full bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground sm:inline-flex">
+                            {taskCount}
+                          </span>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
+                            className="h-9 w-9 rounded-xl"
                             title="Edit section"
                             aria-label="Edit section"
                             onClick={() => setEditingSection({ ...section })}
@@ -1105,9 +1125,9 @@ const ProjectDetailPage = () => {
                             type="button"
                             variant="ghost"
                             size="icon"
+                            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive"
                             title="Delete section"
                             aria-label="Delete section"
-                            className="text-muted-foreground hover:text-destructive"
                             onClick={() => deleteSection(section)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1115,106 +1135,112 @@ const ProjectDetailPage = () => {
                         </div>
                       </div>
 
-                      {section.description && (
-                        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-                          {section.description}
-                        </p>
-                      )}
+                      {isSectionOpen && (
+                        <div className="border-t border-border/70 bg-background/45 p-3">
+                          {section.description && (
+                            <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+                              {section.description}
+                            </p>
+                          )}
 
-                      <form
-                        onSubmit={(event) => addProjectAction(section.id, event)}
-                        className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px] xl:grid-cols-[minmax(0,1fr)_180px_140px_auto]"
-                      >
-                        <Input
-                          value={draft.title}
-                          onChange={(event) =>
-                            updateSectionTaskDraft(section.id, { title: event.target.value })
-                          }
-                          placeholder={`Add task to ${section.name}...`}
-                          className="border-border/70 bg-card"
-                        />
+                          <form
+                            onSubmit={(event) => addProjectAction(section.id, event)}
+                            className="rounded-xl border border-border/70 bg-card p-3 shadow-soft"
+                          >
+                            <Input
+                              value={draft.title}
+                              onChange={(event) =>
+                                updateSectionTaskDraft(section.id, { title: event.target.value })
+                              }
+                              placeholder={`Add task to ${section.name}...`}
+                              className="h-11 border-border/70 bg-background"
+                            />
 
-                        <PeopleSearchSelect
-                          people={assignableProjectPeople}
-                          selectedPersonId={draft.assigned_person_id}
-                          onSelect={(personId) =>
-                            updateSectionTaskDraft(section.id, {
-                              assigned_person_id: personId,
-                            })
-                          }
-                          placeholder="Assign..."
-                          emptyText="No project collaborators found."
-                          showAllOnFocus
-                        />
+                            <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem_auto]">
+                              <PeopleSearchSelect
+                                people={assignableProjectPeople}
+                                selectedPersonId={draft.assigned_person_id}
+                                onSelect={(personId) =>
+                                  updateSectionTaskDraft(section.id, {
+                                    assigned_person_id: personId,
+                                  })
+                                }
+                                placeholder="Assign..."
+                                emptyText="No project collaborators found."
+                                showAllOnFocus
+                              />
 
-                        <Input
-                          type="date"
-                          value={draft.due}
-                          onChange={(event) =>
-                            updateSectionTaskDraft(section.id, { due: event.target.value })
-                          }
-                          className="border-border/70 bg-card"
-                        />
+                              <Input
+                                type="date"
+                                value={draft.due}
+                                onChange={(event) =>
+                                  updateSectionTaskDraft(section.id, { due: event.target.value })
+                                }
+                                className="h-11 border-border/70 bg-background"
+                              />
 
-                        <Button type="submit" className="actsix-btn-primary rounded-lg px-4">
-                          Add
-                        </Button>
-                      </form>
+                              <Button type="submit" className="actsix-btn-primary h-11 rounded-lg px-4">
+                                Add
+                              </Button>
+                            </div>
+                          </form>
 
-                      <div className="mt-4 space-y-1.5 rounded-lg border border-border/70 bg-muted/10 p-2">
-                        {openTasks.length === 0 && completedTasks.length === 0 && (
-                          <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
-                            <ListChecks className="h-4 w-4" />
-                            No tasks in this section yet.
-                          </div>
-                        )}
+                          <div className="mt-3 space-y-1.5 rounded-xl border border-border/70 bg-card p-2">
+                            {openTasks.length === 0 && completedTasks.length === 0 && (
+                              <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+                                <ListChecks className="h-4 w-4" />
+                                No tasks in this section yet.
+                              </div>
+                            )}
 
-                        {openTasks.map((task) => (
-                          <CompactTaskRow
-                            key={task.id}
-                            task={task}
-                            showAssignee
-                            onToggle={toggleTask}
-                            onEdit={(task) => setEditingTask({ ...task })}
-                            onDelete={(task) => removeTask(task.id)}
-                          />
-                        ))}
+                            {openTasks.map((task) => (
+                              <CompactTaskRow
+                                key={task.id}
+                                task={task}
+                                showAssignee
+                                onToggle={toggleTask}
+                                onEdit={(task) => setEditingTask({ ...task })}
+                                onDelete={(task) => removeTask(task.id)}
+                              />
+                            ))}
 
-                        {completedTasks.length > 0 && (
-                          <div className="pt-1">
-                            <button
-                              type="button"
-                              className="flex min-h-9 w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-xs font-extrabold text-muted-foreground transition hover:bg-brand-teal/5"
-                              aria-expanded={Boolean(openCompletedSectionIds[section.id])}
-                              onClick={() => toggleCompletedSection(section.id)}
-                            >
-                              <span className="inline-flex items-center gap-2">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-brand-sage" />
-                                Completed
-                              </span>
-                              <span className="inline-flex items-center gap-1">
-                                {completedTasks.length}
-                                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openCompletedSectionIds[section.id] ? "rotate-180" : ""}`} />
-                              </span>
-                            </button>
+                            {completedTasks.length > 0 && (
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  className="flex min-h-9 w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-xs font-extrabold text-muted-foreground transition hover:bg-brand-teal/5"
+                                  aria-expanded={Boolean(openCompletedSectionIds[section.id])}
+                                  onClick={() => toggleCompletedSection(section.id)}
+                                >
+                                  <span className="inline-flex items-center gap-2">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-brand-sage" />
+                                    Completed
+                                  </span>
+                                  <span className="inline-flex items-center gap-1">
+                                    {completedTasks.length}
+                                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openCompletedSectionIds[section.id] ? "rotate-180" : ""}`} />
+                                  </span>
+                                </button>
 
-                            {openCompletedSectionIds[section.id] && (
-                              <div className="mt-1 space-y-1.5">
-                                {completedTasks.map((task) => (
-                                  <CompactTaskRow
-                                    key={task.id}
-                                    task={task}
-                                    showAssignee
-                                    onToggle={toggleTask}
-                                    onEdit={(task) => setEditingTask({ ...task })}
-                                    onDelete={(task) => removeTask(task.id)}
-                                  />
-                                ))}
+                                {openCompletedSectionIds[section.id] && (
+                                  <div className="mt-1 space-y-1.5">
+                                    {completedTasks.map((task) => (
+                                      <CompactTaskRow
+                                        key={task.id}
+                                        task={task}
+                                        showAssignee
+                                        onToggle={toggleTask}
+                                        onEdit={(task) => setEditingTask({ ...task })}
+                                        onDelete={(task) => removeTask(task.id)}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1222,18 +1248,23 @@ const ProjectDetailPage = () => {
             )}
 
             {unsectionedTasks.length > 0 && (
-              <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/10 p-3">
+              <div className="mt-4 rounded-2xl border border-dashed border-border bg-card p-3 shadow-soft">
                 <button
                   type="button"
                   className="flex min-h-10 w-full items-center justify-between gap-3 text-left"
                   aria-expanded={isUnsectionedOpen}
                   onClick={() => setIsUnsectionedOpen((open) => !open)}
                 >
-                  <span className="inline-flex items-center gap-2 text-sm font-extrabold">
-                    <ListChecks className="h-4 w-4 text-brand-teal" />
-                    Tasks without a section
+                  <span className="min-w-0">
+                    <span className="inline-flex items-center gap-2 text-sm font-extrabold">
+                      <ListChecks className="h-4 w-4 text-brand-teal" />
+                      General
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      Tasks not assigned to a section yet.
+                    </span>
                   </span>
-                  <span className="text-xs font-bold text-muted-foreground">
+                  <span className="shrink-0 rounded-full border border-border/70 bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
                     {unsectionedTasks.length}
                   </span>
                 </button>
@@ -1427,10 +1458,10 @@ const ProjectDetailPage = () => {
       )}
 
       {editingSection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl overflow-hidden border-border/70 bg-card shadow-card">
-            <div className="flex items-start justify-between gap-4 border-b border-border/70 p-6">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:px-4">
+          <Card className="max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-b-none border-border/70 bg-card shadow-card sm:rounded-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-6">
+              <div className="min-w-0">
                 <p className="label-eyebrow">Project Sections</p>
                 <h2 className="text-xl font-extrabold leading-tight">
                   {editingSection.id ? "Edit Section" : "Add Section"}
@@ -1450,7 +1481,7 @@ const ProjectDetailPage = () => {
               </Button>
             </div>
 
-            <div className="space-y-4 p-6">
+            <div className="space-y-4 p-4 sm:p-6">
               <div>
                 <label className="label-eyebrow">Section name</label>
                 <Input
@@ -1522,7 +1553,7 @@ const ProjectDetailPage = () => {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-border/70 bg-card p-6">
+            <div className="grid grid-cols-2 gap-2 border-t border-border/70 bg-card p-4 sm:flex sm:justify-end sm:p-6">
               <Button
                 type="button"
                 variant="outline"
