@@ -203,18 +203,18 @@ export default function AppLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-content">
+      <div className="min-h-screen w-full overflow-x-hidden bg-gradient-content md:flex">
         
         <div className="hidden md:flex">
           <AppSidebar />
         </div>
 
-        <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-          <header className="sticky top-0 z-10 flex min-h-16 items-center gap-3 border-b border-border bg-background/80 px-3 py-1.5 pr-7 backdrop-blur sm:px-4 sm:pr-8 xl:pr-10">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col pb-[calc(6.8rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
+          <header className="sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-border/70 bg-background/90 px-3 py-1 backdrop-blur-xl sm:px-4 xl:px-6">
             
             {/* FULL TEXT LOGO IN HEADER (Mobile Only) */}
-            <Link to="/" className="flex items-center md:hidden shrink-0 mr-1">
-              <img src={actsixLogo} alt="ACTSIX" className="h-12 w-auto object-contain brightness-0 dark:invert" />
+            <Link to="/" className="mr-1 flex shrink-0 items-center md:hidden">
+              <img src={actsixLogo} alt="ACTSIX" className="h-9 w-auto object-contain brightness-0 dark:invert" />
             </Link>
 
             {backTarget && (
@@ -222,7 +222,7 @@ export default function AppLayout() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="min-w-0 rounded-lg text-muted-foreground hover:text-foreground"
+                className="h-10 min-w-0 rounded-lg px-2 text-muted-foreground hover:text-foreground"
                 onClick={() => navigate(backTarget.to)}
               >
                 <ArrowLeft className="h-4 w-4 shrink-0" />
@@ -230,7 +230,7 @@ export default function AppLayout() {
               </Button>
             )}
 
-            <div className="ml-auto flex min-w-0 items-center gap-2.5">
+            <div className="ml-auto flex min-w-0 items-center gap-2">
               <Button
                 type="button"
                 size="icon"

@@ -184,9 +184,9 @@ const WorkspaceSettings = () => {
         subtitle="Manage Alpha workspace access, secret phrase, and workspace roles."
       />
 
-      <div className="grid w-full gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] xl:px-8 2xl:px-10">
-        <div className="space-y-6">
-          <Card className="border-border/70 bg-card p-6 shadow-card">
+      <div className="grid w-full min-w-0 gap-4 px-4 pb-12 sm:px-6 md:gap-6 lg:grid-cols-[0.9fr_1.1fr] xl:px-8 2xl:px-10">
+        <div className="space-y-4 md:space-y-6">
+          <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl bg-brand-teal/10 p-3 text-brand-teal">
                 <ShieldCheck className="h-5 w-5" />
@@ -229,7 +229,7 @@ const WorkspaceSettings = () => {
             </div>
           </Card>
 
-          <Card className="border-border/70 bg-card p-6 shadow-card">
+          <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl bg-brand-teal/10 p-3 text-brand-teal">
                 <KeyRound className="h-5 w-5" />
@@ -274,7 +274,7 @@ const WorkspaceSettings = () => {
             </form>
           </Card>
 
-          <Card className="border-border/70 bg-card p-6 shadow-card">
+          <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl bg-destructive/10 p-3 text-destructive">
                 <LogOut className="h-5 w-5" />
@@ -309,7 +309,7 @@ const WorkspaceSettings = () => {
 
         </div>
 
-        <Card className="border-border/70 bg-card p-6 shadow-card">
+        <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="label-eyebrow">Workspace Roles</p>
@@ -343,7 +343,7 @@ const WorkspaceSettings = () => {
               {sortedMembers.map((member) => (
                 <div
                   key={member.id}
-                  className="grid gap-3 px-4 py-3 md:grid-cols-[1fr_180px]"
+                  className="grid gap-3 bg-card px-3 py-3 md:grid-cols-[1fr_180px] md:px-4"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-extrabold tracking-tight">
@@ -360,7 +360,7 @@ const WorkspaceSettings = () => {
                   <select
                     value={member.role}
                     onChange={(event) => updateRole(member.id, event.target.value)}
-                    className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-bold capitalize outline-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-bold capitalize outline-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                   >
                     {roleOptions.map((option) => (
                       <option key={option} value={option}>

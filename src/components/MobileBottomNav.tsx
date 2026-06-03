@@ -347,14 +347,14 @@ const DockLink = ({ item, active }: { item: MobileDockLink; active: boolean }) =
       to={item.path}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-[1.35rem] px-1 text-[10px] font-extrabold text-muted-foreground transition",
+        "group flex min-h-[54px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-[10px] font-extrabold text-muted-foreground transition",
         "hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/25",
         active && "text-brand-teal"
       )}
     >
       <span
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-2xl transition",
+          "flex h-8 w-8 items-center justify-center rounded-xl transition",
           active
             ? "bg-brand-teal/10 shadow-[inset_0_0_0_1px_rgba(45,140,140,0.08)]"
             : "group-hover:bg-brand-teal/5"
@@ -385,17 +385,17 @@ const DockButton = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-[1.35rem] px-1 text-[10px] font-extrabold text-muted-foreground transition",
+        "group flex min-h-[54px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-[10px] font-extrabold text-muted-foreground transition",
         "hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/25",
         active && "text-brand-teal",
-        emphasis && "bg-brand-teal text-white shadow-[0_9px_22px_rgba(45,140,140,0.22)] hover:bg-brand-teal-dark hover:text-white"
+        emphasis && "text-brand-teal hover:text-brand-teal"
       )}
     >
       <span
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-2xl transition",
+          "flex h-8 w-8 items-center justify-center rounded-xl transition",
           emphasis
-            ? "bg-white/15"
+            ? "bg-brand-teal text-white shadow-[0_8px_18px_rgba(45,140,140,0.2)] group-hover:bg-brand-teal-dark"
             : active
               ? "bg-brand-teal/10 shadow-[inset_0_0_0_1px_rgba(45,140,140,0.08)]"
               : "group-hover:bg-brand-teal/5"
@@ -468,19 +468,23 @@ export function MobileBottomNav() {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] md:hidden">
       <div className="relative mx-auto max-w-md">
         <div
-          data-open={switcherOpen}
-          className="mobile-switcher-seed pointer-events-none absolute left-1/2 bottom-[4.05rem] z-10 h-3 w-3 rounded-full bg-brand-teal shadow-[0_10px_26px_rgba(45,140,140,0.28)]"
+          className={cn(
+            "pointer-events-none absolute left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-brand-teal shadow-[0_10px_24px_rgba(45,140,140,0.24)] transition-all duration-200 ease-out",
+            switcherOpen
+              ? "bottom-[5.1rem] scale-x-[2.6] scale-y-75 opacity-80"
+              : "bottom-[3.55rem] scale-75 opacity-0"
+          )}
         />
 
         <div
           className={cn(
-            "absolute left-1/2 bottom-[5.85rem] z-20 flex w-[min(82%,19.5rem)] origin-bottom -translate-x-1/2 items-center justify-between gap-1 rounded-full border border-white/10 bg-brand-teal px-3 py-2 shadow-[0_16px_36px_rgba(45,140,140,0.34)] transition-all duration-300 ease-out",
+            "absolute left-1/2 bottom-[5.5rem] z-20 flex h-12 origin-bottom -translate-x-1/2 items-center justify-between gap-1 overflow-hidden rounded-full border border-white/10 bg-brand-teal shadow-[0_16px_34px_rgba(45,140,140,0.26)] transition-all duration-200 ease-out",
             switcherOpen
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100 delay-75"
-              : "pointer-events-none translate-y-5 scale-50 opacity-0 delay-0"
+              ? "pointer-events-auto w-[min(90%,21rem)] translate-y-0 scale-x-100 px-3 opacity-100"
+              : "pointer-events-none w-12 translate-y-7 scale-x-[0.18] px-0 opacity-0"
           )}
         >
           {moduleSwitcherItems.map((module) => {
@@ -496,11 +500,15 @@ export function MobileBottomNav() {
                   navigate(module.path);
                 }}
                 className={cn(
-                  "flex h-10 min-w-0 flex-1 items-center justify-center rounded-full text-white/85 transition active:scale-95",
+                  "flex h-10 min-w-0 flex-1 items-center justify-center rounded-full text-white/85 transition-all duration-200 ease-out active:scale-95",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
+                  switcherOpen
+                    ? "translate-y-0 opacity-100 delay-75"
+                    : "translate-y-1 opacity-0 delay-0",
                   active && "bg-white/15 text-white ring-1 ring-white/25"
                 )}
                 aria-label={`Open ${module.label}`}
+                tabIndex={switcherOpen ? 0 : -1}
               >
                 <Icon className="h-5 w-5" />
               </button>
@@ -508,8 +516,8 @@ export function MobileBottomNav() {
           })}
         </div>
 
-        <div className="relative overflow-visible rounded-[1.55rem] border border-border/75 bg-white/95 px-2 pb-2 pt-3 shadow-[0_-10px_30px_rgba(30,30,27,0.11)] backdrop-blur-xl before:absolute before:left-1/2 before:top-0 before:h-16 before:w-24 before:-translate-x-1/2 before:-translate-y-[42%] before:rounded-full before:bg-white/95 before:shadow-[0_0_0_1px_rgba(227,222,211,0.72)] before:content-['']">
-          <div className="relative z-10 grid grid-cols-[1fr_1fr_68px_1fr_1fr] items-end gap-1">
+        <div className="relative overflow-visible rounded-[1.35rem] border border-border/75 bg-white/95 px-2 pb-1.5 pt-2.5 shadow-[0_-8px_26px_rgba(30,30,27,0.1)] backdrop-blur-xl before:absolute before:left-1/2 before:top-0 before:h-14 before:w-20 before:-translate-x-1/2 before:-translate-y-[40%] before:rounded-full before:bg-white/95 before:shadow-[0_0_0_1px_rgba(227,222,211,0.72)] before:content-['']">
+          <div className="relative z-10 grid grid-cols-[1fr_1fr_62px_1fr_1fr] items-end gap-1">
             <DockLink
               item={{ icon: Home, label: "Home", path: "/" }}
               active={location.pathname === "/"}
@@ -519,34 +527,49 @@ export function MobileBottomNav() {
               <NotificationBell collapsed tone="dock" />
             </div>
 
-            <div className="relative flex h-[58px] items-end justify-center">
+            <div className="relative flex h-[54px] items-end justify-center">
+              <span
+                className={cn(
+                  "pointer-events-none absolute left-1/2 top-[-0.5rem] h-6 w-8 -translate-x-1/2 rounded-b-full bg-white/95 shadow-[0_8px_14px_rgba(30,30,27,0.05)] transition-all duration-200 ease-out",
+                  switcherOpen && "h-7 w-9"
+                )}
+              />
               <button
                 type="button"
                 onClick={() => setSwitcherOpen((open) => !open)}
                 className={cn(
-                  "absolute left-1/2 top-[-3.55rem] flex h-[70px] w-[70px] -translate-x-1/2 items-center justify-center rounded-full border-[7px] border-white bg-white shadow-[0_10px_26px_rgba(30,30,27,0.13)] transition active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-teal/25",
-                  switcherOpen && "shadow-[0_16px_34px_rgba(45,140,140,0.24)]"
+                  "absolute left-1/2 top-[-3.15rem] flex h-[64px] w-[64px] -translate-x-1/2 items-center justify-center rounded-full border-[6px] border-white bg-white shadow-[0_10px_24px_rgba(30,30,27,0.13)] transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-teal/25",
+                  switcherOpen && "shadow-[0_15px_30px_rgba(45,140,140,0.24)]"
                 )}
                 aria-label="Switch ACTSIX module"
                 aria-expanded={switcherOpen}
               >
                 <span
                   className={cn(
-                    "flex h-[48px] w-[48px] items-center justify-center rounded-[1rem] ring-1 transition",
+                    "relative flex h-[44px] w-[44px] items-center justify-center overflow-hidden rounded-[0.9rem] ring-1 transition-all duration-200 ease-out",
                     switcherOpen
                       ? "bg-brand-teal text-white ring-brand-teal"
                       : "bg-brand-teal/[0.07] ring-brand-teal/10"
                   )}
                 >
-                  {switcherOpen ? (
-                    <X className="h-6 w-6 text-white" />
-                  ) : (
-                    <img
-                      src={actsixIcon}
-                      alt="ACTSIX"
-                      className="h-[40px] w-[40px] object-contain"
-                    />
-                  )}
+                  <img
+                    src={actsixIcon}
+                    alt="ACTSIX"
+                    className={cn(
+                      "absolute h-9 w-9 object-contain transition-all duration-200 ease-out",
+                      switcherOpen
+                        ? "scale-75 rotate-45 opacity-0"
+                        : "scale-100 rotate-0 opacity-100 delay-75"
+                    )}
+                  />
+                  <X
+                    className={cn(
+                      "absolute h-6 w-6 text-white transition-all duration-200 ease-out",
+                      switcherOpen
+                        ? "scale-100 rotate-0 opacity-100 delay-75"
+                        : "scale-75 -rotate-45 opacity-0"
+                    )}
+                  />
                 </span>
               </button>
             </div>
@@ -586,7 +609,7 @@ export function MobileBottomNav() {
             </p>
           </DrawerHeader>
 
-          <div className="grid grid-cols-1 gap-3 px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
+          <div className="grid grid-cols-1 gap-2.5 px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
             {currentConfig.menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActivePath(location.pathname, item.path);
@@ -600,9 +623,9 @@ export function MobileBottomNav() {
                     navigate(item.path);
                   }}
                   className={cn(
-                    "group flex min-h-[70px] items-center gap-3 rounded-2xl border bg-card p-3 text-left shadow-soft transition active:scale-[0.99]",
+                    "group flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card p-3 text-left shadow-soft transition active:scale-[0.99]",
                     active
-                      ? "border-brand-teal/35 bg-brand-teal/8"
+                      ? "border-brand-teal/35 bg-brand-teal/10"
                       : "border-border/70 hover:border-brand-teal/25 hover:bg-brand-teal/5"
                   )}
                 >

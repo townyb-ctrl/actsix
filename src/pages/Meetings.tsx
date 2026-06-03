@@ -277,8 +277,8 @@ const Meetings = () => {
         </div>
       </div>
       {addOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-3xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:px-4">
+          <Card className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-b-none border-border/70 bg-card p-4 shadow-card sm:rounded-xl sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Meeting</p>
@@ -355,7 +355,7 @@ const Meetings = () => {
                 
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="grid grid-cols-2 gap-2 pt-2 sm:flex sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"

@@ -40,10 +40,10 @@ const TaskEditorModal = ({
   if (!task) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 p-4 backdrop-blur-sm">
-      <Card className="flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden border-border/70 bg-card shadow-card">
-        <div className="flex items-start justify-between gap-4 border-b border-border/70 p-5">
-          <div>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <Card className="flex max-h-[92svh] w-full max-w-4xl flex-col overflow-hidden rounded-b-none border-border/70 bg-card shadow-card sm:h-[88vh] sm:rounded-xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
+          <div className="min-w-0">
             <p className="label-eyebrow">{eyebrow}</p>
             <h2 className="mt-1 text-xl font-extrabold leading-tight">
               {title}
@@ -59,7 +59,7 @@ const TaskEditorModal = ({
           </Button>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:space-y-5 sm:p-5">
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Archive className="h-4 w-4 text-brand-teal" />
@@ -143,12 +143,12 @@ const TaskEditorModal = ({
           </section>
         </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/70 bg-card/95 p-4">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-border/70 bg-card/95 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
             Save changes to update this Next Action.
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <Button variant="outline" className="rounded-lg" onClick={onClose}>
               Cancel
             </Button>
