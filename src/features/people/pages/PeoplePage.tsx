@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Copy, Filter, Mail, Merge, Phone, Plus, Search, Send, Upload, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -775,65 +777,61 @@ ${row.notes}`
   }, [user, workspace?.id]);
 
   return (
-    <div className="w-full min-w-0 space-y-4 px-4 pb-10 pt-4 sm:px-6 md:pt-5 xl:px-8 2xl:px-10">
-      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
-        <div className="min-w-0">
-          <p className="label-eyebrow">People</p>
-          <h1 className="mt-1.5 text-2xl font-extrabold leading-tight md:text-3xl">
-            People
-          </h1>
-          <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">
-            Alpha workspace users appear here automatically. Everyone can view the directory; only admins/editors can manage profiles.
-          </p>
-        </div>
-
-        <div data-tour="people-actions" className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-          {canEditPeopleDirectory && duplicateEmailGroups.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-lg border-brand-teal/40 bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal"
-              onClick={mergeDuplicateEmailProfiles}
-            >
-              <Merge className="h-4 w-4" />
-              Merge Duplicates
-            </Button>
-          )}
-
-          {canEditPeopleDirectory && (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => {
-                  setCsvRows([]);
-                  setCsvError("");
-                  setImportOpen(true);
-                }}
-              >
-                <Upload className="h-4 w-4" />
-                Import CSV
+    <div className="w-full min-w-0 space-y-5 pb-10">
+      <PageHeader
+        eyebrow="People"
+        title="People"
+        subtitle="Alpha workspace users appear here automatically. Everyone can view the directory; only admins and editors can manage profiles."
+        actions={
+          <div data-tour="people-actions" className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            {canEditPeopleDirectory && duplicateEmailGroups.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="actsix-btn-outline border-brand-teal/40 text-brand-teal hover:text-brand-teal"
+                  onClick={mergeDuplicateEmailProfiles}
+                >
+                <Merge className="h-4 w-4" />
+                Merge Duplicates
               </Button>
+            )}
 
-              <Button
-                type="button"
-                size="sm"
-                className="actsix-btn-primary rounded-lg"
-                onClick={() => setAddPersonOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Add Person
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
+            {canEditPeopleDirectory && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="actsix-btn-outline"
+                  onClick={() => {
+                    setCsvRows([]);
+                    setCsvError("");
+                    setImportOpen(true);
+                  }}
+                >
+                  <Upload className="h-4 w-4" />
+                  Import CSV
+                </Button>
 
-      <div data-tour="people-search" className="flex min-w-0 flex-col gap-2 rounded-lg border border-border/70 bg-card p-3 shadow-soft lg:flex-row lg:items-center">
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="actsix-btn-primary"
+                  onClick={() => setAddPersonOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Person
+                </Button>
+              </>
+            )}
+          </div>
+        }
+      />
+
+      <div className="px-4 sm:px-6 xl:px-8 2xl:px-10">
+        <div data-tour="people-search" className="actsix-toolbar flex min-w-0 flex-col gap-2 rounded-[1rem] lg:flex-row lg:items-center">
+          <div className="actsix-interactive-row flex min-w-0 flex-1 items-center gap-2 bg-background px-3 py-2">
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={searchTerm}
@@ -841,9 +839,9 @@ ${row.notes}`
             placeholder="Search people..."
             className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
           />
-        </div>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
           {[
             ["all", "All"],
             ["members", "Members"],
@@ -884,7 +882,7 @@ ${row.notes}`
             </button>
 
             {customFilterOpen && (
-              <div className="absolute right-0 top-10 z-50 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-border/70 bg-card p-4 shadow-xl sm:left-0 sm:right-auto">
+              <div className="actsix-overlay-surface absolute right-0 top-10 z-50 w-[min(18rem,calc(100vw-2rem))] p-4 sm:left-0 sm:right-auto">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-extrabold tracking-tight">
@@ -916,7 +914,7 @@ ${row.notes}`
                   ].map(([key, label]) => (
                     <label
                       key={key}
-                      className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-sm font-bold"
+                      className="actsix-interactive-row flex items-center gap-2 bg-background/70 px-3 py-2 text-sm font-bold"
                     >
                       <input
                         type="checkbox"
@@ -940,7 +938,7 @@ ${row.notes}`
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="rounded-xl"
+                    className="actsix-btn-outline"
                     onClick={() => {
                       setCustomFilters({
                         canMessage: false,
@@ -960,7 +958,7 @@ ${row.notes}`
                   <Button
                     type="button"
                     size="sm"
-                    className="actsix-btn-primary rounded-xl"
+                    className="actsix-btn-primary"
                     onClick={() => {
                       setPeopleFilter("custom");
                       setCustomFilterOpen(false);
@@ -973,17 +971,17 @@ ${row.notes}`
             )}
           </div>
         </div>
-      </div>
+        </div>
 
-      {loading && (
-        <Card className="border-border/70 bg-card shadow-card p-6">
-          <p className="text-sm text-muted-foreground">Loading people...</p>
-        </Card>
-      )}
+        {loading && (
+          <Card className="actsix-panel mt-5 rounded-[1rem] p-6 sm:mt-6">
+            <div className="actsix-loading-state" role="status">Loading people...</div>
+          </Card>
+        )}
 
-      {!loading && filteredPeople.length === 0 && (
-        <Card className="border-border/70 bg-card shadow-card p-8">
-          <div className="flex flex-col items-center justify-center text-center">
+        {!loading && filteredPeople.length === 0 && (
+          <Card className="actsix-panel mt-5 rounded-[1rem] p-8 sm:mt-6 sm:p-10">
+            <div className="actsix-empty-state flex flex-col items-center justify-center text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
               <Users className="h-5 w-5" />
             </div>
@@ -994,11 +992,11 @@ ${row.notes}`
               People who join this workspace will appear here automatically.
             </p>
           </div>
-        </Card>
-      )}
+          </Card>
+        )}
 
-      {!loading && filteredPeople.length > 0 && (
-        <Card data-tour="people-list" className="overflow-hidden border-border/70 bg-card shadow-soft">
+        {!loading && filteredPeople.length > 0 && (
+          <Card data-tour="people-list" className="actsix-panel mt-5 overflow-hidden rounded-[1rem] sm:mt-6">
           <div className="hidden grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] gap-3 border-b border-border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground md:grid">
             <div>Person</div>
             <div>Phone</div>
@@ -1094,38 +1092,30 @@ ${row.notes}`
               </Link>
             ))}
           </div>
-        </Card>
-      )}
+          </Card>
+        )}
+      </div>
 
-      {importOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <Card className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-b-none border-border/70 bg-card p-4 shadow-card sm:rounded-xl sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="label-eyebrow">People</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
-                  Import People from CSV
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Upload a CSV file to add multiple People profiles at once.
-                </p>
-              </div>
+      <Dialog
+        open={importOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCsvRows([]);
+            setCsvError("");
+          }
+          setImportOpen(open);
+        }}
+      >
+        <DialogContent className="max-h-[92svh] max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-6">
+          <DialogHeader>
+            <p className="label-eyebrow">People</p>
+            <DialogTitle className="text-xl">Import People from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to add multiple People profiles at once.
+            </DialogDescription>
+          </DialogHeader>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => {
-                  setCsvRows([]);
-                  setCsvError("");
-                  setImportOpen(false);
-                }}
-              >
-                Close
-              </Button>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4">
+            <div className="mt-1 rounded-[var(--radius-panel)] border border-border/70 bg-background/70 p-4">
               <label className="label-eyebrow">CSV File</label>
               <Input
                 type="file"
@@ -1207,11 +1197,11 @@ ${row.notes}`
               </div>
             )}
 
-            <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+            <DialogFooter className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                className="actsix-btn-outline"
                 onClick={() => {
                   setCsvRows([]);
                   setCsvError("");
@@ -1223,43 +1213,28 @@ ${row.notes}`
 
               <Button
                 type="button"
-                className="actsix-btn-primary rounded-xl"
+                className="actsix-btn-primary"
                 onClick={importCsvPeople}
                 disabled={csvRows.length === 0 || importingCsv}
               >
                 <Upload className="h-4 w-4" />
                 {importingCsv ? "Importing..." : `Import ${csvRows.length || ""} People`}
               </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {welcomeRecipients.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <Card className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-b-none border-border/70 bg-card p-4 shadow-card sm:rounded-xl sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="label-eyebrow">People</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
-                  Invite people to activate their ACTSIX account
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Send these people a welcome message so they can register, join the workspace, and connect to their People profile automatically.
-                </p>
-              </div>
+      <Dialog open={welcomeRecipients.length > 0} onOpenChange={(open) => !open && setWelcomeRecipients([])}>
+        <DialogContent className="max-h-[92svh] max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-6">
+            <DialogHeader>
+              <p className="label-eyebrow">People</p>
+              <DialogTitle className="text-xl">Invite people to activate their ACTSIX account</DialogTitle>
+              <DialogDescription>
+                Send these people a welcome message so they can register, join the workspace, and connect to their People profile automatically.
+              </DialogDescription>
+            </DialogHeader>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setWelcomeRecipients([])}
-              >
-                Close
-              </Button>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+            <div className="mt-1 rounded-[var(--radius-panel)] border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
               <p>
                 The welcome message includes the ACTSIX link and join code. Add the current secret phrase from{" "}
                 <span className="font-semibold text-foreground">Settings → Workspace Settings</span> before sending.
@@ -1268,10 +1243,7 @@ ${row.notes}`
 
             <div className="mt-5 max-h-80 space-y-3 overflow-auto">
               {welcomeRecipients.map((recipient, index) => (
-                <div
-                  key={`${recipient.email}-${index}`}
-                  className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-background p-4 md:flex-row md:items-center md:justify-between"
-                >
+                <div key={`${recipient.email}-${index}`} className="actsix-interactive-row flex flex-col gap-3 bg-background p-4 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
                     <p className="font-extrabold tracking-tight">
                       {recipient.display_name}
@@ -1285,7 +1257,7 @@ ${row.notes}`
                     <Button
                       type="button"
                       variant="outline"
-                      className="rounded-xl"
+                      className="actsix-btn-outline"
                       onClick={() => copyWelcomeMessage(recipient)}
                     >
                       <Copy className="h-4 w-4" />
@@ -1294,7 +1266,7 @@ ${row.notes}`
 
                     <Button
                       type="button"
-                      className="actsix-btn-primary rounded-xl"
+                      className="actsix-btn-primary"
                       onClick={() => openWelcomeEmailDraft(recipient)}
                     >
                       <Send className="h-4 w-4" />
@@ -1304,38 +1276,26 @@ ${row.notes}`
                 </div>
               ))}
             </div>
-          </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {addPersonOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <Card className="max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-b-none border-border/70 bg-card p-4 shadow-card sm:rounded-xl sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="label-eyebrow">People</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
-                  Add Person
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Create one profile that can later connect to teams, roles, services, and communication.
-                </p>
-              </div>
+      <Dialog
+        open={addPersonOpen}
+        onOpenChange={(open) => {
+          if (!open) resetForm();
+          setAddPersonOpen(open);
+        }}
+      >
+        <DialogContent className="max-h-[92svh] max-w-2xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-6">
+            <DialogHeader>
+              <p className="label-eyebrow">People</p>
+              <DialogTitle className="text-xl">Add Person</DialogTitle>
+              <DialogDescription>
+                Create one profile that can later connect to teams, roles, services, and communication.
+              </DialogDescription>
+            </DialogHeader>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => {
-                  resetForm();
-                  setAddPersonOpen(false);
-                }}
-              >
-                Close
-              </Button>
-            </div>
-
-            <form onSubmit={createPerson} className="mt-6 space-y-4">
+            <form onSubmit={createPerson} className="mt-2 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="label-eyebrow">First Name</label>
@@ -1386,7 +1346,7 @@ ${row.notes}`
                   <select
                     value={gender}
                     onChange={(event) => setGender(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                   >
                     <option value="">Not specified</option>
                     <option value="Male">Male</option>
@@ -1399,7 +1359,7 @@ ${row.notes}`
                   <select
                     value={membershipStatus}
                     onChange={(event) => setMembershipStatus(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                   >
                     <option value="Member">Member</option>
                     <option value="Adherent">Adherent</option>
@@ -1414,15 +1374,15 @@ ${row.notes}`
                   onChange={(event) => setNotes(event.target.value)}
                   rows={4}
                   placeholder="Care notes, serving preferences, availability, family context..."
-                  className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-2 sm:flex sm:justify-end">
+              <DialogFooter className="grid grid-cols-2 gap-2 pt-2 sm:flex sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="actsix-btn-outline"
                   onClick={() => {
                     resetForm();
                     setAddPersonOpen(false);
@@ -1431,15 +1391,14 @@ ${row.notes}`
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary">
                   <Plus className="h-4 w-4" />
                   Add Person
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
-          </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

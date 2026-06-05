@@ -123,9 +123,11 @@ const ProjectDetailPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { person: currentPerson } = useCurrentPerson();
+  const { person: currentPerson, loading: currentPersonLoading } = useCurrentPerson();
 
   const [project, setProject] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [sections, setSections] = useState<ProjectSection[]>([]);
   const [projectSectionsAvailable, setProjectSectionsAvailable] = useState(true);
@@ -153,9 +155,14 @@ const ProjectDetailPage = () => {
   const load = async () => {
     if (!user || !projectId || !currentPerson?.workspace_id) return;
 
+    setLoading(true);
+    setLoadError(null);
+
     const { data: projectData, error: projectError } = await getProject(projectId);
 
     if (projectError) {
+      setLoadError(projectError.message || "Could not load this project.");
+      setLoading(false);
       toast.error(projectError.message);
       return;
     }
@@ -175,16 +182,22 @@ const ProjectDetailPage = () => {
     ]);
 
     if (taskError) {
+      setLoadError(taskError.message || "Could not load project tasks.");
+      setLoading(false);
       toast.error(taskError.message);
       return;
     }
 
     if (peopleError) {
+      setLoadError(peopleError.message || "Could not load project people.");
+      setLoading(false);
       toast.error(peopleError.message);
       return;
     }
 
     if (collaboratorError) {
+      setLoadError(collaboratorError.message || "Could not load project collaborators.");
+      setLoading(false);
       toast.error(collaboratorError.message);
       return;
     }
@@ -195,6 +208,8 @@ const ProjectDetailPage = () => {
         setSections([]);
         setIsUnsectionedOpen(true);
       } else {
+        setLoadError(sectionError.message || "Could not load project sections.");
+        setLoading(false);
         toast.error(sectionError.message);
         return;
       }
@@ -203,6 +218,8 @@ const ProjectDetailPage = () => {
     }
 
     if (activityError) {
+      setLoadError(activityError.message || "Could not load project activity.");
+      setLoading(false);
       toast.error(activityError.message);
       return;
     }
@@ -254,6 +271,7 @@ const ProjectDetailPage = () => {
     setPeople(peopleData ?? []);
     setCollaborators(collaboratorData ?? []);
     setActivityLogs(enrichedActivityLogs);
+    setLoading(false);
   };
 
   const toggleCompletedSection = (sectionId: string) => {
@@ -271,8 +289,21 @@ const ProjectDetailPage = () => {
   };
 
   useEffect(() => {
-    load();
-  }, [user, projectId, currentPerson?.workspace_id]);
+    if (currentPersonLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (user && projectId && currentPerson?.workspace_id) {
+      load();
+      return;
+    }
+
+    if (!user || !projectId || !currentPerson?.workspace_id) {
+      setLoading(false);
+      setLoadError("Workspace context is required to load this project.");
+    }
+  }, [user, projectId, currentPerson?.workspace_id, currentPersonLoading]);
 
   const stats = useMemo(() => {
     const openTasks = tasks.filter((task) => !task.complete);
@@ -787,10 +818,52 @@ const ProjectDetailPage = () => {
     }
   };
 
-  if (!project) {
+  if (loading && !project) {
     return (
       <div>
         <PageHeader eyebrow="Tasks" title="Project" subtitle="Loading project..." />
+
+        <div className="actsix-page-body">
+          <Card className="actsix-panel p-6 sm:p-7">
+            <div className="actsix-loading-state min-h-[16rem]">
+              Loading project details...
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if ((loadError || !project) && !loading) {
+    return (
+      <div>
+        <PageHeader
+          eyebrow="Tasks"
+          title="Project"
+          subtitle="We could not load this project."
+        />
+
+        <div className="actsix-page-body">
+          <Card className="actsix-panel flex max-w-2xl flex-col items-start gap-4 p-6 sm:p-7">
+            <div>
+              <p className="text-base font-semibold text-foreground">
+                This project is unavailable right now.
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try again to load project details, collaborators, and tasks.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" className="rounded-xl" onClick={load}>
+                Retry
+              </Button>
+              <Button asChild type="button" className="actsix-btn-soft rounded-xl">
+                <Link to="/tasks/projects">Back to Projects</Link>
+              </Button>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -905,8 +978,8 @@ const ProjectDetailPage = () => {
             </div>
 
             {collaborators.length === 0 && (
-              <div className="rounded-lg border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-                No collaborators added yet.
+              <div className="actsix-empty-state min-h-[7rem] text-left">
+                Add collaborators so this project has visible owners and shared follow-up.
               </div>
             )}
 
@@ -1036,12 +1109,12 @@ const ProjectDetailPage = () => {
             )}
 
             {sections.length === 0 && (
-              <div className="rounded-lg border border-dashed border-border bg-muted/10 p-5 text-sm text-muted-foreground">
+              <div className="actsix-empty-state min-h-[8rem] text-left">
                 <div className="flex items-center gap-2 font-semibold text-foreground">
                   <ListChecks className="h-4 w-4 text-brand-teal" />
                   No project sections yet.
                 </div>
-                <p className="mt-2">
+                <p className="mt-2 text-sm text-muted-foreground">
                   Add sections like Worship, Media, Logistics, or Follow-up, then add tasks inside each section.
                 </p>
               </div>
@@ -1187,8 +1260,8 @@ const ProjectDetailPage = () => {
 
                           <div className="mt-3 space-y-1.5 rounded-xl border border-border/70 bg-card p-2">
                             {openTasks.length === 0 && completedTasks.length === 0 && (
-                              <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
-                                <ListChecks className="h-4 w-4" />
+                              <div className="actsix-empty-state min-h-[6.5rem] gap-2 p-3 text-left text-sm">
+                                <ListChecks className="h-4 w-4 text-brand-teal" />
                                 No tasks in this section yet.
                               </div>
                             )}
@@ -1311,8 +1384,8 @@ const ProjectDetailPage = () => {
             </div>
 
             {isActivityOpen && activityLogs.length === 0 && (
-              <div className="rounded-lg border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-                No activity recorded yet.
+              <div className="actsix-empty-state min-h-[7rem] text-left">
+                Project updates, task changes, and collaborator activity will appear here.
               </div>
             )}
 

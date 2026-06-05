@@ -4,14 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { filterPeopleOptions, type PeoplePickerPerson } from "@/components/people/peoplePickerUtils";
 
-export type PeopleSearchPerson = {
-  id: string;
-  display_name: string;
-  avatar_url?: string | null;
-  email?: string | null;
-  phone_number?: string | null;
-};
+export type PeopleSearchPerson = PeoplePickerPerson;
 
 type PeopleSearchSelectProps = {
   people: PeopleSearchPerson[];
@@ -37,6 +32,7 @@ export function PeopleSearchSelect({
   showAllOnFocus = false,
 }: PeopleSearchSelectProps) {
   const inputId = useId();
+  const listboxId = useId();
   const peopleSearchSelectRef = useRef<HTMLDivElement | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
@@ -47,23 +43,11 @@ export function PeopleSearchSelect({
   const cleanSearch = searchTerm.trim();
 
   const results = useMemo(() => {
-    const query = cleanSearch.toLowerCase();
-
-    if (query.length < 2) return showAllOnFocus ? people.slice(0, 8) : [];
-
-    return people
-      .filter((person) => {
-        return [
-          person.display_name,
-          person.email,
-          person.phone_number,
-          formatPhoneForDisplay(person.phone_number),
-        ]
-          .filter(Boolean)
-          .some((value) => value!.toLowerCase().includes(query));
-      })
-      .slice(0, 8);
-  }, [people, cleanSearch]);
+    return filterPeopleOptions(people, cleanSearch, {
+      showAllOnFocus,
+      limit: 8,
+    });
+  }, [people, cleanSearch, showAllOnFocus]);
 
   const showDropdown = open && (showAllOnFocus || cleanSearch.length > 0) && !selectedPerson;
   const canCreate = Boolean(onCreatePerson && cleanSearch.length >= 2);
@@ -128,6 +112,7 @@ export function PeopleSearchSelect({
             variant="ghost"
             size="icon"
             className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-destructive"
+            aria-label={`Remove ${selectedPerson.display_name}`}
             onClick={() => {
               onSelect("");
               setSearchTerm("");
@@ -144,8 +129,19 @@ export function PeopleSearchSelect({
             name={`actsix-people-search-${inputId}`}
             type="search"
             value={searchTerm}
+            role="combobox"
+            aria-label={placeholder}
+            aria-expanded={showDropdown}
+            aria-controls={listboxId}
+            aria-haspopup="listbox"
+            aria-autocomplete="list"
             onFocus={() => setOpen(true)}
             onClick={() => setOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setOpen(false);
+              }
+            }}
             onChange={(event) => {
               setSearchTerm(event.target.value);
               setOpen(true);
@@ -159,7 +155,11 @@ export function PeopleSearchSelect({
           />
 
           {showDropdown && (
-            <div className={`absolute left-0 right-0 top-14 ${dropdownZIndexClass} overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl`}>
+            <div
+              id={listboxId}
+              role="listbox"
+              className={`actsix-overlay-surface absolute left-0 right-0 top-14 ${dropdownZIndexClass} overflow-hidden`}
+            >
               {!showAllOnFocus && cleanSearch.length < 2 && (
                 <div className="px-4 py-3 text-sm text-muted-foreground">
                   Type at least 2 characters to search.
@@ -178,6 +178,9 @@ export function PeopleSearchSelect({
                     <button
                       key={person.id}
                       type="button"
+                      role="option"
+                      aria-selected={person.id === selectedPersonId}
+                      aria-label={`Select ${person.display_name}`}
                       className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-brand-teal/5"
                       onClick={() => {
                         onSelect(person.id);
@@ -213,6 +216,7 @@ export function PeopleSearchSelect({
                   className="flex w-full items-center gap-3 border-t border-border bg-brand-teal/5 px-4 py-3 text-left text-sm font-extrabold text-brand-teal transition hover:bg-brand-teal/10"
                   onClick={createPerson}
                   disabled={creating}
+                  aria-label={`Add ${cleanSearch} as new People profile`}
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-teal/10">
                     <Plus className="h-4 w-4" />

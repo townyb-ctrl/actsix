@@ -638,7 +638,7 @@ const ProjectsPage = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-9 rounded-xl text-muted-foreground hover:text-foreground"
+                  className="h-10 px-3 text-muted-foreground hover:text-foreground"
                   onClick={clearFilters}
                 >
                   <X className="h-3.5 w-3.5 mr-1.5" />
@@ -649,7 +649,7 @@ const ProjectsPage = () => {
               <Button
                 type="button"
                 size="sm"
-                className="actsix-btn-primary flex-1 rounded-xl sm:flex-none"
+                className="actsix-btn-primary h-10 flex-1 sm:flex-none"
                 onClick={openNewProjectModal}
               >
                 <Plus className="h-4 w-4" />
@@ -664,7 +664,7 @@ const ProjectsPage = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search projects..."
-              className="h-11 pl-10 border-border/70 bg-card shadow-soft"
+              className="h-11 rounded-xl pl-10 border-border/70 bg-card shadow-soft"
             />
           </div>
 
@@ -677,7 +677,7 @@ const ProjectsPage = () => {
                   key={view.value}
                   type="button"
                   onClick={() => setProjectView(view.value)}
-                  className={`inline-flex min-h-9 shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+                  className={`actsix-filter-chip min-h-10 ${
                     active
                       ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
                       : "border-border/70 bg-card text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -702,7 +702,7 @@ const ProjectsPage = () => {
         <div className="md:hidden">
           <div className="space-y-3">
             {filteredProjects.length === 0 && (
-              <Card className="border-border/70 bg-card p-6 text-center shadow-soft">
+              <Card className="border-border/70 bg-card p-7 text-center shadow-soft">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
                   <FolderKanban className="h-5 w-5" />
                 </div>
@@ -721,7 +721,7 @@ const ProjectsPage = () => {
                   key={project.id}
                   type="button"
                   onClick={() => navigate(`/tasks/projects/${project.id}`)}
-                  className="w-full rounded-2xl border border-border/70 bg-card p-4 text-left shadow-soft transition active:scale-[0.99] hover:border-brand-teal/30 hover:bg-brand-teal/5"
+                  className="actsix-interactive-tile w-full p-4"
                 >
                   <div className="flex min-w-0 items-start gap-3">
                     <div
@@ -748,7 +748,7 @@ const ProjectsPage = () => {
                         </span>
                       </div>
 
-                      <div className="mt-3 rounded-xl border border-border/60 bg-background/60 p-3">
+                      <div className="actsix-interactive-row mt-3 border-border/60 bg-background/60 p-3">
                         <p className="label-eyebrow">Next Action</p>
                         <p className="mt-1 line-clamp-2 text-sm font-bold text-foreground">
                           {stats?.nextAction || "No next action set"}
@@ -822,7 +822,16 @@ const ProjectsPage = () => {
                             ? "bg-brand-teal/5 shadow-[inset_3px_0_0_hsl(var(--brand-teal))]"
                             : "hover:bg-muted/30"
                         }`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Open project ${project.name}`}
                         onClick={() => navigate(`/tasks/projects/${project.id}`)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            navigate(`/tasks/projects/${project.id}`);
+                          }
+                        }}
                       >
                         <td className="px-4 py-4 min-w-[260px]">
                           <div className="flex items-center gap-3">

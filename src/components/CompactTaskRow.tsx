@@ -77,6 +77,7 @@ const CompactTaskRow = ({
       }`}
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? `Edit task: ${title}` : undefined}
       onClick={clickable ? openEditor : undefined}
       onKeyDown={
         clickable
@@ -173,8 +174,8 @@ const CompactTaskRow = ({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            title="Edit"
-            aria-label="Edit"
+            title={`Edit ${title}`}
+            aria-label={`Edit ${title}`}
             onClick={(event) => {
               event.stopPropagation();
               onEdit(task);
@@ -189,8 +190,8 @@ const CompactTaskRow = ({
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-destructive"
-            title="Delete"
-            aria-label="Delete"
+            title={`Delete ${title}`}
+            aria-label={`Delete ${title}`}
             onClick={(event) => {
               event.stopPropagation();
               onDelete(task);

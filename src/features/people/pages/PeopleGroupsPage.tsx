@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
@@ -262,7 +263,7 @@ const PeopleGroupsPage = () => {
           <Button
             type="button"
             size="sm"
-            className="actsix-btn-primary shrink-0 rounded-lg"
+            className="actsix-btn-primary shrink-0"
             onClick={() => setCreateGroupOpen(true)}
           >
             <Plus className="h-4 w-4" />
@@ -272,7 +273,7 @@ const PeopleGroupsPage = () => {
 
         <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="space-y-4">
-            <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
+            <Card className="actsix-panel-soft overflow-hidden">
               <div className="border-b border-border/70 bg-brand-sage-soft px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Folder className="h-4 w-4 text-brand-sage" />
@@ -283,7 +284,7 @@ const PeopleGroupsPage = () => {
               <div className="space-y-1 p-2">
                 <button
                   type="button"
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-bold transition ${
+                  className={`flex w-full items-center justify-between rounded-[var(--radius-control)] px-3 py-2 text-sm font-bold transition ${
                     selectedFolderId === "all"
                       ? "bg-brand-sage/10 text-brand-sage"
                       : "text-muted-foreground hover:bg-muted"
@@ -296,7 +297,7 @@ const PeopleGroupsPage = () => {
 
                 <button
                   type="button"
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-bold transition ${
+                  className={`flex w-full items-center justify-between rounded-[var(--radius-control)] px-3 py-2 text-sm font-bold transition ${
                     selectedFolderId === "uncategorized"
                       ? "bg-brand-sage/10 text-brand-sage"
                       : "text-muted-foreground hover:bg-muted"
@@ -317,13 +318,13 @@ const PeopleGroupsPage = () => {
                           <Input
                             value={editingFolderName}
                             onChange={(event) => setEditingFolderName(event.target.value)}
-                            className="h-8 rounded-lg border-border/70 bg-background text-sm"
+                            className="h-8 rounded-[var(--radius-control)] border-border/70 bg-background text-sm"
                             autoFocus
                           />
 
                           <button
                             type="submit"
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-brand-teal hover:bg-brand-teal/10"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-brand-teal hover:bg-brand-teal/10"
                             aria-label="Save folder name"
                             disabled={!editingFolderName.trim()}
                           >
@@ -332,7 +333,7 @@ const PeopleGroupsPage = () => {
 
                           <button
                             type="button"
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-muted-foreground hover:bg-muted"
                             onClick={cancelEditingFolder}
                             aria-label="Cancel rename"
                           >
@@ -343,7 +344,7 @@ const PeopleGroupsPage = () => {
                         <>
                           <button
                             type="button"
-                            className={`flex min-w-0 flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm font-bold transition ${
+                            className={`flex min-w-0 flex-1 items-center justify-between rounded-[var(--radius-control)] px-3 py-2 text-sm font-bold transition ${
                               selectedFolderId === folderItem.id
                                 ? "bg-brand-sage/10 text-brand-sage"
                                 : "text-muted-foreground hover:bg-muted"
@@ -356,7 +357,7 @@ const PeopleGroupsPage = () => {
 
                           <button
                             type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:bg-muted hover:text-brand-teal"
+                            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted-foreground/60 hover:bg-muted hover:text-brand-teal"
                             onClick={() => startEditingFolder(folderItem)}
                             aria-label="Rename folder"
                           >
@@ -365,7 +366,7 @@ const PeopleGroupsPage = () => {
 
                           <button
                             type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:bg-muted hover:text-destructive"
+                            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted-foreground/60 hover:bg-muted hover:text-destructive"
                             onClick={() => deleteFolder(folderItem)}
                             aria-label="Delete folder"
                           >
@@ -383,9 +384,9 @@ const PeopleGroupsPage = () => {
                   value={newFolderName}
                   onChange={(event) => setNewFolderName(event.target.value)}
                   placeholder="New folder..."
-                  className="h-9 rounded-lg border-border/70 bg-background"
+                  className="h-9 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
-                <Button type="submit" size="icon" className="h-9 w-9 shrink-0 rounded-lg bg-brand-sage text-white hover:bg-brand-sage/90">
+                <Button type="submit" size="icon" className="h-9 w-9 shrink-0 rounded-[var(--radius-control)] bg-brand-sage text-white hover:bg-brand-sage/90">
                   <Plus className="h-4 w-4" />
                 </Button>
               </form>
@@ -395,13 +396,13 @@ const PeopleGroupsPage = () => {
 
           <div>
             {loading && (
-              <Card className="border-border/70 bg-card p-5 shadow-soft">
-                <p className="text-sm text-muted-foreground">Loading groups...</p>
+              <Card className="actsix-panel p-5">
+                <div className="actsix-loading-state" role="status">Loading groups...</div>
               </Card>
             )}
 
             {!loading && filteredGroups.length === 0 && (
-              <Card className="border-border/70 bg-card p-8 text-center shadow-soft">
+              <Card className="actsix-panel p-8 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-brand-sage/10 text-brand-sage">
                   <Users className="h-5 w-5" />
                 </div>
@@ -424,16 +425,13 @@ const PeopleGroupsPage = () => {
                   const displayedLeaders = leaders.slice(0, 3);
 
                   return (
-                    <Card
-                      key={group.id}
-                      className="group flex min-h-44 flex-col overflow-hidden border-border/70 bg-card shadow-soft transition hover:-translate-y-0.5 hover:border-brand-sage/40 hover:shadow-card"
-                    >
+                    <Card key={group.id} className="group actsix-panel-soft flex min-h-44 flex-col overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-sage/40 hover:shadow-card">
                       <Link
                         to={`/people/groups/${group.id}`}
                         className="flex min-h-0 flex-1 flex-col p-3"
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <span className="inline-flex rounded-md bg-brand-sage-soft px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-sage">
+                          <span className="inline-flex rounded-[var(--radius-control)] bg-brand-sage-soft px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-sage">
                             {folderName(group.folder_id)}
                           </span>
                           <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-brand-teal" />
@@ -448,7 +446,7 @@ const PeopleGroupsPage = () => {
                           </p>
                         </div>
 
-                        <div className="mt-3 rounded-lg border border-border/70 bg-background/45 px-3 py-2">
+                        <div className="actsix-interactive-row mt-3 bg-background/45 px-3 py-2">
                           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                             People
                           </p>
@@ -495,7 +493,7 @@ const PeopleGroupsPage = () => {
                         </span>
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition hover:bg-muted hover:text-destructive"
+                          className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted-foreground/60 transition hover:bg-muted hover:text-destructive"
                           onClick={() => deleteGroup(group)}
                           aria-label="Delete group"
                         >
@@ -511,31 +509,16 @@ const PeopleGroupsPage = () => {
         </div>
       </div>
 
-      {createGroupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-xl border-border/70 bg-card p-5 shadow-card">
+      <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
+        <DialogContent className="max-w-xl">
             <form onSubmit={createGroup} className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="label-eyebrow">People Group</p>
-                  <h2 className="text-xl font-extrabold tracking-tight">
-                    Create Group
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Add a new group, then open it to add people and assign leaders.
-                  </p>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-lg"
-                  onClick={() => setCreateGroupOpen(false)}
-                >
-                  <X className="h-4 w-4" />
-                  Close
-                </Button>
-              </div>
+              <DialogHeader>
+                <p className="label-eyebrow">People Group</p>
+                <DialogTitle className="text-xl">Create Group</DialogTitle>
+                <DialogDescription>
+                  Add a new group, then open it to add people and assign leaders.
+                </DialogDescription>
+              </DialogHeader>
 
               <div>
                 <label className="label-eyebrow">Group Name</label>
@@ -543,7 +526,7 @@ const PeopleGroupsPage = () => {
                   value={newGroupName}
                   onChange={(event) => setNewGroupName(event.target.value)}
                   placeholder="Brandon’s Bible Study"
-                  className="mt-1.5 h-10 rounded-lg border-border/70 bg-background"
+                  className="mt-1.5 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                   autoFocus
                 />
               </div>
@@ -553,7 +536,7 @@ const PeopleGroupsPage = () => {
                 <select
                   value={newGroupFolderId}
                   onChange={(event) => setNewGroupFolderId(event.target.value)}
-                  className="mt-1.5 h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-1.5 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 >
                   <option value="">Uncategorized</option>
                   {folders.map((folderItem) => (
@@ -570,15 +553,15 @@ const PeopleGroupsPage = () => {
                   value={newGroupDescription}
                   onChange={(event) => setNewGroupDescription(event.target.value)}
                   placeholder="Optional notes..."
-                  className="mt-1.5 h-10 rounded-lg border-border/70 bg-background"
+                  className="mt-1.5 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-border/70 pt-4">
+              <DialogFooter className="flex justify-end gap-2 border-t border-border/70 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-lg"
+                  className="actsix-btn-outline"
                   onClick={() => setCreateGroupOpen(false)}
                 >
                   Cancel
@@ -586,17 +569,16 @@ const PeopleGroupsPage = () => {
 
                 <Button
                   type="submit"
-                  className="actsix-btn-primary rounded-lg"
+                  className="actsix-btn-primary"
                   disabled={!newGroupName.trim()}
                 >
                   <Plus className="h-4 w-4" />
                   Create Group
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
-          </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -37,6 +37,8 @@ const WorkspaceSettingsPage = () => {
   const [joinPhrase, setJoinPhrase] = useState("");
   const [busy, setBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
 
   const joinCode = workspace?.join_code || "";
 
@@ -51,6 +53,9 @@ const WorkspaceSettingsPage = () => {
   const loadMembers = async () => {
     if (!workspace || !isAdmin) return;
 
+    setMembersLoading(true);
+    setMembersError(null);
+
     const { data, error } = await (supabase as any).rpc(
       "get_workspace_members_for_current_user",
       {
@@ -59,11 +64,14 @@ const WorkspaceSettingsPage = () => {
     );
 
     if (error) {
+      setMembersError("Could not load workspace members right now.");
+      setMembersLoading(false);
       toast.error(error.message);
       return;
     }
 
     setMembers(data || []);
+    setMembersLoading(false);
   };
 
   useEffect(() => {
@@ -152,6 +160,14 @@ const WorkspaceSettingsPage = () => {
           title="Workspace Settings"
           subtitle="Loading workspace..."
         />
+
+        <div className="actsix-page-body">
+          <Card className="actsix-panel p-6 sm:p-7">
+            <div className="actsix-loading-state min-h-[12rem]">
+              Loading workspace settings...
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -165,9 +181,9 @@ const WorkspaceSettingsPage = () => {
           subtitle="Create or join a workspace first."
         />
 
-        <div className="px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-          <Card className="max-w-2xl border-border/70 bg-card p-6 shadow-card">
-            <p className="text-sm text-muted-foreground">
+        <div className="actsix-page-body">
+          <Card className="actsix-panel max-w-2xl p-6 sm:p-7">
+            <p className="actsix-empty-state">
               You are not connected to a church workspace yet.
             </p>
           </Card>
@@ -184,9 +200,9 @@ const WorkspaceSettingsPage = () => {
         subtitle="Manage Alpha workspace access, secret phrase, and workspace roles."
       />
 
-      <div className="grid w-full min-w-0 gap-4 px-4 pb-12 sm:px-6 md:gap-6 lg:grid-cols-[0.9fr_1.1fr] xl:px-8 2xl:px-10">
+      <div className="actsix-page-body grid min-w-0 gap-4 md:gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-4 md:space-y-6">
-          <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
+          <Card className="actsix-panel p-5 sm:p-6">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl bg-brand-teal/10 p-3 text-brand-teal">
                 <ShieldCheck className="h-5 w-5" />
@@ -203,7 +219,7 @@ const WorkspaceSettingsPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 rounded-2xl border border-border/70 bg-muted/10 p-4">
+            <div className="mt-5 grid gap-3 rounded-[1.25rem] border border-border/70 bg-muted/10 p-4">
               <div>
                 <p className="label-eyebrow">Release Mode</p>
                 <p className="mt-1 text-sm font-bold capitalize">
@@ -229,7 +245,7 @@ const WorkspaceSettingsPage = () => {
             </div>
           </Card>
 
-          <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
+          <Card className="actsix-panel p-5 sm:p-6">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl bg-brand-teal/10 p-3 text-brand-teal">
                 <KeyRound className="h-5 w-5" />
@@ -274,7 +290,7 @@ const WorkspaceSettingsPage = () => {
             </form>
           </Card>
 
-          <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
+          <Card className="actsix-panel p-5 sm:p-6">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl bg-destructive/10 p-3 text-destructive">
                 <LogOut className="h-5 w-5" />
@@ -309,7 +325,7 @@ const WorkspaceSettingsPage = () => {
 
         </div>
 
-        <Card className="border-border/70 bg-card p-4 shadow-card sm:p-6">
+        <Card className="actsix-panel p-5 sm:p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="label-eyebrow">Workspace Roles</p>
@@ -327,18 +343,40 @@ const WorkspaceSettingsPage = () => {
           </div>
 
           {!isAdmin && (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+            <div className="actsix-empty-state text-left">
               Only workspace admins can view and manage workspace roles.
             </div>
           )}
 
-          {isAdmin && members.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-              No workspace users found yet.
+          {isAdmin && membersLoading && (
+            <div className="actsix-loading-state min-h-[12rem] text-left">
+              Loading workspace roles...
             </div>
           )}
 
-          {isAdmin && members.length > 0 && (
+          {isAdmin && !membersLoading && membersError && (
+            <div className="flex min-h-[12rem] flex-col items-start justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 p-5 text-left">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Could not load workspace roles
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try again to review member access and admin assignments.
+                </p>
+              </div>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={loadMembers}>
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {isAdmin && !membersLoading && !membersError && members.length === 0 && (
+            <div className="actsix-empty-state text-left">
+              No workspace members have joined yet.
+            </div>
+          )}
+
+          {isAdmin && !membersLoading && !membersError && members.length > 0 && (
             <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70">
               {sortedMembers.map((member) => (
                 <div

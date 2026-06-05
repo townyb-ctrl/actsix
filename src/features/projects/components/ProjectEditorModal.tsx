@@ -39,21 +39,34 @@ const ProjectEditorModal = ({
 }: ProjectEditorModalProps) => {
   if (!project) return null;
 
+  const titleId = "project-editor-title";
+  const descriptionId = "project-editor-description";
+  const nameId = "project-editor-name";
+  const areaId = "project-editor-area";
+  const statusId = "project-editor-status";
+  const notesId = "project-editor-notes";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
       <Card className="flex max-h-[92svh] w-full max-w-3xl flex-col overflow-hidden rounded-b-none border-border/70 bg-card shadow-card sm:max-h-[88vh] sm:rounded-xl">
         <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
           <div className="min-w-0">
             <p className="label-eyebrow">Edit Project</p>
-            <h2 className="mt-1 text-xl font-extrabold leading-tight">
+            <h2 id={titleId} className="mt-1 text-xl font-extrabold leading-tight">
               Project details
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">
               Update the project name, area, status, and notes.
             </p>
           </div>
 
-          <Button variant="ghost" size="icon" className="rounded-lg text-muted-foreground" onClick={onClose}>
+          <Button variant="ghost" size="icon" className="rounded-lg text-muted-foreground" onClick={onClose} aria-label="Close project editor">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
           </Button>
@@ -68,8 +81,9 @@ const ProjectEditorModal = ({
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-border/70 bg-background/45 p-3 md:col-span-2">
-                <label className="label-eyebrow">Project name</label>
+                <label htmlFor={nameId} className="label-eyebrow">Project name</label>
                 <Input
+                  id={nameId}
                   value={project.name ?? ""}
                   onChange={(event) =>
                     onChange({ ...project, name: event.target.value })
@@ -83,8 +97,9 @@ const ProjectEditorModal = ({
               </div>
 
               <div className="rounded-lg border border-border/70 bg-background/45 p-3">
-                <label className="label-eyebrow">Area</label>
+                <label htmlFor={areaId} className="label-eyebrow">Area</label>
                 <Input
+                  id={areaId}
                   value={project.area ?? "General"}
                   onChange={(event) =>
                     onChange({ ...project, area: event.target.value })
@@ -95,8 +110,9 @@ const ProjectEditorModal = ({
               </div>
 
               <div className="rounded-lg border border-border/70 bg-background/45 p-3">
-                <label className="label-eyebrow">Status</label>
+                <label htmlFor={statusId} className="label-eyebrow">Status</label>
                 <select
+                  id={statusId}
                   value={project.status ?? "In Progress"}
                   onChange={(event) =>
                     onChange({ ...project, status: event.target.value })
@@ -114,8 +130,9 @@ const ProjectEditorModal = ({
 
           <section>
             <div className="rounded-lg border border-border/70 bg-background/45 p-3">
-              <label className="label-eyebrow">Notes</label>
+              <label htmlFor={notesId} className="label-eyebrow">Notes</label>
               <textarea
+                id={notesId}
                 value={project.notes ?? ""}
                 onChange={(event) =>
                   onChange({ ...project, notes: event.target.value })

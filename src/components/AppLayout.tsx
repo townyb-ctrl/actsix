@@ -209,8 +209,8 @@ export default function AppLayout() {
           <AppSidebar />
         </div>
 
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col pb-[calc(6.8rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
-          <header className="sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-border/70 bg-background/90 px-3 py-1 backdrop-blur-xl sm:px-4 xl:px-6">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col pb-[calc(7.6rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
+          <header className="sticky top-0 z-10 flex min-h-[3.75rem] items-center gap-2 border-b border-border/70 bg-background/90 px-4 py-2 backdrop-blur-xl sm:px-4 xl:px-6">
             
             {/* FULL TEXT LOGO IN HEADER (Mobile Only) */}
             <Link to="/" className="mr-1 flex shrink-0 items-center md:hidden">

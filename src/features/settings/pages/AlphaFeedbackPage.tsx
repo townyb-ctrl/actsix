@@ -138,7 +138,7 @@ export default function AlphaFeedback() {
         }
       />
 
-      <div className="w-full space-y-5 px-4 py-8 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body space-y-5 py-8">
         <Card className="flex flex-col gap-3 border-brand-teal/20 bg-brand-teal/5 p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-brand-teal/10 text-brand-teal">
@@ -155,12 +155,12 @@ export default function AlphaFeedback() {
         </Card>
 
         {loading || workspaceLoading ? (
-          <Card className="border-border/60 p-6 text-sm text-muted-foreground shadow-soft">
-            Loading feedback...
+          <Card className="border-border/60 p-6 shadow-soft">
+            <div className="actsix-loading-state">Loading feedback...</div>
           </Card>
         ) : feedback.length === 0 ? (
-          <Card className="border-border/60 p-6 text-sm text-muted-foreground shadow-soft">
-            No alpha feedback has been submitted yet.
+          <Card className="border-border/60 p-6 shadow-soft">
+            <div className="actsix-empty-state">No alpha feedback has been submitted yet.</div>
           </Card>
         ) : (
           <Card className="overflow-hidden border-border/60 shadow-soft">

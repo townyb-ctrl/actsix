@@ -235,7 +235,7 @@ const projectProgress = (project: Project, tasks: Task[]) => {
 };
 
 const EmptyState = ({ children }: { children: string }) => (
-  <div className="rounded-2xl border border-dashed border-border bg-background/70 px-4 py-5 text-center text-sm font-semibold text-muted-foreground">
+  <div className="actsix-empty-state">
     {children}
   </div>
 );
@@ -671,13 +671,27 @@ const Dashboard = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="overflow-x-hidden">
+        <div className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10">
+          <section className="actsix-panel p-5 sm:p-6">
+            <div className="actsix-loading-state" role="status">
+              Loading your home overview...
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-hidden">
       <div
         data-tour="home-overview"
         className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10"
       >
-        <section className="relative overflow-hidden rounded-[1.4rem] border border-border/70 bg-card p-4 shadow-card sm:p-5 md:p-6">
+        <section className="actsix-panel relative overflow-hidden p-5 sm:p-6">
           <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-brand-teal/10 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-16 left-6 h-28 w-28 rounded-full bg-brand-sand/25 blur-2xl" />
 
@@ -698,7 +712,7 @@ const Dashboard = () => {
 
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(390px,0.8fr)] 2xl:grid-cols-[minmax(0,1.25fr)_minmax(430px,0.75fr)]">
-          <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card">
+          <Card className="actsix-panel min-w-0 overflow-hidden">
             <SectionHeader
               eyebrow="Tasks"
               title="Due Today"
@@ -734,7 +748,7 @@ const Dashboard = () => {
             </div>
           </Card>
 
-          <Card className="min-w-0 overflow-hidden rounded-[1.25rem] border-border/70 bg-card shadow-card">
+          <Card className="actsix-panel min-w-0 overflow-hidden">
             <SectionHeader
               eyebrow="Service Planner"
               title="Next Service"
@@ -772,7 +786,7 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <Button asChild className="actsix-btn-primary h-9 shrink-0 rounded-xl px-3 text-xs">
+                  <Button asChild className="actsix-btn-primary h-9 shrink-0 px-3 text-xs">
                     <Link to={`/service-planner/services/${nextService.id}`}>
                       Open
                       <ArrowUpRight className="h-3.5 w-3.5" />
@@ -780,17 +794,14 @@ const Dashboard = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 rounded-xl border border-border bg-background/70 p-1">
+                <div className="actsix-segmented grid grid-cols-2 bg-background/70">
                   {(["plan", "team"] as const).map((view) => (
                     <button
                       key={view}
                       type="button"
                       onClick={() => setServiceView(view)}
-                      className={`min-h-[36px] flex-1 rounded-lg px-2 text-sm font-extrabold transition ${
-                        serviceView === view
-                          ? "bg-brand-teal text-white shadow-soft"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                      data-state={serviceView === view ? "active" : "inactive"}
+                      className="actsix-segmented-item min-h-[36px] flex-1 px-2 text-sm font-extrabold"
                     >
                       {view === "plan" ? "Plan" : "Team"}
                     </button>
@@ -837,7 +848,7 @@ const Dashboard = () => {
 
                 <Link
                   to={`/service-planner/services/${nextService.id}`}
-                  className="inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl border border-brand-teal/25 bg-brand-teal/15 px-3 text-sm font-extrabold text-brand-teal transition hover:bg-brand-teal/20 sm:w-auto"
+                  className="actsix-btn-outline inline-flex min-h-[38px] w-full gap-1.5 px-3 text-sm font-extrabold text-brand-teal sm:w-auto"
                 >
                   View full service
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -847,7 +858,7 @@ const Dashboard = () => {
           </Card>
 
 
-          <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card">
+          <Card className="actsix-panel min-w-0 overflow-hidden">
             <SectionHeader
               eyebrow="Projects"
               title="Active Momentum"
@@ -894,7 +905,7 @@ const Dashboard = () => {
             </div>
           </Card>
 
-          <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card">
+          <Card className="actsix-panel min-w-0 overflow-hidden">
             <SectionHeader
               eyebrow="Meetings"
               title="Upcoming Meetings"
@@ -936,12 +947,12 @@ const Dashboard = () => {
           </Card>
         </section>
 
-        <Card className="min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card md:hidden">
+        <Card className="actsix-panel min-w-0 overflow-hidden md:hidden">
           <SectionHeader
             eyebrow="Calendar"
             title="Upcoming Agenda"
             action={
-              <Button asChild variant="outline" size="sm" className="h-9 rounded-xl px-3 text-xs">
+              <Button asChild variant="outline" size="sm" className="actsix-btn-outline h-9 px-3 text-xs">
                 <Link to="/meetings">
                   Meetings
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -949,7 +960,7 @@ const Dashboard = () => {
               </Button>
             }
           />
-          <div className="space-y-3 p-4">
+          <div className="space-y-3 p-4 sm:p-5">
             {mobileAgendaItems.length === 0 && <EmptyState>No dated items in the next 7 days.</EmptyState>}
             {mobileAgendaItems.map((item) => (
               <AgendaItemRow key={item.id} item={item} />
@@ -957,7 +968,7 @@ const Dashboard = () => {
           </div>
         </Card>
 
-        <Card className="hidden min-w-0 overflow-hidden rounded-[1.4rem] border-border/70 bg-card shadow-card md:block">
+        <Card className="actsix-panel hidden min-w-0 overflow-hidden md:block">
           <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="label-eyebrow">Calendar</p>
@@ -966,23 +977,20 @@ const Dashboard = () => {
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex rounded-xl border border-border/70 bg-background/55 p-1">
+              <div className="actsix-segmented">
                 {(["month", "week"] as const).map((view) => (
                   <button
                     key={view}
                     type="button"
                     onClick={() => setCalendarView(view)}
-                    className={`h-8 rounded-lg px-3 text-xs font-extrabold capitalize transition ${
-                      calendarView === view
-                        ? "bg-brand-teal text-white shadow-soft"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    data-state={calendarView === view ? "active" : "inactive"}
+                    className="actsix-segmented-item h-8 px-3 text-xs font-extrabold capitalize"
                   >
                     {view}
                   </button>
                 ))}
               </div>
-              <Button asChild variant="outline" size="sm" className="h-9 rounded-xl px-3">
+              <Button asChild variant="outline" size="sm" className="actsix-btn-outline h-9 px-3">
                 <Link to="/meetings">
                   Meetings
                   <ArrowUpRight className="h-3.5 w-3.5" />

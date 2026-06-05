@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Archive,
   CalendarDays,
@@ -18,7 +25,6 @@ import {
   Tags,
   Trash2,
   UsersRound,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { syncProjectStatsById } from "@/lib/syncProjectStats";
@@ -86,6 +92,7 @@ const InboxPage = () => {
   const [title, setTitle] = useState("");
   const [editingItem, setEditingItem] = useState<InboxItem | null>(null);
   const [processTarget, setProcessTarget] = useState<ProcessTarget>("");
+  const [loadingItems, setLoadingItems] = useState(true);
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
 
@@ -94,51 +101,50 @@ const InboxPage = () => {
     return Array.from(new Set([...fallbackContexts, ...fromDb]));
   }, [contexts]);
 
-  const load = async () => {
-    if (!user) return;
-
-    const [
-      { data: inboxData, error: inboxError },
-      { data: projectData, error: projectError },
-      { data: contextData, error: contextError },
-    ] = await Promise.all([
-      supabase
-        .from("inbox_items")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("projects")
-        .select("id, name")
-        .order("name", { ascending: true }),
-      supabase
-        .from("contexts")
-        .select("id, name")
-        .order("position", { ascending: true }),
-    ]);
-
-    if (inboxError) {
-      toast.error(inboxError.message);
+  const load = useCallback(async () => {
+    if (!user) {
+      setLoadingItems(false);
       return;
     }
 
-    if (projectError) {
-      toast.error(projectError.message);
-      return;
-    }
+    try {
+      const [
+        { data: inboxData, error: inboxError },
+        { data: projectData, error: projectError },
+        { data: contextData, error: contextError },
+      ] = await Promise.all([
+        supabase
+          .from("inbox_items")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("projects")
+          .select("id, name")
+          .order("name", { ascending: true }),
+        supabase
+          .from("contexts")
+          .select("id, name")
+          .order("position", { ascending: true }),
+      ]);
 
-    if (contextError) {
-      toast.error(contextError.message);
-      return;
-    }
+      if (inboxError) throw inboxError;
+      if (projectError) throw projectError;
+      if (contextError) throw contextError;
 
-    setItems(inboxData ?? []);
-    setProjects(projectData ?? []);
-    setContexts(contextData ?? []);
-  };
+      setItems(inboxData ?? []);
+      setProjects(projectData ?? []);
+      setContexts(contextData ?? []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not load inbox.";
+      toast.error(message);
+    } finally {
+      setLoadingItems(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) load();
-  }, [user]);
+  }, [load, user]);
 
   const add = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -333,7 +339,7 @@ const InboxPage = () => {
         subtitle="Quickly capture what has your attention. Clarify it later."
       />
 
-      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <Card className="p-3 shadow-card border-border/70 bg-card">
           <form onSubmit={add} className="flex gap-2">
             <Input
@@ -353,51 +359,51 @@ const InboxPage = () => {
         </Card>
 
         <Card className="p-2 space-y-2 shadow-card border-border/70 bg-card">
-          {items.length === 0 && (
-            <div className="p-6 text-sm text-muted-foreground">
+          {loadingItems && (
+            <div className="actsix-loading-state" role="status">
+              Loading inbox...
+            </div>
+          )}
+
+          {!loadingItems && items.length === 0 && (
+            <div className="actsix-empty-state">
               Inbox clear. Capture something when it has your attention.
             </div>
           )}
 
-          {items.map((item) => (
+          {!loadingItems && items.map((item) => (
             <div
               key={item.id}
-              className="action-row group flex cursor-pointer items-center gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
-              role="button"
-              tabIndex={0}
-              onClick={() => openEditor(item)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openEditor(item);
-                }
-              }}
+              className="action-row group flex items-center gap-2 px-3 py-2"
             >
-              <div className="h-1.5 w-1.5 rounded-full bg-brand-teal shrink-0" />
+              <button
+                type="button"
+                className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-md px-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                onClick={() => openEditor(item)}
+              >
+                <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-teal" />
 
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold truncate">
-                  {item.title}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">
+                    {item.title}
+                  </div>
+
+                  {item.notes && (
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                      {item.notes}
+                    </p>
+                  )}
                 </div>
+              </button>
 
-                {item.notes && (
-                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                    {item.notes}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex shrink-0 items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+              <div className="flex shrink-0 items-center gap-1.5 opacity-85 transition-opacity group-hover:opacity-100">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-9 w-9 rounded-xl"
                   title="Clarify"
                   aria-label="Clarify"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openEditor(item);
-                  }}
+                  onClick={() => openEditor(item)}
                 >
                   <Edit3 className="h-3.5 w-3.5" />
                 </Button>
@@ -405,13 +411,10 @@ const InboxPage = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive"
                   title="Delete"
                   aria-label="Delete"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    quickDelete(item);
-                  }}
+                  onClick={() => quickDelete(item)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -421,27 +424,27 @@ const InboxPage = () => {
         </Card>
       </div>
 
-      {editingItem && (
-        <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-4xl shadow-card border-border/70 bg-card h-[88vh] flex flex-col overflow-hidden">
-            <div className="flex items-start justify-between gap-4 p-6 border-b border-border/70">
+      <Dialog
+        open={Boolean(editingItem)}
+        onOpenChange={(open) => {
+          if (!open) closeEditor();
+        }}
+      >
+        {editingItem && (
+          <DialogContent className="flex h-[92svh] max-w-4xl flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:h-[88vh] sm:rounded-xl">
+            <DialogHeader className="border-b border-border/70 p-4 pr-12 text-left sm:p-6 sm:pr-14">
               <div>
                 <p className="label-eyebrow">Clarify Inbox Item</p>
-                <h2 className="text-2xl font-extrabold tracking-tight mt-1">
+                <DialogTitle className="mt-1 text-2xl font-extrabold tracking-tight">
                   Inbox details
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
+                </DialogTitle>
+                <DialogDescription className="mt-1">
                   Choose where this belongs first. ACTSIX will only show the fields that matter.
-                </p>
+                </DialogDescription>
               </div>
+            </DialogHeader>
 
-              <Button variant="outline" className="rounded-xl" onClick={closeEditor}>
-                <X className="h-4 w-4 mr-2" />
-                Close
-              </Button>
-            </div>
-
-            <div className="flex-1 p-6 overflow-y-auto space-y-5">
+            <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
               <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Archive className="h-4 w-4 text-brand-teal" />
@@ -560,7 +563,7 @@ const InboxPage = () => {
 
                     <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
                       <label className="label-eyebrow">Project</label>
-                                            <ProjectSelect
+                      <ProjectSelect
                         value={editingItem.project ?? ""}
                         onChange={(project) =>
                           setEditingItem({ ...editingItem, project })
@@ -707,14 +710,14 @@ const InboxPage = () => {
               )}
             </div>
 
-            <div className="shrink-0 flex items-center justify-between gap-3 p-4 border-t border-border/70 bg-card/95">
+            <div className="flex shrink-0 flex-col gap-3 border-t border-border/70 bg-card/95 p-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">
                 {processTarget
                   ? `Ready to process this as: ${targetLabels[processTarget]}`
                   : "Choose a destination before processing."}
               </p>
 
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                 <Button variant="outline" className="rounded-xl" onClick={closeEditor}>
                   Cancel
                 </Button>
@@ -732,16 +735,16 @@ const InboxPage = () => {
                 <Button
                   disabled={!canProcess}
                   variant="outline"
-                  className="rounded-xl actsix-btn-soft font-bold"
+                  className="col-span-2 rounded-xl actsix-btn-soft font-bold sm:col-span-1"
                   onClick={processItem}
                 >
                   Process
                 </Button>
               </div>
             </div>
-          </Card>
-        </div>
-      )}
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 };

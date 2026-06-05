@@ -43,10 +43,12 @@ const TasksDashboardPage = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
 
   const load = async () => {
     if (!user) return;
+    setLoading(true);
 
     const [inbox, next, projects, waiting, someday, taskResult] =
       await Promise.all([
@@ -76,6 +78,7 @@ const TasksDashboardPage = () => {
     });
 
     setTasks(taskResult.data ?? []);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -223,37 +226,37 @@ const TasksDashboardPage = () => {
         }
       />
 
-      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 shadow-soft sm:grid-cols-2 lg:grid-cols-5">
-          <div className="bg-card px-4 py-3">
+      <div className="actsix-page-body actsix-page-stack">
+        <div className="grid gap-px overflow-hidden rounded-[1.25rem] border border-border/70 bg-border/70 shadow-soft sm:grid-cols-2 lg:grid-cols-5">
+          <div className="bg-card px-4 py-4">
             <p className="label-eyebrow">Inbox</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.inbox}</div>
           </div>
 
-          <div className="bg-card px-4 py-3">
+          <div className="bg-card px-4 py-4">
             <p className="label-eyebrow">Next Actions</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.next}</div>
           </div>
 
-          <div className="bg-card px-4 py-3">
+          <div className="bg-card px-4 py-4">
             <p className="label-eyebrow">Projects</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.projects}</div>
           </div>
 
-          <div className="bg-card px-4 py-3">
+          <div className="bg-card px-4 py-4">
             <p className="label-eyebrow">Waiting</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.waiting}</div>
           </div>
 
-          <div className="bg-card px-4 py-3">
+          <div className="bg-card px-4 py-4">
             <p className="label-eyebrow">Someday</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.someday}</div>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card className="border-border/70 bg-card p-4 shadow-soft">
-            <div className="mb-3 flex items-start justify-between gap-3">
+          <Card className="actsix-panel-soft p-5 sm:p-6">
+            <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-extrabold">
                   Highest Priority
@@ -267,14 +270,20 @@ const TasksDashboardPage = () => {
               </span>
             </div>
 
-            <div className="space-y-1.5 rounded-md border border-border/70 bg-muted/10 p-2">
-              {topTasks.length === 0 && (
-                <div className="p-6 text-sm text-muted-foreground text-center">
+            <div className="space-y-1.5 rounded-xl border border-border/70 bg-muted/10 p-2.5">
+              {loading && (
+                <div className="actsix-loading-state" role="status">
+                  Loading active next actions...
+                </div>
+              )}
+
+              {!loading && topTasks.length === 0 && (
+                <div className="actsix-empty-state">
                   No active next actions yet.
                 </div>
               )}
 
-              {topTasks.map((task) => (
+              {!loading && topTasks.map((task) => (
                 <CompactTaskRow
                   key={task.id}
                   task={task}
@@ -291,9 +300,9 @@ const TasksDashboardPage = () => {
 
               return (
                 <Link key={area.title} to={area.to}>
-                  <Card className="border-border/70 bg-card p-3 shadow-soft transition-colors hover:border-brand-teal/40 group">
+                  <Card className="actsix-panel-soft group p-4 transition-colors hover:border-brand-teal/40">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                         <Icon className="h-5 w-5" />
                       </div>
 

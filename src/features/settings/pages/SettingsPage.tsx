@@ -27,20 +27,20 @@ const SettingsPage = () => {
   return (
     <div>
       <PageHeader eyebrow="Settings" title="The studio" subtitle="Account and preferences." />
-      <div className="w-full space-y-6 px-4 py-10 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack pt-5 pb-10 sm:pt-6">
         {developer && (
-          <Card className="p-6 shadow-soft border-brand-teal/25 bg-brand-teal/5">
-            <div className="text-xs uppercase tracking-[0.2em] text-brand-teal font-display italic">
+          <Card className="actsix-panel-soft border-brand-teal/25 bg-brand-teal/5 p-6 sm:p-7">
+            <div className="label-eyebrow text-brand-teal">
               Software Developer
             </div>
-            <div className="mt-2 font-display text-2xl">Alpha Feedback</div>
+            <div className="mt-2 text-2xl font-extrabold tracking-tight">Alpha Feedback</div>
             <p className="mt-2 text-sm text-muted-foreground">
               Review comments submitted by alpha testers from the floating feedback chat.
             </p>
             <Button
               asChild
               variant="outline"
-              className="mt-6 gap-2 rounded-xl border-brand-teal/30 text-brand-teal hover:bg-brand-teal/10 hover:text-brand-teal"
+              className="actsix-btn-outline mt-6 gap-2 border-brand-teal/30 text-brand-teal hover:text-brand-teal"
             >
               <a href="/settings/alpha-feedback">
                 <MessageSquare className="h-4 w-4" />
@@ -50,16 +50,16 @@ const SettingsPage = () => {
           </Card>
         )}
 
-        <Card className="border-border/60 p-6 shadow-soft">
-          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-display italic">
+        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+          <div className="label-eyebrow">
             Navigation
           </div>
-          <div className="mt-2 font-display text-2xl">Modules</div>
+          <div className="mt-2 text-2xl font-extrabold tracking-tight">Modules</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Choose which ACTSIX modules appear in your left menu. Home, Tasks, and People stay active for every user.
           </p>
 
-          <div className="mt-5 overflow-hidden rounded-lg border border-border/70">
+          <div className="mt-5 overflow-hidden rounded-[var(--radius-panel)] border border-border/70">
             {settingsModules.map((moduleKey) => {
               const locked = REQUIRED_MODULES.includes(moduleKey);
               const active = isModuleActive(moduleKey as ActiveModuleKey);
@@ -108,43 +108,43 @@ const SettingsPage = () => {
           </div>
         </Card>
 
-        <Card className="p-6 shadow-soft border-border/60">
-          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-display italic">
+        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+          <div className="label-eyebrow">
             Admin
           </div>
-          <div className="mt-2 font-display text-2xl">Workspace Settings</div>
+          <div className="mt-2 text-2xl font-extrabold tracking-tight">Workspace Settings</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Manage your church workspace, join code, secret phrase, and member roles.
           </p>
-          <Button asChild variant="outline" className="mt-6">
+          <Button asChild variant="outline" className="actsix-btn-outline mt-6">
             <a href="/settings/workspace">Open Workspace Settings</a>
           </Button>
         </Card>
 
-        <Card className="p-6 shadow-soft border-border/60">
-          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-display italic">
+        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+          <div className="label-eyebrow">
             Data
           </div>
-          <div className="mt-2 font-display text-2xl">Import and export</div>
+          <div className="mt-2 text-2xl font-extrabold tracking-tight">Import and export</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Manage ACTSIX data movement from one place instead of showing these tools across every module.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Button variant="outline" className="rounded-xl gap-2">
+            <Button variant="outline" className="actsix-btn-outline gap-2">
               <Download className="h-4 w-4" />
               Export
             </Button>
-            <Button variant="outline" className="rounded-xl gap-2">
+            <Button variant="outline" className="actsix-btn-outline gap-2">
               <Upload className="h-4 w-4" />
               Import
             </Button>
           </div>
         </Card>
 
-        <Card className="p-6 shadow-soft border-border/60">
-          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-display italic">Account</div>
-          <div className="mt-2 font-display text-2xl">{user?.email}</div>
-          <Button variant="outline" className="mt-6" onClick={signOut}>Sign out</Button>
+        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+          <div className="label-eyebrow">Account</div>
+          <div className="mt-2 text-2xl font-extrabold tracking-tight">{user?.email}</div>
+          <Button variant="outline" className="actsix-btn-outline mt-6" onClick={signOut}>Sign out</Button>
         </Card>
       </div>
     </div>

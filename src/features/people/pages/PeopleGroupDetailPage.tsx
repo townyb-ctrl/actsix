@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
@@ -304,7 +305,9 @@ const PeopleGroupDetailPage = () => {
   if (loading) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <p className="text-sm text-muted-foreground">Loading group...</p>
+        <Card className="actsix-panel p-6">
+          <div className="actsix-loading-state" role="status">Loading group...</div>
+        </Card>
       </div>
     );
   }
@@ -312,12 +315,12 @@ const PeopleGroupDetailPage = () => {
   if (!group) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="border-border/70 bg-card p-6 shadow-card">
-          <p className="text-sm text-muted-foreground">Group not found.</p>
+        <Card className="actsix-panel p-6">
+          <div className="actsix-empty-state">Group not found.</div>
           <Button
             type="button"
             variant="outline"
-            className="mt-4 rounded-xl"
+            className="actsix-btn-outline mt-4"
             onClick={() => navigate("/people/groups")}
           >
             Back to Groups
@@ -366,7 +369,7 @@ const PeopleGroupDetailPage = () => {
           <Button
             type="button"
             variant="outline"
-            className="rounded-xl"
+            className="actsix-btn-outline"
             onClick={() => {
               setEditGroupName(group.name || "");
               setEditGroupDescription(group.description || "");
@@ -380,7 +383,7 @@ const PeopleGroupDetailPage = () => {
 
           <Button
             type="button"
-            className="actsix-btn-primary rounded-xl"
+            className="actsix-btn-primary"
             onClick={() => {
               setSelectedPersonIds([]);
               setMemberRole("");
@@ -417,7 +420,7 @@ const PeopleGroupDetailPage = () => {
             onChange={(event) => setGroupMessage(event.target.value)}
             rows={3}
             placeholder={`Hi ${group.name} team...`}
-            className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+            className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
           />
         </div>
 
@@ -430,7 +433,7 @@ const PeopleGroupDetailPage = () => {
         <div className="mt-4 flex justify-end">
           <Button
             type="button"
-            className="actsix-btn-primary rounded-xl"
+            className="actsix-btn-primary"
             onClick={messageGroupMembers}
             disabled={messageableMembers.length === 0}
           >
@@ -545,31 +548,16 @@ const PeopleGroupDetailPage = () => {
         )}
       </Card>
 
-      {editGroupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-xl border-border/70 bg-card p-6 shadow-card">
+      <Dialog open={editGroupOpen} onOpenChange={setEditGroupOpen}>
+        <DialogContent className="max-w-xl">
             <form onSubmit={updateGroup} className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="label-eyebrow">People Group</p>
-                  <h2 className="text-xl font-extrabold tracking-tight">
-                    Edit Group
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Update the group name, description, or folder.
-                  </p>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setEditGroupOpen(false)}
-                >
-                  <X className="h-4 w-4" />
-                  Close
-                </Button>
-              </div>
+              <DialogHeader>
+                <p className="label-eyebrow">People Group</p>
+                <DialogTitle className="text-xl">Edit Group</DialogTitle>
+                <DialogDescription>
+                  Update the group name, description, or folder.
+                </DialogDescription>
+              </DialogHeader>
 
               <div>
                 <label className="label-eyebrow">Group Name</label>
@@ -586,7 +574,7 @@ const PeopleGroupDetailPage = () => {
                 <select
                   value={editGroupFolderId}
                   onChange={(event) => setEditGroupFolderId(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 >
                   <option value="">Uncategorized</option>
                   {folders.map((folder) => (
@@ -604,57 +592,40 @@ const PeopleGroupDetailPage = () => {
                   onChange={(event) => setEditGroupDescription(event.target.value)}
                   rows={4}
                   placeholder="Optional notes about this group..."
-                  className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <DialogFooter className="flex justify-end gap-2 pt-2">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="actsix-btn-outline"
                   onClick={() => setEditGroupOpen(false)}
                 >
                   Cancel
                 </Button>
 
-                <Button
-                  type="submit"
-                  className="actsix-btn-primary rounded-xl"
-                  disabled={!editGroupName.trim()}
-                >
+                <Button type="submit" className="actsix-btn-primary" disabled={!editGroupName.trim()}>
                   <Save className="h-4 w-4" />
                   Save Group
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
-          </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {addPeopleOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl overflow-visible border-border/70 bg-card shadow-card">
+      <Dialog open={addPeopleOpen} onOpenChange={setAddPeopleOpen}>
+        <DialogContent className="max-w-2xl overflow-visible p-0">
             <form onSubmit={addMembers} className="flex flex-col">
-              <div className="flex items-start justify-between gap-4 border-b border-border/70 p-6">
-                <div>
+              <div className="border-b border-border/70 p-6">
+                <DialogHeader className="text-left">
                   <p className="label-eyebrow">People Group</p>
-                  <h2 className="text-xl font-extrabold tracking-tight">
-                    Add People to {group.name}
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <DialogTitle className="text-xl">Add People to {group.name}</DialogTitle>
+                  <DialogDescription>
                     Select one or more People profiles to add to this group.
-                  </p>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setAddPeopleOpen(false)}
-                >
-                  Close
-                </Button>
+                  </DialogDescription>
+                </DialogHeader>
               </div>
 
               <div className="space-y-4 p-6">
@@ -682,11 +653,11 @@ const PeopleGroupDetailPage = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-border/70 bg-card p-6">
+              <DialogFooter className="flex justify-end gap-2 border-t border-border/70 bg-card p-6">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="actsix-btn-outline"
                   onClick={() => setAddPeopleOpen(false)}
                 >
                   Cancel
@@ -694,7 +665,7 @@ const PeopleGroupDetailPage = () => {
 
                 <Button
                   type="submit"
-                  className="actsix-btn-primary rounded-xl"
+                  className="actsix-btn-primary"
                   disabled={selectedPersonIds.length === 0}
                 >
                   <UserPlus className="h-4 w-4" />
@@ -702,11 +673,10 @@ const PeopleGroupDetailPage = () => {
                     ? `Add ${selectedPersonIds.length} People`
                     : "Add Person"}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
-          </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

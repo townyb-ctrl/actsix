@@ -238,6 +238,7 @@ const ServicePlannerTeamsPage = () => {
                     key={team.id}
                     role="button"
                     tabIndex={0}
+                    aria-label={`Open service team ${team.name}`}
                     onClick={() => navigate(`/service-planner/teams/${team.id}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -245,7 +246,7 @@ const ServicePlannerTeamsPage = () => {
                         navigate(`/service-planner/teams/${team.id}`);
                       }
                     }}
-                    className="flex min-h-[230px] cursor-pointer flex-col border-border/70 bg-card shadow-card overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg"
+                    className="flex min-h-[230px] cursor-pointer flex-col border-border/70 bg-card shadow-card overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                   >
                     <div className="flex-1 p-5">
                       <div className="flex items-start justify-between gap-4">

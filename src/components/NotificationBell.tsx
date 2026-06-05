@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Drawer,
   DrawerContent,
@@ -36,6 +37,8 @@ export function NotificationBell({
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const channelNameRef = useRef(
@@ -50,6 +53,9 @@ export function NotificationBell({
   const loadNotifications = async () => {
     if (!user) return;
 
+    setLoading(true);
+    setLoadError(null);
+
     const { data, error } = await (supabase as any)
       .from("notifications")
       .select("id, title, message, type, entity_type, entity_id, read_at, created_at")
@@ -59,10 +65,14 @@ export function NotificationBell({
 
     if (error) {
       console.error("Notification load error:", error.message);
+      setLoadError("Could not load notifications right now.");
+      setLoading(false);
+      toast.error("Could not load notifications.");
       return;
     }
 
     setNotifications(data || []);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -161,6 +171,7 @@ export function NotificationBell({
 
     if (error) {
       console.error("Notification read error:", error.message);
+      toast.error("Could not mark that notification as read.");
       return;
     }
 
@@ -184,6 +195,7 @@ export function NotificationBell({
 
     if (error) {
       console.error("Notification read-all error:", error.message);
+      toast.error("Could not mark notifications as read.");
       return;
     }
 
@@ -230,13 +242,39 @@ export function NotificationBell({
 
   const notificationRows = (
     <>
-      {notifications.length === 0 && (
-        <div className="p-4 text-sm text-muted-foreground">
-          No notifications yet.
+      {loading && (
+        <div className="actsix-loading-state min-h-[9rem] text-sm">
+          Loading notifications...
         </div>
       )}
 
-      {notifications.length > 0 && (
+      {!loading && loadError && (
+        <div className="flex min-h-[10rem] flex-col items-center justify-center gap-3 p-5 text-center">
+          <p className="text-sm font-semibold text-foreground">
+            Could not load notifications
+          </p>
+          <p className="max-w-[18rem] text-xs leading-5 text-muted-foreground">
+            Try again in a moment to check project, people, and service updates.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            onClick={loadNotifications}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {!loading && !loadError && notifications.length === 0 && (
+        <div className="actsix-empty-state min-h-[10rem] text-center text-sm">
+          Nothing new yet. Alerts for tasks, projects, and people activity will show up here.
+        </div>
+      )}
+
+      {!loading && !loadError && notifications.length > 0 && (
         <div className="min-h-0 flex-1 divide-y divide-border/70 overflow-y-auto bg-card">
           {notifications.map((notification) => (
             <button
@@ -288,7 +326,7 @@ export function NotificationBell({
           tone === "topbar"
             ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground transition hover:border-brand-teal/30 hover:bg-brand-teal/5 hover:text-brand-teal"
             : tone === "dock"
-              ? "group flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-[1.35rem] px-1 text-[10px] font-extrabold text-muted-foreground transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/25"
+              ? "actsix-mobile-dock-item group flex min-h-[58px] flex-col items-center justify-center gap-1"
             : `relative flex items-center justify-center rounded-xl transition ${
                 collapsed
                   ? "h-11 w-11 bg-sidebar-accent/60 text-sidebar-foreground hover:bg-sidebar-accent"
@@ -307,7 +345,7 @@ export function NotificationBell({
             tone === "topbar"
               ? "h-9 w-9"
               : tone === "dock"
-                ? "h-9 w-9 rounded-2xl transition group-hover:bg-brand-teal/5"
+                ? "actsix-mobile-dock-icon h-9 w-9 group-hover:bg-brand-teal/5"
               : "h-7 w-7 rounded-md bg-sidebar-accent/40"
           }`}
         >
@@ -320,7 +358,7 @@ export function NotificationBell({
         </span>
 
         {!collapsed && tone === "sidebar" && <span className="text-sm">Notifications</span>}
-        {tone === "dock" && <span className="max-w-[58px] truncate leading-none">Alerts</span>}
+        {tone === "dock" && <span className="max-w-[62px] truncate leading-none">Alerts</span>}
       </button>
 
       {isMobile && (
@@ -342,7 +380,7 @@ export function NotificationBell({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-9 rounded-xl text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+                  className="h-9 text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
                   onClick={markAllAsRead}
                   disabled={unreadCount === 0}
                   title="Mark all as read"
@@ -353,7 +391,7 @@ export function NotificationBell({
             </DrawerHeader>
 
             <div className="min-h-0 flex-1 overflow-hidden px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
-              <div className="flex max-h-[55svh] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-soft">
+              <div className="actsix-panel-soft flex max-h-[55svh] flex-col overflow-hidden">
                 {notificationRows}
               </div>
             </div>
@@ -364,7 +402,7 @@ export function NotificationBell({
       {!isMobile && open && createPortal(
         <div
           ref={panelRef}
-          className="fixed z-[1000] flex max-h-[21rem] w-[min(21.25rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-border/70 bg-card text-foreground shadow-card"
+          className="actsix-overlay-surface fixed z-[1000] flex max-h-[21rem] w-[min(21.25rem,calc(100vw-1.5rem))] flex-col overflow-hidden text-foreground"
           style={{
             left: panelPosition.left,
             top: panelPosition.top,
@@ -384,7 +422,7 @@ export function NotificationBell({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 rounded-lg text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
+              className="h-8 text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal"
               onClick={markAllAsRead}
               disabled={unreadCount === 0}
               title="Mark all as read"

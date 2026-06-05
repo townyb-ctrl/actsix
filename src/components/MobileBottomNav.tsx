@@ -347,14 +347,13 @@ const DockLink = ({ item, active }: { item: MobileDockLink; active: boolean }) =
       to={item.path}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex min-h-[54px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-[10px] font-extrabold text-muted-foreground transition",
-        "hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/25",
+        "actsix-mobile-dock-item group flex min-h-[58px] flex-col items-center justify-center gap-1",
         active && "text-brand-teal"
       )}
     >
       <span
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-xl transition",
+          "actsix-mobile-dock-icon",
           active
             ? "bg-brand-teal/10 shadow-[inset_0_0_0_1px_rgba(45,140,140,0.08)]"
             : "group-hover:bg-brand-teal/5"
@@ -362,7 +361,7 @@ const DockLink = ({ item, active }: { item: MobileDockLink; active: boolean }) =
       >
         <Icon className={cn("h-5 w-5 transition", active && "stroke-[2.45px]")} />
       </span>
-      <span className="max-w-[58px] truncate leading-none">{item.label}</span>
+      <span className="max-w-[62px] truncate leading-none">{item.label}</span>
     </Link>
   );
 };
@@ -385,15 +384,14 @@ const DockButton = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex min-h-[54px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-[10px] font-extrabold text-muted-foreground transition",
-        "hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/25",
+        "actsix-mobile-dock-item group flex min-h-[58px] flex-col items-center justify-center gap-1",
         active && "text-brand-teal",
         emphasis && "text-brand-teal hover:text-brand-teal"
       )}
     >
       <span
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-xl transition",
+          "actsix-mobile-dock-icon",
           emphasis
             ? "bg-brand-teal text-white shadow-[0_8px_18px_rgba(45,140,140,0.2)] group-hover:bg-brand-teal-dark"
             : active
@@ -403,7 +401,7 @@ const DockButton = ({
       >
         <Icon className="h-5 w-5" />
       </span>
-      <span className="max-w-[58px] truncate leading-none">{label}</span>
+      <span className="max-w-[62px] truncate leading-none">{label}</span>
     </button>
   );
 };
@@ -468,7 +466,7 @@ export function MobileBottomNav() {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] md:hidden">
       <div className="relative mx-auto max-w-md">
         <div
           className={cn(
@@ -516,8 +514,8 @@ export function MobileBottomNav() {
           })}
         </div>
 
-        <div className="relative overflow-visible rounded-[1.35rem] border border-border/75 bg-white/95 px-2 pb-1.5 pt-2.5 shadow-[0_-8px_26px_rgba(30,30,27,0.1)] backdrop-blur-xl before:absolute before:left-1/2 before:top-0 before:h-14 before:w-20 before:-translate-x-1/2 before:-translate-y-[40%] before:rounded-full before:bg-white/95 before:shadow-[0_0_0_1px_rgba(227,222,211,0.72)] before:content-['']">
-          <div className="relative z-10 grid grid-cols-[1fr_1fr_62px_1fr_1fr] items-end gap-1">
+        <div className="relative overflow-visible rounded-[var(--radius-panel)] border border-border/75 bg-white/95 px-2 pb-2 pt-2.5 shadow-[0_-8px_26px_rgba(30,30,27,0.1)] backdrop-blur-xl before:absolute before:left-1/2 before:top-0 before:h-14 before:w-20 before:-translate-x-1/2 before:-translate-y-[40%] before:rounded-full before:bg-white/95 before:shadow-[0_0_0_1px_rgba(227,222,211,0.72)] before:content-['']">
+          <div className="relative z-10 grid grid-cols-[1fr_1fr_62px_1fr_1fr] items-end gap-1.5">
             <DockLink
               item={{ icon: Home, label: "Home", path: "/" }}
               active={location.pathname === "/"}
@@ -546,7 +544,7 @@ export function MobileBottomNav() {
               >
                 <span
                   className={cn(
-                    "relative flex h-[44px] w-[44px] items-center justify-center overflow-hidden rounded-[0.9rem] ring-1 transition-all duration-200 ease-out",
+                    "relative flex h-[44px] w-[44px] items-center justify-center overflow-hidden rounded-[var(--radius-control)] ring-1 transition-all duration-200 ease-out",
                     switcherOpen
                       ? "bg-brand-teal text-white ring-brand-teal"
                       : "bg-brand-teal/[0.07] ring-brand-teal/10"
@@ -623,7 +621,7 @@ export function MobileBottomNav() {
                     navigate(item.path);
                   }}
                   className={cn(
-                    "group flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card p-3 text-left shadow-soft transition active:scale-[0.99]",
+                    "actsix-interactive-tile group flex min-h-[68px] items-center gap-3.5 p-3.5 text-left",
                     active
                       ? "border-brand-teal/35 bg-brand-teal/10"
                       : "border-border/70 hover:border-brand-teal/25 hover:bg-brand-teal/5"
@@ -631,19 +629,20 @@ export function MobileBottomNav() {
                 >
                   <div
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                      "flex h-11 w-11 shrink-0 items-center justify-center border",
                       active
                         ? "border-brand-teal/20 bg-brand-teal/10 text-brand-teal"
                         : "border-border/70 bg-background text-muted-foreground"
                     )}
+                    style={{ borderRadius: "var(--radius-panel)" }}
                   >
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-extrabold text-foreground group-hover:text-brand-teal">
+                    <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
                       {item.label}
                     </div>
-                    <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
+                    <div className="mt-0.5 truncate text-sm font-medium text-muted-foreground">
                       {item.description}
                     </div>
                   </div>
@@ -672,7 +671,8 @@ export function MobileBottomNav() {
               value={captureText}
               onChange={(event) => setCaptureText(event.target.value)}
               placeholder="Type a task, reminder, idea, follow-up, meeting note..."
-              className="min-h-[120px] resize-none rounded-2xl border-border/80 bg-card text-base shadow-soft focus-visible:ring-brand-teal/25"
+              className="min-h-[132px] resize-none border-border/80 bg-card px-4 py-3 text-base shadow-soft focus-visible:ring-brand-teal/25"
+              style={{ borderRadius: "var(--radius-panel)" }}
             />
 
             <div className="grid grid-cols-2 gap-2">
@@ -680,7 +680,7 @@ export function MobileBottomNav() {
                 type="button"
                 onClick={() => saveQuickCapture(false)}
                 disabled={captureSaving}
-                className="min-h-[48px] rounded-2xl bg-brand-teal px-4 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-teal-dark disabled:opacity-60"
+                className="actsix-btn-primary min-h-[48px] px-4 text-sm font-extrabold disabled:opacity-60"
               >
                 {captureSaving ? "Saving..." : "Save"}
               </button>
@@ -689,13 +689,13 @@ export function MobileBottomNav() {
                 type="button"
                 onClick={() => saveQuickCapture(true)}
                 disabled={captureSaving}
-                className="min-h-[48px] rounded-2xl border border-brand-teal/20 bg-brand-teal/10 px-4 text-sm font-extrabold text-brand-teal transition hover:bg-brand-teal/15 disabled:opacity-60"
+                className="actsix-btn-outline min-h-[48px] border-brand-teal/20 px-4 text-sm font-extrabold text-brand-teal disabled:opacity-60"
               >
                 Save & open
               </button>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-soft">
+            <div className="actsix-panel-soft p-3">
               <p className="text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground">
                 Capture examples
               </p>

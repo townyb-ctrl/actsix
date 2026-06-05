@@ -33,6 +33,8 @@ const MeetingsPage = () => {
   const { user } = useAuth();
 
   const [meetings, setMeetings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
 
@@ -45,6 +47,9 @@ const MeetingsPage = () => {
   const load = async () => {
     if (!user) return;
 
+    setLoading(true);
+    setLoadError(null);
+
     const { data, error } = await supabase
       .from("meetings")
       .select("*")
@@ -52,15 +57,23 @@ const MeetingsPage = () => {
       .order("meeting_time", { ascending: true });
 
     if (error) {
+      setLoadError("Could not load meetings right now.");
+      setLoading(false);
       toast.error(error.message);
       return;
     }
 
     setMeetings(data ?? []);
+    setLoading(false);
   };
 
   useEffect(() => {
-    if (user) load();
+    if (user) {
+      load();
+      return;
+    }
+
+    setLoading(false);
   }, [user]);
 
   const createMeeting = async (event: React.FormEvent) => {
@@ -187,19 +200,55 @@ const MeetingsPage = () => {
           </div>
 
           <div data-tour="meetings-list" className="divide-y divide-border/70">
-              {filteredMeetings.length === 0 && (
+              {loading && (
+                <div className="actsix-loading-state min-h-[16rem]">
+                  Loading meetings...
+                </div>
+              )}
+
+              {!loading && loadError && (
+                <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 p-8 text-center">
+                  <p className="text-sm font-semibold text-foreground">
+                    Could not load meetings
+                  </p>
+                  <p className="max-w-md text-sm text-muted-foreground">
+                    Try again to load agendas, meeting dates, and links.
+                  </p>
+                  <Button type="button" variant="outline" className="rounded-xl" onClick={load}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+
+              {!loading && !loadError && filteredMeetings.length === 0 && (
                 <div className="p-8 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
                     <CalendarDays className="h-5 w-5" />
                   </div>
-                  <p className="mt-3 text-sm font-semibold">No meetings found</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Create a meeting or adjust your search.
+                  <p className="mt-3 text-sm font-semibold">
+                    {search.trim() ? "No meetings match this search" : "No meetings yet"}
                   </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {search.trim()
+                      ? "Try a different meeting title or location."
+                      : "Create your first meeting to start tracking agendas, notes, and action points."}
+                  </p>
+                  {!search.trim() && (
+                    <div className="mt-4">
+                      <Button
+                        type="button"
+                        className="actsix-btn-primary rounded-xl"
+                        onClick={() => setAddOpen(true)}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Meeting
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {filteredMeetings.map((meeting) => (
+              {!loading && !loadError && filteredMeetings.map((meeting) => (
                 <Link
                   key={meeting.id}
                   to={`/meetings/${meeting.id}`}

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -480,7 +481,9 @@ const PersonDetailPage = () => {
   if (loading) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <p className="text-sm text-muted-foreground">Loading person...</p>
+        <Card className="actsix-panel p-6">
+          <div className="actsix-loading-state" role="status">Loading person profile...</div>
+        </Card>
       </div>
     );
   }
@@ -488,8 +491,8 @@ const PersonDetailPage = () => {
   if (!person) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="border-border/70 bg-card p-5 shadow-soft">
-          <p className="text-sm text-muted-foreground">Person not found.</p>
+        <Card className="actsix-panel p-6">
+          <div className="actsix-empty-state">Person not found.</div>
         </Card>
       </div>
     );
@@ -497,7 +500,7 @@ const PersonDetailPage = () => {
 
   return (
     <div className="w-full space-y-5 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
-      <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
+      <Card className="actsix-panel overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5">
           <div className="flex min-w-0 items-start gap-4">
             <PersonAvatar
@@ -549,7 +552,7 @@ const PersonDetailPage = () => {
                 href={getWhatsappHref(person.phone_number)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-brand-teal bg-brand-teal/10 px-3 text-sm font-bold text-brand-teal transition hover:bg-brand-teal/15"
+                className="actsix-btn-outline inline-flex h-9 gap-2 border-brand-teal px-3 text-sm font-bold text-brand-teal"
               >
                 <Send className="h-4 w-4" />
                 Message
@@ -558,7 +561,7 @@ const PersonDetailPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="cursor-not-allowed rounded-xl text-muted-foreground/50"
+                className="cursor-not-allowed text-muted-foreground/50"
                 disabled
                 title={person.phone_number ? "Invalid phone format. Use +27..." : "No phone number"}
               >
@@ -567,7 +570,7 @@ const PersonDetailPage = () => {
               </Button>
             )}
 
-            <label className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition ${canEditProfile ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed opacity-50"}`}>
+            <label className={`inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] border border-border bg-background px-4 text-sm font-bold text-foreground transition ${canEditProfile ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed opacity-50"}`}>
               <Camera className="h-4 w-4" />
               Upload Photo
               <input
@@ -587,7 +590,7 @@ const PersonDetailPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl text-muted-foreground"
+                className="actsix-btn-outline text-muted-foreground"
                 onClick={removeAvatar}
               >
                 <Trash2 className="h-4 w-4" />
@@ -596,14 +599,14 @@ const PersonDetailPage = () => {
             )}
 
             {!canEditProfile && (
-              <p className="max-w-xs text-xs font-medium leading-5 text-muted-foreground">
+              <div className="actsix-loading-state max-w-xs px-3 py-2 text-xs leading-5">
                 You can view this profile, but only admins/editors can edit other people.
-              </p>
+              </div>
             )}
 
             <Button
               type="button"
-              className="actsix-btn-primary rounded-xl"
+              className="actsix-btn-primary"
               onClick={() => setEditing(true)}
               disabled={!canEditProfile}
             >
@@ -614,7 +617,7 @@ const PersonDetailPage = () => {
 
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-5">
-            <Card className="border-border/70 bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-5">
               <p className="label-eyebrow">Profile Notes</p>
               <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
                 {person.notes || "No notes added yet."}
@@ -628,13 +631,13 @@ const PersonDetailPage = () => {
               </h2>
 
               {memberships.length === 0 && (
-                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                <div className="actsix-empty-state mt-4 bg-card/70 p-4 text-left">
                   This person is not linked to any teams yet. The next patch will connect team members to People profiles.
                 </div>
               )}
 
               {memberships.length > 0 && (
-                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                <div className="actsix-interactive-row mt-4 divide-y divide-border overflow-hidden bg-card">
                   {memberships.map((membership) => (
                     <div key={membership.id} className="flex items-center gap-3 px-4 py-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
@@ -655,7 +658,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="border-border/70 bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Groups</p>
@@ -666,20 +669,20 @@ const PersonDetailPage = () => {
 
                 <Link
                   to="/people/groups"
-                  className="inline-flex h-9 items-center justify-center rounded-xl border border-border bg-background px-3 text-sm font-bold text-foreground transition hover:bg-muted"
+                  className="actsix-btn-outline inline-flex h-9 px-3 text-sm font-bold text-foreground"
                 >
                   View Groups
                 </Link>
               </div>
 
               {groupMemberships.length === 0 && (
-                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                <div className="actsix-empty-state mt-4 bg-card/70 p-4 text-left">
                   This person is not part of any People Groups yet.
                 </div>
               )}
 
               {groupMemberships.length > 0 && (
-                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                <div className="actsix-interactive-row mt-4 divide-y divide-border overflow-hidden bg-card">
                   {groupMemberships.map((membership) => (
                     <Link
                       key={membership.id}
@@ -714,7 +717,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="border-border/70 bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Project Collaborations</p>
@@ -731,13 +734,13 @@ const PersonDetailPage = () => {
               </div>
 
               {projectCollaborations.length === 0 && (
-                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                <div className="actsix-empty-state mt-4 bg-card/70 p-4 text-left">
                   This person is not currently linked to any projects.
                 </div>
               )}
 
               {projectCollaborations.length > 0 && (
-                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                <div className="actsix-interactive-row mt-4 divide-y divide-border overflow-hidden bg-card">
                   {projectCollaborations.map((collaboration) => {
                     const linkedProject = getProjectForCollaboration(collaboration.project_id);
 
@@ -781,7 +784,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="border-border/70 bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Assigned Tasks</p>
@@ -798,13 +801,13 @@ const PersonDetailPage = () => {
               </div>
 
               {assignedTasks.length === 0 && (
-                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                <div className="actsix-empty-state mt-4 bg-card/70 p-4 text-left">
                   No tasks are currently assigned to this person.
                 </div>
               )}
 
               {assignedTasks.length > 0 && (
-                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                <div className="actsix-interactive-row mt-4 divide-y divide-border overflow-hidden bg-card">
                   {assignedTasks.slice(0, 8).map((task) => (
                     <div key={task.id} className="flex items-center gap-3 px-4 py-3">
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
@@ -856,20 +859,20 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="border-border/70 bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-5">
               <p className="label-eyebrow">Upcoming Services</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                 Scheduled to serve
               </h2>
 
               {upcomingServiceAssignments.length === 0 && (
-                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                <div className="actsix-empty-state mt-4 bg-card/70 p-4 text-left">
                   No upcoming service assignments linked to this person.
                 </div>
               )}
 
               {upcomingServiceAssignments.length > 0 && (
-                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                <div className="actsix-interactive-row mt-4 divide-y divide-border overflow-hidden bg-card">
                   {upcomingServiceAssignments.map((assignment) => {
                     const linkedService = getServiceForAssignment(assignment.service_id);
 
@@ -920,20 +923,20 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="border-border/70 bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-5">
               <p className="label-eyebrow">Past Serving History</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                 Previous assignments
               </h2>
 
               {pastServiceAssignments.length === 0 && (
-                <div className="mt-4 rounded-xl border border-dashed border-border bg-card/70 p-4 text-sm text-muted-foreground">
+                <div className="actsix-empty-state mt-4 bg-card/70 p-4 text-left">
                   No past service assignments linked to this person yet.
                 </div>
               )}
 
               {pastServiceAssignments.length > 0 && (
-                <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card">
+                <div className="actsix-interactive-row mt-4 divide-y divide-border overflow-hidden bg-card">
                   {pastServiceAssignments.slice(0, 8).map((assignment) => {
                     const linkedService = getServiceForAssignment(assignment.service_id);
 
@@ -991,7 +994,7 @@ const PersonDetailPage = () => {
             </Card>
           </div>
 
-          <Card className="border-border/70 bg-background/70 p-5">
+          <Card className="actsix-panel-soft bg-background/70 p-5">
             <p className="label-eyebrow">Profile Summary</p>
             <div className="mt-4 space-y-3 text-sm">
               <div>
@@ -1091,27 +1094,16 @@ const PersonDetailPage = () => {
         </div>
       </Card>
 
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
+      <Dialog open={editing} onOpenChange={(open) => !open && cancelEdit()}>
+        <DialogContent className="max-w-2xl">
             <form onSubmit={updatePerson} className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="label-eyebrow">People</p>
-                  <h2 className="text-xl font-extrabold leading-tight">
-                    Edit Profile
-                  </h2>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={cancelEdit}
-                >
-                  Close
-                </Button>
-              </div>
+              <DialogHeader>
+                <p className="label-eyebrow">People</p>
+                <DialogTitle className="text-xl">Edit Profile</DialogTitle>
+                <DialogDescription>
+                  Update this profile without changing workspace permissions or linked ministry records.
+                </DialogDescription>
+              </DialogHeader>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
@@ -1160,7 +1152,7 @@ const PersonDetailPage = () => {
                   <select
                     value={gender}
                     onChange={(event) => setGender(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                   >
                     <option value="">Not specified</option>
                     <option value="Male">Male</option>
@@ -1173,7 +1165,7 @@ const PersonDetailPage = () => {
                   <select
                     value={membershipStatus}
                     onChange={(event) => setMembershipStatus(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                   >
                     <option value="Member">Member</option>
                     <option value="Adherent">Adherent</option>
@@ -1187,30 +1179,29 @@ const PersonDetailPage = () => {
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                   rows={4}
-                  className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <DialogFooter className="flex justify-end gap-2 pt-2">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl"
+                  className="actsix-btn-outline"
                   onClick={cancelEdit}
                 >
                   <X className="h-4 w-4" />
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary">
                   <Save className="h-4 w-4" />
                   Save Profile
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
-          </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

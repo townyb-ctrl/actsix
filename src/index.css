@@ -42,6 +42,9 @@
     --radius-xl: 14px;
     --radius-2xl: 16px;
     --radius-pill: 999px;
+    --radius-control: 0.875rem;
+    --radius-panel: 1.25rem;
+    --radius-overlay: 1.125rem;
 
     --space-xs: 4px;
     --space-sm: 8px;
@@ -86,7 +89,7 @@
     --input: 38 22% 79%;
     --ring: 180 51% 36%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
     --brand-charcoal: 60 5% 11%;
     --brand-warm-white: 40 36% 95%;
@@ -211,6 +214,10 @@
   }
 
   @media (max-width: 767px) {
+    html {
+      font-size: 15px;
+    }
+
     body {
       background: var(--bg-main);
     }
@@ -238,6 +245,12 @@
       font-size: 16px;
     }
   }
+
+  @media (max-width: 390px) {
+    html {
+      font-size: 14.5px;
+    }
+  }
 }
 
 @layer utilities {
@@ -250,7 +263,8 @@
   }
 
   .action-row {
-    @apply rounded-md border border-transparent bg-background/45 transition-all;
+    @apply border border-transparent bg-background/45 transition-all;
+    border-radius: var(--radius-control);
   }
 
   .action-row:hover {
@@ -265,6 +279,7 @@
     justify-content: center;
     gap: 8px;
     min-height: 40px;
+    border-radius: var(--radius-control);
     background-color: hsl(var(--brand-teal));
     color: #ffffff;
     border: 1px solid hsl(var(--brand-teal));
@@ -283,6 +298,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    border-radius: var(--radius-control);
     background-color: hsl(var(--brand-teal) / 0.1);
     color: hsl(var(--brand-teal-dark));
     border: 1px solid hsl(var(--brand-teal) / 0.35);
@@ -295,11 +311,108 @@
     transform: translateY(-1px);
   }
 
+  .actsix-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    border-radius: var(--radius-control);
+    border: 1px solid hsl(var(--brand-teal) / 0.24);
+    background-color: hsl(var(--brand-teal) / 0.1);
+    color: hsl(var(--brand-teal-dark));
+    transition: var(--transition-normal);
+  }
+
+  .actsix-btn-outline:hover {
+    background-color: hsl(var(--brand-teal) / 0.16);
+    color: hsl(var(--brand-teal-dark));
+    transform: translateY(-1px);
+  }
+
+  .actsix-overlay-surface {
+    border: 1px solid hsl(var(--border) / 0.7);
+    border-radius: var(--radius-overlay);
+    background-color: hsl(var(--card));
+    box-shadow: var(--shadow-card);
+  }
+
   .actsix-card {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-panel);
     box-shadow: var(--shadow-sm);
+  }
+
+  .actsix-panel {
+    @apply border border-border/70 bg-card shadow-card;
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-panel-soft {
+    @apply border border-border/70 bg-card shadow-soft;
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-toolbar {
+    @apply border border-border/70 bg-card p-3 shadow-soft;
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-page-body {
+    @apply w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10;
+  }
+
+  .actsix-page-stack {
+    @apply space-y-6;
+  }
+
+  .actsix-empty-state {
+    @apply border border-dashed border-border/80 bg-background/70 px-5 py-7 text-center text-sm font-medium text-muted-foreground;
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-loading-state {
+    @apply border border-border/70 bg-background/55 px-5 py-6 text-sm font-medium text-muted-foreground;
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-segmented {
+    @apply flex border border-border/70 bg-background/55 p-1;
+    border-radius: var(--radius-control);
+  }
+
+  .actsix-segmented-item {
+    @apply text-muted-foreground transition hover:text-foreground;
+    border-radius: calc(var(--radius-control) - 0.25rem);
+  }
+
+  .actsix-segmented-item[data-state="active"] {
+    @apply bg-brand-teal text-white shadow-soft;
+  }
+
+  .actsix-interactive-tile {
+    @apply border border-border/70 bg-card text-left shadow-soft transition hover:border-brand-teal/30 hover:bg-brand-teal/5 active:scale-[0.99];
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-interactive-row {
+    @apply border border-border/70 bg-card transition hover:border-brand-teal/25 hover:bg-brand-teal/5;
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-filter-chip {
+    @apply inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors;
+  }
+
+  .actsix-mobile-dock-item {
+    @apply min-w-0 px-1 text-[11px] font-extrabold text-muted-foreground transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/25;
+    border-radius: var(--radius-panel);
+  }
+
+  .actsix-mobile-dock-icon {
+    @apply flex h-8 w-8 items-center justify-center transition;
+    border-radius: var(--radius-control);
   }
 
   .label-eyebrow {

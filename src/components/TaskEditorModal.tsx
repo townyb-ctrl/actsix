@@ -39,21 +39,33 @@ const TaskEditorModal = ({
 }: TaskEditorModalProps) => {
   if (!task) return null;
 
+  const titleId = "task-editor-title";
+  const descriptionId = "task-editor-description";
+  const destinationId = "task-editor-destination";
+  const taskTitleId = "task-editor-task-title";
+  const notesId = "task-editor-notes";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-      <Card className="flex max-h-[92svh] w-full max-w-4xl flex-col overflow-hidden rounded-b-none border-border/70 bg-card shadow-card sm:h-[88vh] sm:rounded-xl">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
+      <Card className="flex max-h-[92svh] w-full max-w-4xl flex-col overflow-hidden rounded-b-none border-border/70 bg-card shadow-card sm:h-[88vh] sm:rounded-[var(--radius-overlay)]">
         <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
           <div className="min-w-0">
             <p className="label-eyebrow">{eyebrow}</p>
-            <h2 className="mt-1 text-xl font-extrabold leading-tight">
+            <h2 id={titleId} className="mt-1 text-xl font-extrabold leading-tight">
               {title}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">
               {description}
             </p>
           </div>
 
-          <Button variant="ghost" size="icon" className="rounded-lg text-muted-foreground" onClick={onClose}>
+          <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={onClose} aria-label="Close task editor">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
           </Button>
@@ -66,12 +78,13 @@ const TaskEditorModal = ({
               <h3 className="font-extrabold">Destination</h3>
             </div>
 
-            <div className="rounded-lg border border-brand-teal/25 bg-brand-teal/5 p-3">
-              <label className="label-eyebrow">Where does this belong?</label>
+            <div className="actsix-interactive-row border-brand-teal/25 bg-brand-teal/5 p-3">
+              <label htmlFor={destinationId} className="label-eyebrow">Where does this belong?</label>
               <select
+                id={destinationId}
                 value="task"
                 disabled
-                className="mt-2 h-11 w-full rounded-md border border-border/70 bg-background px-3 text-sm opacity-80"
+                className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm opacity-80"
               >
                 <option value="task">Next Action</option>
               </select>
@@ -83,9 +96,10 @@ const TaskEditorModal = ({
           </section>
 
           <section className="grid gap-3">
-            <div className="rounded-lg border border-border/70 bg-background/45 p-3">
-              <label className="label-eyebrow">Title</label>
+            <div className="actsix-interactive-row bg-background/45 p-3">
+              <label htmlFor={taskTitleId} className="label-eyebrow">Title</label>
               <Input
+                id={taskTitleId}
                 value={task.title ?? ""}
                 onChange={(event) =>
                   onChange({ ...task, title: event.target.value })
@@ -95,17 +109,18 @@ const TaskEditorModal = ({
               />
             </div>
 
-            <div className="rounded-lg border border-border/70 bg-background/45 p-3">
-              <label className="label-eyebrow flex items-center gap-2">
+            <div className="actsix-interactive-row bg-background/45 p-3">
+              <label htmlFor={notesId} className="label-eyebrow flex items-center gap-2">
                 <FileText className="h-3.5 w-3.5" />
                 Notes
               </label>
               <textarea
+                id={notesId}
                 value={task.notes ?? ""}
                 onChange={(event) =>
                   onChange({ ...task, notes: event.target.value })
                 }
-                className="mt-2 min-h-28 w-full rounded-md border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="mt-2 min-h-28 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                 placeholder="Add details, links, thoughts, or next-step context..."
               />
             </div>
@@ -117,7 +132,7 @@ const TaskEditorModal = ({
             onRefreshOptions={onRefreshOptions}
           />
 
-          <section className="rounded-lg border border-border/70 bg-muted/30 p-3">
+          <section className="actsix-interactive-row bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h3 className="font-extrabold">Advanced</h3>
@@ -149,14 +164,14 @@ const TaskEditorModal = ({
           </p>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button variant="outline" className="rounded-lg" onClick={onClose}>
+            <Button variant="outline" className="actsix-btn-outline" onClick={onClose}>
               Cancel
             </Button>
 
             <Button
               disabled={saving}
               variant="outline"
-              className="rounded-lg border-brand-teal/50 bg-brand-teal/10 font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal"
+              className="actsix-btn-outline border-brand-teal/50 font-bold text-brand-teal hover:text-brand-teal"
               onClick={onSave}
             >
               <Save className="h-4 w-4 mr-2" />

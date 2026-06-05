@@ -25,23 +25,57 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   const [extra, setExtra] = useState("");
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = async () => {
-    const { data } = await supabase
+    if (!user) {
+      setItems([]);
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setLoadError(null);
+
+    const { data, error } = await supabase
       .from(cfg.table)
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+
+    if (error) {
+      setItems([]);
+      setLoading(false);
+      setLoadError(error.message);
+      toast.error(error.message);
+      return;
+    }
 
     setItems(data ?? []);
 
     if (cfg.table === "waiting_items") {
-      const { data: projectData } = await supabase
+      const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("id, name")
+        .eq("user_id", user.id)
         .order("name", { ascending: true });
 
+      if (projectError) {
+        setProjects([]);
+        setLoading(false);
+        setLoadError(projectError.message);
+        toast.error(projectError.message);
+        return;
+      }
+
       setProjects(projectData ?? []);
+    } else {
+      setProjects([]);
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -71,20 +105,39 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
       payload.category = extra.trim() || "General";
     }
 
-    await supabase.from(cfg.table).insert(payload);
+    const { error } = await supabase.from(cfg.table).insert(payload);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
 
     setVal("");
     setExtra("");
+    toast.success("Item added");
     load();
   };
 
   const remove = async (id: string) => {
-    await supabase.from(cfg.table).delete().eq("id", id);
-    load();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from(cfg.table)
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Item deleted");
+    await load();
   };
 
   const saveEdit = async () => {
-    if (!editingItem) return;
+    if (!editingItem || !user) return;
 
     setSaving(true);
 
@@ -106,7 +159,8 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
     const { error } = await supabase
       .from(cfg.table)
       .update(payload)
-      .eq("id", editingItem.id);
+      .eq("id", editingItem.id)
+      .eq("user_id", user.id);
 
     setSaving(false);
 
@@ -162,11 +216,33 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
         </Card>
 
         <Card className="divide-y divide-border shadow-card border-border/70 bg-card">
-          {items.length === 0 && (
+          {loading && (
+            <div className="actsix-loading-state min-h-[10rem]">
+              Loading {cfg.title.toLowerCase()}...
+            </div>
+          )}
+
+          {!loading && loadError && (
+            <div className="flex min-h-[10rem] flex-col items-start justify-center gap-3 p-6">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Could not load this list
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try again to refresh your saved items.
+                </p>
+              </div>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={load}>
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {!loading && !loadError && items.length === 0 && (
             <div className="p-6 text-sm text-muted-foreground">Nothing here yet.</div>
           )}
 
-          {items.map((it) => (
+          {!loading && !loadError && items.map((it) => (
             <div
               key={it.id}
               className="flex items-center gap-3 p-4 group hover:bg-muted/30"
@@ -375,8 +451,8 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               <Button
                 variant="ghost"
                 className="text-destructive hover:text-destructive"
-                onClick={() => {
-                  remove(editingItem.id);
+                onClick={async () => {
+                  await remove(editingItem.id);
                   setEditingItem(null);
                 }}
               >
