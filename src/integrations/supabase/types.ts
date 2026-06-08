@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -11,6 +11,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -639,6 +664,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "project_collaborators_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
         ]
       }
       project_sections: {
@@ -713,7 +745,7 @@ export type Database = {
         Insert: {
           area?: string
           created_at?: string
-          id: string
+          id?: string
           name: string
           next_action?: string
           notes?: string
@@ -1433,6 +1465,123 @@ export type Database = {
           },
         ]
       }
+      training_assignments: {
+        Row: {
+          assigned_by: string
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          person_id: string
+          progress: number
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          assigned_by: string
+          completed_at?: string | null
+          course_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          person_id: string
+          progress?: number
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          assigned_by?: string
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          person_id?: string
+          progress?: number
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "training_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignments_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_courses: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          estimated_minutes: number
+          id: string
+          modules: string[]
+          status: string
+          suggested_audience: string
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          estimated_minutes?: number
+          id?: string
+          modules?: string[]
+          status?: string
+          suggested_audience?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          estimated_minutes?: number
+          id?: string
+          modules?: string[]
+          status?: string
+          suggested_audience?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_courses_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_settings: {
         Row: {
           active_view: string
@@ -1507,6 +1656,52 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workspace_group_leaders: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          workspace_id: string
+          workspace_member_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          workspace_id: string
+          workspace_member_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          workspace_id?: string
+          workspace_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_group_leaders_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "people_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_group_leaders_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_group_leaders_workspace_member_id_fkey"
+            columns: ["workspace_member_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_members: {
         Row: {
@@ -1590,6 +1785,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      actsix_create_notification_for_person: {
+        Args: {
+          actor_person_id: string
+          notification_entity_id?: string
+          notification_entity_type?: string
+          notification_message?: string
+          notification_title: string
+          notification_type?: string
+          recipient_person_id: string
+        }
+        Returns: undefined
+      }
+      actsix_create_notification_for_user: {
+        Args: {
+          actor_person_id: string
+          notification_entity_id?: string
+          notification_entity_type?: string
+          notification_message?: string
+          notification_title: string
+          notification_type?: string
+          recipient_user_id: string
+        }
+        Returns: undefined
+      }
+      actsix_notify_project_participants: {
+        Args: {
+          actor_person_id: string
+          notification_message: string
+          notification_title: string
+          notification_type?: string
+          target_project_id: string
+        }
+        Returns: undefined
+      }
       add_meeting_folder_source: {
         Args: { p_folder_id: string; p_meeting_id: string }
         Returns: undefined
@@ -1602,16 +1831,49 @@ export type Database = {
         Args: { p_meeting_id: string; p_person_id: string }
         Returns: undefined
       }
-      create_notification_for_person: {
+      can_access_project: {
+        Args: { target_project_id: string }
+        Returns: boolean
+      }
+      can_current_user_edit_person: {
+        Args: { target_person_id: string }
+        Returns: boolean
+      }
+      create_notification_for_person:
+        | {
+            Args: {
+              p_entity_id?: string
+              p_entity_type?: string
+              p_message?: string
+              p_person_id: string
+              p_title: string
+              p_type?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              actor_person_id: string
+              notification_entity_id?: string
+              notification_entity_type?: string
+              notification_message?: string
+              notification_title: string
+              notification_type?: string
+              recipient_person_id: string
+            }
+            Returns: undefined
+          }
+      create_notification_for_user: {
         Args: {
-          p_entity_id?: string
-          p_entity_type?: string
-          p_message?: string
-          p_person_id: string
-          p_title: string
-          p_type?: string
+          actor_person_id: string
+          notification_entity_id?: string
+          notification_entity_type?: string
+          notification_message?: string
+          notification_title: string
+          notification_type?: string
+          recipient_user_id: string
         }
-        Returns: string
+        Returns: undefined
       }
       create_person_for_workspace_member: {
         Args: { p_workspace_member_id: string }
@@ -1625,11 +1887,16 @@ export type Database = {
         }
         Returns: string
       }
+      crypt: { Args: { password: string; salt: string }; Returns: string }
       current_user_can_access_meeting: {
         Args: { p_meeting_id: string }
         Returns: boolean
       }
       current_user_is_workspace_admin: { Args: never; Returns: boolean }
+      current_workspace_role: {
+        Args: { target_workspace_id: string }
+        Returns: string
+      }
       ensure_current_workspace_person: {
         Args: never
         Returns: {
@@ -1657,6 +1924,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      gen_salt: { Args: { salt_type: string }; Returns: string }
       get_current_workspace_id: { Args: never; Returns: string }
       get_current_workspace_invite_details: {
         Args: never
@@ -1678,6 +1946,52 @@ export type Database = {
           source_name: string
           status: string
         }[]
+      }
+      get_visible_project_for_current_user: {
+        Args: { target_project_id: string }
+        Returns: {
+          area: string
+          created_at: string
+          id: string
+          name: string
+          next_action: string
+          notes: string
+          open_tasks: number
+          position: number
+          progress: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "projects"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_visible_projects_for_current_user: {
+        Args: { target_workspace_id: string }
+        Returns: {
+          area: string
+          created_at: string
+          id: string
+          name: string
+          next_action: string
+          notes: string
+          open_tasks: number
+          position: number
+          progress: number
+          status: string
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "projects"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_workspace_members_for_current_user: {
         Args: { target_workspace_id: string }
@@ -1710,6 +2024,10 @@ export type Database = {
         Args: { workspace_join_code: string; workspace_join_phrase: string }
         Returns: string
       }
+      leave_current_workspace: {
+        Args: { target_workspace_id: string }
+        Returns: undefined
+      }
       link_workspace_member_to_person: {
         Args: { p_person_id: string; p_workspace_member_id: string }
         Returns: undefined
@@ -1718,6 +2036,7 @@ export type Database = {
         Args: { p_meeting_id: string; p_person_id: string }
         Returns: undefined
       }
+      sync_alpha_workspace_people_directory: { Args: never; Returns: undefined }
       sync_meeting_people_from_sources: {
         Args: { p_meeting_id: string }
         Returns: undefined
@@ -1733,6 +2052,42 @@ export type Database = {
       update_workspace_member_role: {
         Args: { next_role: string; target_member_id: string }
         Returns: undefined
+      }
+      update_workspace_person_profile: {
+        Args: {
+          next_email: string
+          next_first_name: string
+          next_gender: string
+          next_last_name: string
+          next_membership_status: string
+          next_notes: string
+          next_phone_number: string
+          target_person_id: string
+        }
+        Returns: {
+          auth_user_id: string | null
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string
+          email: string | null
+          first_name: string
+          gender: string | null
+          id: string
+          last_name: string | null
+          membership_status: string | null
+          notes: string | null
+          phone_number: string | null
+          updated_at: string | null
+          user_id: string
+          whatsapp_enabled: boolean | null
+          workspace_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "people"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
@@ -1862,6 +2217,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
