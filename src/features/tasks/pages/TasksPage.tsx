@@ -77,6 +77,7 @@ const TasksPage = () => {
   const { person: currentPerson } = useCurrentPerson();
 
   const [tasks, setTasks] = useState<any[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -92,7 +93,12 @@ const TasksPage = () => {
   const [sortBy, setSortBy] = useState("due");
 
   const load = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoadingTasks(false);
+      return;
+    }
+
+    setLoadingTasks(true);
 
     const { data, error } = await supabase
       .from("tasks")
@@ -102,10 +108,12 @@ const TasksPage = () => {
 
     if (error) {
       toast.error(error.message);
+      setLoadingTasks(false);
       return;
     }
 
     setTasks(data ?? []);
+    setLoadingTasks(false);
   };
 
   useEffect(() => {
@@ -336,7 +344,7 @@ const TasksPage = () => {
       />
 
       <div className="-mt-1 w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        {tasks.length === 0 && (
+        {!loadingTasks && tasks.length === 0 && (
           <Card
             data-tour="tasks-gtd-primer"
             className="overflow-hidden border-brand-teal/25 bg-card shadow-card"
@@ -564,7 +572,13 @@ const TasksPage = () => {
           </div>
 
           <Card data-tour="tasks-list" className="p-2 space-y-1.5 shadow-card border-border/70 bg-card">
-            {filteredOpen.length === 0 && (
+            {loadingTasks && (
+              <div className="p-6 text-sm font-semibold text-muted-foreground">
+                Loading next actions...
+              </div>
+            )}
+
+            {!loadingTasks && filteredOpen.length === 0 && (
               <div className="p-6 text-sm text-muted-foreground">
                 No open actions match this view.
               </div>
