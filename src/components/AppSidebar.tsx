@@ -297,7 +297,7 @@ export function AppSidebar() {
           className={
             collapsed
               ? "flex h-20 flex-col items-center justify-center gap-2 px-0 py-2"
-              : "flex h-[5.75rem] items-center gap-3 px-3 py-3"
+              : "flex h-[4.75rem] items-center gap-2.5 px-3 py-2.5"
           }
         >
           <NavLink
@@ -329,12 +329,12 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent data-tour="sidebar-primary-nav">
             {!collapsed && isAlphaMode && (
-              <div className="mx-1.5 mb-3 rounded-xl border border-brand-teal/35 bg-brand-teal/15 px-3 py-2 text-sm font-bold text-brand-teal-bright">
+              <div className="mx-1.5 mb-2 rounded-xl border border-brand-teal/35 bg-brand-teal/15 px-3 py-1.5 text-[12px] font-bold text-brand-teal-bright">
                 {getReleaseLabel()} Mode
               </div>
             )}
 
-            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1.5 px-1"}>
+            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 px-1"}>
               {visibleSections.map((section) => {
                 const SectionIcon = section.icon;
                 const sectionActive = section.id === activeSection?.id;
@@ -344,7 +344,7 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem
                     key={section.id}
-                    className={cn(section.id === "settings" && !collapsed && "mt-3 border-t border-sidebar-border/70 pt-3")}
+                    className={cn(section.id === "settings" && !collapsed && "mt-2 border-t border-sidebar-border/70 pt-2.5")}
                   >
                     {collapsed ? (
                       <SidebarMenuButton
@@ -365,7 +365,7 @@ export function AppSidebar() {
                       <>
                         <div
                           className={cn(
-                            "flex h-11 w-full items-center overflow-hidden rounded-xl transition-colors",
+                            "flex h-10 w-full items-center overflow-hidden rounded-xl transition-colors",
                             sectionActive
                               ? "bg-brand-teal text-white shadow-[0_10px_24px_rgba(45,140,140,0.22)]"
                               : "text-sidebar-foreground/74 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
@@ -373,10 +373,10 @@ export function AppSidebar() {
                         >
                           <NavLink
                             to={section.url}
-                            className="flex h-full min-w-0 flex-1 items-center gap-3 px-3 text-left"
+                            className="flex h-full min-w-0 flex-1 items-center gap-2.5 px-3 text-left"
                           >
-                            <SectionIcon className="h-[18px] w-[18px] shrink-0" />
-                            <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold">
+                            <SectionIcon className="h-4 w-4 shrink-0" />
+                            <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold">
                               {section.title}
                             </span>
                           </NavLink>
@@ -384,7 +384,7 @@ export function AppSidebar() {
                           <button
                             type="button"
                             className={cn(
-                              "flex h-full w-11 shrink-0 items-center justify-center transition-colors",
+                              "flex h-full w-10 shrink-0 items-center justify-center transition-colors",
                               sectionActive
                                 ? "text-white/90 hover:bg-white/10"
                                 : "text-sidebar-foreground/45 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground"
@@ -403,7 +403,7 @@ export function AppSidebar() {
                         </div>
 
                         {sectionOpen && (
-                          <div className="ml-[1.65rem] mt-1.5 space-y-1 border-l border-sidebar-border/70 pb-1 pl-3">
+                          <div className="ml-[1.45rem] mt-1 space-y-0.5 border-l border-sidebar-border/70 pb-0.5 pl-2.5">
                             {section.items.map((item) => {
                               const ItemIcon = item.icon;
                               const itemActive = isItemActive(section, item);
@@ -413,13 +413,13 @@ export function AppSidebar() {
                                   key={item.url}
                                   to={item.url}
                                   className={cn(
-                                    "flex min-h-9 items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition",
+                                    "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition",
                                     itemActive
                                       ? "bg-sidebar-accent/85 text-sidebar-foreground"
                                       : "text-sidebar-foreground/62 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                                   )}
                                 >
-                                  <ItemIcon className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/45" />
+                                  <ItemIcon className="h-3 w-3 shrink-0 text-sidebar-foreground/45" />
                                   <span className="min-w-0 flex-1 truncate">{item.title}</span>
                                   {renderBadge(item)}
                                 </NavLink>
@@ -463,14 +463,14 @@ export function AppSidebar() {
                         to={section.url}
                         data-tour={section.id === "home" ? "module-menu" : undefined}
                         className={cn(
-                          "flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left transition-colors",
+                          "flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left transition-colors",
                           sectionActive
                             ? "bg-brand-teal text-white shadow-[0_10px_24px_rgba(45,140,140,0.22)]"
                             : "text-sidebar-foreground/74 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                         )}
                       >
-                        <SectionIcon className="h-[18px] w-[18px] shrink-0" />
-                        <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold">
+                        <SectionIcon className="h-4 w-4 shrink-0" />
+                        <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold">
                           {section.title}
                         </span>
                       </NavLink>
@@ -481,7 +481,7 @@ export function AppSidebar() {
             </SidebarMenu>
 
             {!collapsed && inactiveOptionalSections.length > 0 && (
-              <div className="mx-1.5 mt-4 border-t border-sidebar-border/70 pt-3">
+              <div className="mx-1.5 mt-3 border-t border-sidebar-border/70 pt-2.5">
                 <p className="px-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-sidebar-foreground/40">
                   Available Modules
                 </p>
@@ -493,7 +493,7 @@ export function AppSidebar() {
                       <NavLink
                         key={section.id}
                         to={section.url}
-                        className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold text-sidebar-foreground/55 transition hover:bg-sidebar-accent/45 hover:text-sidebar-foreground"
+                        className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-sidebar-foreground/55 transition hover:bg-sidebar-accent/45 hover:text-sidebar-foreground"
                       >
                         <SectionIcon className="h-3.5 w-3.5 shrink-0" />
                         <span className="min-w-0 flex-1 truncate">{section.title}</span>

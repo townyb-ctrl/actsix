@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  Camera,
   Clock3,
   Eye,
   Filter,
@@ -48,6 +49,7 @@ type TrainingCourse = {
   user_id: string;
   title: string;
   category: string;
+  cover_image_url: string;
   description: string;
   estimated_minutes: number;
   status: "Active" | "Draft" | "Archived";
@@ -116,10 +118,12 @@ type PersonOption = {
 };
 
 type PanelMode = "course" | "assign" | "new" | "edit";
+type TrainingAdminView = "library" | "progress" | "activity";
 
 const emptyCourseForm = {
   title: "",
   category: "",
+  coverImageUrl: "",
   description: "",
   estimatedMinutes: "45",
   status: "Active" as TrainingCourse["status"],
@@ -326,6 +330,7 @@ const TrainingCenter = () => {
   const [people, setPeople] = useState<PersonOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -341,6 +346,7 @@ const TrainingCenter = () => {
   const [previewLessonId, setPreviewLessonId] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>("course");
   const [panelOpen, setPanelOpen] = useState(false);
+  const [adminView, setAdminView] = useState<TrainingAdminView>("library");
 
   const canManageTraining = ["admin", "editor", "group_leader"].includes(role || "");
   const lessonTitleCount = courseLessons.filter((lesson) => lesson.title.trim()).length;
@@ -512,6 +518,14 @@ const TrainingCenter = () => {
     };
   }, [myTrainingAssignments]);
 
+  const nextTrainingAssignment = useMemo(() => {
+    return (
+      myTrainingAssignments.find((assignment) => assignment.status !== "Complete") ||
+      myTrainingAssignments[0] ||
+      null
+    );
+  }, [myTrainingAssignments]);
+
   const selectedCourseAssignments = useMemo(() => {
     if (!selectedCourse) return [];
     return assignments.filter((assignment) => assignment.course_id === selectedCourse.id);
@@ -618,6 +632,39 @@ const TrainingCenter = () => {
     },
   ];
 
+  const adminViews: Array<{
+    id: TrainingAdminView;
+    label: string;
+    count: number;
+  }> = [
+    { id: "library", label: "Library", count: filteredCourses.length },
+    { id: "progress", label: "Progress", count: progressRows.length },
+    { id: "activity", label: "Activity", count: recentTrainingActivity.length },
+  ];
+
+  const attentionAssignments = useMemo(() => {
+    return assignments
+      .map((assignment) => {
+        const dueState = getTrainingDueState(assignment.due_date, assignment.status);
+        return {
+          assignment,
+          dueState,
+          course: coursesById[assignment.course_id],
+          person: peopleById[assignment.person_id],
+        };
+      })
+      .filter(({ assignment, dueState }) => assignment.status !== "Complete" && dueState !== "none")
+      .sort((a, b) => {
+        const rank = { overdue: 0, "due-soon": 1, scheduled: 2, complete: 3, none: 4 };
+        const rankDiff = rank[a.dueState] - rank[b.dueState];
+        if (rankDiff !== 0) return rankDiff;
+        return (a.assignment.due_date || "9999-12-31").localeCompare(
+          b.assignment.due_date || "9999-12-31"
+        );
+      })
+      .slice(0, 4);
+  }, [assignments, coursesById, peopleById]);
+
   const openPanel = (mode: PanelMode, course?: TrainingCourse) => {
     setPanelMode(mode);
     setSelectedCourse(course ?? null);
@@ -643,6 +690,7 @@ const TrainingCenter = () => {
       title: course.title,
       category: course.category,
       description: course.description,
+      coverImageUrl: course.cover_image_url || "",
       estimatedMinutes: String(course.estimated_minutes),
       status: course.status,
       suggestedAudience: course.suggested_audience,
@@ -780,6 +828,7 @@ const TrainingCenter = () => {
     const payload = {
       title: courseForm.title.trim(),
       category: courseForm.category.trim() || "General",
+      cover_image_url: courseForm.coverImageUrl.trim(),
       description: courseForm.description.trim(),
       estimated_minutes: Number(courseForm.estimatedMinutes) || 30,
       status: courseForm.status,
@@ -809,6 +858,13 @@ const TrainingCenter = () => {
 
     if (courseResult.error) {
       setSaving(false);
+      if (
+        courseResult.error.message.includes("cover_image_url") ||
+        courseResult.error.code === "PGRST204"
+      ) {
+        toast.error("Apply the training cover image migration in Supabase, then save again.");
+        return;
+      }
       toast.error(courseResult.error.message);
       return;
     }
@@ -931,6 +987,57 @@ const TrainingCenter = () => {
     toast.success("Training assigned");
     setPanelOpen(false);
     loadTraining();
+  };
+
+  const uploadCourseCover = async (file?: File | null) => {
+    if (!workspace?.id || !user?.id || !canManageTraining || !file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const filePath = `${workspace.id}/${user.id}-${Date.now()}.${fileExt}`;
+
+    setUploadingCover(true);
+    toast.info("Uploading course cover...");
+
+    const { error: uploadError } = await supabase.storage
+      .from("training-course-covers")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (uploadError) {
+      setUploadingCover(false);
+      if (uploadError.message.toLowerCase().includes("bucket not found")) {
+        toast.error("Create the training-course-covers storage bucket in Supabase, then upload again.");
+        return;
+      }
+      if (uploadError.message.toLowerCase().includes("row-level security")) {
+        toast.error("Add the training-course-covers storage policies in Supabase, then upload again.");
+        return;
+      }
+      toast.error(uploadError.message);
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from("training-course-covers")
+      .getPublicUrl(filePath);
+
+    setUploadingCover(false);
+
+    if (!data.publicUrl) {
+      toast.error("Could not generate public image URL.");
+      return;
+    }
+
+    setCourseForm((current) => ({ ...current, coverImageUrl: data.publicUrl }));
+    toast.success("Course cover uploaded");
   };
 
   const updateAssignment = async (
@@ -1128,26 +1235,77 @@ const TrainingCenter = () => {
         />
 
         <div className="actsix-page-body actsix-page-stack pt-5 pb-12 sm:pt-6">
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            {learnerSummaryCards.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Card key={item.label} className="actsix-panel-soft border-border/60 p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="label-eyebrow">{item.label}</p>
-                      <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground">
-                        {loading ? "..." : item.value}
-                      </p>
-                    </div>
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
-                      <Icon className="h-5 w-5" />
-                    </span>
+          <section className="actsix-panel-soft overflow-hidden border border-border/60 bg-card">
+            <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_20rem]">
+              <div className="p-4 sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="label-eyebrow">My Training</p>
+                    <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                      {nextTrainingAssignment
+                        ? coursesById[nextTrainingAssignment.course_id]?.title || "Training Course"
+                        : "No training assigned"}
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">
+                      {nextTrainingAssignment
+                        ? coursesById[nextTrainingAssignment.course_id]?.description ||
+                          "Open the course to see the training details."
+                        : "Assigned courses will appear here when your team adds training for you."}
+                    </p>
                   </div>
-                </Card>
-              );
-            })}
+
+                  {nextTrainingAssignment && (
+                    <Button
+                      className="actsix-btn-primary w-full sm:w-auto"
+                      onClick={() => {
+                        const course = coursesById[nextTrainingAssignment.course_id] || null;
+                        setSelectedCourse(course);
+                        setSelectedAssignment(nextTrainingAssignment);
+                        setPanelMode("course");
+                        setPanelOpen(true);
+                      }}
+                      disabled={!coursesById[nextTrainingAssignment.course_id]}
+                    >
+                      <Eye className="h-4 w-4" />
+                      Open Next Course
+                    </Button>
+                  )}
+                </div>
+
+                {nextTrainingAssignment && (
+                  <div className="mt-5">
+                    <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-muted-foreground">
+                      <span>{nextTrainingAssignment.status}</span>
+                      <span>{nextTrainingAssignment.progress}%</span>
+                    </div>
+                    <Progress value={nextTrainingAssignment.progress} className="h-2 bg-muted" />
+                  </div>
+                )}
+              </div>
+
+              <aside className="border-t border-border/70 bg-muted/35 p-4 sm:p-5 xl:border-l xl:border-t-0">
+                <p className="label-eyebrow">Summary</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {learnerSummaryCards.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <div key={item.label} className="rounded-xl bg-background px-3 py-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
+                            {item.label}
+                          </p>
+                          <Icon className="h-3.5 w-3.5 shrink-0 text-brand-teal" />
+                        </div>
+                        <p className="mt-1 text-xl font-extrabold tracking-tight">
+                          {loading ? "..." : item.value}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </aside>
+            </div>
           </section>
 
           <Card className="actsix-panel-soft overflow-hidden border-border/60">
@@ -1497,28 +1655,121 @@ const TrainingCenter = () => {
       />
 
       <div className="actsix-page-body actsix-page-stack pt-5 pb-12 sm:pt-6">
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {summaryCards.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <Card key={item.label} className="actsix-panel-soft border-border/60 p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="label-eyebrow">{item.label}</p>
-                    <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground">
-                      {loading ? "..." : item.value}
-                    </p>
-                  </div>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
-                    <Icon className="h-5 w-5" />
-                  </span>
+        <section className="actsix-panel-soft overflow-hidden border border-border/60 bg-card">
+          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="p-4 sm:p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="label-eyebrow">Command Center</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    Training at a glance
+                  </h2>
                 </div>
-              </Card>
-            );
-          })}
+
+                <div className="flex rounded-xl border border-border/70 bg-background p-1">
+                  {adminViews.map((view) => (
+                    <button
+                      key={view.id}
+                      type="button"
+                      onClick={() => setAdminView(view.id)}
+                      className={cn(
+                        "flex min-w-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-extrabold transition",
+                        adminView === view.id
+                          ? "bg-brand-teal text-white shadow-soft"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <span>{view.label}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums",
+                          adminView === view.id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {loading ? "..." : view.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                {summaryCards.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <div
+                      key={item.label}
+                      className="flex min-w-0 items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-2.5"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
+                          {item.label}
+                        </p>
+                        <p className="text-xl font-extrabold tracking-tight">
+                          {loading ? "..." : item.value}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <aside className="border-t border-border/70 bg-muted/35 p-4 sm:p-5 xl:border-l xl:border-t-0">
+              <div className="flex items-center justify-between gap-3">
+                <p className="label-eyebrow">Needs Attention</p>
+                <Badge variant="outline" className="border-brand-amber/25 bg-brand-amber/10 text-brand-amber">
+                  {loading ? "..." : attentionAssignments.length}
+                </Badge>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {loading && (
+                  <div className="rounded-xl bg-background px-3 py-2 text-sm font-bold text-muted-foreground">
+                    Loading training status...
+                  </div>
+                )}
+
+                {!loading && attentionAssignments.length === 0 && (
+                  <div className="rounded-xl bg-background px-3 py-2 text-sm font-bold text-muted-foreground">
+                    No urgent training due dates.
+                  </div>
+                )}
+
+                {!loading &&
+                  attentionAssignments.map(({ assignment, course, person, dueState }) => (
+                    <div key={assignment.id} className="rounded-xl bg-background px-3 py-2.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-extrabold">
+                            {person?.display_name || "Unknown person"}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs font-bold text-muted-foreground">
+                            {course?.title || "Training Course"}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className={dueStateBadge(dueState).className}>
+                          {dueStateBadge(dueState).label}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <Progress value={assignment.progress} className="h-1.5 bg-muted" />
+                        <span className="w-9 text-right text-[11px] font-extrabold tabular-nums text-muted-foreground">
+                          {assignment.progress}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </aside>
+          </div>
         </section>
 
+        {adminView === "library" && (
         <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative min-w-0 flex-1">
@@ -1561,10 +1812,12 @@ const TrainingCenter = () => {
             </div>
           </div>
         </Card>
+        )}
 
-        <section className="grid gap-4 xl:grid-cols-2">
+        {adminView === "library" && (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {loading && (
-            <Card className="actsix-loading-state xl:col-span-2" role="status">
+            <Card className="actsix-loading-state md:col-span-2 xl:col-span-3 2xl:col-span-4" role="status">
               Loading training center...
             </Card>
           )}
@@ -1573,76 +1826,96 @@ const TrainingCenter = () => {
             filteredCourses.map((course) => (
               <Card
                 key={course.id}
-                className="actsix-panel-soft flex flex-col border-border/60 p-5 sm:p-6"
+                className="actsix-panel-soft flex min-w-0 flex-col overflow-hidden border-border/60 p-0"
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <h2 className="text-xl font-extrabold tracking-tight text-foreground">
-                      {course.title}
-                    </h2>
-                    <Badge
-                      variant="outline"
-                      className="mt-2 border-brand-teal/25 bg-brand-teal/10 text-brand-teal"
-                    >
-                      {course.category}
-                    </Badge>
-                  </div>
+                <div className="relative aspect-[16/7] overflow-hidden bg-muted">
+                  {course.cover_image_url ? (
+                    <img
+                      src={course.cover_image_url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-brand-teal/10 text-brand-teal">
+                      <GraduationCap className="h-9 w-9" />
+                    </div>
+                  )}
 
-                  <Badge variant="outline" className={cn("w-fit", statusBadgeClass(course.status))}>
+                  <Badge
+                    variant="outline"
+                    className={cn("absolute right-3 top-3 w-fit bg-background/90 backdrop-blur", statusBadgeClass(course.status))}
+                  >
                     {course.status}
                   </Badge>
                 </div>
 
-                <p className="mt-4 flex-1 text-sm font-medium leading-6 text-muted-foreground">
-                  {course.description || "No course description yet."}
-                </p>
+                <div className="flex flex-1 flex-col p-3">
+                  <div className="min-w-0">
+                    <h2 className="line-clamp-2 min-h-[3rem] text-base font-extrabold leading-6 tracking-tight text-foreground">
+                      {course.title}
+                    </h2>
+                    <Badge variant="outline" className="mt-1.5 max-w-full border-brand-teal/25 bg-brand-teal/10 px-2 py-0.5 text-[11px] text-brand-teal">
+                      <span className="truncate">{course.category}</span>
+                    </Badge>
+                  </div>
 
-                <div className="mt-5 flex flex-wrap gap-2 text-sm font-bold text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    {course.estimated_minutes} min
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
-                    <BookOpen className="h-3.5 w-3.5" />
-                    {(lessonsByCourseId[course.id]?.length || course.modules.length || 0)} lessons
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
-                    <Users className="h-3.5 w-3.5" />
-                    {assignmentCountByCourse[course.id] || 0} assigned
-                  </span>
-                </div>
+                  <p className="mt-2 line-clamp-2 min-h-[2.75rem] text-xs font-medium leading-5 text-muted-foreground">
+                    {course.description || "No course description yet."}
+                  </p>
 
-                <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    variant="outline"
-                    className="actsix-btn-outline flex-1"
-                    onClick={() => openPanel("course", course)}
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Course
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="actsix-btn-outline flex-1"
-                    onClick={() => editCourse(course)}
-                    disabled={!canManageTraining}
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button
-                    className="actsix-btn-primary flex-1"
-                    onClick={() => openPanel("assign", course)}
-                    disabled={!canManageTraining}
-                  >
-                    Assign
-                  </Button>
+                  <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-bold text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+                      <Clock3 className="h-3 w-3" />
+                      {course.estimated_minutes} min
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+                      <BookOpen className="h-3 w-3" />
+                      {(lessonsByCourseId[course.id]?.length || course.modules.length || 0)} lessons
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+                      <Users className="h-3 w-3" />
+                      {assignmentCountByCourse[course.id] || 0} assigned
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-[2.25rem_2.25rem_minmax(0,1fr)] gap-1.5">
+                    <Button
+                      variant="outline"
+                      title="View course"
+                      aria-label={`View ${course.title}`}
+                      size="sm"
+                      className="actsix-btn-outline h-8 min-w-0 px-0"
+                      onClick={() => openPanel("course", course)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      title="Edit course"
+                      aria-label={`Edit ${course.title}`}
+                      size="sm"
+                      className="actsix-btn-outline h-8 min-w-0 px-0"
+                      onClick={() => editCourse(course)}
+                      disabled={!canManageTraining}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="actsix-btn-primary h-8 min-w-0 px-2 text-xs"
+                      onClick={() => openPanel("assign", course)}
+                      disabled={!canManageTraining}
+                    >
+                      <span className="truncate">Assign</span>
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}
 
           {!loading && filteredCourses.length === 0 && (
-            <Card className="actsix-panel-soft border-border/60 p-8 text-center xl:col-span-2">
+            <Card className="actsix-panel-soft border-border/60 p-8 text-center md:col-span-2 xl:col-span-3 2xl:col-span-4">
               <p className="text-lg font-extrabold">No training resources found</p>
               <p className="mt-2 text-sm font-medium text-muted-foreground">
                 Adjust your filters or create the first training course for this workspace.
@@ -1650,7 +1923,9 @@ const TrainingCenter = () => {
             </Card>
           )}
         </section>
+        )}
 
+        {adminView === "progress" && (
         <Card className="actsix-panel-soft overflow-hidden border-border/60">
           <div className="border-b border-border/70 p-5 sm:p-6">
             <div className="flex items-center gap-3">
@@ -1712,7 +1987,9 @@ const TrainingCenter = () => {
             </TableBody>
           </Table>
         </Card>
+        )}
 
+        {adminView === "activity" && (
         <Card className="actsix-panel-soft overflow-hidden border-border/60">
           <div className="border-b border-border/70 p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1803,6 +2080,7 @@ const TrainingCenter = () => {
             </div>
           )}
         </Card>
+        )}
       </div>
 
       <ResponsiveModal
@@ -1839,6 +2117,17 @@ const TrainingCenter = () => {
 
           {panelMode === "course" && selectedCourse && (
             <div className="mt-6 space-y-5">
+              {selectedCourse.cover_image_url && (
+                <div className="aspect-[16/9] overflow-hidden rounded-xl bg-muted">
+                  <img
+                    src={selectedCourse.cover_image_url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="border-brand-teal/25 bg-brand-teal/10 text-brand-teal">
@@ -2146,6 +2435,44 @@ const TrainingCenter = () => {
                     className="mt-2 h-11 rounded-xl border-border/70 bg-background"
                   />
                 </label>
+              </div>
+
+              <div className="block">
+                <span className="label-eyebrow">Cover image URL</span>
+                <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <Input
+                    value={courseForm.coverImageUrl}
+                    onChange={(event) =>
+                      setCourseForm((current) => ({ ...current, coverImageUrl: event.target.value }))
+                    }
+                    placeholder="https://example.com/training-cover.jpg"
+                    className="h-10 rounded-xl border-border/70 bg-background"
+                  />
+                  <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm font-bold text-foreground transition hover:bg-muted">
+                    <Camera className="h-4 w-4" />
+                    {uploadingCover ? "Uploading..." : "Upload"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingCover || !canManageTraining}
+                      onChange={(event) => {
+                        uploadCourseCover(event.target.files?.[0]).finally(() => {
+                          event.currentTarget.value = "";
+                        });
+                      }}
+                    />
+                  </label>
+                </div>
+                {courseForm.coverImageUrl && (
+                  <div className="mt-3 aspect-[16/7] overflow-hidden rounded-xl bg-muted">
+                    <img
+                      src={courseForm.coverImageUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
               </div>
 
               <label className="block">

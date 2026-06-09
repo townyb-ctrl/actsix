@@ -1342,6 +1342,7 @@ export type Database = {
       someday_items: {
         Row: {
           category: string
+          cover_image_url: string
           created_at: string
           created_on: string
           id: string
@@ -1353,6 +1354,7 @@ export type Database = {
         }
         Insert: {
           category?: string
+          cover_image_url?: string
           created_at?: string
           created_on?: string
           id: string
@@ -1364,6 +1366,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          cover_image_url?: string
           created_at?: string
           created_on?: string
           id?: string
