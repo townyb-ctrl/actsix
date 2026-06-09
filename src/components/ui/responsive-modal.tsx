@@ -21,6 +21,8 @@ interface ResponsiveModalProps {
   title: string;
   description?: string;
   children: React.ReactNode;
+  className?: string;
+  bodyClassName?: string;
 }
 
 export function ResponsiveModal({
@@ -29,18 +31,20 @@ export function ResponsiveModal({
   title,
   description,
   children,
+  className,
+  bodyClassName,
 }: ResponsiveModalProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className={className || "sm:max-w-[425px]"}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
-          {children}
+          <div className={bodyClassName}>{children}</div>
         </DialogContent>
       </Dialog>
     );
@@ -53,7 +57,7 @@ export function ResponsiveModal({
           <DrawerTitle>{title}</DrawerTitle>
           {description && <DrawerDescription>{description}</DrawerDescription>}
         </DrawerHeader>
-        <div className="px-4 pb-8 pt-2">
+        <div className={bodyClassName || "px-4 pb-8 pt-2"}>
           {children}
         </div>
       </DrawerContent>

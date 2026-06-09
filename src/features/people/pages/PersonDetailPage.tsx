@@ -1,7 +1,11 @@
 import {
   useEffect,
   useState,
-  type FormEvent } from "react"; import { CalendarDays,
+  type FormEvent,
+} from "react";
+import {
+  BookOpen,
+  CalendarDays,
   Trash2,
   Camera,
   CheckCircle2,
@@ -10,6 +14,7 @@ import {
   FolderKanban,
   Mail,
   MapPin,
+  Plus,
   Send,
   Phone,
   Save,
@@ -20,6 +25,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +33,7 @@ import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { Link, useParams } from "react-router-dom";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { createNotificationForPerson } from "@/lib/notifications";
 import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
 
 type Person = {
@@ -117,6 +124,29 @@ type CollaborationProject = {
   notes: string | null;
 };
 
+type TrainingCourse = {
+  id: string;
+  title: string;
+  category: string;
+  estimated_minutes: number;
+  status: "Active" | "Draft" | "Archived";
+};
+
+type TrainingAssignment = {
+  id: string;
+  workspace_id: string;
+  course_id: string;
+  person_id: string;
+  status: "Not Started" | "In Progress" | "Complete";
+  progress: number;
+  due_date: string | null;
+  completed_at: string | null;
+};
+
+type PersonTrainingAssignment = TrainingAssignment & {
+  course: TrainingCourse | null;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "No date";
 
@@ -132,12 +162,30 @@ const normalizeEmail = (value?: string | null) => {
   return value?.trim().toLowerCase() || null;
 };
 
+const statusBadgeClass = (status: TrainingAssignment["status"] | TrainingCourse["status"]) => {
+  if (status === "Active" || status === "Complete") {
+    return "border-brand-sage/25 bg-brand-sage/10 text-brand-sage";
+  }
+
+  if (status === "Draft" || status === "Not Started") {
+    return "border-brand-amber/25 bg-brand-amber/10 text-brand-amber";
+  }
+
+  return "border-brand-teal/25 bg-brand-teal/10 text-brand-teal";
+};
+
+const getProgressStatus = (progress: number): TrainingAssignment["status"] => {
+  if (progress >= 100) return "Complete";
+  if (progress > 0) return "In Progress";
+  return "Not Started";
+};
+
 
 const PersonDetailPage = () => {
   const { personId } = useParams();
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
-  const { canEditPeopleDirectory } = useCurrentWorkspace();
+  const { role, canEditPeopleDirectory } = useCurrentWorkspace();
 
   const [person, setPerson] = useState<Person | null>(null);
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
@@ -147,8 +195,12 @@ const PersonDetailPage = () => {
   const [collaborationProjects, setCollaborationProjects] = useState<CollaborationProject[]>([]);
   const [serviceAssignments, setServiceAssignments] = useState<ServiceAssignment[]>([]);
   const [assignmentServices, setAssignmentServices] = useState<ServiceInstance[]>([]);
+  const [trainingCourses, setTrainingCourses] = useState<TrainingCourse[]>([]);
+  const [trainingAssignments, setTrainingAssignments] = useState<PersonTrainingAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [assignTrainingOpen, setAssignTrainingOpen] = useState(false);
+  const [assigningTraining, setAssigningTraining] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -157,10 +209,14 @@ const PersonDetailPage = () => {
   const [gender, setGender] = useState("");
   const [membershipStatus, setMembershipStatus] = useState("Member");
   const [notes, setNotes] = useState("");
+  const [selectedTrainingCourseId, setSelectedTrainingCourseId] = useState("");
+  const [trainingDueDate, setTrainingDueDate] = useState("");
 
   const canEditProfile =
     Boolean(person?.auth_user_id && person.auth_user_id === user?.id) ||
     canEditPeopleDirectory;
+
+  const canManageTraining = ["admin", "editor", "group_leader"].includes(role || "");
 
   const fetchPerson = async () => {
     if (!user || !personId || !currentPerson?.workspace_id) return;
@@ -298,6 +354,56 @@ const PersonDetailPage = () => {
       setAssignmentServices([]);
     }
 
+    const { data: trainingAssignmentData, error: trainingAssignmentError } = await (supabase as any)
+      .from("training_assignments")
+      .select("id, workspace_id, course_id, person_id, status, progress, due_date, completed_at")
+      .eq("workspace_id", currentPerson.workspace_id)
+      .eq("person_id", personId)
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+
+    if (trainingAssignmentError) {
+      toast.error(trainingAssignmentError.message);
+    }
+
+    const nextTrainingAssignments = trainingAssignmentData || [];
+    const { data: trainingCourseData, error: trainingCourseError } = await (supabase as any)
+      .from("training_courses")
+      .select("id, title, category, estimated_minutes, status")
+      .eq("workspace_id", currentPerson.workspace_id)
+      .neq("status", "Archived")
+      .order("title", { ascending: true });
+
+    if (trainingCourseError) {
+      toast.error(trainingCourseError.message);
+    }
+
+    const nextTrainingCourses = trainingCourseData || [];
+    setTrainingCourses(nextTrainingCourses);
+
+    const trainingCourseIds = Array.from(
+      new Set(nextTrainingAssignments.map((assignment: TrainingAssignment) => assignment.course_id))
+    );
+
+    if (trainingCourseIds.length > 0) {
+      const coursesById = nextTrainingCourses.reduce<Record<string, TrainingCourse>>(
+        (acc, course: TrainingCourse) => {
+          acc[course.id] = course;
+          return acc;
+        },
+        {}
+      );
+
+      setTrainingAssignments(
+        nextTrainingAssignments.map((assignment: TrainingAssignment) => ({
+          ...assignment,
+          course: coursesById[assignment.course_id] || null,
+        }))
+      );
+    } else {
+      setTrainingAssignments([]);
+    }
+
     setLoading(false);
   };
 
@@ -353,6 +459,117 @@ const PersonDetailPage = () => {
     fetchPerson();
   };
 
+  const updateTrainingAssignment = async (
+    assignment: PersonTrainingAssignment,
+    updates: Partial<Pick<TrainingAssignment, "status" | "progress" | "due_date">>
+  ) => {
+    if (!canManageTraining) return;
+
+    const nextProgress =
+      updates.progress !== undefined
+        ? Math.max(0, Math.min(100, Number(updates.progress) || 0))
+        : assignment.progress;
+    const nextStatus = updates.status || getProgressStatus(nextProgress);
+    const nextDueDate =
+      updates.due_date !== undefined
+        ? updates.due_date || null
+        : assignment.due_date;
+
+    const { error } = await (supabase as any)
+      .from("training_assignments")
+      .update({
+        status: nextStatus,
+        progress: nextProgress,
+        due_date: nextDueDate,
+        completed_at: nextStatus === "Complete" ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", assignment.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setTrainingAssignments((current) =>
+      current.map((item) =>
+        item.id === assignment.id
+          ? {
+              ...item,
+              status: nextStatus,
+              progress: nextProgress,
+              due_date: nextDueDate,
+              completed_at: nextStatus === "Complete" ? new Date().toISOString() : null,
+            }
+          : item
+      )
+    );
+
+    toast.success("Training updated");
+  };
+
+  const openAssignTraining = () => {
+    if (!canManageTraining) return;
+
+    setSelectedTrainingCourseId(availableTrainingCourses[0]?.id || "");
+    setTrainingDueDate("");
+    setAssignTrainingOpen(true);
+  };
+
+  const assignTrainingToPerson = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!user?.id || !person || !currentPerson?.workspace_id || !canManageTraining) return;
+
+    if (!selectedTrainingCourseId) {
+      toast.error("Choose a training course.");
+      return;
+    }
+
+    setAssigningTraining(true);
+
+    const { error } = await (supabase as any)
+      .from("training_assignments")
+      .upsert(
+        {
+          workspace_id: currentPerson.workspace_id,
+          course_id: selectedTrainingCourseId,
+          person_id: person.id,
+          assigned_by: user.id,
+          status: "Not Started",
+          progress: 0,
+          due_date: trainingDueDate || null,
+        },
+        { onConflict: "course_id,person_id" }
+      );
+
+    if (error) {
+      setAssigningTraining(false);
+      toast.error(error.message);
+      return;
+    }
+
+    const assignedCourse = trainingCourses.find((course) => course.id === selectedTrainingCourseId);
+
+    await createNotificationForPerson({
+      personId: person.id,
+      currentUserId: user.id,
+      actorPersonId: currentPerson?.id || null,
+      title: "Training assigned",
+      message: `You were assigned ${assignedCourse?.title || "a training course"}.`,
+      type: "training",
+      entityType: "training",
+      entityId: selectedTrainingCourseId,
+    });
+
+    setAssigningTraining(false);
+    setAssignTrainingOpen(false);
+    setSelectedTrainingCourseId("");
+    setTrainingDueDate("");
+    toast.success("Training assigned");
+    fetchPerson();
+  };
+
 
   const todayDateKey = new Date().toISOString().slice(0, 10);
 
@@ -381,6 +598,13 @@ const PersonDetailPage = () => {
       const bService = getServiceForAssignment(b.service_id);
       return (bService?.service_date || "").localeCompare(aService?.service_date || "");
     });
+
+  const assignedTrainingCourseIds = new Set(
+    trainingAssignments.map((assignment) => assignment.course_id)
+  );
+  const availableTrainingCourses = trainingCourses.filter(
+    (course) => !assignedTrainingCourseIds.has(course.id)
+  );
 
   const openAssignedTasks = assignedTasks.filter((task) => !task.complete);
   const completedAssignedTasks = assignedTasks.filter((task) => task.complete);
@@ -787,6 +1011,151 @@ const PersonDetailPage = () => {
             <Card className="actsix-panel-soft bg-background/70 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
+                  <p className="label-eyebrow">Training</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    Courses assigned to this person
+                  </h2>
+                </div>
+
+                <div className="flex flex-wrap justify-end gap-2">
+                  {canManageTraining && (
+                    <Button
+                      type="button"
+                      className="actsix-btn-primary h-9 px-3 text-sm"
+                      onClick={openAssignTraining}
+                      disabled={availableTrainingCourses.length === 0}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Assign Training
+                    </Button>
+                  )}
+
+                  <Link
+                    to="/training"
+                    className="actsix-btn-outline inline-flex h-9 px-3 text-sm font-bold text-foreground"
+                  >
+                    Training Center
+                  </Link>
+                </div>
+              </div>
+
+              {trainingAssignments.length === 0 && (
+                <div className="actsix-empty-state mt-4 bg-card/70 p-4 text-left">
+                  No training assigned yet.
+                </div>
+              )}
+
+              {trainingAssignments.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {trainingAssignments.map((assignment) => (
+                    <div
+                      key={assignment.id}
+                      className="rounded-[var(--radius-control)] border border-border/70 bg-card p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                            <BookOpen className="h-4 w-4" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-extrabold tracking-tight">
+                              {assignment.course?.title || "Training Course"}
+                            </p>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <span className="rounded-full border border-border bg-background px-2.5 py-1 font-bold">
+                                {assignment.course?.category || "General"}
+                              </span>
+
+                              {assignment.course?.estimated_minutes && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Clock3 className="h-3 w-3" />
+                                  {assignment.course.estimated_minutes} min
+                                </span>
+                              )}
+
+                              <span className="inline-flex items-center gap-1">
+                                <CalendarDays className="h-3 w-3" />
+                                {assignment.status === "Complete"
+                                  ? "Complete"
+                                  : formatDate(assignment.due_date)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${statusBadgeClass(assignment.status)}`}>
+                          {assignment.status}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_280px] md:items-end">
+                        <div>
+                          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-muted-foreground">
+                            <span>Progress</span>
+                            <span>{assignment.progress}%</span>
+                          </div>
+                          <Progress value={assignment.progress} className="h-2.5 bg-muted" />
+                        </div>
+
+                        {canManageTraining && (
+                          <div className="grid grid-cols-[1fr_82px] gap-2 sm:grid-cols-[1fr_90px_120px]">
+                            <select
+                              value={assignment.status}
+                              onChange={(event) =>
+                                updateTrainingAssignment(assignment, {
+                                  status: event.target.value as TrainingAssignment["status"],
+                                  progress:
+                                    event.target.value === "Complete"
+                                      ? 100
+                                      : event.target.value === "Not Started"
+                                        ? 0
+                                        : assignment.progress || 25,
+                                })
+                              }
+                              className="h-10 min-w-0 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                            >
+                              <option value="Not Started">Not Started</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Complete">Complete</option>
+                            </select>
+
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={assignment.progress}
+                              onChange={(event) =>
+                                updateTrainingAssignment(assignment, {
+                                  progress: Number(event.target.value),
+                                })
+                              }
+                              className="h-10 border-border/70 bg-background text-sm"
+                            />
+
+                            <Input
+                              type="date"
+                              value={assignment.due_date || ""}
+                              onChange={(event) =>
+                                updateTrainingAssignment(assignment, {
+                                  due_date: event.target.value,
+                                })
+                              }
+                              className="col-span-2 h-10 border-border/70 bg-background text-sm sm:col-span-1"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            <Card className="actsix-panel-soft bg-background/70 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
                   <p className="label-eyebrow">Assigned Tasks</p>
                   <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                     Current responsibilities
@@ -1064,6 +1433,15 @@ const PersonDetailPage = () => {
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Training
+                </p>
+                <p className="font-bold">
+                  {trainingAssignments.filter((assignment) => assignment.status !== "Complete").length} active
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                   Open Tasks
                 </p>
                 <p className="font-bold">{openAssignedTasks.length}</p>
@@ -1093,6 +1471,74 @@ const PersonDetailPage = () => {
           </Card>
         </div>
       </Card>
+
+      <Dialog open={assignTrainingOpen} onOpenChange={setAssignTrainingOpen}>
+        <DialogContent className="max-w-lg">
+          <form onSubmit={assignTrainingToPerson} className="space-y-4">
+            <DialogHeader>
+              <p className="label-eyebrow">Training</p>
+              <DialogTitle className="text-xl">Assign Training</DialogTitle>
+              <DialogDescription>
+                Assign a course to {person.display_name} and optionally set a due date.
+              </DialogDescription>
+            </DialogHeader>
+
+            {availableTrainingCourses.length === 0 ? (
+              <div className="actsix-empty-state bg-card/70 p-4 text-left">
+                All available training courses are already assigned to this person.
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="label-eyebrow">Course</label>
+                  <select
+                    value={selectedTrainingCourseId}
+                    onChange={(event) => setSelectedTrainingCourseId(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    {availableTrainingCourses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.title} · {course.category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label-eyebrow">Due Date</label>
+                  <Input
+                    type="date"
+                    value={trainingDueDate}
+                    onChange={(event) => setTrainingDueDate(event.target.value)}
+                    className="mt-2 border-border/70 bg-background"
+                  />
+                </div>
+              </>
+            )}
+
+            <DialogFooter className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="actsix-btn-outline"
+                onClick={() => setAssignTrainingOpen(false)}
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                className="actsix-btn-primary"
+                disabled={assigningTraining || availableTrainingCourses.length === 0}
+              >
+                <Plus className="h-4 w-4" />
+                {assigningTraining ? "Assigning..." : "Assign Training"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={editing} onOpenChange={(open) => !open && cancelEdit()}>
         <DialogContent className="max-w-2xl">

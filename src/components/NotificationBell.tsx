@@ -234,6 +234,11 @@ export function NotificationBell({
         navigate(`/people/${notification.entity_id}`);
         return;
 
+      case "training":
+      case "training_assignment":
+        navigate("/training");
+        return;
+
       default:
         console.warn("Unknown notification entity type:", notification.entity_type);
         return;

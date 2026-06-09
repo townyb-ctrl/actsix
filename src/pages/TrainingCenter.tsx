@@ -1,16 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowDown,
+  ArrowUp,
   BookOpen,
+  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
   Clock3,
   Eye,
   Filter,
   GraduationCap,
+  Image as ImageIcon,
+  Pencil,
   Plus,
   Search,
   Send,
+  Trash2,
   Users,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
@@ -19,13 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import {
   Table,
   TableBody,
@@ -35,8 +36,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { supabase } from "@/integrations/supabase/client";
+import { createNotification, createNotificationForPerson } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 type TrainingCourse = {
@@ -64,6 +67,46 @@ type TrainingAssignment = {
   progress: number;
   due_date: string | null;
   completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type TrainingLesson = {
+  id: string;
+  workspace_id: string;
+  course_id: string;
+  title: string;
+  content: string;
+  media_items: LessonMediaItem[];
+  position: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type TrainingLessonProgress = {
+  id: string;
+  workspace_id: string;
+  assignment_id: string;
+  lesson_id: string;
+  person_id: string;
+  completed_at: string;
+  created_at: string;
+};
+
+type CourseLessonForm = {
+  id?: string;
+  tempId: string;
+  title: string;
+  content: string;
+  mediaItems: LessonMediaItem[];
+  position: number;
+};
+
+type LessonMediaItem = {
+  id: string;
+  type: "video" | "image";
+  title: string;
+  url: string;
 };
 
 type PersonOption = {
@@ -72,7 +115,7 @@ type PersonOption = {
   email?: string | null;
 };
 
-type PanelMode = "course" | "assign" | "new";
+type PanelMode = "course" | "assign" | "new" | "edit";
 
 const emptyCourseForm = {
   title: "",
@@ -81,7 +124,99 @@ const emptyCourseForm = {
   estimatedMinutes: "45",
   status: "Active" as TrainingCourse["status"],
   suggestedAudience: "",
-  modulesText: "",
+};
+
+const createLessonForm = (
+  position: number,
+  lesson?: Partial<TrainingLesson>
+): CourseLessonForm => ({
+  id: lesson?.id,
+  tempId: lesson?.id || `lesson-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  title: lesson?.title || "",
+  content: lesson?.content || "",
+  mediaItems: Array.isArray(lesson?.media_items) ? lesson.media_items : [],
+  position,
+});
+
+const createMediaItem = (type: LessonMediaItem["type"]): LessonMediaItem => ({
+  id: `media-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  type,
+  title: "",
+  url: "",
+});
+
+const getLessonReadTime = (content: string, mediaItems: LessonMediaItem[] = []) => {
+  const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(wordCount / 180) + mediaItems.length);
+};
+
+const getVideoEmbedUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.hostname.includes("youtube.com")) {
+      const videoId = parsed.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    }
+
+    if (parsed.hostname.includes("youtu.be")) {
+      const videoId = parsed.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    }
+
+    if (parsed.hostname.includes("vimeo.com")) {
+      const videoId = parsed.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : url;
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
+};
+
+const LessonMediaList = ({ mediaItems }: { mediaItems: LessonMediaItem[] }) => {
+  const visibleItems = mediaItems.filter((item) => item.url.trim());
+
+  if (visibleItems.length === 0) return null;
+
+  return (
+    <div className="mt-3 space-y-3">
+      {visibleItems.map((item) => (
+        <div key={item.id} className="overflow-hidden rounded-xl border border-border/70 bg-background">
+          <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
+            {item.type === "video" ? (
+              <Video className="h-4 w-4 text-brand-teal" />
+            ) : (
+              <ImageIcon className="h-4 w-4 text-brand-teal" />
+            )}
+            <p className="truncate text-sm font-extrabold">
+              {item.title || (item.type === "video" ? "Video" : "Image")}
+            </p>
+          </div>
+
+          {item.type === "video" ? (
+            <div className="aspect-video bg-muted">
+              <iframe
+                src={getVideoEmbedUrl(item.url)}
+                title={item.title || "Lesson video"}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <img
+              src={item.url}
+              alt={item.title || "Lesson image"}
+              className="max-h-[26rem] w-full object-contain bg-muted"
+              loading="lazy"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const statusBadgeClass = (
@@ -111,6 +246,69 @@ const formatDueDate = (value?: string | null) => {
   });
 };
 
+const formatActivityTime = (value?: string | null) => {
+  if (!value) return "No recent update";
+
+  return new Date(value).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getLocalDateKey = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getTrainingDueState = (
+  dueDate?: string | null,
+  status?: TrainingAssignment["status"]
+) => {
+  if (status === "Complete") return "complete";
+  if (!dueDate) return "none";
+
+  const today = getLocalDateKey();
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 14);
+  const soonKey = getLocalDateKey(soon);
+
+  if (dueDate < today) return "overdue";
+  if (dueDate <= soonKey) return "due-soon";
+  return "scheduled";
+};
+
+const dueStateBadge = (state: ReturnType<typeof getTrainingDueState>) => {
+  if (state === "overdue") {
+    return {
+      label: "Overdue",
+      className: "border-destructive/25 bg-destructive/10 text-destructive",
+    };
+  }
+
+  if (state === "due-soon") {
+    return {
+      label: "Due Soon",
+      className: "border-brand-amber/25 bg-brand-amber/10 text-brand-amber",
+    };
+  }
+
+  if (state === "complete") {
+    return {
+      label: "Complete",
+      className: "border-brand-sage/25 bg-brand-sage/10 text-brand-sage",
+    };
+  }
+
+  return {
+    label: "Scheduled",
+    className: "border-border bg-background text-muted-foreground",
+  };
+};
+
 const getProgressStatus = (progress: number): TrainingAssignment["status"] => {
   if (progress >= 100) return "Complete";
   if (progress > 0) return "In Progress";
@@ -119,9 +317,12 @@ const getProgressStatus = (progress: number): TrainingAssignment["status"] => {
 
 const TrainingCenter = () => {
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
   const { workspace, role } = useCurrentWorkspace();
   const [courses, setCourses] = useState<TrainingCourse[]>([]);
   const [assignments, setAssignments] = useState<TrainingAssignment[]>([]);
+  const [lessons, setLessons] = useState<TrainingLesson[]>([]);
+  const [lessonProgress, setLessonProgress] = useState<TrainingLessonProgress[]>([]);
   const [people, setPeople] = useState<PersonOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -129,14 +330,33 @@ const TrainingCenter = () => {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedCourse, setSelectedCourse] = useState<TrainingCourse | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<TrainingAssignment | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [assignmentDueDate, setAssignmentDueDate] = useState("");
   const [courseForm, setCourseForm] = useState(emptyCourseForm);
+  const [courseLessons, setCourseLessons] = useState<CourseLessonForm[]>([
+    createLessonForm(0),
+  ]);
+  const [previewLessonId, setPreviewLessonId] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>("course");
   const [panelOpen, setPanelOpen] = useState(false);
 
   const canManageTraining = ["admin", "editor", "group_leader"].includes(role || "");
+  const lessonTitleCount = courseLessons.filter((lesson) => lesson.title.trim()).length;
+  const lessonContentCount = courseLessons.filter((lesson) => lesson.content.trim()).length;
+  const lessonMediaCount = courseLessons.reduce(
+    (sum, lesson) => sum + lesson.mediaItems.filter((item) => item.url.trim()).length,
+    0
+  );
+  const courseReadiness = Math.min(
+    100,
+    (courseForm.title.trim() ? 25 : 0) +
+      (courseForm.description.trim() ? 20 : 0) +
+      (lessonTitleCount > 0 ? 25 : 0) +
+      (lessonContentCount > 0 ? 20 : 0) +
+      (lessonMediaCount > 0 ? 10 : 0)
+  );
 
   const loadTraining = async () => {
     if (!workspace?.id) {
@@ -146,7 +366,7 @@ const TrainingCenter = () => {
 
     setLoading(true);
 
-    const [courseResult, assignmentResult, peopleResult] = await Promise.all([
+    const [courseResult, assignmentResult, lessonResult, lessonProgressResult, peopleResult] = await Promise.all([
       (supabase as any)
         .from("training_courses")
         .select("*")
@@ -159,6 +379,16 @@ const TrainingCenter = () => {
         .eq("workspace_id", workspace.id)
         .order("created_at", { ascending: false }),
       (supabase as any)
+        .from("training_lessons")
+        .select("*")
+        .eq("workspace_id", workspace.id)
+        .order("position", { ascending: true }),
+      (supabase as any)
+        .from("training_lesson_progress")
+        .select("*")
+        .eq("workspace_id", workspace.id)
+        .order("completed_at", { ascending: false }),
+      (supabase as any)
         .from("people")
         .select("id, display_name, email")
         .eq("workspace_id", workspace.id)
@@ -167,10 +397,14 @@ const TrainingCenter = () => {
 
     if (courseResult.error) toast.error(courseResult.error.message);
     if (assignmentResult.error) toast.error(assignmentResult.error.message);
+    if (lessonResult.error) toast.error(lessonResult.error.message);
+    if (lessonProgressResult.error) toast.error(lessonProgressResult.error.message);
     if (peopleResult.error) toast.error(peopleResult.error.message);
 
     setCourses(courseResult.data ?? []);
     setAssignments(assignmentResult.data ?? []);
+    setLessons(lessonResult.data ?? []);
+    setLessonProgress(lessonProgressResult.data ?? []);
     setPeople(peopleResult.data ?? []);
     setLoading(false);
   };
@@ -208,6 +442,100 @@ const TrainingCenter = () => {
     }, {});
   }, [assignments]);
 
+  const peopleById = useMemo(() => {
+    return people.reduce<Record<string, PersonOption>>((acc, person) => {
+      acc[person.id] = person;
+      return acc;
+    }, {});
+  }, [people]);
+
+  const coursesById = useMemo(() => {
+    return courses.reduce<Record<string, TrainingCourse>>((acc, course) => {
+      acc[course.id] = course;
+      return acc;
+    }, {});
+  }, [courses]);
+
+  const lessonsByCourseId = useMemo(() => {
+    return lessons.reduce<Record<string, TrainingLesson[]>>((acc, lesson) => {
+      acc[lesson.course_id] = [...(acc[lesson.course_id] || []), lesson].sort(
+        (a, b) => a.position - b.position
+      );
+      return acc;
+    }, {});
+  }, [lessons]);
+
+  const lessonProgressByAssignmentId = useMemo(() => {
+    return lessonProgress.reduce<Record<string, Set<string>>>((acc, progress) => {
+      if (!acc[progress.assignment_id]) {
+        acc[progress.assignment_id] = new Set<string>();
+      }
+
+      acc[progress.assignment_id].add(progress.lesson_id);
+      return acc;
+    }, {});
+  }, [lessonProgress]);
+
+  const myTrainingAssignments = useMemo(() => {
+    if (!currentPerson?.id) return [];
+
+    const urgencyRank = (assignment: TrainingAssignment) => {
+      const dueState = getTrainingDueState(assignment.due_date, assignment.status);
+      if (dueState === "overdue") return 0;
+      if (dueState === "due-soon") return 1;
+      if (assignment.status === "In Progress") return 2;
+      if (assignment.status === "Not Started") return 3;
+      if (dueState === "scheduled") return 4;
+      return 5;
+    };
+
+    return assignments
+      .filter((assignment) => assignment.person_id === currentPerson.id)
+      .sort((a, b) => {
+        const urgencyDifference = urgencyRank(a) - urgencyRank(b);
+        if (urgencyDifference !== 0) return urgencyDifference;
+        return (a.due_date || "9999-12-31").localeCompare(b.due_date || "9999-12-31");
+      });
+  }, [assignments, currentPerson?.id]);
+
+  const myTrainingSummary = useMemo(() => {
+    return {
+      assigned: myTrainingAssignments.length,
+      inProgress: myTrainingAssignments.filter((assignment) => assignment.status === "In Progress").length,
+      completed: myTrainingAssignments.filter((assignment) => assignment.status === "Complete").length,
+      overdue: myTrainingAssignments.filter(
+        (assignment) => getTrainingDueState(assignment.due_date, assignment.status) === "overdue"
+      ).length,
+      dueSoon: myTrainingAssignments.filter(
+        (assignment) => getTrainingDueState(assignment.due_date, assignment.status) === "due-soon"
+      ).length,
+    };
+  }, [myTrainingAssignments]);
+
+  const selectedCourseAssignments = useMemo(() => {
+    if (!selectedCourse) return [];
+    return assignments.filter((assignment) => assignment.course_id === selectedCourse.id);
+  }, [assignments, selectedCourse]);
+
+  const selectedCourseLessons = useMemo(() => {
+    if (!selectedCourse) return [];
+
+    const savedLessons = lessonsByCourseId[selectedCourse.id] || [];
+    if (savedLessons.length > 0) return savedLessons;
+
+    return (selectedCourse.modules || []).map((module, index) => ({
+      id: `${selectedCourse.id}-module-${index}`,
+      workspace_id: selectedCourse.workspace_id,
+      course_id: selectedCourse.id,
+      title: module,
+      content: "",
+      media_items: [],
+      position: index,
+      created_at: selectedCourse.created_at,
+      updated_at: selectedCourse.updated_at,
+    }));
+  }, [lessonsByCourseId, selectedCourse]);
+
   const progressRows = useMemo(() => {
     return courses.map((course) => {
       const courseAssignments = assignments.filter((assignment) => assignment.course_id === course.id);
@@ -219,19 +547,52 @@ const TrainingCenter = () => {
                 courseAssignments.length
             );
       const status = getProgressStatus(progress);
+      const earliestDueDate = courseAssignments
+        .filter((assignment) => assignment.status !== "Complete")
+        .map((assignment) => assignment.due_date)
+        .filter(Boolean)
+        .sort()[0];
       const dueDate =
         status === "Complete"
           ? "Complete"
-          : formatDueDate(
-              courseAssignments
-                .map((assignment) => assignment.due_date)
-                .filter(Boolean)
-                .sort()[0]
-            );
+          : formatDueDate(earliestDueDate);
+      const dueState = getTrainingDueState(earliestDueDate, status);
 
-      return { course: course.title, progress, status, dueDate };
+      return { course: course.title, progress, status, dueDate, dueState };
     });
   }, [assignments, courses]);
+
+  const recentTrainingActivity = useMemo(() => {
+    return assignments
+      .map((assignment) => {
+        const person = peopleById[assignment.person_id];
+        const course = coursesById[assignment.course_id];
+        const activityTime =
+          assignment.status === "Complete"
+            ? assignment.completed_at || assignment.updated_at
+            : assignment.updated_at || assignment.created_at;
+
+        return {
+          id: assignment.id,
+          personName: person?.display_name || "Unknown person",
+          courseTitle: course?.title || "Training Course",
+          courseCategory: course?.category || "General",
+          status: assignment.status,
+          progress: assignment.progress,
+          dueDate: assignment.due_date,
+          dueState: getTrainingDueState(assignment.due_date, assignment.status),
+          activityTime,
+          action:
+            assignment.status === "Complete"
+              ? "Completed training"
+              : assignment.progress > 0
+                ? "Updated progress"
+                : "Assigned training",
+        };
+      })
+      .sort((a, b) => (b.activityTime || "").localeCompare(a.activityTime || ""))
+      .slice(0, 8);
+  }, [assignments, coursesById, peopleById]);
 
   const summaryCards = [
     { label: "Total Courses", value: String(courses.length), icon: BookOpen },
@@ -240,6 +601,15 @@ const TrainingCenter = () => {
       label: "In Progress",
       value: String(assignments.filter((assignment) => assignment.status === "In Progress").length),
       icon: Clock3,
+    },
+    {
+      label: "Overdue",
+      value: String(
+        assignments.filter(
+          (assignment) => getTrainingDueState(assignment.due_date, assignment.status) === "overdue"
+        ).length
+      ),
+      icon: CalendarDays,
     },
     {
       label: "Completed",
@@ -251,47 +621,265 @@ const TrainingCenter = () => {
   const openPanel = (mode: PanelMode, course?: TrainingCourse) => {
     setPanelMode(mode);
     setSelectedCourse(course ?? null);
+    setSelectedAssignment(null);
     setSelectedCourseId(course?.id || courses[0]?.id || "");
     setSelectedPersonIds([]);
     setAssignmentDueDate("");
+    setPreviewLessonId(null);
+    if (mode === "new") {
+      setCourseForm(emptyCourseForm);
+      setCourseLessons([createLessonForm(0)]);
+    }
     setPanelOpen(true);
   };
 
-  const createCourse = async () => {
+  const editCourse = (course: TrainingCourse) => {
+    const existingLessons = lessonsByCourseId[course.id] || [];
+
+    setSelectedCourse(course);
+    setSelectedAssignment(null);
+    setPreviewLessonId(null);
+    setCourseForm({
+      title: course.title,
+      category: course.category,
+      description: course.description,
+      estimatedMinutes: String(course.estimated_minutes),
+      status: course.status,
+      suggestedAudience: course.suggested_audience,
+    });
+    setCourseLessons(
+      existingLessons.length > 0
+        ? existingLessons.map((lesson, index) => createLessonForm(index, lesson))
+        : (course.modules || []).length > 0
+          ? (course.modules || []).map((module, index) =>
+              createLessonForm(index, {
+                title: module,
+                content: "",
+              })
+            )
+          : [createLessonForm(0)]
+    );
+    setPanelMode("edit");
+    setPanelOpen(true);
+  };
+
+  const updateCourseLesson = (
+    tempId: string,
+    updates: Partial<Pick<CourseLessonForm, "title" | "content" | "mediaItems">>
+  ) => {
+    setCourseLessons((current) =>
+      current.map((lesson) => (lesson.tempId === tempId ? { ...lesson, ...updates } : lesson))
+    );
+  };
+
+  const addLessonMedia = (lessonTempId: string, type: LessonMediaItem["type"]) => {
+    setCourseLessons((current) =>
+      current.map((lesson) =>
+        lesson.tempId === lessonTempId
+          ? { ...lesson, mediaItems: [...lesson.mediaItems, createMediaItem(type)] }
+          : lesson
+      )
+    );
+  };
+
+  const updateLessonMedia = (
+    lessonTempId: string,
+    mediaId: string,
+    updates: Partial<Pick<LessonMediaItem, "title" | "url">>
+  ) => {
+    setCourseLessons((current) =>
+      current.map((lesson) =>
+        lesson.tempId === lessonTempId
+          ? {
+              ...lesson,
+              mediaItems: lesson.mediaItems.map((item) =>
+                item.id === mediaId ? { ...item, ...updates } : item
+              ),
+            }
+          : lesson
+      )
+    );
+  };
+
+  const removeLessonMedia = (lessonTempId: string, mediaId: string) => {
+    setCourseLessons((current) =>
+      current.map((lesson) =>
+        lesson.tempId === lessonTempId
+          ? {
+              ...lesson,
+              mediaItems: lesson.mediaItems.filter((item) => item.id !== mediaId),
+            }
+          : lesson
+      )
+    );
+  };
+
+  const addCourseLesson = () => {
+    setCourseLessons((current) => [...current, createLessonForm(current.length)]);
+  };
+
+  const removeCourseLesson = (tempId: string) => {
+    setCourseLessons((current) => {
+      if (current.length === 1) {
+        return [createLessonForm(0)];
+      }
+
+      return current
+        .filter((lesson) => lesson.tempId !== tempId)
+        .map((lesson, index) => ({ ...lesson, position: index }));
+    });
+  };
+
+  const moveCourseLesson = (tempId: string, direction: -1 | 1) => {
+    setCourseLessons((current) => {
+      const index = current.findIndex((lesson) => lesson.tempId === tempId);
+      const nextIndex = index + direction;
+
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next.map((lesson, nextPosition) => ({ ...lesson, position: nextPosition }));
+    });
+  };
+
+  const saveCourse = async () => {
     if (!workspace?.id || !user?.id) return;
     if (!courseForm.title.trim()) {
       toast.error("Add a course name first.");
       return;
     }
 
+    const cleanLessons = courseLessons
+      .map((lesson, index) => ({
+        title: lesson.title.trim(),
+        content: lesson.content.trim(),
+        mediaItems: lesson.mediaItems
+          .map((item) => ({
+            ...item,
+            title: item.title.trim(),
+            url: item.url.trim(),
+          }))
+          .filter((item) => item.url),
+        position: index,
+      }))
+      .filter((lesson) => lesson.title || lesson.content || lesson.mediaItems.length > 0);
+
+    if (cleanLessons.some((lesson) => !lesson.title)) {
+      toast.error("Every lesson with content needs a lesson title.");
+      return;
+    }
+
+    if (cleanLessons.some((lesson) => lesson.mediaItems.some((item) => !item.url))) {
+      toast.error("Every media item needs a URL.");
+      return;
+    }
+
     setSaving(true);
 
-    const { error } = await (supabase as any).from("training_courses").insert({
-      workspace_id: workspace.id,
-      user_id: user.id,
+    const payload = {
       title: courseForm.title.trim(),
       category: courseForm.category.trim() || "General",
       description: courseForm.description.trim(),
       estimated_minutes: Number(courseForm.estimatedMinutes) || 30,
       status: courseForm.status,
       suggested_audience: courseForm.suggestedAudience.trim(),
-      modules: courseForm.modulesText
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    });
+      modules: cleanLessons.map((lesson) => lesson.title),
+      updated_at: new Date().toISOString(),
+    };
+
+    const courseResult =
+      panelMode === "edit" && selectedCourse
+        ? await (supabase as any)
+            .from("training_courses")
+            .update(payload)
+            .eq("id", selectedCourse.id)
+            .eq("workspace_id", workspace.id)
+            .select("id")
+            .single()
+        : await (supabase as any)
+            .from("training_courses")
+            .insert({
+              workspace_id: workspace.id,
+              user_id: user.id,
+              ...payload,
+            })
+            .select("id")
+            .single();
+
+    if (courseResult.error) {
+      setSaving(false);
+      toast.error(courseResult.error.message);
+      return;
+    }
+
+    const savedCourseId = courseResult.data?.id;
+
+    if (savedCourseId) {
+      const { error: deleteLessonsError } = await (supabase as any)
+        .from("training_lessons")
+        .delete()
+        .eq("course_id", savedCourseId)
+        .eq("workspace_id", workspace.id);
+
+      if (deleteLessonsError) {
+        setSaving(false);
+        toast.error(deleteLessonsError.message);
+        return;
+      }
+
+      if (cleanLessons.length > 0) {
+        const { error: lessonError } = await (supabase as any)
+          .from("training_lessons")
+          .insert(
+            cleanLessons.map((lesson) => ({
+              workspace_id: workspace.id,
+              course_id: savedCourseId,
+              title: lesson.title,
+              content: lesson.content,
+              media_items: lesson.mediaItems,
+              position: lesson.position,
+            }))
+          );
+
+        if (lessonError) {
+          setSaving(false);
+          toast.error(lessonError.message);
+          return;
+        }
+      }
+    }
 
     setSaving(false);
+    toast.success(panelMode === "edit" ? "Training course updated" : "Training course created");
+    setCourseForm(emptyCourseForm);
+    setCourseLessons([createLessonForm(0)]);
+    setPanelOpen(false);
+    loadTraining();
+  };
+
+  const archiveCourse = async (course: TrainingCourse) => {
+    if (!workspace?.id || !canManageTraining) return;
+    const confirmed = window.confirm(`Archive ${course.title}? Existing assignments will be kept.`);
+    if (!confirmed) return;
+
+    const { error } = await (supabase as any)
+      .from("training_courses")
+      .update({
+        status: "Archived",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", course.id)
+      .eq("workspace_id", workspace.id);
 
     if (error) {
       toast.error(error.message);
       return;
     }
 
-    toast.success("Training course created");
-    setCourseForm(emptyCourseForm);
+    toast.success("Training course archived");
+    setCourses((current) => current.filter((item) => item.id !== course.id));
     setPanelOpen(false);
-    loadTraining();
   };
 
   const assignTraining = async () => {
@@ -324,10 +912,560 @@ const TrainingCenter = () => {
       return;
     }
 
+    const assignedCourse = courses.find((course) => course.id === selectedCourseId);
+    await Promise.all(
+      selectedPersonIds.map((personId) =>
+        createNotificationForPerson({
+          personId,
+          currentUserId: user.id,
+          actorPersonId: currentPerson?.id || null,
+          title: "Training assigned",
+          message: `You were assigned ${assignedCourse?.title || "a training course"}.`,
+          type: "training",
+          entityType: "training",
+          entityId: selectedCourseId,
+        })
+      )
+    );
+
     toast.success("Training assigned");
     setPanelOpen(false);
     loadTraining();
   };
+
+  const updateAssignment = async (
+    assignment: TrainingAssignment,
+    updates: Partial<Pick<TrainingAssignment, "status" | "progress" | "due_date">>
+  ) => {
+    if (!canManageTraining) return;
+
+    const nextProgress =
+      updates.progress !== undefined
+        ? Math.max(0, Math.min(100, Number(updates.progress) || 0))
+        : assignment.progress;
+    const nextStatus = updates.status || getProgressStatus(nextProgress);
+
+    const { error } = await (supabase as any)
+      .from("training_assignments")
+      .update({
+        ...updates,
+        progress: nextProgress,
+        status: nextStatus,
+        completed_at: nextStatus === "Complete" ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", assignment.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setAssignments((current) =>
+      current.map((item) =>
+        item.id === assignment.id
+          ? {
+              ...item,
+              ...updates,
+              progress: nextProgress,
+              status: nextStatus,
+              completed_at: nextStatus === "Complete" ? new Date().toISOString() : null,
+            }
+          : item
+      )
+    );
+  };
+
+  const deleteAssignment = async (assignmentId: string) => {
+    if (!canManageTraining) return;
+
+    const { error } = await (supabase as any)
+      .from("training_assignments")
+      .delete()
+      .eq("id", assignmentId);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setAssignments((current) => current.filter((assignment) => assignment.id !== assignmentId));
+    toast.success("Assignment removed");
+  };
+
+  const updateMyAssignment = async (
+    assignment: TrainingAssignment,
+    updates: Partial<Pick<TrainingAssignment, "status" | "progress">>
+  ) => {
+    if (!user?.id || !currentPerson?.id) return;
+
+    const nextProgress =
+      updates.progress !== undefined
+        ? Math.max(0, Math.min(100, Number(updates.progress) || 0))
+        : assignment.progress;
+    const nextStatus = updates.status || getProgressStatus(nextProgress);
+
+    const { data, error } = await (supabase as any).rpc("update_my_training_assignment_progress", {
+      target_assignment_id: assignment.id,
+      next_progress: nextProgress,
+      next_status: nextStatus,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    const updatedAssignment = data as TrainingAssignment;
+    setAssignments((current) =>
+      current.map((item) => (item.id === assignment.id ? updatedAssignment : item))
+    );
+
+    const course = coursesById[assignment.course_id];
+
+    if (nextStatus === "Complete" && assignment.status !== "Complete") {
+      if (assignment.assigned_by && assignment.assigned_by !== user.id) {
+        await createNotification({
+          recipientUserId: assignment.assigned_by,
+          actorPersonId: currentPerson.id,
+          title: "Training completed",
+          message: `${currentPerson.display_name} completed ${course?.title || "a training course"}.`,
+          type: "training",
+          entityType: "training",
+          entityId: assignment.course_id,
+        });
+      }
+
+      toast.success("Training completed");
+      return;
+    }
+
+    toast.success("Training progress updated");
+  };
+
+  const toggleMyLessonCompletion = async (
+    assignment: TrainingAssignment,
+    lesson: TrainingLesson,
+    shouldComplete: boolean
+  ) => {
+    if (!user?.id || !currentPerson?.id) return;
+
+    const { data, error } = await (supabase as any).rpc("set_my_training_lesson_completion", {
+      target_assignment_id: assignment.id,
+      target_lesson_id: lesson.id,
+      should_complete: shouldComplete,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    const updatedAssignment = data as TrainingAssignment;
+    setAssignments((current) =>
+      current.map((item) => (item.id === assignment.id ? updatedAssignment : item))
+    );
+    setSelectedAssignment(updatedAssignment);
+
+    setLessonProgress((current) => {
+      const withoutCurrent = current.filter(
+        (item) => !(item.assignment_id === assignment.id && item.lesson_id === lesson.id)
+      );
+
+      if (!shouldComplete) return withoutCurrent;
+
+      return [
+        {
+          id: `${assignment.id}-${lesson.id}`,
+          workspace_id: assignment.workspace_id,
+          assignment_id: assignment.id,
+          lesson_id: lesson.id,
+          person_id: assignment.person_id,
+          completed_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        },
+        ...withoutCurrent,
+      ];
+    });
+
+    if (updatedAssignment.status === "Complete" && assignment.status !== "Complete") {
+      const course = coursesById[assignment.course_id];
+
+      if (assignment.assigned_by && assignment.assigned_by !== user.id) {
+        await createNotification({
+          recipientUserId: assignment.assigned_by,
+          actorPersonId: currentPerson.id,
+          title: "Training completed",
+          message: `${currentPerson.display_name} completed ${course?.title || "a training course"}.`,
+          type: "training",
+          entityType: "training",
+          entityId: assignment.course_id,
+        });
+      }
+
+      toast.success("Course completed");
+      return;
+    }
+
+    toast.success(shouldComplete ? "Lesson completed" : "Lesson reopened");
+  };
+
+  if (!canManageTraining) {
+    const learnerSummaryCards = [
+      { label: "Assigned", value: String(myTrainingSummary.assigned), icon: ClipboardCheck },
+      { label: "In Progress", value: String(myTrainingSummary.inProgress), icon: Clock3 },
+      { label: "Overdue", value: String(myTrainingSummary.overdue), icon: CalendarDays },
+      { label: "Due Soon", value: String(myTrainingSummary.dueSoon), icon: CalendarDays },
+      { label: "Completed", value: String(myTrainingSummary.completed), icon: CheckCircle2 },
+    ];
+
+    return (
+      <div>
+        <PageHeader
+          eyebrow="Training"
+          title="My Training"
+          subtitle="See assigned courses, due dates, and ministry training progress."
+        />
+
+        <div className="actsix-page-body actsix-page-stack pt-5 pb-12 sm:pt-6">
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {learnerSummaryCards.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Card key={item.label} className="actsix-panel-soft border-border/60 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="label-eyebrow">{item.label}</p>
+                      <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground">
+                        {loading ? "..." : item.value}
+                      </p>
+                    </div>
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                  </div>
+                </Card>
+              );
+            })}
+          </section>
+
+          <Card className="actsix-panel-soft overflow-hidden border-border/60">
+            <div className="border-b border-border/70 p-5 sm:p-6">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+                  <GraduationCap className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="label-eyebrow">Assigned Courses</p>
+                  <h2 className="text-2xl font-extrabold tracking-tight">Training to complete</h2>
+                </div>
+              </div>
+            </div>
+
+            {loading && (
+              <div className="p-5 sm:p-6">
+                <div className="actsix-loading-state" role="status">
+                  Loading your training...
+                </div>
+              </div>
+            )}
+
+            {!loading && myTrainingAssignments.length === 0 && (
+              <div className="p-5 sm:p-6">
+                <div className="actsix-empty-state bg-card/70 p-5 text-left">
+                  No training assigned yet.
+                </div>
+              </div>
+            )}
+
+            {!loading && myTrainingAssignments.length > 0 && (
+              <div className="divide-y divide-border/70">
+                {myTrainingAssignments.map((assignment) => {
+                  const course = coursesById[assignment.course_id] || null;
+                  const courseLessonCount =
+                    lessonsByCourseId[assignment.course_id]?.length || course?.modules.length || 0;
+                  const dueBadge = dueStateBadge(
+                    getTrainingDueState(assignment.due_date, assignment.status)
+                  );
+
+                  return (
+                    <div key={assignment.id} className="p-5 sm:p-6">
+                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-center">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-extrabold tracking-tight">
+                              {course?.title || "Training Course"}
+                            </h3>
+                            <Badge
+                              variant="outline"
+                              className="border-brand-teal/25 bg-brand-teal/10 text-brand-teal"
+                            >
+                              {course?.category || "General"}
+                            </Badge>
+                            <Badge variant="outline" className={statusBadgeClass(assignment.status)}>
+                              {assignment.status}
+                            </Badge>
+                            {dueBadge.label !== "Scheduled" && (
+                              <Badge variant="outline" className={dueBadge.className}>
+                                {dueBadge.label}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <p className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-muted-foreground">
+                            {course?.description || "Open the course to see the training details."}
+                          </p>
+
+                          <div className="mt-4 flex flex-wrap gap-2 text-sm font-bold text-muted-foreground">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
+                              <Clock3 className="h-3.5 w-3.5" />
+                              {course?.estimated_minutes || 0} min
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
+                              <BookOpen className="h-3.5 w-3.5" />
+                              {courseLessonCount} lessons
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              {assignment.status === "Complete"
+                                ? "Complete"
+                                : formatDueDate(assignment.due_date)}
+                            </span>
+                          </div>
+
+                          <div className="mt-4">
+                            <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-muted-foreground">
+                              <span>Progress</span>
+                              <span>{assignment.progress}%</span>
+                            </div>
+                            <Progress value={assignment.progress} className="h-2.5 bg-muted" />
+                          </div>
+
+                          {assignment.status !== "Complete" && courseLessonCount === 0 && (
+                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                              {assignment.status === "Not Started" && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="actsix-btn-primary h-9"
+                                  onClick={() =>
+                                    updateMyAssignment(assignment, {
+                                      status: "In Progress",
+                                      progress: Math.max(assignment.progress, 10),
+                                    })
+                                  }
+                                >
+                                  Start Training
+                                </Button>
+                              )}
+
+                              {[25, 50, 75].map((value) => (
+                                <Button
+                                  key={value}
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="actsix-btn-outline h-9 px-3"
+                                  onClick={() =>
+                                    updateMyAssignment(assignment, {
+                                      progress: value,
+                                    })
+                                  }
+                                  disabled={assignment.progress === value}
+                                >
+                                  {value}%
+                                </Button>
+                              ))}
+
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                defaultValue={assignment.progress}
+                                aria-label={`Update progress for ${course?.title || "training course"}`}
+                                onBlur={(event) => {
+                                  const nextValue = Number(event.target.value);
+                                  if (Number.isNaN(nextValue) || nextValue === assignment.progress) return;
+                                  updateMyAssignment(assignment, {
+                                    progress: nextValue,
+                                  });
+                                }}
+                                className="h-9 w-24 border-border/70 bg-background text-sm"
+                              />
+                            </div>
+                          )}
+
+                          {assignment.status !== "Complete" && courseLessonCount > 0 && (
+                            <p className="mt-4 rounded-xl bg-muted px-3 py-2 text-sm font-bold text-muted-foreground">
+                              Open the course to complete lessons and update progress.
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Button
+                            variant="outline"
+                            className="actsix-btn-outline w-full"
+                          onClick={() => {
+                            setSelectedCourse(course);
+                            setSelectedAssignment(assignment);
+                            setPanelMode("course");
+                            setPanelOpen(true);
+                          }}
+                            disabled={!course}
+                          >
+                            <Eye className="h-4 w-4" />
+                            View Course
+                          </Button>
+
+                          {assignment.status !== "Complete" && courseLessonCount > 0 ? (
+                            <Button
+                              type="button"
+                              className="actsix-btn-primary w-full"
+                              onClick={() => {
+                                setSelectedCourse(course);
+                                setSelectedAssignment(assignment);
+                                setPanelMode("course");
+                                setPanelOpen(true);
+                              }}
+                              disabled={!course}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              Complete Lessons
+                            </Button>
+                          ) : assignment.status !== "Complete" ? (
+                            <Button
+                              type="button"
+                              className="actsix-btn-primary w-full"
+                              onClick={() =>
+                                updateMyAssignment(assignment, {
+                                  status: "Complete",
+                                  progress: 100,
+                                })
+                              }
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              Mark Complete
+                            </Button>
+                          ) : (
+                            <div className="rounded-[var(--radius-control)] border border-brand-sage/25 bg-brand-sage/10 px-3 py-2 text-center text-sm font-extrabold text-brand-sage">
+                              Completed
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <ResponsiveModal
+          open={panelOpen}
+          onOpenChange={setPanelOpen}
+          title={selectedCourse?.title || "Course"}
+          description={selectedCourse?.description}
+          className="max-h-[88vh] overflow-hidden sm:max-w-[44rem]"
+          bodyClassName="max-h-[calc(88vh-8rem)] overflow-y-auto px-4 pb-8 pt-2 md:px-0 md:pb-0 md:pt-0"
+        >
+          {selectedCourse && (
+            <div className="space-y-5">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="border-brand-teal/25 bg-brand-teal/10 text-brand-teal">
+                  {selectedCourse.category}
+                </Badge>
+                <Badge variant="outline" className={statusBadgeClass(selectedCourse.status)}>
+                  {selectedCourse.status}
+                </Badge>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-bold text-muted-foreground">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  {selectedCourse.estimated_minutes} min
+                </span>
+              </div>
+
+              <Card className="border-border/60 bg-background p-4">
+                <p className="label-eyebrow">Course Description</p>
+                <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
+                  {selectedCourse.description || "No course description yet."}
+                </p>
+              </Card>
+
+              {selectedCourseLessons.length > 0 && (
+                <Card className="border-border/60 bg-background p-4">
+                  <p className="label-eyebrow">Lessons</p>
+                  <div className="mt-3 space-y-2">
+                    {selectedCourseLessons.map((lesson, index) => {
+                      const completedLessons = selectedAssignment
+                        ? lessonProgressByAssignmentId[selectedAssignment.id] || new Set<string>()
+                        : new Set<string>();
+                      const isComplete = completedLessons.has(lesson.id);
+
+                      return (
+                        <div key={lesson.id} className="rounded-xl bg-muted/70 p-3">
+                          <div className="flex items-start gap-3">
+                            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${
+                              isComplete
+                                ? "bg-brand-sage text-white"
+                                : "bg-brand-teal text-white"
+                            }`}>
+                              {isComplete ? <CheckCircle2 className="h-3.5 w-3.5" /> : index + 1}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-foreground">{lesson.title}</p>
+                                  <p className="mt-0.5 text-xs font-bold text-muted-foreground">
+                                    {getLessonReadTime(lesson.content, lesson.media_items)} min read
+                                  </p>
+                                </div>
+
+                                {selectedAssignment && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={isComplete ? "outline" : "default"}
+                                    className={isComplete ? "actsix-btn-outline h-8" : "actsix-btn-primary h-8"}
+                                    onClick={() =>
+                                      toggleMyLessonCompletion(selectedAssignment, lesson, !isComplete)
+                                    }
+                                  >
+                                    {isComplete ? "Reopen" : "Complete"}
+                                  </Button>
+                                )}
+                              </div>
+
+                              {lesson.content && (
+                                <p className="mt-3 whitespace-pre-wrap text-sm font-medium leading-6 text-muted-foreground">
+                                  {lesson.content}
+                                </p>
+                              )}
+                              <LessonMediaList mediaItems={lesson.media_items || []} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              )}
+
+              {selectedCourse.suggested_audience && (
+                <Card className="border-border/60 bg-background p-4">
+                  <p className="label-eyebrow">Suggested Audience</p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
+                    {selectedCourse.suggested_audience}
+                  </p>
+                </Card>
+              )}
+            </div>
+          )}
+        </ResponsiveModal>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -359,7 +1497,7 @@ const TrainingCenter = () => {
       />
 
       <div className="actsix-page-body actsix-page-stack pt-5 pb-12 sm:pt-6">
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {summaryCards.map((item) => {
             const Icon = item.icon;
 
@@ -465,6 +1603,10 @@ const TrainingCenter = () => {
                     {course.estimated_minutes} min
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    {(lessonsByCourseId[course.id]?.length || course.modules.length || 0)} lessons
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
                     <Users className="h-3.5 w-3.5" />
                     {assignmentCountByCourse[course.id] || 0} assigned
                   </span>
@@ -478,6 +1620,15 @@ const TrainingCenter = () => {
                   >
                     <Eye className="h-4 w-4" />
                     View Course
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="actsix-btn-outline flex-1"
+                    onClick={() => editCourse(course)}
+                    disabled={!canManageTraining}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
                   </Button>
                   <Button
                     className="actsix-btn-primary flex-1"
@@ -547,46 +1698,181 @@ const TrainingCenter = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-semibold text-muted-foreground">
-                    {item.dueDate}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>{item.dueDate}</span>
+                      {item.dueState !== "none" && (
+                        <Badge variant="outline" className={dueStateBadge(item.dueState).className}>
+                          {dueStateBadge(item.dueState).label}
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Card>
+
+        <Card className="actsix-panel-soft overflow-hidden border-border/60">
+          <div className="border-b border-border/70 p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+                  <Clock3 className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="label-eyebrow">Activity</p>
+                  <h2 className="text-2xl font-extrabold tracking-tight">
+                    Recent Training Activity
+                  </h2>
+                </div>
+              </div>
+
+              <Badge variant="outline" className="border-brand-teal/25 bg-brand-teal/10 text-brand-teal">
+                {recentTrainingActivity.length} recent
+              </Badge>
+            </div>
+          </div>
+
+          {loading && (
+            <div className="p-5 sm:p-6">
+              <div className="actsix-loading-state" role="status">
+                Loading training activity...
+              </div>
+            </div>
+          )}
+
+          {!loading && recentTrainingActivity.length === 0 && (
+            <div className="p-5 sm:p-6">
+              <div className="actsix-empty-state bg-card/70 p-5 text-left">
+                No training activity yet.
+              </div>
+            </div>
+          )}
+
+          {!loading && recentTrainingActivity.length > 0 && (
+            <div className="divide-y divide-border/70">
+              {recentTrainingActivity.map((item) => (
+                <div
+                  key={item.id}
+                  className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_160px_120px] lg:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-base font-extrabold tracking-tight">
+                        {item.personName}
+                      </p>
+                      <Badge variant="outline" className={statusBadgeClass(item.status)}>
+                        {item.status}
+                      </Badge>
+                      {item.dueState !== "none" && (
+                        <Badge variant="outline" className={dueStateBadge(item.dueState).className}>
+                          {dueStateBadge(item.dueState).label}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <p className="mt-1 text-sm font-bold text-muted-foreground">
+                      {item.action} - {item.courseTitle}
+                    </p>
+
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-muted-foreground">
+                      <span className="rounded-full bg-muted px-2.5 py-1">
+                        {item.courseCategory}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1">
+                        <CalendarDays className="h-3 w-3" />
+                        {item.status === "Complete" ? "Complete" : formatDueDate(item.dueDate)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-muted-foreground">
+                      <span>Progress</span>
+                      <span>{item.progress}%</span>
+                    </div>
+                    <Progress value={item.progress} className="h-2 bg-muted" />
+                  </div>
+
+                  <p className="text-sm font-bold text-muted-foreground lg:text-right">
+                    {formatActivityTime(item.activityTime)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
 
-      <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
-        <SheetContent className="flex w-[min(100vw,34rem)] flex-col overflow-y-auto sm:max-w-[34rem]">
-          <SheetHeader className="pr-8 text-left">
-            <p className="label-eyebrow">
-              {panelMode === "new" ? "Course Builder" : panelMode === "assign" ? "Assignment" : "Course"}
-            </p>
-            <SheetTitle className="text-2xl font-extrabold tracking-tight">
-              {panelMode === "new"
-                ? "Create a new course"
-                : panelMode === "assign"
-                  ? "Assign training"
-                  : selectedCourse?.title || "Course"}
-            </SheetTitle>
-            <SheetDescription>
-              {panelMode === "new"
-                ? "Create a workspace training resource that can be assigned to people."
-                : panelMode === "assign"
-                  ? "Choose the course, people, and optional due date."
-                  : selectedCourse?.description}
-            </SheetDescription>
-          </SheetHeader>
+      <ResponsiveModal
+        open={panelOpen}
+        onOpenChange={setPanelOpen}
+        title={
+          panelMode === "new"
+            ? "Create a new course"
+            : panelMode === "edit"
+              ? "Edit course"
+              : panelMode === "assign"
+              ? "Assign training"
+              : selectedCourse?.title || "Course"
+        }
+        description={
+          panelMode === "new"
+            ? "Create a workspace training resource that can be assigned to people."
+            : panelMode === "edit"
+              ? "Update the course details, outline, status, and ministry fit."
+            : panelMode === "assign"
+              ? "Choose the course, people, and optional due date."
+              : selectedCourse?.description
+        }
+        className="max-h-[88vh] overflow-hidden sm:max-w-[52rem]"
+        bodyClassName="max-h-[calc(88vh-8rem)] overflow-y-auto px-4 pb-8 pt-2 pr-4 md:px-0 md:pb-0 md:pt-0 md:pr-1"
+      >
+          <p className="label-eyebrow">
+            {panelMode === "new" || panelMode === "edit"
+              ? "Course Builder"
+              : panelMode === "assign"
+                ? "Assignment"
+                : "Course"}
+          </p>
 
           {panelMode === "course" && selectedCourse && (
             <div className="mt-6 space-y-5">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="border-brand-teal/25 bg-brand-teal/10 text-brand-teal">
-                  {selectedCourse.category}
-                </Badge>
-                <Badge variant="outline" className={statusBadgeClass(selectedCourse.status)}>
-                  {selectedCourse.status}
-                </Badge>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="border-brand-teal/25 bg-brand-teal/10 text-brand-teal">
+                    {selectedCourse.category}
+                  </Badge>
+                  <Badge variant="outline" className={statusBadgeClass(selectedCourse.status)}>
+                    {selectedCourse.status}
+                  </Badge>
+                </div>
+
+                {canManageTraining && (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="actsix-btn-outline"
+                      onClick={() => editCourse(selectedCourse)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => archiveCourse(selectedCourse)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Archive
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <Card className="border-border/60 bg-background p-4">
@@ -597,22 +1883,30 @@ const TrainingCenter = () => {
               </Card>
 
               <div>
-                <p className="label-eyebrow">Course Outline</p>
+                <p className="label-eyebrow">Lessons</p>
                 <div className="mt-3 space-y-2">
-                  {(selectedCourse.modules || []).length === 0 && (
+                  {selectedCourseLessons.length === 0 && (
                     <p className="text-sm font-medium text-muted-foreground">
-                      No outline items added yet.
+                      No lessons added yet.
                     </p>
                   )}
-                  {(selectedCourse.modules || []).map((module, index) => (
+                  {selectedCourseLessons.map((lesson, index) => (
                     <div
-                      key={module}
-                      className="flex items-center gap-3 rounded-xl border border-border/70 bg-background px-3 py-2.5"
+                      key={lesson.id}
+                      className="flex items-start gap-3 rounded-xl border border-border/70 bg-background px-3 py-2.5"
                     >
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-teal/10 text-xs font-extrabold text-brand-teal">
                         {index + 1}
                       </span>
-                      <span className="text-sm font-extrabold">{module}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-extrabold">{lesson.title}</p>
+                        {lesson.content && (
+                          <p className="mt-1 whitespace-pre-wrap text-sm font-medium leading-6 text-muted-foreground">
+                            {lesson.content}
+                          </p>
+                        )}
+                        <LessonMediaList mediaItems={lesson.media_items || []} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -629,6 +1923,114 @@ const TrainingCenter = () => {
                     {assignmentCountByCourse[selectedCourse.id] || 0}
                   </p>
                 </Card>
+              </div>
+
+              <div>
+                <p className="label-eyebrow">Assignments</p>
+                <div className="mt-3 space-y-2">
+                  {selectedCourseAssignments.length === 0 && (
+                    <Card className="border-border/60 bg-background p-4 text-sm font-medium text-muted-foreground">
+                      No one has been assigned to this course yet.
+                    </Card>
+                  )}
+
+                  {selectedCourseAssignments.map((assignment) => {
+                    const person = peopleById[assignment.person_id];
+
+                    return (
+                      <Card key={assignment.id} className="border-border/60 bg-background p-4">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate font-extrabold">
+                                {person?.display_name || "Unknown person"}
+                              </p>
+                              <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                                Due {formatDueDate(assignment.due_date)}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => deleteAssignment(assignment.id)}
+                              disabled={!canManageTraining}
+                              aria-label="Remove assignment"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="grid gap-2 sm:grid-cols-[1fr_7rem_9rem]">
+                            <label>
+                              <span className="label-eyebrow">Status</span>
+                              <select
+                                value={assignment.status}
+                                onChange={(event) =>
+                                  updateAssignment(assignment, {
+                                    status: event.target.value as TrainingAssignment["status"],
+                                    progress:
+                                      event.target.value === "Complete"
+                                        ? 100
+                                        : event.target.value === "Not Started"
+                                          ? 0
+                                          : assignment.progress || 25,
+                                  })
+                                }
+                                disabled={!canManageTraining}
+                                className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-card px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                              >
+                                <option>Not Started</option>
+                                <option>In Progress</option>
+                                <option>Complete</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span className="label-eyebrow">Progress</span>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={assignment.progress}
+                                onChange={(event) =>
+                                  updateAssignment(assignment, {
+                                    progress: Number(event.target.value),
+                                  })
+                                }
+                                disabled={!canManageTraining}
+                                className="mt-1 h-10 rounded-xl border-border/70 bg-card"
+                              />
+                            </label>
+
+                            <label>
+                              <span className="label-eyebrow">Due Date</span>
+                              <Input
+                                type="date"
+                                value={assignment.due_date || ""}
+                                onChange={(event) =>
+                                  updateAssignment(assignment, {
+                                    due_date: event.target.value || null,
+                                  })
+                                }
+                                disabled={!canManageTraining}
+                                className="mt-1 h-10 rounded-xl border-border/70 bg-card"
+                              />
+                            </label>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <Progress value={assignment.progress} className="h-2" />
+                            <span className="w-10 text-right text-xs font-extrabold tabular-nums text-muted-foreground">
+                              {assignment.progress}%
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
@@ -709,7 +2111,7 @@ const TrainingCenter = () => {
             </div>
           )}
 
-          {panelMode === "new" && (
+          {(panelMode === "new" || panelMode === "edit") && (
             <div className="mt-6 space-y-5">
               <label className="block">
                 <span className="label-eyebrow">Course name</span>
@@ -760,6 +2162,7 @@ const TrainingCenter = () => {
                 >
                   <option>Active</option>
                   <option>Draft</option>
+                  {panelMode === "edit" && <option>Archived</option>}
                 </select>
               </label>
 
@@ -786,43 +2189,267 @@ const TrainingCenter = () => {
                 />
               </label>
 
-              <label className="block">
-                <span className="label-eyebrow">Outline items</span>
-                <textarea
-                  value={courseForm.modulesText}
-                  onChange={(event) =>
-                    setCourseForm((current) => ({ ...current, modulesText: event.target.value }))
-                  }
-                  rows={4}
-                  placeholder="One outline item per line"
-                  className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                />
-              </label>
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="label-eyebrow">Lessons</span>
+                    <p className="mt-1 text-sm font-medium text-muted-foreground">
+                      Add the lesson count and write the content people should work through.
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="actsix-btn-outline h-9 px-3 text-sm"
+                    onClick={addCourseLesson}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Lesson
+                  </Button>
+                </div>
+
+                <div className="mt-3 space-y-3">
+                  {courseLessons.map((lesson, index) => (
+                    <Card key={lesson.tempId} className="border-border/60 bg-background p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
+                            {index + 1}
+                          </span>
+                          <div>
+                            <p className="text-sm font-extrabold">Lesson {index + 1}</p>
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Title and content
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() =>
+                              setPreviewLessonId((current) =>
+                                current === lesson.tempId ? null : lesson.tempId
+                              )
+                            }
+                            aria-label="Preview lesson"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() => moveCourseLesson(lesson.tempId, -1)}
+                            disabled={index === 0}
+                            aria-label="Move lesson up"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() => moveCourseLesson(lesson.tempId, 1)}
+                            disabled={index === courseLessons.length - 1}
+                            aria-label="Move lesson down"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => removeCourseLesson(lesson.tempId)}
+                            aria-label="Remove lesson"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <label className="mt-4 block">
+                        <span className="label-eyebrow">Lesson title</span>
+                        <Input
+                          value={lesson.title}
+                          onChange={(event) =>
+                            updateCourseLesson(lesson.tempId, { title: event.target.value })
+                          }
+                          placeholder="Example: Ministry vision and expectations"
+                          className="mt-2 h-11 rounded-xl border-border/70 bg-card"
+                        />
+                      </label>
+
+                      <label className="mt-4 block">
+                        <span className="label-eyebrow">Lesson content</span>
+                        <textarea
+                          value={lesson.content}
+                          onChange={(event) =>
+                            updateCourseLesson(lesson.tempId, { content: event.target.value })
+                          }
+                          rows={5}
+                          placeholder="Write the training content, notes, links, or instructions for this lesson."
+                          className="mt-2 w-full rounded-xl border border-border/70 bg-card px-3 py-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                        />
+                      </label>
+
+                      <div className="mt-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <span className="label-eyebrow">Media</span>
+                            <p className="mt-1 text-xs font-medium text-muted-foreground">
+                              Add video links or image URLs for this lesson.
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="actsix-btn-outline h-8 px-3 text-xs"
+                              onClick={() => addLessonMedia(lesson.tempId, "video")}
+                            >
+                              <Video className="h-3.5 w-3.5" />
+                              Video
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="actsix-btn-outline h-8 px-3 text-xs"
+                              onClick={() => addLessonMedia(lesson.tempId, "image")}
+                            >
+                              <ImageIcon className="h-3.5 w-3.5" />
+                              Image
+                            </Button>
+                          </div>
+                        </div>
+
+                        {lesson.mediaItems.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {lesson.mediaItems.map((mediaItem) => (
+                              <div
+                                key={mediaItem.id}
+                                className="grid gap-2 rounded-xl border border-border/70 bg-card p-3 md:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1.4fr)_2.5rem]"
+                              >
+                                <div className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-sm font-extrabold">
+                                  {mediaItem.type === "video" ? (
+                                    <Video className="h-4 w-4 text-brand-teal" />
+                                  ) : (
+                                    <ImageIcon className="h-4 w-4 text-brand-teal" />
+                                  )}
+                                  {mediaItem.type === "video" ? "Video" : "Image"}
+                                </div>
+
+                                <Input
+                                  value={mediaItem.title}
+                                  onChange={(event) =>
+                                    updateLessonMedia(lesson.tempId, mediaItem.id, {
+                                      title: event.target.value,
+                                    })
+                                  }
+                                  placeholder="Media title"
+                                  className="h-10 rounded-xl border-border/70 bg-background"
+                                />
+
+                                <Input
+                                  value={mediaItem.url}
+                                  onChange={(event) =>
+                                    updateLessonMedia(lesson.tempId, mediaItem.id, {
+                                      url: event.target.value,
+                                    })
+                                  }
+                                  placeholder={
+                                    mediaItem.type === "video"
+                                      ? "https://youtube.com/watch?v=..."
+                                      : "https://example.com/image.jpg"
+                                  }
+                                  className="h-10 rounded-xl border-border/70 bg-background"
+                                />
+
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={() => removeLessonMedia(lesson.tempId, mediaItem.id)}
+                                  aria-label="Remove media"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {previewLessonId === lesson.tempId && (
+                        <Card className="mt-4 border-border/60 bg-card p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="label-eyebrow">Lesson Preview</p>
+                            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                              {getLessonReadTime(lesson.content, lesson.mediaItems)} min read
+                            </span>
+                          </div>
+                          <h3 className="mt-3 text-base font-extrabold tracking-tight">
+                            {lesson.title.trim() || `Lesson ${index + 1}`}
+                          </h3>
+                          <p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-6 text-muted-foreground">
+                            {lesson.content.trim() || "No lesson content added yet."}
+                          </p>
+                          <LessonMediaList mediaItems={lesson.mediaItems} />
+                        </Card>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
 
               <Card className="border-border/60 bg-background p-4">
                 <p className="label-eyebrow">Readiness</p>
                 <div className="mt-3 flex items-center gap-3">
-                  <Progress value={courseForm.title.trim() ? 65 : 25} className="h-2" />
+                  <Progress value={courseReadiness} className="h-2" />
                   <span className="text-xs font-extrabold text-muted-foreground">
-                    {courseForm.title.trim() ? "65%" : "25%"}
+                    {courseReadiness}%
                   </span>
                 </div>
                 <p className="mt-3 text-sm font-medium text-muted-foreground">
-                  Lessons, files, quizzes, and renewal rules can build on this course record later.
+                  {lessonTitleCount} lesson title{lessonTitleCount === 1 ? "" : "s"} and{" "}
+                  {lessonContentCount} lesson content block{lessonContentCount === 1 ? "" : "s"} ready.
+                  {lessonMediaCount > 0 && ` ${lessonMediaCount} media item${lessonMediaCount === 1 ? "" : "s"} attached.`}
+                  Files, quizzes, and renewal rules can build on this later.
                 </p>
               </Card>
 
               <Button
                 className="actsix-btn-primary w-full"
-                onClick={createCourse}
+                onClick={saveCourse}
                 disabled={saving || !canManageTraining}
               >
-                {saving ? "Saving..." : "Save Course"}
+                {saving ? "Saving..." : panelMode === "edit" ? "Save Changes" : "Save Course"}
               </Button>
+
+              {panelMode === "edit" && selectedCourse && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => archiveCourse(selectedCourse)}
+                  disabled={saving || !canManageTraining}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Archive Course
+                </Button>
+              )}
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+      </ResponsiveModal>
     </div>
   );
 };
