@@ -321,7 +321,7 @@ const PeopleGroupDetailPage = () => {
             type="button"
             variant="outline"
             className="actsix-btn-outline mt-4"
-            onClick={() => navigate("/people/groups")}
+            onClick={() => navigate("/groups")}
           >
             Back to Groups
           </Button>
@@ -335,7 +335,7 @@ const PeopleGroupDetailPage = () => {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
-            to="/people/groups"
+            to="/groups"
             className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground transition hover:text-brand-teal"
           >
             <ArrowLeft className="h-4 w-4" />

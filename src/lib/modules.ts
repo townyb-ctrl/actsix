@@ -2,16 +2,17 @@ import type { ActsixModuleKey } from "@/lib/releaseMode";
 
 export type ActiveModuleKey = Extract<
   ActsixModuleKey,
-  "home" | "tasks" | "people" | "meetings" | "service_planner"
+  "home" | "tasks" | "people" | "groups" | "meetings" | "service_planner"
 >;
 
 export const REQUIRED_MODULES: ActiveModuleKey[] = ["home", "tasks", "people"];
-export const OPTIONAL_MODULES: ActiveModuleKey[] = ["meetings", "service_planner"];
+export const OPTIONAL_MODULES: ActiveModuleKey[] = ["groups", "meetings", "service_planner"];
 
 export const DEFAULT_ACTIVE_MODULES: Record<ActiveModuleKey, boolean> = {
   home: true,
   tasks: true,
   people: true,
+  groups: true,
   meetings: false,
   service_planner: false,
 };
@@ -20,6 +21,7 @@ export const MODULE_LABELS: Record<ActiveModuleKey, string> = {
   home: "Home",
   tasks: "Tasks",
   people: "People",
+  groups: "Groups",
   meetings: "Meetings",
   service_planner: "Service Planner",
 };
@@ -27,7 +29,8 @@ export const MODULE_LABELS: Record<ActiveModuleKey, string> = {
 export const MODULE_DESCRIPTIONS: Record<ActiveModuleKey, string> = {
   home: "Daily dashboard and cross-module overview.",
   tasks: "Next actions, inbox, projects, waiting, and someday.",
-  people: "Directory, profiles, groups, and relationships.",
+  people: "Directory, profiles, care notes, and relationships.",
+  groups: "People folders, ministry groups, and team lists.",
   meetings: "Agendas, minutes, recurring meetings, and action points.",
   service_planner: "Service dates, teams, order of service, and repertoire.",
 };
@@ -55,6 +58,7 @@ export const getModuleKeyForPath = (pathname: string): ActiveModuleKey => {
   }
 
   if (pathname === "/people" || pathname.startsWith("/people/")) return "people";
+  if (pathname === "/groups" || pathname.startsWith("/groups/")) return "groups";
   if (pathname === "/meetings" || pathname.startsWith("/meetings/")) return "meetings";
   if (pathname === "/service-planner" || pathname.startsWith("/service-planner/")) {
     return "service_planner";

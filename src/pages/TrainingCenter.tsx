@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowDown,
+  ArrowLeft,
   ArrowUp,
   BookOpen,
   CalendarDays,
@@ -10,6 +12,8 @@ import {
   Clock3,
   Eye,
   Filter,
+  Folder,
+  FolderPlus,
   GraduationCap,
   Image as ImageIcon,
   Pencil,
@@ -47,6 +51,7 @@ type TrainingCourse = {
   id: string;
   workspace_id: string;
   user_id: string;
+  section_id: string | null;
   title: string;
   category: string;
   cover_image_url: string;
@@ -55,6 +60,17 @@ type TrainingCourse = {
   status: "Active" | "Draft" | "Archived";
   suggested_audience: string;
   modules: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+type TrainingSection = {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  name: string;
+  description: string;
+  position: number;
   created_at: string;
   updated_at: string;
 };
@@ -117,7 +133,7 @@ type PersonOption = {
   email?: string | null;
 };
 
-type PanelMode = "course" | "assign" | "new" | "edit";
+type PanelMode = "course" | "assign" | "new" | "edit" | "section";
 type TrainingAdminView = "library" | "progress" | "activity";
 
 const emptyCourseForm = {
@@ -126,6 +142,7 @@ const emptyCourseForm = {
   coverImageUrl: "",
   description: "",
   estimatedMinutes: "45",
+  sectionId: "",
   status: "Active" as TrainingCourse["status"],
   suggestedAudience: "",
 };
@@ -320,10 +337,14 @@ const getProgressStatus = (progress: number): TrainingAssignment["status"] => {
 };
 
 const TrainingCenter = () => {
+  const { folderId } = useParams<{ folderId?: string }>();
+  const [searchParams] = useSearchParams();
+  const selectedFolderId = folderId || searchParams.get("folder") || "";
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
   const { workspace, role } = useCurrentWorkspace();
   const [courses, setCourses] = useState<TrainingCourse[]>([]);
+  const [sections, setSections] = useState<TrainingSection[]>([]);
   const [assignments, setAssignments] = useState<TrainingAssignment[]>([]);
   const [lessons, setLessons] = useState<TrainingLesson[]>([]);
   const [lessonProgress, setLessonProgress] = useState<TrainingLessonProgress[]>([]);
@@ -334,6 +355,8 @@ const TrainingCenter = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [newSectionName, setNewSectionName] = useState("");
+  const [creatingSection, setCreatingSection] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<TrainingCourse | null>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<TrainingAssignment | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
@@ -372,7 +395,13 @@ const TrainingCenter = () => {
 
     setLoading(true);
 
-    const [courseResult, assignmentResult, lessonResult, lessonProgressResult, peopleResult] = await Promise.all([
+    const [sectionResult, courseResult, assignmentResult, lessonResult, lessonProgressResult, peopleResult] = await Promise.all([
+      (supabase as any)
+        .from("training_sections")
+        .select("*")
+        .eq("workspace_id", workspace.id)
+        .order("position", { ascending: true })
+        .order("name", { ascending: true }),
       (supabase as any)
         .from("training_courses")
         .select("*")
@@ -401,12 +430,14 @@ const TrainingCenter = () => {
         .order("display_name", { ascending: true }),
     ]);
 
+    if (sectionResult.error) toast.error(sectionResult.error.message);
     if (courseResult.error) toast.error(courseResult.error.message);
     if (assignmentResult.error) toast.error(assignmentResult.error.message);
     if (lessonResult.error) toast.error(lessonResult.error.message);
     if (lessonProgressResult.error) toast.error(lessonProgressResult.error.message);
     if (peopleResult.error) toast.error(peopleResult.error.message);
 
+    setSections(sectionResult.data ?? []);
     setCourses(courseResult.data ?? []);
     setAssignments(assignmentResult.data ?? []);
     setLessons(lessonResult.data ?? []);
@@ -424,6 +455,47 @@ const TrainingCenter = () => {
     [courses]
   );
 
+  const sectionsById = useMemo(() => {
+    return sections.reduce<Record<string, TrainingSection>>((acc, section) => {
+      acc[section.id] = section;
+      return acc;
+    }, {});
+  }, [sections]);
+
+  const folderTiles = useMemo(() => {
+    const tiles = sections.map((section) => ({
+      id: section.id,
+      name: section.name,
+      description: section.description,
+      courseCount: courses.filter((course) => course.section_id === section.id).length,
+    }));
+
+    const unfiledCourseCount = courses.filter((course) => !course.section_id).length;
+    if (unfiledCourseCount > 0) {
+      tiles.push({
+        id: "unfiled",
+        name: "Unfiled Courses",
+        description: "Courses that have not been added to a folder yet.",
+        courseCount: unfiledCourseCount,
+      });
+    }
+
+    return tiles;
+  }, [courses, sections]);
+
+  const selectedFolder = useMemo(() => {
+    if (!selectedFolderId) return null;
+    if (selectedFolderId === "unfiled") {
+      return {
+        id: "unfiled",
+        name: "Unfiled Courses",
+        description: "Courses that have not been added to a folder yet.",
+      };
+    }
+
+    return sectionsById[selectedFolderId] || null;
+  }, [selectedFolderId, sectionsById]);
+
   const filteredCourses = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -435,11 +507,16 @@ const TrainingCenter = () => {
         course.description.toLowerCase().includes(query);
 
       const matchesCategory = categoryFilter === "All" || course.category === categoryFilter;
+      const matchesSection = selectedFolderId
+        ? selectedFolderId === "unfiled"
+          ? !course.section_id
+          : course.section_id === selectedFolderId
+        : true;
       const matchesStatus = statusFilter === "All" || course.status === statusFilter;
 
-      return matchesSearch && matchesCategory && matchesStatus;
+      return matchesSearch && matchesCategory && matchesSection && matchesStatus;
     });
-  }, [categoryFilter, courses, search, statusFilter]);
+  }, [categoryFilter, courses, search, selectedFolderId, statusFilter]);
 
   const assignmentCountByCourse = useMemo(() => {
     return assignments.reduce<Record<string, number>>((acc, assignment) => {
@@ -610,6 +687,7 @@ const TrainingCenter = () => {
 
   const summaryCards = [
     { label: "Total Courses", value: String(courses.length), icon: BookOpen },
+    { label: "Sections", value: String(sections.length), icon: Folder },
     { label: "Assigned Training", value: String(assignments.length), icon: ClipboardCheck },
     {
       label: "In Progress",
@@ -637,7 +715,7 @@ const TrainingCenter = () => {
     label: string;
     count: number;
   }> = [
-    { id: "library", label: "Library", count: filteredCourses.length },
+    { id: "library", label: "Library", count: selectedFolderId ? filteredCourses.length : folderTiles.length },
     { id: "progress", label: "Progress", count: progressRows.length },
     { id: "activity", label: "Activity", count: recentTrainingActivity.length },
   ];
@@ -674,8 +752,14 @@ const TrainingCenter = () => {
     setAssignmentDueDate("");
     setPreviewLessonId(null);
     if (mode === "new") {
-      setCourseForm(emptyCourseForm);
+      setCourseForm({
+        ...emptyCourseForm,
+        sectionId: selectedFolderId && selectedFolderId !== "unfiled" ? selectedFolderId : "",
+      });
       setCourseLessons([createLessonForm(0)]);
+    }
+    if (mode === "section") {
+      setNewSectionName("");
     }
     setPanelOpen(true);
   };
@@ -692,6 +776,7 @@ const TrainingCenter = () => {
       description: course.description,
       coverImageUrl: course.cover_image_url || "",
       estimatedMinutes: String(course.estimated_minutes),
+      sectionId: course.section_id || "",
       status: course.status,
       suggestedAudience: course.suggested_audience,
     });
@@ -791,6 +876,49 @@ const TrainingCenter = () => {
     });
   };
 
+  const createTrainingSection = async () => {
+    if (!workspace?.id || !user?.id || !canManageTraining) return;
+
+    const name = newSectionName.trim();
+    if (!name) {
+      toast.error("Add a folder name first.");
+      return;
+    }
+
+    setCreatingSection(true);
+
+    const { data, error } = await (supabase as any)
+      .from("training_sections")
+      .insert({
+        workspace_id: workspace.id,
+        user_id: user.id,
+        name,
+        position: sections.length,
+      })
+      .select("*")
+      .single();
+
+    setCreatingSection(false);
+
+    if (error) {
+      if (error.message.includes("training_sections") || error.code === "42P01") {
+        toast.error("Apply the training sections migration in Supabase, then create folders.");
+        return;
+      }
+
+      toast.error(error.message);
+      return;
+    }
+
+    setSections((current) => [...current, data].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name)));
+    setNewSectionName("");
+    setAdminView("library");
+    if (panelMode === "section") {
+      setPanelOpen(false);
+    }
+    toast.success("Training folder created");
+  };
+
   const saveCourse = async () => {
     if (!workspace?.id || !user?.id) return;
     if (!courseForm.title.trim()) {
@@ -831,6 +959,7 @@ const TrainingCenter = () => {
       cover_image_url: courseForm.coverImageUrl.trim(),
       description: courseForm.description.trim(),
       estimated_minutes: Number(courseForm.estimatedMinutes) || 30,
+      section_id: courseForm.sectionId || null,
       status: courseForm.status,
       suggested_audience: courseForm.suggestedAudience.trim(),
       modules: cleanLessons.map((lesson) => lesson.title),
@@ -862,7 +991,12 @@ const TrainingCenter = () => {
         courseResult.error.message.includes("cover_image_url") ||
         courseResult.error.code === "PGRST204"
       ) {
-        toast.error("Apply the training cover image migration in Supabase, then save again.");
+        const missingSectionColumn = courseResult.error.message.includes("section_id");
+        toast.error(
+          missingSectionColumn
+            ? "Apply the training sections migration in Supabase, then save again."
+            : "Apply the training cover image migration in Supabase, then save again."
+        );
         return;
       }
       toast.error(courseResult.error.message);
@@ -1039,6 +1173,100 @@ const TrainingCenter = () => {
     setCourseForm((current) => ({ ...current, coverImageUrl: data.publicUrl }));
     toast.success("Course cover uploaded");
   };
+
+  const renderCourseCard = (course: TrainingCourse) => (
+    <Card
+      key={course.id}
+      className="actsix-panel-soft flex min-w-0 flex-col overflow-hidden border-border/60 p-0"
+    >
+      <div className="relative aspect-[16/7] overflow-hidden bg-muted">
+        {course.cover_image_url ? (
+          <img src={course.cover_image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-brand-teal/10 text-brand-teal">
+            <GraduationCap className="h-9 w-9" />
+          </div>
+        )}
+
+        <Badge
+          variant="outline"
+          className={cn("absolute right-3 top-3 w-fit bg-background/90 backdrop-blur", statusBadgeClass(course.status))}
+        >
+          {course.status}
+        </Badge>
+      </div>
+
+      <div className="flex flex-1 flex-col p-3">
+        <div className="min-w-0">
+          <h2 className="line-clamp-2 min-h-[3rem] text-base font-extrabold leading-6 tracking-tight text-foreground">
+            {course.title}
+          </h2>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="max-w-full border-brand-teal/25 bg-brand-teal/10 px-2 py-0.5 text-[11px] text-brand-teal">
+              <span className="truncate">{course.category}</span>
+            </Badge>
+            {course.section_id && sectionsById[course.section_id] && (
+              <Badge variant="outline" className="max-w-full border-border/70 bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
+                <Folder className="mr-1 h-3 w-3" />
+                <span className="truncate">{sectionsById[course.section_id].name}</span>
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <p className="mt-2 line-clamp-2 min-h-[2.75rem] text-xs font-medium leading-5 text-muted-foreground">
+          {course.description || "No course description yet."}
+        </p>
+
+        <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-bold text-muted-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+            <Clock3 className="h-3 w-3" />
+            {course.estimated_minutes} min
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+            <BookOpen className="h-3 w-3" />
+            {(lessonsByCourseId[course.id]?.length || course.modules.length || 0)} lessons
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+            <Users className="h-3 w-3" />
+            {assignmentCountByCourse[course.id] || 0} assigned
+          </span>
+        </div>
+
+        <div className="mt-3 grid grid-cols-[2.25rem_2.25rem_minmax(0,1fr)] gap-1.5">
+          <Button
+            variant="outline"
+            title="View course"
+            aria-label={`View ${course.title}`}
+            size="sm"
+            className="actsix-btn-outline h-8 min-w-0 px-0"
+            onClick={() => openPanel("course", course)}
+          >
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="outline"
+            title="Edit course"
+            aria-label={`Edit ${course.title}`}
+            size="sm"
+            className="actsix-btn-outline h-8 min-w-0 px-0"
+            onClick={() => editCourse(course)}
+            disabled={!canManageTraining}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            className="actsix-btn-primary h-8 min-w-0 px-2 text-xs"
+            onClick={() => openPanel("assign", course)}
+            disabled={!canManageTraining}
+          >
+            <span className="truncate">Assign</span>
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
 
   const updateAssignment = async (
     assignment: TrainingAssignment,
@@ -1634,6 +1862,15 @@ const TrainingCenter = () => {
         actions={
           <>
             <Button
+              variant="outline"
+              className="actsix-btn-outline gap-2"
+              onClick={() => openPanel("section")}
+              disabled={!canManageTraining}
+            >
+              <FolderPlus className="h-4 w-4" />
+              New Folder
+            </Button>
+            <Button
               className="actsix-btn-primary gap-2"
               onClick={() => openPanel("new")}
               disabled={!canManageTraining}
@@ -1693,7 +1930,7 @@ const TrainingCenter = () => {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
                 {summaryCards.map((item) => {
                   const Icon = item.icon;
 
@@ -1769,160 +2006,140 @@ const TrainingCenter = () => {
           </div>
         </section>
 
-        {adminView === "library" && (
-        <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative min-w-0 flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search training resources..."
-                className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-soft"
-              />
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-2 lg:w-[26rem]">
-              <label className="relative">
-                <span className="sr-only">Filter by category</span>
-                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value)}
-                  className="h-11 w-full rounded-xl border border-border/70 bg-background px-9 text-sm font-semibold shadow-soft outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                >
-                  {categories.map((category) => (
-                    <option key={category}>{category}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span className="sr-only">Filter by status</span>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                  className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold shadow-soft outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                >
-                  <option>All</option>
-                  <option>Active</option>
-                  <option>Draft</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </Card>
-        )}
-
-        {adminView === "library" && (
+        {adminView === "library" && !selectedFolderId && (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {loading && (
             <Card className="actsix-loading-state md:col-span-2 xl:col-span-3 2xl:col-span-4" role="status">
-              Loading training center...
+              Loading training folders...
             </Card>
           )}
 
           {!loading &&
-            filteredCourses.map((course) => (
-              <Card
-                key={course.id}
-                className="actsix-panel-soft flex min-w-0 flex-col overflow-hidden border-border/60 p-0"
-              >
-                <div className="relative aspect-[16/7] overflow-hidden bg-muted">
-                  {course.cover_image_url ? (
-                    <img
-                      src={course.cover_image_url}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-brand-teal/10 text-brand-teal">
-                      <GraduationCap className="h-9 w-9" />
-                    </div>
-                  )}
-
-                  <Badge
-                    variant="outline"
-                    className={cn("absolute right-3 top-3 w-fit bg-background/90 backdrop-blur", statusBadgeClass(course.status))}
-                  >
-                    {course.status}
-                  </Badge>
-                </div>
-
-                <div className="flex flex-1 flex-col p-3">
-                  <div className="min-w-0">
-                    <h2 className="line-clamp-2 min-h-[3rem] text-base font-extrabold leading-6 tracking-tight text-foreground">
-                      {course.title}
-                    </h2>
-                    <Badge variant="outline" className="mt-1.5 max-w-full border-brand-teal/25 bg-brand-teal/10 px-2 py-0.5 text-[11px] text-brand-teal">
-                      <span className="truncate">{course.category}</span>
+            folderTiles.map((folder) => (
+              <Link key={folder.id} to={`/training?folder=${encodeURIComponent(folder.id)}`} className="group block min-w-0">
+                <Card className="actsix-panel-soft flex min-h-44 flex-col justify-between border-border/60 p-5 transition hover:-translate-y-0.5 hover:border-brand-teal/35 hover:shadow-card">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal transition group-hover:bg-brand-teal group-hover:text-white">
+                      <Folder className="h-5 w-5" />
+                    </span>
+                    <Badge variant="outline" className="border-border/70 bg-background px-2.5 py-1 text-xs font-extrabold text-muted-foreground">
+                      {folder.courseCount} course{folder.courseCount === 1 ? "" : "s"}
                     </Badge>
                   </div>
 
-                  <p className="mt-2 line-clamp-2 min-h-[2.75rem] text-xs font-medium leading-5 text-muted-foreground">
-                    {course.description || "No course description yet."}
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-bold text-muted-foreground">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
-                      <Clock3 className="h-3 w-3" />
-                      {course.estimated_minutes} min
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
-                      <BookOpen className="h-3 w-3" />
-                      {(lessonsByCourseId[course.id]?.length || course.modules.length || 0)} lessons
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
-                      <Users className="h-3 w-3" />
-                      {assignmentCountByCourse[course.id] || 0} assigned
-                    </span>
+                  <div className="mt-6 min-w-0">
+                    <h2 className="truncate text-xl font-extrabold tracking-tight text-foreground transition group-hover:text-brand-teal">
+                      {folder.name}
+                    </h2>
+                    <p className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-muted-foreground">
+                      {folder.description || "Open this folder to view its training courses."}
+                    </p>
                   </div>
-
-                  <div className="mt-3 grid grid-cols-[2.25rem_2.25rem_minmax(0,1fr)] gap-1.5">
-                    <Button
-                      variant="outline"
-                      title="View course"
-                      aria-label={`View ${course.title}`}
-                      size="sm"
-                      className="actsix-btn-outline h-8 min-w-0 px-0"
-                      onClick={() => openPanel("course", course)}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      title="Edit course"
-                      aria-label={`Edit ${course.title}`}
-                      size="sm"
-                      className="actsix-btn-outline h-8 min-w-0 px-0"
-                      onClick={() => editCourse(course)}
-                      disabled={!canManageTraining}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="actsix-btn-primary h-8 min-w-0 px-2 text-xs"
-                      onClick={() => openPanel("assign", course)}
-                      disabled={!canManageTraining}
-                    >
-                      <span className="truncate">Assign</span>
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             ))}
 
-          {!loading && filteredCourses.length === 0 && (
+          {!loading && folderTiles.length === 0 && (
             <Card className="actsix-panel-soft border-border/60 p-8 text-center md:col-span-2 xl:col-span-3 2xl:col-span-4">
-              <p className="text-lg font-extrabold">No training resources found</p>
+              <p className="text-lg font-extrabold">No training folders yet</p>
               <p className="mt-2 text-sm font-medium text-muted-foreground">
-                Adjust your filters or create the first training course for this workspace.
+                Create a folder from the top action bar to start organizing courses.
               </p>
             </Card>
           )}
         </section>
+        )}
+
+        {adminView === "library" && selectedFolderId && (
+        <>
+          <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Button asChild variant="ghost" className="mb-2 h-8 px-0 text-muted-foreground hover:bg-transparent hover:text-brand-teal">
+                    <Link to="/training">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to folders
+                    </Link>
+                  </Button>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                      <Folder className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <h2 className="truncate text-2xl font-extrabold tracking-tight">
+                        {selectedFolder?.name || "Training Folder"}
+                      </h2>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {filteredCourses.length} course{filteredCourses.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search courses in this folder..."
+                    className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-soft"
+                  />
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2 lg:w-[26rem]">
+                  <label className="relative">
+                    <span className="sr-only">Filter by category</span>
+                    <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <select
+                      value={categoryFilter}
+                      onChange={(event) => setCategoryFilter(event.target.value)}
+                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-9 text-sm font-semibold shadow-soft outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    >
+                      {categories.map((category) => (
+                        <option key={category}>{category}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span className="sr-only">Filter by status</span>
+                    <select
+                      value={statusFilter}
+                      onChange={(event) => setStatusFilter(event.target.value)}
+                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold shadow-soft outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    >
+                      <option>All</option>
+                      <option>Active</option>
+                      <option>Draft</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {loading && (
+              <Card className="actsix-loading-state md:col-span-2 xl:col-span-3 2xl:col-span-4" role="status">
+                Loading courses...
+              </Card>
+            )}
+
+            {!loading && filteredCourses.map((course) => renderCourseCard(course))}
+
+            {!loading && filteredCourses.length === 0 && (
+              <Card className="actsix-panel-soft border-border/60 p-8 text-center md:col-span-2 xl:col-span-3 2xl:col-span-4">
+                <p className="text-lg font-extrabold">No courses in this folder</p>
+                <p className="mt-2 text-sm font-medium text-muted-foreground">
+                  Add a course to this folder or adjust the course filters.
+                </p>
+              </Card>
+            )}
+          </section>
+        </>
         )}
 
         {adminView === "progress" && (
@@ -2091,6 +2308,8 @@ const TrainingCenter = () => {
             ? "Create a new course"
             : panelMode === "edit"
               ? "Edit course"
+              : panelMode === "section"
+              ? "Create a new folder"
               : panelMode === "assign"
               ? "Assign training"
               : selectedCourse?.title || "Course"
@@ -2100,7 +2319,9 @@ const TrainingCenter = () => {
             ? "Create a workspace training resource that can be assigned to people."
             : panelMode === "edit"
               ? "Update the course details, outline, status, and ministry fit."
-            : panelMode === "assign"
+              : panelMode === "section"
+              ? "Add a folder for grouping related training courses."
+              : panelMode === "assign"
               ? "Choose the course, people, and optional due date."
               : selectedCourse?.description
         }
@@ -2110,10 +2331,58 @@ const TrainingCenter = () => {
           <p className="label-eyebrow">
             {panelMode === "new" || panelMode === "edit"
               ? "Course Builder"
+              : panelMode === "section"
+                ? "Folder"
               : panelMode === "assign"
                 ? "Assignment"
                 : "Course"}
           </p>
+
+          {panelMode === "section" && (
+            <div className="mt-6 space-y-5">
+              <label className="block">
+                <span className="label-eyebrow">Folder name</span>
+                <Input
+                  value={newSectionName}
+                  onChange={(event) => setNewSectionName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      createTrainingSection();
+                    }
+                  }}
+                  autoFocus
+                  placeholder="Example: New Volunteers"
+                  className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                />
+              </label>
+
+              <Card className="border-border/60 bg-background p-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                    <Folder className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-extrabold">
+                      {newSectionName.trim() || "New training folder"}
+                    </p>
+                    <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">
+                      Courses can be assigned to this folder from the course builder.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Button
+                className="actsix-btn-primary w-full"
+                onClick={createTrainingSection}
+                disabled={creatingSection || !canManageTraining}
+              >
+                <FolderPlus className="h-4 w-4" />
+                {creatingSection ? "Creating..." : "Create Folder"}
+              </Button>
+            </div>
+          )}
 
           {panelMode === "course" && selectedCourse && (
             <div className="mt-6 space-y-5">
@@ -2133,6 +2402,12 @@ const TrainingCenter = () => {
                   <Badge variant="outline" className="border-brand-teal/25 bg-brand-teal/10 text-brand-teal">
                     {selectedCourse.category}
                   </Badge>
+                  {selectedCourse.section_id && sectionsById[selectedCourse.section_id] && (
+                    <Badge variant="outline" className="border-border/70 bg-background text-muted-foreground">
+                      <Folder className="mr-1 h-3 w-3" />
+                      {sectionsById[selectedCourse.section_id].name}
+                    </Badge>
+                  )}
                   <Badge variant="outline" className={statusBadgeClass(selectedCourse.status)}>
                     {selectedCourse.status}
                   </Badge>
@@ -2411,7 +2686,7 @@ const TrainingCenter = () => {
                 />
               </label>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <label className="block">
                   <span className="label-eyebrow">Category</span>
                   <Input
@@ -2421,6 +2696,24 @@ const TrainingCenter = () => {
                     }
                     className="mt-2 h-11 rounded-xl border-border/70 bg-background"
                   />
+                </label>
+
+                <label className="block">
+                  <span className="label-eyebrow">Folder</span>
+                  <select
+                    value={courseForm.sectionId}
+                    onChange={(event) =>
+                      setCourseForm((current) => ({ ...current, sectionId: event.target.value }))
+                    }
+                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  >
+                    <option value="">Unfiled</option>
+                    {sections.map((section) => (
+                      <option key={section.id} value={section.id}>
+                        {section.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="block">

@@ -1535,11 +1535,13 @@ export type Database = {
       training_courses: {
         Row: {
           category: string
+          cover_image_url: string | null
           created_at: string
           description: string
           estimated_minutes: number
           id: string
           modules: string[]
+          section_id: string | null
           status: string
           suggested_audience: string
           title: string
@@ -1549,11 +1551,13 @@ export type Database = {
         }
         Insert: {
           category?: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string
           estimated_minutes?: number
           id?: string
           modules?: string[]
+          section_id?: string | null
           status?: string
           suggested_audience?: string
           title: string
@@ -1563,11 +1567,13 @@ export type Database = {
         }
         Update: {
           category?: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string
           estimated_minutes?: number
           id?: string
           modules?: string[]
+          section_id?: string | null
           status?: string
           suggested_audience?: string
           title?: string
@@ -1578,6 +1584,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "training_courses_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_courses_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "training_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_sections: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          position: number
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          position?: number
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_sections_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"

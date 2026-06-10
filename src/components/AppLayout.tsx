@@ -44,6 +44,12 @@ const getBackTarget = (pathname: string) => {
   if (pathname.startsWith("/meetings/") && pathname !== "/meetings") {
     return { label: "Back to Meetings", to: "/meetings" };
   }
+  if (pathname.startsWith("/groups/")) {
+    return { label: "Back to Groups", to: "/groups" };
+  }
+  if (pathname.startsWith("/training/folders/")) {
+    return { label: "Back to Training", to: "/training" };
+  }
   if (pathname.startsWith("/people/")) {
     return { label: "Back to People", to: "/people" };
   }

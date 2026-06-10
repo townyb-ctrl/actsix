@@ -57,6 +57,7 @@ const SettingsPage = () => {
           <div className="mt-2 text-2xl font-extrabold tracking-tight">Modules</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Choose which ACTSIX modules appear in your left menu. Home, Tasks, and People stay active for every user.
+            Groups is its own module and starts active for every workspace.
           </p>
 
           <div className="mt-5 overflow-hidden rounded-[var(--radius-panel)] border border-border/70">

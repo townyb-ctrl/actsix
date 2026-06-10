@@ -112,7 +112,7 @@ const tours: Record<TourKey, TourStep[]> = {
     {
       selector: '[data-tour="people-list"]',
       title: "Profiles connect the rest of ACTSIX",
-      body: "People profiles can connect to task assignments, service teams, meeting roles, and groups.",
+      body: "People profiles can connect to task assignments, service teams, meeting roles, and the Groups module.",
       path: "/people",
       placement: "top",
     },

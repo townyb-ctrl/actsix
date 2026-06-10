@@ -8,7 +8,6 @@ import {
   Edit3,
   Plus,
   ListChecks,
-  MessageCircle,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -27,7 +26,6 @@ import ProjectEditorModal from "@/features/projects/components/ProjectEditorModa
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { logActivity } from "@/lib/activityLog";
 import { toast } from "sonner";
-import { getWhatsappHref, isMessageablePhone } from "@/lib/phone";
 import {
   addProjectCollaborators,
   createProjectActionTask,
@@ -135,7 +133,6 @@ const ProjectDetailPage = () => {
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
-  const [isMessagingOpen, setIsMessagingOpen] = useState(false);
   const [openSectionIds, setOpenSectionIds] = useState<Record<string, boolean>>({});
   const [openCompletedSectionIds, setOpenCompletedSectionIds] = useState<Record<string, boolean>>({});
   const [isUnsectionedOpen, setIsUnsectionedOpen] = useState(false);
@@ -150,7 +147,6 @@ const ProjectDetailPage = () => {
   const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
-  const [collaboratorMessage, setCollaboratorMessage] = useState("");
 
   const load = async () => {
     if (!user || !projectId || !currentPerson?.workspace_id) return;
@@ -731,41 +727,6 @@ const ProjectDetailPage = () => {
     return !collaborators.some((collaborator) => collaborator.person_id === person.id);
   });
 
-  const messageableCollaborators = collaborators.filter((collaborator) =>
-    isMessageablePhone(collaborator.people?.phone_number)
-  );
-
-  const nonMessageableCollaborators = collaborators.filter((collaborator) =>
-    !isMessageablePhone(collaborator.people?.phone_number)
-  );
-
-  const messageProjectCollaborators = () => {
-    if (messageableCollaborators.length === 0) {
-      toast.error("No collaborators have valid phone numbers.");
-      return;
-    }
-
-    const encodedMessage = collaboratorMessage.trim()
-      ? `?text=${encodeURIComponent(collaboratorMessage.trim())}`
-      : "";
-
-    messageableCollaborators.forEach((collaborator, index) => {
-      const href = getWhatsappHref(collaborator.people?.phone_number);
-
-      if (!href) return;
-
-      window.setTimeout(() => {
-        window.open(`${href}${encodedMessage}`, "_blank", "noopener,noreferrer");
-      }, index * 250);
-    });
-
-    toast.success(
-      messageableCollaborators.length === 1
-        ? "Opening WhatsApp message"
-        : `Opening ${messageableCollaborators.length} WhatsApp messages`
-    );
-  };
-
   const saveProject = async () => {
     if (!editingProject || !user || !project) return;
 
@@ -893,7 +854,58 @@ const ProjectDetailPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1 shadow-soft">
+                  <div className="flex -space-x-2">
+                    {collaborators.slice(0, 5).map((collaborator) => (
+                      <div
+                        key={collaborator.id}
+                        className="group relative rounded-full"
+                        title={`${collaborator.people?.display_name || "Person"} - ${collaborator.role || "Collaborator"}`}
+                      >
+                        <PersonAvatar
+                          name={collaborator.people?.display_name}
+                          avatarUrl={collaborator.people?.avatar_url}
+                          size="sm"
+                          className="border-2 border-background shadow-soft ring-1 ring-border"
+                        />
+
+                        <button
+                          type="button"
+                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-soft transition hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/25"
+                          onClick={() => removeCollaborator(collaborator.id)}
+                          aria-label="Remove collaborator"
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <span className="text-xs font-extrabold text-muted-foreground">
+                    {collaborators.length === 0
+                      ? "No collaborators"
+                      : `${collaborators.length} collaborator${collaborators.length === 1 ? "" : "s"}`}
+                  </span>
+
+                  {collaborators.length > 5 && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-extrabold text-muted-foreground">
+                      +{collaborators.length - 5}
+                    </span>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg px-2.5"
+                  onClick={() => setAddCollaboratorOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Collaborator
+                </Button>
+
                 <Button
                   variant="ghost"
                   size="icon"
@@ -954,126 +966,6 @@ const ProjectDetailPage = () => {
                 <p className="text-[11px] text-muted-foreground">Due Soon</p>
               </div>
             </div>
-          </div>
-
-          <div className="border-b border-border/70 p-5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="font-extrabold">Collaborators</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Link People profiles to this project.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setAddCollaboratorOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Add Collaborator
-              </Button>
-            </div>
-
-            {collaborators.length === 0 && (
-              <div className="actsix-empty-state min-h-[7rem] text-left">
-                Add collaborators so this project has visible owners and shared follow-up.
-              </div>
-            )}
-
-            {collaborators.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {collaborators.map((collaborator) => (
-                  <div
-                    key={collaborator.id}
-                    className="group relative rounded-full"
-                    title={`${collaborator.people?.display_name || "Person"} - ${collaborator.role || "Collaborator"}`}
-                  >
-                    <PersonAvatar
-                      name={collaborator.people?.display_name}
-                      avatarUrl={collaborator.people?.avatar_url}
-                      size="md"
-                      className="border-2 border-background shadow-soft ring-1 ring-border"
-                    />
-
-                    <button
-                      type="button"
-                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-soft transition hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/25"
-                      onClick={() => removeCollaborator(collaborator.id)}
-                      aria-label="Remove collaborator"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {collaborators.length > 0 && (
-              <div className="mt-5 rounded-lg border border-border/70 bg-muted/10 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="label-eyebrow">Messaging</p>
-                    <h4 className="mt-1 font-extrabold">
-                      Message collaborators
-                    </h4>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Opens WhatsApp chats for collaborators with valid phone numbers.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-brand-teal bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
-                      {messageableCollaborators.length} messageable
-                    </span>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 rounded-lg px-2.5"
-                      aria-expanded={isMessagingOpen}
-                      onClick={() => setIsMessagingOpen((open) => !open)}
-                    >
-                      {isMessagingOpen ? "Hide" : "Show"}
-                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isMessagingOpen ? "rotate-180" : ""}`} />
-                    </Button>
-                  </div>
-                </div>
-
-                {isMessagingOpen && (
-                  <>
-                    <textarea
-                      value={collaboratorMessage}
-                      onChange={(event) => setCollaboratorMessage(event.target.value)}
-                      rows={3}
-                      placeholder={`Hi team, quick update on ${project.name}...`}
-                      className="mt-4 w-full rounded-lg border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-                    />
-
-                    {nonMessageableCollaborators.length > 0 && (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {nonMessageableCollaborators.length} collaborator{nonMessageableCollaborators.length === 1 ? "" : "s"} will be skipped because they do not have a valid phone number.
-                      </p>
-                    )}
-
-                    <div className="mt-4 flex justify-end">
-                      <Button
-                        type="button"
-                        className="actsix-btn-primary rounded-lg"
-                        onClick={messageProjectCollaborators}
-                        disabled={messageableCollaborators.length === 0}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        Message Collaborators
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
 
           <div className="border-b border-border/70 p-4 sm:p-5">

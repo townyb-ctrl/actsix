@@ -892,7 +892,7 @@ const PersonDetailPage = () => {
                 </div>
 
                 <Link
-                  to="/people/groups"
+                  to="/groups"
                   className="actsix-btn-outline inline-flex h-9 px-3 text-sm font-bold text-foreground"
                 >
                   View Groups
@@ -910,7 +910,7 @@ const PersonDetailPage = () => {
                   {groupMemberships.map((membership) => (
                     <Link
                       key={membership.id}
-                      to="/people/groups"
+                      to="/groups"
                       className="flex items-center gap-3 px-4 py-3 transition hover:bg-brand-teal/5"
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">

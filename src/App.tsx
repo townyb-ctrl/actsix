@@ -1,5 +1,5 @@
 ﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +34,11 @@ import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
+
+const LegacyGroupRedirect = () => {
+  const { groupId } = useParams();
+  return <Navigate to={`/groups/${groupId}`} replace />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -76,13 +81,16 @@ const App = () => (
               <Route path="/service-planner/teams/:teamId" element={<ServicePlannerTeamDetail />} />
               <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
               <Route path="/people" element={<People />} />
-              <Route path="/people/groups" element={<PeopleGroups />} />
-              <Route path="/people/groups/:groupId" element={<PeopleGroupDetail />} />
+              <Route path="/groups" element={<PeopleGroups />} />
+              <Route path="/groups/:groupId" element={<PeopleGroupDetail />} />
+              <Route path="/people/groups" element={<Navigate to="/groups" replace />} />
+              <Route path="/people/groups/:groupId" element={<LegacyGroupRedirect />} />
               <Route path="/people/:personId" element={<PersonDetail />} />
               <Route path="/meetings/recurring" element={<RecurringMeetings />} />
               <Route path="/meetings/recurring/:seriesId" element={<RecurringMeetingDetail />} />
               <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
               <Route path="/training" element={<TrainingCenter />} />
+              <Route path="/training/folders/:folderId" element={<TrainingCenter />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/workspace" element={<WorkspaceSettings />} />
               <Route path="/settings/alpha-feedback" element={<AlphaFeedback />} />

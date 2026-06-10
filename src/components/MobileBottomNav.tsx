@@ -42,6 +42,7 @@ type MobileModuleKey =
   | "servicePlanner"
   | "meetings"
   | "people"
+  | "groups"
   | "settings";
 
 type MobileDockLink = {
@@ -76,6 +77,7 @@ const detectModule = (pathname: string): MobileModuleKey => {
   if (pathname === "/") return "home";
   if (pathname.startsWith("/service-planner")) return "servicePlanner";
   if (pathname.startsWith("/meetings")) return "meetings";
+  if (pathname.startsWith("/groups")) return "groups";
   if (pathname.startsWith("/people")) return "people";
   if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/tasks/projects") || pathname.startsWith("/projects")) {
@@ -277,7 +279,7 @@ const moduleConfigs: Record<MobileModuleKey, MobileModuleConfig> = {
   people: {
     key: "people",
     title: "People",
-    subtitle: "People, groups, and ministry involvement.",
+    subtitle: "Directory, profiles, and ministry involvement.",
     primary: { icon: Users, label: "People", path: "/people" },
     menuLabel: "People",
     menuIcon: Menu,
@@ -289,10 +291,32 @@ const moduleConfigs: Record<MobileModuleKey, MobileModuleConfig> = {
         description: "People profiles and contact details.",
       },
       {
+        icon: Inbox,
+        label: "Capture note",
+        path: "/tasks/inbox",
+        description: "Capture a follow-up or care note.",
+      },
+    ],
+  },
+  groups: {
+    key: "groups",
+    title: "Groups",
+    subtitle: "People folders and ministry group lists.",
+    primary: { icon: FolderKanban, label: "Groups", path: "/groups" },
+    menuLabel: "Groups",
+    menuIcon: Menu,
+    menuItems: [
+      {
         icon: FolderKanban,
-        label: "Groups",
-        path: "/people/groups",
+        label: "All Groups",
+        path: "/groups",
         description: "People folders and ministry groups.",
+      },
+      {
+        icon: Users,
+        label: "People",
+        path: "/people",
+        description: "Open the people directory.",
       },
       {
         icon: Inbox,
@@ -336,6 +360,7 @@ const moduleSwitcherItems: Array<{
   { key: "servicePlanner", icon: Music, label: "Services", path: "/service-planner/services" },
   { key: "meetings", icon: Calendar, label: "Meetings", path: "/meetings" },
   { key: "people", icon: Users, label: "People", path: "/people" },
+  { key: "groups", icon: FolderKanban, label: "Groups", path: "/groups" },
   { key: "projects", icon: FolderKanban, label: "Projects", path: "/tasks/projects" },
 ];
 

@@ -116,10 +116,16 @@ const navSections: NavSection[] = [
     icon: Users,
     moduleKey: "people",
     matchPrefixes: ["/people"],
-    items: [
-      { title: "People Directory", url: "/people", icon: Users },
-      { title: "Groups", url: "/people/groups", icon: FolderKanban },
-    ],
+    items: [],
+  },
+  {
+    id: "groups",
+    title: "Groups",
+    url: "/groups",
+    icon: FolderKanban,
+    moduleKey: "groups",
+    matchPrefixes: ["/groups"],
+    items: [],
   },
   {
     id: "meetings",
