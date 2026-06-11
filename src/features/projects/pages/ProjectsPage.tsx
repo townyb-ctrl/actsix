@@ -569,12 +569,23 @@ const ProjectsPage = () => {
         eyebrow="Tasks"
         title="Projects"
         subtitle="Track progress and keep every outcome moving."
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            className="actsix-btn-primary h-10"
+            onClick={openNewProjectModal}
+          >
+            <Plus className="h-4 w-4" />
+            Add Project
+          </Button>
+        }
       />
 
       <div className="w-full min-w-0 space-y-5 px-4 pb-12 sm:px-6 md:space-y-6 xl:px-8 2xl:px-10">
 
-        <div className="grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 shadow-soft md:grid-cols-2 xl:grid-cols-4">
-          <div className="bg-card px-4 py-3">
+        <div className="actsix-panel-soft grid gap-px overflow-hidden md:grid-cols-2 xl:grid-cols-4">
+          <div className="bg-background/55 px-4 py-3">
             <div className="flex items-center gap-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
                 <FolderKanban className="h-4 w-4" />
@@ -586,7 +597,7 @@ const ProjectsPage = () => {
             </div>
           </div>
 
-          <div className="bg-card px-4 py-3">
+          <div className="bg-background/55 px-4 py-3">
             <div className="flex items-center gap-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-sage/10 text-brand-sage">
                 <BarChart3 className="h-4 w-4" />
@@ -598,7 +609,7 @@ const ProjectsPage = () => {
             </div>
           </div>
 
-          <div className="bg-card px-4 py-3">
+          <div className="bg-background/55 px-4 py-3">
             <div className="flex items-center gap-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-amber/10 text-brand-amber">
                 <Clock3 className="h-4 w-4" />
@@ -610,7 +621,7 @@ const ProjectsPage = () => {
             </div>
           </div>
 
-          <div className="bg-card px-4 py-3">
+          <div className="bg-background/55 px-4 py-3">
             <div className="flex items-center gap-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
                 <Activity className="h-4 w-4" />
@@ -623,7 +634,7 @@ const ProjectsPage = () => {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="actsix-panel-soft space-y-3 p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -645,16 +656,6 @@ const ProjectsPage = () => {
                   Clear
                 </Button>
               )}
-
-              <Button
-                type="button"
-                size="sm"
-                className="actsix-btn-primary h-10 flex-1 sm:flex-none"
-                onClick={openNewProjectModal}
-              >
-                <Plus className="h-4 w-4" />
-                Add Project
-              </Button>
             </div>
           </div>
 
@@ -664,11 +665,11 @@ const ProjectsPage = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search projects..."
-              className="h-11 rounded-xl pl-10 border-border/70 bg-card shadow-soft"
+              className="h-11 rounded-xl border-border/70 bg-background pl-10"
             />
           </div>
 
-          <div className="flex snap-x items-center gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:overflow-visible sm:pb-0">
+          <div className="actsix-view-tabs w-full overflow-x-auto [-webkit-overflow-scrolling:touch] sm:w-auto">
             {projectViews.map((view) => {
               const active = projectView === view.value;
 
@@ -677,22 +678,10 @@ const ProjectsPage = () => {
                   key={view.value}
                   type="button"
                   onClick={() => setProjectView(view.value)}
-                  className={`actsix-filter-chip min-h-10 ${
-                    active
-                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                      : "border-border/70 bg-card text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                  }`}
+                  className={`actsix-view-tab ${active ? "active" : ""}`}
                 >
                   {view.label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      active
-                        ? "bg-brand-teal/15 text-brand-teal"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {view.count}
-                  </span>
+                  <span className="actsix-view-tab-count">{view.count}</span>
                 </button>
               );
             })}
@@ -702,7 +691,7 @@ const ProjectsPage = () => {
         <div className="md:hidden">
           <div className="space-y-3">
             {filteredProjects.length === 0 && (
-              <Card className="border-border/70 bg-card p-7 text-center shadow-soft">
+              <Card className="actsix-empty-state p-7 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
                   <FolderKanban className="h-5 w-5" />
                 </div>
@@ -786,7 +775,7 @@ const ProjectsPage = () => {
         </div>
 
         <div className="hidden md:block">
-          <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
+          <Card className="actsix-panel overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

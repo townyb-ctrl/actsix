@@ -342,7 +342,7 @@ function MeetingSourceCombobox({
     <div ref={wrapperRef} className={`relative ${open ? "z-[300]" : "z-[20]"}`}>
       <button
         type="button"
-        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3 text-left text-sm shadow-soft transition hover:border-brand-teal/40 hover:bg-card focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
+        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-border/70 bg-background px-4 py-3 text-left text-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
         onClick={() => {
           if (!open) {
             announceOpen();
@@ -360,8 +360,8 @@ function MeetingSourceCombobox({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-[1200] mt-2 overflow-hidden rounded-3xl border border-border/70 bg-card shadow-2xl">
-          <div className="border-b border-border/70 bg-card p-3">
+        <div className="actsix-panel absolute left-0 right-0 top-full z-[1200] mt-2 overflow-hidden rounded-xl">
+          <div className="border-b border-border/70 bg-background/95 p-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -369,13 +369,13 @@ function MeetingSourceCombobox({
                 onFocus={announceOpen}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={searchPlaceholder}
-                className="h-11 rounded-2xl border-border/70 bg-background pl-9 pr-3 text-sm focus-visible:ring-brand-teal/40"
+                className="h-11 rounded-xl border-border/70 bg-background pl-9 pr-3 text-sm focus-visible:ring-brand-teal/40"
                 autoFocus
               />
             </div>
           </div>
 
-          <div className="max-h-64 overflow-y-auto bg-card">
+          <div className="max-h-64 overflow-y-auto bg-background">
             {filteredOptions.length === 0 && (
               <div className="px-4 py-5 text-sm text-muted-foreground">
                 {emptyText}
@@ -1407,8 +1407,8 @@ ${transcriptText.trim()}`;
         }
       `}</style>
 
-      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft">
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <section className="actsix-panel-soft overflow-visible">
           <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
@@ -1468,7 +1468,7 @@ ${transcriptText.trim()}`;
                 </Button>
 
                 {meetingMenuOpen && (
-                  <div className="absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
+                  <div className="actsix-panel absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-xl">
                     <button
                       type="button"
                       className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition hover:bg-muted"
@@ -1560,8 +1560,8 @@ ${transcriptText.trim()}`;
           {/* LEFT COLUMN: Minutes + Action Points */}
           <div className="space-y-5">
             {/* Minutes Card */}
-            <Card className="overflow-hidden border-border/70 bg-card shadow-card">
-              <div className="border-b border-border/70 bg-muted/20 px-5 py-4">
+            <Card className="actsix-panel overflow-hidden">
+              <div className="border-b border-border/70 bg-background/55 px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="text-xl font-extrabold tracking-tight">Meeting Minutes</h2>
@@ -1715,8 +1715,8 @@ ${transcriptText.trim()}`;
           </div>
 
           {/* RIGHT COLUMN: People + Action Points */}
-          <Card className="overflow-hidden border-border/70 bg-card shadow-card lg:min-h-[calc(100vh-18rem)]">
-            <div className="border-b border-border/70 bg-card px-4 pt-3">
+          <Card className="actsix-panel overflow-hidden lg:min-h-[calc(100vh-18rem)]">
+            <div className="border-b border-border/70 bg-background/55 px-4 pt-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-end gap-5">
                   <button
@@ -1785,7 +1785,7 @@ ${transcriptText.trim()}`;
                       value={actionTitle}
                       onChange={(event) => setActionTitle(event.target.value)}
                       placeholder="Action point..."
-                      className="border-border/70 bg-card"
+                      className="h-10 rounded-xl border-border/70 bg-background shadow-none"
                     />
 
                     <PeopleSearchSelect
@@ -1807,7 +1807,7 @@ ${transcriptText.trim()}`;
                         type="date"
                         value={due}
                         onChange={(event) => setDue(event.target.value)}
-                        className="border-border/70 bg-card"
+                        className="h-10 rounded-xl border-border/70 bg-background shadow-none"
                       />
 
                       <Button type="submit" className="actsix-btn-primary rounded-xl px-3">
@@ -1818,7 +1818,7 @@ ${transcriptText.trim()}`;
 
                   <div className="max-h-[calc(100vh-32rem)] min-h-[18rem] space-y-2 overflow-y-auto pr-1">
                     {actions.length === 0 && (
-                      <div className="rounded-2xl border border-dashed border-border bg-background/50 p-4 text-sm text-muted-foreground">
+                      <div className="actsix-empty-state min-h-[8rem] text-left text-sm">
                         No action points yet.
                       </div>
                     )}
@@ -1832,7 +1832,7 @@ ${transcriptText.trim()}`;
                           <div className="text-sm font-extrabold tracking-tight">{action.title}</div>
                           <div className="mt-1 text-xs font-medium text-muted-foreground">
                             {action.assignee || "Unassigned"}
-                            {action.due ? ` · Due ${action.due}` : ""}
+                            {action.due ? ` | Due ${action.due}` : ""}
                           </div>
                         </div>
 
@@ -1995,7 +1995,7 @@ ${transcriptText.trim()}`;
       )}
 
       <Dialog open={meetingPeopleOpen} onOpenChange={setMeetingPeopleOpen}>
-        <DialogContent className="flex h-[88vh] max-w-6xl flex-col overflow-hidden rounded-2xl border-border/70 bg-card">
+        <DialogContent className="actsix-panel flex h-[88vh] max-w-6xl flex-col overflow-hidden rounded-xl">
           <DialogHeader>
             <DialogTitle>Edit People</DialogTitle>
             <DialogDescription>
@@ -2004,7 +2004,7 @@ ${transcriptText.trim()}`;
           </DialogHeader>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-6 pr-2">
-<Card className="mb-4 border-border/70 bg-background/70 p-4 shadow-soft">
+            <Card className="actsix-panel-soft mb-4 p-4">
         <div className="mb-4">
           <p className="label-eyebrow">Meeting Leadership</p>
           <h2 className="mt-1 text-xl font-extrabold tracking-tight">
@@ -2016,12 +2016,12 @@ ${transcriptText.trim()}`;
         </div>
 
         {meetingActionPeople.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+          <div className="actsix-empty-state p-4 text-left text-sm">
             Add people to this meeting before assigning a chairperson or minute taker.
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+            <div className="actsix-panel-soft p-4">
               <label className="label-eyebrow">Chairperson</label>
               <div className="mt-2">
                 <MeetingSourceCombobox
@@ -2038,7 +2038,7 @@ ${transcriptText.trim()}`;
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+            <div className="actsix-panel-soft p-4">
               <label className="label-eyebrow">Minute taker</label>
               <div className="mt-2">
                 <MeetingSourceCombobox
@@ -2056,7 +2056,7 @@ ${transcriptText.trim()}`;
             </div>
           </div>
         )}
-      </Card>
+            </Card>
 
             <Card className="border-0 bg-transparent p-0 shadow-none">
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -2145,7 +2145,7 @@ ${transcriptText.trim()}`;
                       <Badge
                         key={`group-pill-${source.id}`}
                         variant="outline"
-                        className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted-foreground"
+                        className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-muted-foreground"
                       >
                         Group: {source.people_groups?.name || "Unnamed group"}
                       </Badge>
@@ -2155,7 +2155,7 @@ ${transcriptText.trim()}`;
                       <Badge
                         key={`folder-pill-${source.id}`}
                         variant="outline"
-                        className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted-foreground"
+                        className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-muted-foreground"
                       >
                         Folder: {source.people_group_folders?.name || "Unnamed folder"}
                       </Badge>
@@ -2172,7 +2172,7 @@ ${transcriptText.trim()}`;
       </Dialog>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl border-border/70 bg-card">
+        <DialogContent className="actsix-panel max-w-2xl rounded-xl">
           <DialogHeader>
             <DialogTitle>Edit Meeting</DialogTitle>
             <DialogDescription>
@@ -2186,7 +2186,7 @@ ${transcriptText.trim()}`;
               <Input
                 value={editDraft.title || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, title: event.target.value })}
-                className="mt-2 border-border/70 bg-background"
+                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
               />
             </div>
 
@@ -2196,7 +2196,7 @@ ${transcriptText.trim()}`;
                 type="date"
                 value={editDraft.meeting_date || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, meeting_date: event.target.value || null })}
-                className="mt-2 border-border/70 bg-background"
+                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
               />
             </div>
 
@@ -2206,7 +2206,7 @@ ${transcriptText.trim()}`;
                 type="time"
                 value={editDraft.meeting_time || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, meeting_time: event.target.value || null })}
-                className="mt-2 border-border/70 bg-background"
+                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
               />
             </div>
 
@@ -2215,7 +2215,7 @@ ${transcriptText.trim()}`;
               <Input
                 value={editDraft.location || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, location: event.target.value })}
-                className="mt-2 border-border/70 bg-background"
+                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
               />
             </div>
 
@@ -2233,7 +2233,7 @@ ${transcriptText.trim()}`;
       </Dialog>
 
       <Dialog open={peopleOpen} onOpenChange={setPeopleOpen}>
-        <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col overflow-hidden rounded-2xl border-border/70 bg-card">
+        <DialogContent className="actsix-panel flex max-h-[85vh] max-w-5xl flex-col overflow-hidden rounded-xl">
           <DialogHeader>
             <DialogTitle>Attendance / Apologies</DialogTitle>
             <DialogDescription>
@@ -2318,7 +2318,7 @@ ${transcriptText.trim()}`;
       </Dialog>
 
       <Dialog open={agendaOpen} onOpenChange={setAgendaOpen}>
-        <DialogContent className="max-h-[86vh] max-w-3xl overflow-y-auto rounded-2xl border-border/70 bg-card">
+        <DialogContent className="actsix-panel max-h-[86vh] max-w-3xl overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle>Edit Agenda</DialogTitle>
             <DialogDescription>
@@ -2328,7 +2328,7 @@ ${transcriptText.trim()}`;
 
           <div className="space-y-3">
             {agendaDraft.map((section, sectionIndex) => (
-              <Card key={section.id} className="p-4 border-border/70 bg-muted/10 shadow-soft">
+              <Card key={section.id} className="actsix-panel-soft p-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
                     {sectionIndex + 1}
@@ -2346,7 +2346,7 @@ ${transcriptText.trim()}`;
                           )
                         }
                         placeholder="Section heading..."
-                        className="border-border/70 bg-background font-semibold"
+                        className="h-10 rounded-xl border-border/70 bg-background font-semibold shadow-none"
                       />
 
                       <Button

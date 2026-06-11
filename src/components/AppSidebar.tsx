@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   CalendarDays,
   ChevronDown,
   Clock,
@@ -158,6 +159,15 @@ const navSections: NavSection[] = [
     url: "/training",
     icon: GraduationCap,
     matchPrefixes: ["/training"],
+    items: [],
+  },
+  {
+    id: "sermon_hub",
+    title: "Sermon Hub",
+    url: "/sermon-hub",
+    icon: BookOpen,
+    moduleKey: "sermon_hub",
+    matchPrefixes: ["/sermon-hub"],
     items: [],
   },
   {

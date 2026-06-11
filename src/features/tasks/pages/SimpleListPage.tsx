@@ -178,14 +178,14 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
     <div>
       <PageHeader eyebrow={cfg.eyebrow} title={cfg.title} subtitle={cfg.subtitle} />
 
-      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="p-3 shadow-card border-border/70 bg-card">
-          <form onSubmit={add} className="flex gap-2 flex-wrap">
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <Card className="actsix-panel-soft p-3">
+          <form onSubmit={add} className="flex flex-wrap gap-2">
             <Input
               value={val}
               onChange={(e) => setVal(e.target.value)}
-              placeholder="Capture…"
-              className="flex-1 min-w-[200px] border-transparent bg-muted/40"
+              placeholder="Capture..."
+              className="min-w-[200px] flex-1 border-border/70 bg-background"
             />
 
             {cfg.table === "waiting_items" && (
@@ -193,7 +193,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                 value={extra}
                 onChange={(e) => setExtra(e.target.value)}
                 placeholder="From whom?"
-                className="w-44 border-transparent bg-muted/40"
+                className="w-44 border-border/70 bg-background"
               />
             )}
 
@@ -202,20 +202,20 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                 value={extra}
                 onChange={(e) => setExtra(e.target.value)}
                 placeholder="Category"
-                className="w-44 border-transparent bg-muted/40"
+                className="w-44 border-border/70 bg-background"
               />
             )}
 
             <Button
               type="submit"
-              className="bg-brand-teal hover:bg-brand-teal/90 text-white rounded-full px-5"
+              className="actsix-btn-primary rounded-lg px-5"
             >
               <Plus className="h-4 w-4" />
             </Button>
           </form>
         </Card>
 
-        <Card className="divide-y divide-border shadow-card border-border/70 bg-card">
+        <Card className="actsix-panel divide-y divide-border/70 overflow-hidden">
           {loading && (
             <div className="actsix-loading-state min-h-[10rem]">
               Loading {cfg.title.toLowerCase()}...
@@ -239,13 +239,15 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
           )}
 
           {!loading && !loadError && items.length === 0 && (
-            <div className="p-6 text-sm text-muted-foreground">Nothing here yet.</div>
+            <div className="actsix-empty-state m-3 min-h-[9rem] text-left">
+              Nothing here yet.
+            </div>
           )}
 
           {!loading && !loadError && items.map((it) => (
             <div
               key={it.id}
-              className="flex items-center gap-3 p-4 group hover:bg-muted/30"
+              className="group flex items-center gap-3 p-4 transition-colors hover:bg-muted/30"
             >
               <div className="h-1.5 w-1.5 rounded-full bg-brand-teal" />
 
@@ -255,7 +257,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                 {cfg.table === "waiting_items" && (
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>Waiting for {it.person || "Someone"}</span>
-                    <span>·</span>
+                    <span>|</span>
                     <span>
                       Follow up:{" "}
                       {it.follow_up_date
@@ -267,7 +269,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                     </span>
                     {it.project && (
                       <>
-                        <span>·</span>
+                        <span>|</span>
                         <span className="chip bg-brand-teal/10 text-brand-teal border-brand-teal/20">
                           {it.project}
                         </span>
@@ -292,7 +294,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
 
                 {cfg.table === "inbox_items" && (
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    {it.context} · {it.minutes}m
+                    {it.context} | {it.minutes}m
                   </div>
                 )}
               </div>
@@ -325,7 +327,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
 
       {editingItem && (
         <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-xl shadow-card border-border/70 bg-card overflow-hidden">
+          <Card className="actsix-panel w-full max-w-xl overflow-hidden">
             <div className="flex items-start justify-between gap-4 p-6 border-b border-border/70">
               <div>
                 <p className="label-eyebrow">Edit Item</p>
@@ -341,7 +343,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+              <div className="actsix-panel-soft p-4">
                 <label className="label-eyebrow">
                   {cfg.table === "waiting_items" ? "Waiting for" : "Title"}
                 </label>
@@ -359,7 +361,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
 
               {cfg.table === "waiting_items" && (
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                  <div className="actsix-panel-soft p-4">
                     <label className="label-eyebrow">Who are you waiting for?</label>
                     <Input
                       value={editingItem.person || ""}
@@ -374,7 +376,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                  <div className="actsix-panel-soft p-4">
                     <label className="label-eyebrow">Follow-up date</label>
                     <Input
                       type="date"
@@ -389,7 +391,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft md:col-span-2">
+                  <div className="actsix-panel-soft p-4 md:col-span-2">
                     <label className="label-eyebrow">Related project</label>
                     <select
                       value={editingItem.project || ""}
@@ -414,7 +416,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
 
               {cfg.table === "someday_items" && (
                 <>
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                  <div className="actsix-panel-soft p-4">
                     <label className="label-eyebrow">Category</label>
                     <Input
                       value={editingItem.category || ""}
@@ -429,7 +431,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                  <div className="actsix-panel-soft p-4">
                     <label className="label-eyebrow">Notes</label>
                     <textarea
                       value={editingItem.notes || ""}
@@ -447,7 +449,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 p-4 border-t border-border/70 bg-card/95">
+            <div className="flex items-center justify-between gap-3 border-t border-border/70 bg-background/95 p-4">
               <Button
                 variant="ghost"
                 className="text-destructive hover:text-destructive"

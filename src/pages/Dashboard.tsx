@@ -8,7 +8,6 @@ import {
   Clock3,
   ListChecks,
   Music,
-  Sparkles,
   UsersRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -240,6 +239,12 @@ const EmptyState = ({ children }: { children: string }) => (
   </div>
 );
 
+const DotSeparator = () => (
+  <span aria-hidden="true" className="text-muted-foreground/45">
+    /
+  </span>
+);
+
 const SectionHeader = ({
   eyebrow,
   title,
@@ -271,10 +276,15 @@ const TaskRow = ({ task, compact = false }: { task: Task; compact?: boolean }) =
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold text-muted-foreground">
         <span>{task.due ? formatShortDate(task.due) : "No due date"}</span>
-        {(task.context || task.project) && <span>•</span>}
+        {(task.context || task.project) && <DotSeparator />}
         {task.context && <span className="truncate">{task.context}</span>}
         {!task.context && task.project && <span className="truncate">{task.project}</span>}
-        {task.minutes && !compact && <span>• {task.minutes} min</span>}
+        {task.minutes && !compact && (
+          <>
+            <DotSeparator />
+            <span>{task.minutes} min</span>
+          </>
+        )}
       </div>
     </div>
     <span
@@ -292,8 +302,8 @@ const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
 
   return (
     <Link
-    to={item.to}
-      className="group flex min-h-[62px] items-center gap-3 rounded-2xl border border-border/80 bg-card px-3.5 py-3 shadow-soft transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
+      to={item.to}
+      className="group flex min-h-[62px] items-center gap-3 rounded-2xl border border-border/80 bg-background/70 px-3.5 py-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
     >
       <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
         <Icon className="h-4 w-4" />
@@ -651,7 +661,7 @@ const Dashboard = () => {
         />
 
         <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-          <Card className="border-border/70 bg-card p-6 shadow-card">
+          <Card className="actsix-panel-soft p-6">
             <h2 className="text-2xl font-extrabold tracking-tight">
               Connect ACTSIX to your church
             </h2>
@@ -691,22 +701,25 @@ const Dashboard = () => {
         data-tour="home-overview"
         className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10"
       >
-        <section className="actsix-panel relative overflow-hidden p-5 sm:p-6">
-          <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-brand-teal/10 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-16 left-6 h-28 w-28 rounded-full bg-brand-sand/25 blur-2xl" />
-
-          <div className="relative min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-teal/15 bg-brand-teal/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-brand-teal">
-              <Sparkles className="h-3.5 w-3.5" />
-              Home command centre
-            </div>
-            <h1 className="text-balance text-[2rem] font-extrabold leading-[1.02] tracking-tight text-foreground sm:text-4xl md:text-5xl">
+        <section className="actsix-panel-soft p-5 sm:p-6">
+          <div className="min-w-0">
+            <p className="label-eyebrow text-brand-teal">Home</p>
+            <h1 className="mt-1 text-balance text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl">
               {greeting}, {firstName}
             </h1>
-            <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
-              {dateLabel} · {clockLabel}
-              {workspace?.name ? ` · ${workspace.name}` : ""}
-            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-extrabold text-muted-foreground sm:text-sm">
+              <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
+                {dateLabel}
+              </span>
+              <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
+                {clockLabel}
+              </span>
+              {workspace?.name && (
+                <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-brand-teal">
+                  {workspace.name}
+                </span>
+              )}
+            </div>
           </div>
         </section>
 
@@ -1050,7 +1063,7 @@ const Dashboard = () => {
                                     <span className="truncate font-semibold">{item.title}</span>
                                   </div>
                                   <div className="mt-0.5 truncate pl-[18px] text-[10px] text-muted-foreground group-hover:text-brand-teal/80">
-                                    {item.time ? `${formatTime(item.time)} · ${item.label}` : item.label}
+                                    {item.time ? `${formatTime(item.time)} / ${item.label}` : item.label}
                                   </div>
                                 </Link>
                               );

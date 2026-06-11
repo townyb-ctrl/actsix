@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { PageHeader } from "@/components/PageHeader";
 
 type Person = {
   id: string;
@@ -248,18 +249,11 @@ const PeopleGroupsPage = () => {
 
   return (
     <div>
-      <div className="w-full space-y-4 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="label-eyebrow">People</p>
-            <h1 className="mt-1.5 text-2xl font-extrabold leading-tight md:text-3xl">
-              Groups
-            </h1>
-            <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">
-              Build custom people lists for Bible studies, ministries, teams, training, and care rhythms.
-            </p>
-          </div>
-
+      <PageHeader
+        eyebrow="People"
+        title="Groups"
+        subtitle="Build custom people lists for Bible studies, ministries, teams, training, and care rhythms."
+        actions={
           <Button
             type="button"
             size="sm"
@@ -269,7 +263,10 @@ const PeopleGroupsPage = () => {
             <Plus className="h-4 w-4" />
             Create Group
           </Button>
-        </div>
+        }
+      />
+
+      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
 
         <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="space-y-4">
@@ -425,7 +422,7 @@ const PeopleGroupsPage = () => {
                   const displayedLeaders = leaders.slice(0, 3);
 
                   return (
-                    <Card key={group.id} className="group actsix-panel-soft flex min-h-44 flex-col overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-sage/40 hover:shadow-card">
+                    <Card key={group.id} className="group actsix-panel-soft flex min-h-44 flex-col overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-sage/40 hover:shadow-md">
                       <Link
                         to={`/groups/${group.id}`}
                         className="flex min-h-0 flex-1 flex-col p-3"

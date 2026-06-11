@@ -410,8 +410,11 @@ const RecurringMeetingDetailPage = () => {
         />
 
         <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-          <Card className="p-8 border-border/70 bg-card shadow-card">
-</Card>
+          <Card className="actsix-panel p-6">
+            <div className="actsix-empty-state min-h-[10rem] text-left">
+              Recurring meeting not found.
+            </div>
+          </Card>
         </div>
       </div>
     );
@@ -425,8 +428,8 @@ const RecurringMeetingDetailPage = () => {
         subtitle="Manage regular attendees, regular agenda, and generated meetings."
       />
 
-      <div className="w-full space-y-6 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-<Card className="p-5 border-border/70 bg-card shadow-card">
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <Card className="actsix-panel-soft p-4">
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
               <Repeat className="h-4 w-4" />
@@ -454,8 +457,8 @@ const RecurringMeetingDetailPage = () => {
           </div>
         </Card>
 
-        <Card className="border-border/70 bg-card/80 shadow-soft">
-          <div className="grid gap-0 divide-y divide-border lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+        <Card className="actsix-panel-soft overflow-hidden">
+          <div className="grid gap-0 divide-y divide-border/70 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
             <div className="p-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
@@ -550,24 +553,24 @@ const RecurringMeetingDetailPage = () => {
           </div>
         </Card>
 
-        <Card className="border-border/70 bg-card shadow-card overflow-hidden">
-          <div className="border-b border-border p-4">
+        <Card className="actsix-panel overflow-hidden">
+          <div className="border-b border-border/70 p-4">
             <p className="label-eyebrow">Generated Meetings</p>
             <h2 className="mt-1 text-xl font-extrabold tracking-tight">
               Meetings inside this recurring meeting
             </h2>
           </div>
 
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/70">
             {occurrences.map((occurrence) => {
               const createdMeetingId = createdMap[occurrence.key];
 
               return (
                 <div
                   key={occurrence.key}
-                  className="flex items-center gap-4 p-4"
+                  className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/30"
                 >
-                  <div className="h-10 w-10 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
                     <CalendarDays className="h-5 w-5" />
                   </div>
 
@@ -628,7 +631,7 @@ const RecurringMeetingDetailPage = () => {
 
       {attendeesOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+          <Card className="actsix-panel w-full max-w-2xl p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Regular Attendees</p>
@@ -696,7 +699,7 @@ const RecurringMeetingDetailPage = () => {
 
       {agendaOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-3xl max-h-[86vh] overflow-auto border-border/70 bg-card shadow-card p-6">
+          <Card className="actsix-panel max-h-[86vh] w-full max-w-3xl overflow-auto p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Regular Agenda</p>
@@ -725,7 +728,7 @@ const RecurringMeetingDetailPage = () => {
                       value={section.heading}
                       onChange={(event) => updateAgendaSection(sectionIndex, event.target.value)}
                       placeholder="Section heading..."
-                      className="border-border/70 bg-card font-bold"
+                      className="border-border/70 bg-background font-bold"
                     />
 
                     <Button
@@ -751,7 +754,7 @@ const RecurringMeetingDetailPage = () => {
                             updateAgendaPoint(sectionIndex, pointIndex, event.target.value)
                           }
                           placeholder="Agenda point..."
-                          className="border-border/70 bg-card"
+                          className="border-border/70 bg-background"
                         />
 
                         <Button

@@ -55,21 +55,21 @@ const WorkspaceSetupPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-content px-5 py-8 sm:px-6 sm:py-10">
+    <div className="min-h-screen bg-background px-5 py-8 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
           <Logo />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <Card className="border-border/70 bg-card p-6 shadow-card">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
+        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <Card className="actsix-panel-soft p-5 sm:p-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
               <UsersRound className="h-6 w-6" />
             </div>
 
-            <p className="label-eyebrow mt-6">ACTSIX Alpha</p>
+            <p className="label-eyebrow mt-5">ACTSIX Alpha</p>
 
-            <h1 className="mt-3 text-4xl font-extrabold tracking-tight">
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight">
               Join the Alpha Testing Workspace
             </h1>
 
@@ -78,7 +78,7 @@ const WorkspaceSetupPage = () => {
               This helps us test the same workflows, find friction quickly, and keep feedback focused.
             </p>
 
-            <div className="mt-6 rounded-2xl border border-brand-teal/15 bg-brand-teal/8 p-4">
+            <div className="mt-5 rounded-xl border border-brand-teal/15 bg-brand-teal/8 p-4">
               <div className="flex items-start gap-3">
                 <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" />
                 <div>
@@ -93,7 +93,7 @@ const WorkspaceSetupPage = () => {
             </div>
           </Card>
 
-          <Card className="border-border/70 bg-card p-6 shadow-card">
+          <Card className="actsix-panel p-5 sm:p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <p className="label-eyebrow">Join Workspace</p>
@@ -111,7 +111,7 @@ const WorkspaceSetupPage = () => {
                   id="joinCode"
                   value={ALPHA_JOIN_CODE}
                   readOnly
-                  className="font-bold tracking-wide text-muted-foreground"
+                  className="h-11 rounded-xl border-border/70 bg-background font-bold tracking-wide text-muted-foreground shadow-none"
                 />
               </div>
 
@@ -124,6 +124,7 @@ const WorkspaceSetupPage = () => {
                   placeholder="Enter the phrase Brandon gave you"
                   required
                   autoFocus
+                  className="h-11 rounded-xl border-border/70 bg-background shadow-none"
                 />
               </div>
 

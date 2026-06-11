@@ -830,8 +830,8 @@ ${row.notes}`
       />
 
       <div className="px-4 sm:px-6 xl:px-8 2xl:px-10">
-        <div data-tour="people-search" className="actsix-toolbar flex min-w-0 flex-col gap-2 rounded-[1rem] lg:flex-row lg:items-center">
-          <div className="actsix-interactive-row flex min-w-0 flex-1 items-center gap-2 bg-background px-3 py-2">
+        <div data-tour="people-search" className="actsix-panel-soft flex min-w-0 flex-col gap-3 p-3 lg:flex-row lg:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-2">
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={searchTerm}
@@ -849,10 +849,10 @@ ${row.notes}`
             <button
               key={value}
               type="button"
-              className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
+              className={`actsix-filter-chip ${
                 peopleFilter === value
                   ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50"
               }`}
               onClick={() => {
                 setPeopleFilter(value);
@@ -869,7 +869,7 @@ ${row.notes}`
               className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
                 peopleFilter === "custom"
                   ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50"
               }`}
               onClick={() => {
                 setCustomFilterOpen((open) => !open);
@@ -1033,12 +1033,7 @@ ${row.notes}`
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       <span>{person.membership_status || "Member"}</span>
-                      {person.gender && (
-                        <>
-                          <span>·</span>
-                          <span>{person.gender}</span>
-                        </>
-                      )}
+                      {person.gender && <span>{person.gender}</span>}
                     </div>
                   </div>
                 </div>
@@ -1126,10 +1121,10 @@ ${row.notes}`
                     setCsvError(error instanceof Error ? error.message : "Could not read CSV file.");
                   });
                 }}
-                className="mt-2 border-border/70 bg-card"
+                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
               />
 
-              <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
+              <div className="mt-3 rounded-xl border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground">
                 <p className="font-bold text-foreground">Supported headers:</p>
                 <p className="mt-1 font-mono">
                   First Name,Last Name,Primary Phone Number,Primary Email,Gender

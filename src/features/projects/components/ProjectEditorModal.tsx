@@ -48,13 +48,13 @@ const ProjectEditorModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/35 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
     >
-      <Card className="flex max-h-[92svh] w-full max-w-3xl flex-col overflow-hidden rounded-b-none border-border/70 bg-card shadow-card sm:max-h-[88vh] sm:rounded-xl">
+      <Card className="actsix-panel flex max-h-[92svh] w-full max-w-3xl flex-col overflow-hidden rounded-b-none sm:max-h-[88vh] sm:rounded-xl">
         <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
           <div className="min-w-0">
             <p className="label-eyebrow">Edit Project</p>
@@ -88,7 +88,7 @@ const ProjectEditorModal = ({
                   onChange={(event) =>
                     onChange({ ...project, name: event.target.value })
                   }
-                  className="mt-2 border-border/70 bg-background"
+                  className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   placeholder="Project name"
                 />
                 <p className="mt-2 text-xs text-muted-foreground">
@@ -104,7 +104,7 @@ const ProjectEditorModal = ({
                   onChange={(event) =>
                     onChange({ ...project, area: event.target.value })
                   }
-                  className="mt-2 border-border/70 bg-background"
+                  className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   placeholder="General, Worship, Admin..."
                 />
               </div>
@@ -117,7 +117,7 @@ const ProjectEditorModal = ({
                   onChange={(event) =>
                     onChange({ ...project, status: event.target.value })
                   }
-                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 >
                   <option>In Progress</option>
                   <option>Planning</option>
@@ -137,7 +137,7 @@ const ProjectEditorModal = ({
                 onChange={(event) =>
                   onChange({ ...project, notes: event.target.value })
                 }
-                className="mt-2 min-h-36 w-full rounded-md border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="mt-2 min-h-36 w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 placeholder="Describe the project goal, key details, or next thinking..."
               />
             </div>
@@ -188,7 +188,7 @@ const ProjectEditorModal = ({
           </section>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-3 border-t border-border/70 bg-card/95 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-border/70 bg-background/80 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
             Save changes to update this project.
           </p>

@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { PageHeader } from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { createNotificationForPerson } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
@@ -1121,50 +1122,19 @@ const ServiceDetailPage = () => {
   if (!service) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="border-border/70 bg-card p-5 shadow-soft">
+        <Card className="actsix-panel-soft p-5">
           <p className="text-sm text-muted-foreground">Service not found.</p>
-</Card>
+        </Card>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="w-full space-y-5 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="label-eyebrow">Service Planner</p>
-            <h1 className="mt-1.5 text-2xl font-extrabold leading-tight md:text-3xl">
-              {service.title || serviceType?.name || "Service"}
-            </h1>
-
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {formatDate(service.service_date)}
-              </span>
-
-              {service.start_time && (
-                <span className="inline-flex items-center gap-2">
-                  <Clock3 className="h-3.5 w-3.5" />
-                  {service.start_time.slice(0, 5)}
-                </span>
-              )}
-
-              {service.location && (
-                <span className="inline-flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {service.location}
-                </span>
-              )}
-
-              <span className="inline-flex items-center gap-2">
-                <ListChecks className="h-3.5 w-3.5" />
-                {totalDuration} min planned
-              </span>
-            </div>
-          </div>
-
+      <PageHeader
+        eyebrow="Service Planner"
+        title={service.title || serviceType?.name || "Service"}
+        actions={
           <Button
             type="button"
             size="sm"
@@ -1174,11 +1144,39 @@ const ServiceDetailPage = () => {
             <MessageCircle className="h-4 w-4" />
             WhatsApp Reminder
           </Button>
+        }
+      />
+
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="actsix-panel-soft flex flex-wrap items-center gap-3 px-4 py-3 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-2">
+            <CalendarDays className="h-3.5 w-3.5" />
+            {formatDate(service.service_date)}
+          </span>
+
+          {service.start_time && (
+            <span className="inline-flex items-center gap-2">
+              <Clock3 className="h-3.5 w-3.5" />
+              {service.start_time.slice(0, 5)}
+            </span>
+          )}
+
+          {service.location && (
+            <span className="inline-flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5" />
+              {service.location}
+            </span>
+          )}
+
+          <span className="inline-flex items-center gap-2">
+            <ListChecks className="h-3.5 w-3.5" />
+            {totalDuration} min planned
+          </span>
         </div>
 
         {reminderCenterOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-            <Card className="w-full max-w-3xl border-border/70 bg-card p-5 shadow-card">
+            <Card className="actsix-panel w-full max-w-3xl p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="label-eyebrow">WhatsApp Reminder</p>
@@ -1236,8 +1234,8 @@ const ServiceDetailPage = () => {
         )}
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.75fr)]">
-          <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4">
+          <Card className="actsix-panel overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/70 p-4">
               <div>
                 <p className="label-eyebrow">Service Flow</p>
                 <h2 className="mt-1 text-xl font-extrabold leading-tight">
@@ -1268,7 +1266,7 @@ const ServiceDetailPage = () => {
               </div>
             </div>
 
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/70">
               {orderItems.length === 0 && (
                 <div className="p-6 text-sm text-muted-foreground">
                   No order items yet. Add songs, welcome, sermon, announcements, and other service elements.
@@ -1308,8 +1306,8 @@ const ServiceDetailPage = () => {
             </div>
           </Card>
 
-          <Card className="border-border/70 bg-card shadow-card overflow-hidden">
-            <div className="flex items-center justify-between gap-4 border-b border-border p-4">
+          <Card className="actsix-panel overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-border/70 p-4">
               <div>
                 <p className="label-eyebrow">Service Team</p>
                 <h2 className="mt-1 text-xl font-extrabold tracking-tight">
@@ -1337,7 +1335,7 @@ const ServiceDetailPage = () => {
             </div>
 
             {assignedTeams.length > 0 && (
-              <div className="border-b border-border px-4 py-3">
+              <div className="border-b border-border/70 px-4 py-3">
                 <div className="flex flex-wrap gap-2">
                   {assignedTeams.map((team) => {
                     const active = selectedAssignmentTeamId === team.id;
@@ -1576,7 +1574,7 @@ const ServiceDetailPage = () => {
 
       {whatsAppAssignment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
+          <Card className="actsix-panel w-full max-w-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">WhatsApp Reminder</p>
@@ -1657,7 +1655,7 @@ const ServiceDetailPage = () => {
 
       {addTeamAssignmentOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
+          <Card className="actsix-panel w-full max-w-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Team</p>
@@ -1803,7 +1801,7 @@ const ServiceDetailPage = () => {
         </div>
       )}
 
-      <Card className="border-border/70 bg-card p-5 shadow-card">
+      <Card className="actsix-panel-soft p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="label-eyebrow">Activity</p>
@@ -1870,7 +1868,7 @@ const ServiceDetailPage = () => {
 
       {addOrderOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
+          <Card className="actsix-panel w-full max-w-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Order of Service</p>

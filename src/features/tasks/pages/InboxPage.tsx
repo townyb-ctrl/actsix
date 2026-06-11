@@ -340,13 +340,13 @@ const InboxPage = () => {
       />
 
       <div className="actsix-page-body actsix-page-stack">
-        <Card className="p-3 shadow-card border-border/70 bg-card">
+        <Card className="actsix-panel-soft p-3">
           <form onSubmit={add} className="flex gap-2">
             <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Brain dump anything..."
-              className="border-transparent bg-muted/40 focus-visible:bg-background"
+              className="border-border/70 bg-background"
             />
 
             <Button
@@ -358,7 +358,7 @@ const InboxPage = () => {
           </form>
         </Card>
 
-        <Card className="p-2 space-y-2 shadow-card border-border/70 bg-card">
+        <Card className="actsix-panel space-y-2 overflow-hidden p-2">
           {loadingItems && (
             <div className="actsix-loading-state" role="status">
               Loading inbox...
@@ -366,7 +366,7 @@ const InboxPage = () => {
           )}
 
           {!loadingItems && items.length === 0 && (
-            <div className="actsix-empty-state">
+            <div className="actsix-empty-state min-h-[9rem]">
               Inbox clear. Capture something when it has your attention.
             </div>
           )}
@@ -451,7 +451,7 @@ const InboxPage = () => {
                   <h3 className="font-extrabold tracking-tight">Destination</h3>
                 </div>
 
-                <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/5 p-4 shadow-soft">
+                <div className="rounded-xl border border-brand-teal/20 bg-brand-teal/5 p-4">
                   <label className="label-eyebrow">Where should this go?</label>
                   <select
                     value={processTarget}
@@ -481,7 +481,7 @@ const InboxPage = () => {
               </section>
 
               <section className="grid gap-3">
-                <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                <div className="actsix-panel-soft p-4">
                   <label className="label-eyebrow">
                     {processTarget === "project" ? "Project name" : "Title"}
                   </label>
@@ -499,7 +499,7 @@ const InboxPage = () => {
                   />
                 </div>
 
-                <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                <div className="actsix-panel-soft p-4">
                   <label className="label-eyebrow flex items-center gap-2">
                     <FileText className="h-3.5 w-3.5" />
                     Notes
@@ -531,7 +531,7 @@ const InboxPage = () => {
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-3">
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Who are you waiting for?</label>
                       <Input
                         value={editingItem.waiting_person ?? ""}
@@ -546,7 +546,7 @@ const InboxPage = () => {
                       />
                     </div>
 
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Follow-up date</label>
                       <Input
                         type="date"
@@ -561,7 +561,7 @@ const InboxPage = () => {
                       />
                     </div>
 
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Project</label>
                       <ProjectSelect
                         value={editingItem.project ?? ""}
@@ -590,7 +590,7 @@ const InboxPage = () => {
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Category</label>
                       <Input
                         value={editingItem.someday_category ?? "General"}
@@ -605,7 +605,7 @@ const InboxPage = () => {
                       />
                     </div>
 
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Tags</label>
                       <Input
                         value={Array.isArray(editingItem.tags) ? editingItem.tags.join(", ") : ""}
@@ -634,7 +634,7 @@ const InboxPage = () => {
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Meeting with</label>
                       <Input
                         value={editingItem.waiting_person ?? ""}
@@ -649,7 +649,7 @@ const InboxPage = () => {
                       />
                     </div>
 
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Meeting date</label>
                       <Input
                         type="date"
@@ -661,7 +661,7 @@ const InboxPage = () => {
                       />
                     </div>
 
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Meeting time</label>
                       <Input
                         type="time"
@@ -676,7 +676,7 @@ const InboxPage = () => {
                       />
                     </div>
 
-                    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+                    <div className="actsix-panel-soft p-4">
                       <label className="label-eyebrow">Location</label>
                       <Input
                         value={editingItem.meeting_location ?? ""}
@@ -701,7 +701,7 @@ const InboxPage = () => {
                     <h3 className="font-extrabold tracking-tight">Project details</h3>
                   </div>
 
-                  <div className="rounded-2xl border border-border/70 bg-muted/30 p-4">
+                  <div className="actsix-empty-state p-4 text-left">
                     <p className="text-sm text-muted-foreground">
                       This will create a project using the title above as the project name and the notes as the project description.
                     </p>
@@ -710,7 +710,7 @@ const InboxPage = () => {
               )}
             </div>
 
-            <div className="flex shrink-0 flex-col gap-3 border-t border-border/70 bg-card/95 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex shrink-0 flex-col gap-3 border-t border-border/70 bg-background/95 p-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">
                 {processTarget
                   ? `Ready to process this as: ${targetLabels[processTarget]}`

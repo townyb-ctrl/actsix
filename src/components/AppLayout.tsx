@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
-import { GuidedTour, startGuidedTour } from "./GuidedTour";
+import { GuidedTour, hasGuidedTour, startGuidedTour } from "./GuidedTour";
 import { FeedbackBubble } from "./FeedbackBubble";
 import { QuickCaptureDialog } from "./QuickCaptureDialog";
 import actsixLogo from "@/assets/actsix-logo.png";
@@ -69,7 +69,7 @@ const ModuleActivationPrompt = ({
   onActivate: () => void;
 }) => (
   <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 xl:px-8 2xl:px-10">
-    <Card className="w-full max-w-xl border-border/70 bg-card p-6 text-center shadow-soft">
+    <Card className="actsix-panel-soft w-full max-w-xl p-6 text-center">
       <p className="label-eyebrow">Optional Module</p>
       <h1 className="mt-2 text-2xl font-extrabold tracking-tight">
         Activate {MODULE_LABELS[moduleKey]}
@@ -79,7 +79,7 @@ const ModuleActivationPrompt = ({
       </p>
       <Button
         type="button"
-        className="mt-5 rounded-lg bg-brand-teal px-4 font-bold text-white hover:bg-brand-teal/90"
+        className="actsix-btn-primary mt-5 px-4"
         onClick={onActivate}
         disabled={activating}
       >
@@ -162,7 +162,9 @@ export default function AppLayout() {
 
     const timer = window.setTimeout(() => {
       startedToursRef.current.add(tourKey);
-      startGuidedTour(tourKey);
+      if (hasGuidedTour(tourKey)) {
+        startGuidedTour(tourKey);
+      }
     }, 650);
 
     return () => window.clearTimeout(timer);
@@ -242,7 +244,7 @@ export default function AppLayout() {
                 size="icon"
                 variant="outline"
                 data-tour="quick-capture"
-                className="hidden h-10 w-10 rounded-full border-brand-teal bg-brand-teal text-white shadow-soft hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white md:inline-flex"
+                className="hidden h-10 w-10 rounded-full border-brand-teal bg-brand-teal text-white shadow-sm hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white md:inline-flex"
                 onClick={() => setQuickCaptureOpen(true)}
                 title="Quick Capture"
                 aria-label="Quick Capture"
@@ -258,7 +260,7 @@ export default function AppLayout() {
                 <button
                   type="button"
                   data-tour="account-menu"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-card p-0 text-foreground shadow-soft outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-card p-0 text-foreground shadow-sm outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
                   onClick={() => setProfileMenuOpen((open) => !open)}
                   title="Open account menu"
                   aria-label="Open account menu"
@@ -273,7 +275,7 @@ export default function AppLayout() {
                 </button>
 
                 {profileMenuOpen && (
-                  <div className="absolute right-0 top-12 z-[1000] w-56 overflow-hidden rounded-xl border border-border/70 bg-card text-foreground shadow-card">
+                  <div className="absolute right-0 top-12 z-[1000] w-56 overflow-hidden rounded-xl border border-border/70 bg-background text-foreground shadow-md">
                     <button
                       type="button"
                       className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-brand-teal/5 hover:text-brand-teal"

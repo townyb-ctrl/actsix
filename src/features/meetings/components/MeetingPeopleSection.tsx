@@ -231,7 +231,7 @@ export function MeetingPeopleSection({
       </div>
 
       <Dialog open={inviteOpen} onOpenChange={onInviteClose}>
-        <DialogContent className="max-w-3xl rounded-2xl border-border/70 bg-card">
+        <DialogContent className="actsix-panel max-w-3xl rounded-xl">
           <DialogHeader>
               <DialogTitle>Mark Meeting Invites Sent</DialogTitle>
             <DialogDescription>
@@ -250,7 +250,7 @@ export function MeetingPeopleSection({
                       <Badge
                         key={recipient.personId}
                         variant="outline"
-                        className="rounded-full bg-card px-3 py-2 text-sm font-semibold text-muted-foreground"
+                        className="rounded-full bg-background px-3 py-2 text-sm font-semibold text-muted-foreground"
                       >
                         {recipient.displayName}
                       </Badge>
@@ -263,13 +263,13 @@ export function MeetingPeopleSection({
                     <p className="text-sm font-semibold text-foreground">Missing email</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {inviteRecipients.filter((recipient) => !recipient.email.trim()).map((recipient) => (
-                        <Badge
-                          key={recipient.personId}
-                          variant="outline"
-                          className="rounded-full bg-card px-3 py-2 text-sm font-semibold text-muted-foreground"
-                        >
-                          {recipient.displayName}
-                        </Badge>
+                      <Badge
+                        key={recipient.personId}
+                        variant="outline"
+                        className="rounded-full bg-background px-3 py-2 text-sm font-semibold text-muted-foreground"
+                      >
+                        {recipient.displayName}
+                      </Badge>
                       ))}
                     </div>
                   </div>
@@ -289,7 +289,7 @@ export function MeetingPeopleSection({
                 value={inviteMessage}
                 onChange={(event) => onInviteMessageChange(event.target.value)}
                 placeholder="Hey {{username}}, you have been invited to a {{meeting_name}} meeting. On {{meeting_date}} at {{meeting_time}}. Please respond with your availability."
-                className="mt-3 min-h-[180px] border-border/70 bg-muted/10"
+                className="mt-3 min-h-[180px] rounded-xl border-border/70 bg-background shadow-none"
               />
             </div>
           </div>
@@ -350,10 +350,10 @@ export function MeetingPeopleHeaderActions({
         </Button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-xl border border-border/70 bg-card shadow-2xl">
+          <div className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-xl border border-border/70 bg-background shadow-md">
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted/60"
               onClick={() => {
                 setMenuOpen(false);
                 onOpenMeetingPeopleDialog();
@@ -364,7 +364,7 @@ export function MeetingPeopleHeaderActions({
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted"
+              className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted/60"
               onClick={() => {
                 setMenuOpen(false);
                 onOpenPeopleDialog();
@@ -375,7 +375,7 @@ export function MeetingPeopleHeaderActions({
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-45"
+              className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-45"
               onClick={() => {
                 setMenuOpen(false);
                 onInviteOpen();

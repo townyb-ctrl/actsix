@@ -838,9 +838,9 @@ const ProjectDetailPage = () => {
       />
 
       <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="overflow-hidden border-border/70 bg-card shadow-soft">
-          <div className="border-b border-border/70 p-5">
-            <div className="flex items-start justify-between gap-4">
+        <Card className="actsix-panel overflow-hidden">
+          <div className="border-b border-border/70 p-4 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                   <UserRound className="h-4 w-4" />
@@ -855,7 +855,7 @@ const ProjectDetailPage = () => {
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1 shadow-soft">
+                <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1">
                   <div className="flex -space-x-2">
                     {collaborators.slice(0, 5).map((collaborator) => (
                       <div
@@ -867,12 +867,12 @@ const ProjectDetailPage = () => {
                           name={collaborator.people?.display_name}
                           avatarUrl={collaborator.people?.avatar_url}
                           size="sm"
-                          className="border-2 border-background shadow-soft ring-1 ring-border"
+                          className="border-2 border-background shadow-sm ring-1 ring-border"
                         />
 
                         <button
                           type="button"
-                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-soft transition hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/25"
+                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-border bg-background text-muted-foreground opacity-0 shadow-sm transition hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/25"
                           onClick={() => removeCollaborator(collaborator.id)}
                           aria-label="Remove collaborator"
                         >
@@ -947,20 +947,20 @@ const ProjectDetailPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 md:grid-cols-3">
-              <div className="bg-card p-3 text-center">
+            <div className="actsix-panel-soft mt-5 grid gap-px overflow-hidden md:grid-cols-3">
+              <div className="bg-background/55 p-3 text-center">
                 <CheckCircle2 className="h-5 w-5 text-brand-teal mx-auto mb-1" />
                 <div className="text-xl font-extrabold">{stats.openTasks.length}</div>
                 <p className="text-[11px] text-muted-foreground">Open Actions</p>
               </div>
 
-              <div className="bg-card p-3 text-center">
+              <div className="bg-background/55 p-3 text-center">
                 <CheckCircle2 className="h-5 w-5 text-brand-sage mx-auto mb-1" />
                 <div className="text-xl font-extrabold">{stats.completedTasks.length}</div>
                 <p className="text-[11px] text-muted-foreground">Completed</p>
               </div>
 
-              <div className="bg-card p-3 text-center">
+              <div className="bg-background/55 p-3 text-center">
                 <Clock3 className="h-5 w-5 text-brand-amber mx-auto mb-1" />
                 <div className="text-xl font-extrabold">{stats.dueSoon}</div>
                 <p className="text-[11px] text-muted-foreground">Due Soon</p>
@@ -1026,7 +1026,7 @@ const ProjectDetailPage = () => {
                   return (
                     <div
                       key={section.id}
-                      className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft transition hover:border-brand-teal/25"
+                      className="overflow-hidden rounded-xl border border-border/70 bg-background/65 transition hover:border-brand-teal/25 hover:bg-background"
                     >
                       <div className="flex items-center gap-2 p-3">
                         <button
@@ -1110,7 +1110,7 @@ const ProjectDetailPage = () => {
 
                           <form
                             onSubmit={(event) => addProjectAction(section.id, event)}
-                            className="rounded-xl border border-border/70 bg-card p-3 shadow-soft"
+                            className="rounded-xl border border-border/70 bg-background p-3"
                           >
                             <Input
                               value={draft.title}
@@ -1150,7 +1150,7 @@ const ProjectDetailPage = () => {
                             </div>
                           </form>
 
-                          <div className="mt-3 space-y-1.5 rounded-xl border border-border/70 bg-card p-2">
+                          <div className="mt-3 space-y-1.5 rounded-xl border border-border/70 bg-background p-2">
                             {openTasks.length === 0 && completedTasks.length === 0 && (
                               <div className="actsix-empty-state min-h-[6.5rem] gap-2 p-3 text-left text-sm">
                                 <ListChecks className="h-4 w-4 text-brand-teal" />
@@ -1213,7 +1213,7 @@ const ProjectDetailPage = () => {
             )}
 
             {unsectionedTasks.length > 0 && (
-              <div className="mt-4 rounded-2xl border border-dashed border-border bg-card p-3 shadow-soft">
+              <div className="mt-4 rounded-xl border border-dashed border-border bg-background/65 p-3">
                 <button
                   type="button"
                   className="flex min-h-10 w-full items-center justify-between gap-3 text-left"
@@ -1334,7 +1334,7 @@ const ProjectDetailPage = () => {
 
       {addCollaboratorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-visible border-border/70 bg-card shadow-card">
+          <Card className="actsix-panel relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-visible">
             <form onSubmit={addCollaborator} className="flex min-h-0 flex-1 flex-col">
               <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-6">
                 <div>
@@ -1394,7 +1394,7 @@ const ProjectDetailPage = () => {
               )}
               </div>
 
-              <div className="relative z-10 flex shrink-0 justify-end gap-2 border-t border-border/70 bg-card p-6">
+              <div className="relative z-10 flex shrink-0 justify-end gap-2 border-t border-border/70 bg-background/95 p-6">
                 <Button
                   type="button"
                   variant="outline"
@@ -1424,7 +1424,7 @@ const ProjectDetailPage = () => {
 
       {editingSection && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <Card className="max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-b-none border-border/70 bg-card shadow-card sm:rounded-xl">
+          <Card className="actsix-panel max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-b-none sm:rounded-xl">
             <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-6">
               <div className="min-w-0">
                 <p className="label-eyebrow">Project Sections</p>
@@ -1518,7 +1518,7 @@ const ProjectDetailPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 border-t border-border/70 bg-card p-4 sm:flex sm:justify-end sm:p-6">
+            <div className="grid grid-cols-2 gap-2 border-t border-border/70 bg-background/95 p-4 sm:flex sm:justify-end sm:p-6">
               <Button
                 type="button"
                 variant="outline"

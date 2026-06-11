@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -121,7 +122,7 @@ const SortableRoleCard = ({ role, disabled = false, children }: SortableRoleCard
       {...listeners}
       className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden will-change-transform transition-[box-shadow,border-color,opacity] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
         isDragging
-          ? "z-20 scale-[1.015] border-brand-teal bg-card shadow-xl ring-2 ring-brand-teal/15"
+          ? "z-20 scale-[1.01] border-brand-teal bg-background shadow-md ring-2 ring-brand-teal/15"
           : "border-border/70"
       }`}
     >
@@ -877,37 +878,21 @@ const ServicePlannerTeamDetailPage = () => {
   if (!team) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="p-6 border-border/70 bg-card shadow-card">
+        <Card className="actsix-panel-soft p-6">
           <p className="text-sm text-muted-foreground">Team not found.</p>
-</Card>
+        </Card>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="w-full space-y-5 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
-<Card className="border-border/70 bg-card shadow-card overflow-visible">
-          <div className="border-b border-border p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="label-eyebrow">Service Team</p>
-                <h1 className="mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
-                  {team.name}
-                </h1>
-                {team.description && (
-                  <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                    {team.description}
-                  </p>
-                )}
-                {roles.length > 0 && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Click a role to filter the people list.
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
+      <PageHeader
+        eyebrow="Service Team"
+        title={team.name}
+        subtitle={team.description || "Manage team roles and linked People profiles for service planning."}
+        actions={
+          <>
                 {selectedRoleFilter && (
                   <Button
                     type="button"
@@ -933,11 +918,11 @@ const ServicePlannerTeamDetailPage = () => {
 
                 <Button
                   type="button"
-                  className="actsix-btn-primary h-11 w-11 rounded-full p-0"
+                  className="actsix-btn-primary h-10 w-10 rounded-lg p-0"
                   onClick={() => setAddRoleOpen(true)}
                   title="Add role"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-4 w-4" />
                   <span className="sr-only">Add role</span>
                 </Button>
 
@@ -945,7 +930,7 @@ const ServicePlannerTeamDetailPage = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-11 w-11 rounded-full p-0"
+                    className="h-10 w-10 rounded-lg p-0"
                     onClick={() => setTeamMenuOpen((open) => !open)}
                     title="Team options"
                   >
@@ -954,10 +939,10 @@ const ServicePlannerTeamDetailPage = () => {
                   </Button>
 
                   {teamMenuOpen && (
-                    <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl border border-border bg-card p-2 shadow-lg">
+                    <div className="absolute right-0 top-12 z-50 w-44 rounded-xl border border-border/70 bg-background p-2 shadow-md">
                       <button
                         type="button"
-                        className="flex w-full items-center rounded-xl px-3 py-2 text-left text-sm font-bold text-foreground hover:bg-background"
+                        className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-bold text-foreground hover:bg-muted/60"
                         onClick={() => {
                           setEditingTeam(true);
                           setTeamMenuOpen(false);
@@ -968,7 +953,7 @@ const ServicePlannerTeamDetailPage = () => {
 
                       <button
                         type="button"
-                        className="flex w-full items-center rounded-xl px-3 py-2 text-left text-sm font-bold text-destructive hover:bg-destructive/5"
+                        className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-bold text-destructive hover:bg-destructive/5"
                         onClick={() => {
                           setTeamMenuOpen(false);
                           deleteTeam();
@@ -979,11 +964,15 @@ const ServicePlannerTeamDetailPage = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+          </>
+        }
+      />
 
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <Card className="actsix-panel overflow-visible">
             {roles.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="border-b border-border/70 p-3">
+                <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => setSelectedRoleFilter(null)}
@@ -1010,19 +999,19 @@ const ServicePlannerTeamDetailPage = () => {
                     {role}
                   </button>
                 ))}
+                </div>
               </div>
             )}
-          </div>
 
           <div className="p-4">
             {members.length === 0 && (
-              <div className="rounded-xl border border-dashed border-border bg-background/70 p-6 text-sm text-muted-foreground">
+              <div className="actsix-empty-state min-h-[9rem] text-left">
                 No people added to this team yet.
               </div>
             )}
 
             {members.length > 0 && filteredGroupedMembers.length === 0 && (
-              <div className="rounded-xl border border-dashed border-border bg-background/70 p-6 text-sm text-muted-foreground">
+              <div className="actsix-empty-state min-h-[9rem] text-left">
                 No people found for this role filter.
               </div>
             )}
@@ -1143,8 +1132,8 @@ const ServicePlannerTeamDetailPage = () => {
         </Card>
 
         {editingTeam && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-            <Card className="w-full max-w-2xl overflow-visible border-border/70 bg-card shadow-card p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
+            <Card className="actsix-panel w-full max-w-2xl overflow-visible p-5 sm:p-6">
               <form onSubmit={updateTeam} className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -1173,7 +1162,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={editTeamName}
                     onChange={(event) => setEditTeamName(event.target.value)}
                     placeholder="Worship Team"
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -1183,7 +1172,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={editTeamDescription}
                     onChange={(event) => setEditTeamDescription(event.target.value)}
                     placeholder="People who serve in worship services"
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -1193,10 +1182,10 @@ const ServicePlannerTeamDetailPage = () => {
                     value={editTeamWhatsAppGroupUrl}
                     onChange={(event) => setEditTeamWhatsAppGroupUrl(event.target.value)}
                     placeholder="https://chat.whatsapp.com/..."
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Paste the invite link for this team’s existing WhatsApp group.
+                    Paste the invite link for this team's existing WhatsApp group.
                   </p>
                 </div>
 
@@ -1222,8 +1211,8 @@ const ServicePlannerTeamDetailPage = () => {
         )}
 
         {addRoleOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-            <Card className="w-full max-w-lg border-border/70 bg-card shadow-card p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
+            <Card className="actsix-panel w-full max-w-lg p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="label-eyebrow">Team Role</p>
@@ -1252,7 +1241,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={newRoleName}
                     onChange={(event) => setNewRoleName(event.target.value)}
                     placeholder="Vocals"
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -1277,8 +1266,8 @@ const ServicePlannerTeamDetailPage = () => {
         )}
 
         {addPersonOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-            <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
+            <Card className="actsix-panel w-full max-w-2xl p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="label-eyebrow">Team Members</p>
@@ -1323,7 +1312,7 @@ const ServicePlannerTeamDetailPage = () => {
                       <span className="font-bold text-foreground">{personName}</span>
                       {phoneNumber ? (
                         <>
-                          {" "}· <span>{phoneNumber}</span>
+                          {" "}| <span>{phoneNumber}</span>
                         </>
                       ) : null}
                     </div>
@@ -1337,7 +1326,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={roleName}
                     onChange={(event) => setRoleName(event.target.value)}
                     placeholder="Worship Leader"
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -1348,7 +1337,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={memberNotes}
                     onChange={(event) => setMemberNotes(event.target.value)}
                     placeholder="Availability, instrument, serving notes..."
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 

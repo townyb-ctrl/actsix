@@ -24,11 +24,15 @@ const Auth = () => {
     setBusy(true);
     if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
-        email, password,
+        email,
+        password,
         options: { emailRedirectTo: `${window.location.origin}/` },
       });
       if (error) toast.error(error.message);
-      else { toast.success("Welcome — check your inbox to confirm."); navigate("/"); }
+      else {
+        toast.success("Welcome - check your inbox to confirm.");
+        navigate("/");
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message);
@@ -54,41 +58,59 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between p-12 bg-gradient-sidebar text-sidebar-foreground relative overflow-hidden">
-        <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand-teal/20 blur-3xl" />
-        <div className="absolute -left-12 bottom-0 h-72 w-72 rounded-full bg-brand-coral/10 blur-3xl" />
+    <div className="grid min-h-screen bg-background lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="hidden flex-col justify-between overflow-hidden border-r border-border/70 bg-brand-ink p-12 text-sidebar-foreground lg:flex">
         <Logo />
-        <div className="relative z-10">
-          <p className="text-5xl font-extrabold leading-[1.05] tracking-tight text-balance">
-            Organize the work.<br/>
+        <div>
+          <p className="text-3xl font-extrabold leading-[1.08] tracking-tight text-balance">
+            Organize the work.<br />
             <span className="text-brand-teal-bright">Serve</span> the word.
           </p>
-          <p className="mt-6 text-sm uppercase tracking-[0.2em] text-sidebar-foreground/50 font-semibold">
+          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/50">
             A calm command center for ministry work
           </p>
         </div>
-        <div className="text-xs text-sidebar-foreground/40">© ACTSIX · 2026</div>
+        <div className="text-xs text-sidebar-foreground/40">ACTSIX | 2026</div>
       </div>
 
-      <div className="flex items-center justify-center p-8 bg-gradient-content">
-        <form onSubmit={handle} className="w-full max-w-sm space-y-6">
+      <div className="flex items-center justify-center p-5 sm:p-8">
+        <form onSubmit={handle} className="actsix-panel w-full max-w-sm space-y-6 p-5 sm:p-6">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight">{mode === "signin" ? "Welcome back" : "Create account"}</h1>
-            <p className="text-sm text-muted-foreground mt-2">
+            <h1 className="text-3xl font-extrabold tracking-tight">
+              {mode === "signin" ? "Welcome back" : "Create account"}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               {mode === "signin" ? "Sign in to your workspace." : "Begin organizing your work."}
             </p>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-11 rounded-xl border-border/70 bg-background shadow-none"
+            />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-11 rounded-xl border-border/70 bg-background shadow-none"
+            />
           </div>
-          <Button type="submit" className="w-full bg-brand-teal hover:bg-brand-teal/90 text-white rounded-full" disabled={busy}>
-            {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+
+          <Button type="submit" className="actsix-btn-primary w-full" disabled={busy}>
+            {busy ? "..." : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
 
           <div className="flex items-center gap-3">
@@ -102,15 +124,11 @@ const Auth = () => {
           <Button
             type="button"
             variant="outline"
-            className="w-full rounded-full border-border/80 bg-background/70 font-bold hover:bg-background"
+            className="actsix-btn-outline w-full font-bold"
             disabled={googleBusy || busy}
             onClick={signInWithGoogle}
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -134,7 +152,7 @@ const Auth = () => {
           <button
             type="button"
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
+            className="text-sm text-muted-foreground underline underline-offset-4 transition hover:text-foreground"
           >
             {mode === "signin" ? "No account? Create one." : "Already have an account? Sign in."}
           </button>

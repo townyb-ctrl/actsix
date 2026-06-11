@@ -1050,7 +1050,7 @@ const PersonDetailPage = () => {
                   {trainingAssignments.map((assignment) => (
                     <div
                       key={assignment.id}
-                      className="rounded-[var(--radius-control)] border border-border/70 bg-card p-4"
+                      className="rounded-[var(--radius-control)] border border-border/70 bg-background/70 p-4"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="flex min-w-0 flex-1 items-start gap-3">

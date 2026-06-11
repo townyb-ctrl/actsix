@@ -22,7 +22,7 @@ const alphaModules: Record<ActsixModuleKey, boolean> = {
   service_planner: true,
   people: true,
   groups: true,
-  sermon_hub: false,
+  sermon_hub: true,
   resources: false,
   chat: false,
   reports: false,

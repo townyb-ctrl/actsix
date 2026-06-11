@@ -19,7 +19,7 @@ type GuidedTourProps = {
 
 const START_TOUR_EVENT = "actsix:start-tour";
 
-const tours: Record<TourKey, TourStep[]> = {
+const tours: Partial<Record<TourKey, TourStep[]>> = {
   home: [
     {
       selector: '[data-tour="home-overview"]',
@@ -165,6 +165,9 @@ const tours: Record<TourKey, TourStep[]> = {
   ],
 };
 
+export const hasGuidedTour = (tourKey: TourKey) =>
+  Boolean(tours[tourKey]?.length);
+
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
@@ -176,8 +179,8 @@ export function GuidedTour({ onStepChange, onComplete }: GuidedTourProps) {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [targetRadius, setTargetRadius] = useState(18);
 
-  const tourSteps = activeTourKey ? tours[activeTourKey] : [];
-  const step = activeTourKey ? tourSteps[stepIndex] : null;
+  const tourSteps = activeTourKey ? tours[activeTourKey] ?? [] : [];
+  const step = tourSteps[stepIndex] ?? null;
 
   const finishTour = useCallback(() => {
     if (activeTourKey) {
@@ -190,9 +193,16 @@ export function GuidedTour({ onStepChange, onComplete }: GuidedTourProps) {
   }, [activeTourKey, onComplete, onStepChange]);
 
   const startTour = useCallback((tourKey: TourKey = "home") => {
+    if (!hasGuidedTour(tourKey)) {
+      setActiveTourKey(null);
+      setStepIndex(0);
+      onStepChange?.(null);
+      return;
+    }
+
     setStepIndex(0);
     setActiveTourKey(tourKey);
-  }, []);
+  }, [onStepChange]);
 
   useEffect(() => {
     const handleStartTour = (event: Event) => {

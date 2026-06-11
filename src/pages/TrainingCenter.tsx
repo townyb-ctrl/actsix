@@ -1511,14 +1511,14 @@ const TrainingCenter = () => {
                 )}
               </div>
 
-              <aside className="border-t border-border/70 bg-muted/35 p-4 sm:p-5 xl:border-l xl:border-t-0">
+              <aside className="border-t border-border/70 bg-background/70 p-4 sm:p-5 xl:border-l xl:border-t-0">
                 <p className="label-eyebrow">Summary</p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {learnerSummaryCards.map((item) => {
                     const Icon = item.icon;
 
                     return (
-                      <div key={item.label} className="rounded-xl bg-background px-3 py-2.5">
+                      <div key={item.label} className="rounded-xl border border-border/60 bg-card/60 px-3 py-2.5">
                         <div className="flex items-center justify-between gap-2">
                           <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
                             {item.label}
@@ -1903,26 +1903,17 @@ const TrainingCenter = () => {
                   </h2>
                 </div>
 
-                <div className="flex rounded-xl border border-border/70 bg-background p-1">
+                <div className="actsix-view-tabs grid gap-1.5 sm:grid-cols-3 lg:min-w-[25rem]">
                   {adminViews.map((view) => (
                     <button
                       key={view.id}
                       type="button"
                       onClick={() => setAdminView(view.id)}
-                      className={cn(
-                        "flex min-w-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-extrabold transition",
-                        adminView === view.id
-                          ? "bg-brand-teal text-white shadow-soft"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
+                      className="actsix-view-tab"
+                      data-state={adminView === view.id ? "active" : "inactive"}
                     >
-                      <span>{view.label}</span>
-                      <span
-                        className={cn(
-                          "rounded-full px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums",
-                          adminView === view.id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                        )}
-                      >
+                      <span className="min-w-0 truncate text-sm font-extrabold">{view.label}</span>
+                      <span className="actsix-view-tab-count">
                         {loading ? "..." : view.count}
                       </span>
                     </button>
@@ -1956,7 +1947,7 @@ const TrainingCenter = () => {
               </div>
             </div>
 
-            <aside className="border-t border-border/70 bg-muted/35 p-4 sm:p-5 xl:border-l xl:border-t-0">
+            <aside className="border-t border-border/70 bg-background/70 p-4 sm:p-5 xl:border-l xl:border-t-0">
               <div className="flex items-center justify-between gap-3">
                 <p className="label-eyebrow">Needs Attention</p>
                 <Badge variant="outline" className="border-brand-amber/25 bg-brand-amber/10 text-brand-amber">
@@ -2017,7 +2008,7 @@ const TrainingCenter = () => {
           {!loading &&
             folderTiles.map((folder) => (
               <Link key={folder.id} to={`/training?folder=${encodeURIComponent(folder.id)}`} className="group block min-w-0">
-                <Card className="actsix-panel-soft flex min-h-44 flex-col justify-between border-border/60 p-5 transition hover:-translate-y-0.5 hover:border-brand-teal/35 hover:shadow-card">
+                <Card className="actsix-panel-soft flex min-h-44 flex-col justify-between border-border/60 p-5 transition hover:-translate-y-0.5 hover:border-brand-teal/35 hover:shadow-md">
                   <div className="flex items-start justify-between gap-4">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal transition group-hover:bg-brand-teal group-hover:text-white">
                       <Folder className="h-5 w-5" />
@@ -2085,7 +2076,7 @@ const TrainingCenter = () => {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search courses in this folder..."
-                    className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-soft"
+                    className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-none"
                   />
                 </div>
 
@@ -2096,7 +2087,7 @@ const TrainingCenter = () => {
                     <select
                       value={categoryFilter}
                       onChange={(event) => setCategoryFilter(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-9 text-sm font-semibold shadow-soft outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-9 text-sm font-semibold shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                     >
                       {categories.map((category) => (
                         <option key={category}>{category}</option>
@@ -2109,7 +2100,7 @@ const TrainingCenter = () => {
                     <select
                       value={statusFilter}
                       onChange={(event) => setStatusFilter(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold shadow-soft outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                     >
                       <option>All</option>
                       <option>Active</option>
@@ -2543,7 +2534,7 @@ const TrainingCenter = () => {
                                   })
                                 }
                                 disabled={!canManageTraining}
-                                className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-card px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                                className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                               >
                                 <option>Not Started</option>
                                 <option>In Progress</option>
@@ -2564,7 +2555,7 @@ const TrainingCenter = () => {
                                   })
                                 }
                                 disabled={!canManageTraining}
-                                className="mt-1 h-10 rounded-xl border-border/70 bg-card"
+                                className="mt-1 h-10 rounded-xl border-border/70 bg-background shadow-none"
                               />
                             </label>
 
@@ -2579,7 +2570,7 @@ const TrainingCenter = () => {
                                   })
                                 }
                                 disabled={!canManageTraining}
-                                className="mt-1 h-10 rounded-xl border-border/70 bg-card"
+                                className="mt-1 h-10 rounded-xl border-border/70 bg-background shadow-none"
                               />
                             </label>
                           </div>
@@ -2903,7 +2894,7 @@ const TrainingCenter = () => {
                             updateCourseLesson(lesson.tempId, { title: event.target.value })
                           }
                           placeholder="Example: Ministry vision and expectations"
-                          className="mt-2 h-11 rounded-xl border-border/70 bg-card"
+                          className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                         />
                       </label>
 
@@ -2916,7 +2907,7 @@ const TrainingCenter = () => {
                           }
                           rows={5}
                           placeholder="Write the training content, notes, links, or instructions for this lesson."
-                          className="mt-2 w-full rounded-xl border border-border/70 bg-card px-3 py-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                          className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                         />
                       </label>
 
@@ -2956,7 +2947,7 @@ const TrainingCenter = () => {
                             {lesson.mediaItems.map((mediaItem) => (
                               <div
                                 key={mediaItem.id}
-                                className="grid gap-2 rounded-xl border border-border/70 bg-card p-3 md:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1.4fr)_2.5rem]"
+                                className="grid gap-2 rounded-xl border border-border/70 bg-background/70 p-3 md:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1.4fr)_2.5rem]"
                               >
                                 <div className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-sm font-extrabold">
                                   {mediaItem.type === "video" ? (
@@ -3010,7 +3001,7 @@ const TrainingCenter = () => {
                       </div>
 
                       {previewLessonId === lesson.tempId && (
-                        <Card className="mt-4 border-border/60 bg-card p-4">
+                        <Card className="mt-4 border-border/60 bg-background/70 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="label-eyebrow">Lesson Preview</p>
                             <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">

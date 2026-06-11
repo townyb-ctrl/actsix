@@ -227,28 +227,28 @@ const TasksDashboardPage = () => {
       />
 
       <div className="actsix-page-body actsix-page-stack">
-        <div className="grid gap-px overflow-hidden rounded-[1.25rem] border border-border/70 bg-border/70 shadow-soft sm:grid-cols-2 lg:grid-cols-5">
-          <div className="bg-card px-4 py-4">
+        <div className="actsix-panel-soft grid gap-px overflow-hidden sm:grid-cols-2 lg:grid-cols-5">
+          <div className="bg-background/55 px-4 py-4">
             <p className="label-eyebrow">Inbox</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.inbox}</div>
           </div>
 
-          <div className="bg-card px-4 py-4">
+          <div className="bg-background/55 px-4 py-4">
             <p className="label-eyebrow">Next Actions</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.next}</div>
           </div>
 
-          <div className="bg-card px-4 py-4">
+          <div className="bg-background/55 px-4 py-4">
             <p className="label-eyebrow">Projects</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.projects}</div>
           </div>
 
-          <div className="bg-card px-4 py-4">
+          <div className="bg-background/55 px-4 py-4">
             <p className="label-eyebrow">Waiting</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.waiting}</div>
           </div>
 
-          <div className="bg-card px-4 py-4">
+          <div className="bg-background/55 px-4 py-4">
             <p className="label-eyebrow">Someday</p>
             <div className="mt-1 text-2xl font-extrabold">{counts.someday}</div>
           </div>

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/PageHeader";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -331,9 +332,46 @@ const PeopleGroupDetailPage = () => {
   }
 
   return (
-    <div className="w-full space-y-5 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+    <div>
+      <PageHeader
+        eyebrow="People Group"
+        title={group.name}
+        subtitle={group.description || "Manage members, leaders, and group messaging."}
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="actsix-btn-outline h-10"
+              onClick={() => {
+                setEditGroupName(group.name || "");
+                setEditGroupDescription(group.description || "");
+                setEditGroupFolderId(group.folder_id || "");
+                setEditGroupOpen(true);
+              }}
+            >
+              <Edit3 className="h-4 w-4" />
+              Edit
+            </Button>
+
+            <Button
+              type="button"
+              className="actsix-btn-primary h-10"
+              onClick={() => {
+                setSelectedPersonIds([]);
+                setMemberRole("");
+                setAddPeopleOpen(true);
+              }}
+            >
+              <UserPlus className="h-4 w-4" />
+              Add People
+            </Button>
+          </>
+        }
+      />
+
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="actsix-panel-soft flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link
             to="/groups"
             className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground transition hover:text-brand-teal"
@@ -342,12 +380,7 @@ const PeopleGroupDetailPage = () => {
             Back to Groups
           </Link>
 
-          <p className="label-eyebrow mt-6">ACTSIX: People Group</p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
-            {group.name}
-          </h1>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 font-bold">
               <Folder className="h-3.5 w-3.5" />
               {group.people_group_folders?.name || "Uncategorized"}
@@ -357,46 +390,9 @@ const PeopleGroupDetailPage = () => {
               {members.length} {members.length === 1 ? "person" : "people"}
             </span>
           </div>
-
-          {group.description && (
-            <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
-              {group.description}
-            </p>
-          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="actsix-btn-outline"
-            onClick={() => {
-              setEditGroupName(group.name || "");
-              setEditGroupDescription(group.description || "");
-              setEditGroupFolderId(group.folder_id || "");
-              setEditGroupOpen(true);
-            }}
-          >
-            <Edit3 className="h-4 w-4" />
-            Edit Group
-          </Button>
-
-          <Button
-            type="button"
-            className="actsix-btn-primary"
-            onClick={() => {
-              setSelectedPersonIds([]);
-              setMemberRole("");
-              setAddPeopleOpen(true);
-            }}
-          >
-            <UserPlus className="h-4 w-4" />
-            Add People
-          </Button>
-        </div>
-      </div>
-
-      <Card className="border-border/70 bg-card p-5 shadow-card">
+        <Card className="actsix-panel p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="label-eyebrow">Messaging</p>
@@ -441,9 +437,9 @@ const PeopleGroupDetailPage = () => {
             Message Group
           </Button>
         </div>
-      </Card>
+        </Card>
 
-      <Card className="overflow-hidden border-border/70 bg-card shadow-card">
+        <Card className="actsix-panel overflow-hidden">
         <div className="border-b border-border/70 px-5 py-4">
           <p className="label-eyebrow">Members</p>
           <h2 className="mt-1 text-xl font-extrabold tracking-tight">
@@ -452,7 +448,7 @@ const PeopleGroupDetailPage = () => {
         </div>
 
         {members.length === 0 && (
-          <div className="p-8 text-center">
+          <div className="actsix-empty-state m-3 min-h-[10rem] text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
               <Users className="h-5 w-5" />
             </div>
@@ -466,7 +462,7 @@ const PeopleGroupDetailPage = () => {
         )}
 
         {members.length > 0 && (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/70">
             {members.map((member) => {
               const isLeader = isLeaderRole(member.role);
 
@@ -508,7 +504,7 @@ const PeopleGroupDetailPage = () => {
                       {member.role && <span>{member.role}</span>}
                       {member.people?.email && (
                         <>
-                          {member.role && <span>·</span>}
+                          {member.role && <span>|</span>}
                           <span>{member.people.email}</span>
                         </>
                       )}
@@ -546,7 +542,8 @@ const PeopleGroupDetailPage = () => {
             })}
           </div>
         )}
-      </Card>
+        </Card>
+      </div>
 
       <Dialog open={editGroupOpen} onOpenChange={setEditGroupOpen}>
         <DialogContent className="max-w-xl">
@@ -653,7 +650,7 @@ const PeopleGroupDetailPage = () => {
                 </div>
               </div>
 
-              <DialogFooter className="flex justify-end gap-2 border-t border-border/70 bg-card p-6">
+              <DialogFooter className="flex justify-end gap-2 border-t border-border/70 bg-background/80 p-6">
                 <Button
                   type="button"
                   variant="outline"

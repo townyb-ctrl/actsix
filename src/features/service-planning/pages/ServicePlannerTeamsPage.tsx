@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PageHeader } from "@/components/PageHeader";
 
 type ServiceTeam = {
   id: string;
@@ -180,47 +181,44 @@ const ServicePlannerTeamsPage = () => {
 
   return (
     <div>
-      <div className="w-full space-y-4 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
-        <div>
-          <p className="label-eyebrow">Service Planner</p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
-            Teams
-          </h1>
-          <p className="mt-2 text-base text-muted-foreground">
-            Create service teams, define roles, and prepare future team communication.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative max-w-2xl flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search teams or roles..."
-              className="h-10 pl-10 border-border/70 bg-card shadow-soft"
-            />
-          </div>
-
+      <PageHeader
+        eyebrow="Service Planner"
+        title="Teams"
+        subtitle="Create service teams, define roles, and prepare future team communication."
+        actions={
           <Button
             type="button"
-            className="actsix-btn-primary rounded-xl shrink-0"
+            className="actsix-btn-primary shrink-0"
             onClick={() => setAddTeamOpen(true)}
           >
             <Plus className="h-4 w-4" />
             Add Team
           </Button>
+        }
+      />
+
+      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="actsix-panel-soft p-3">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search teams or roles..."
+              className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-none"
+            />
+          </div>
         </div>
 
         <div>
           {loading && (
-            <Card className="p-6 border-border/70 bg-card shadow-card">
+            <Card className="actsix-loading-state">
               <p className="text-sm text-muted-foreground">Loading teams...</p>
             </Card>
           )}
 
           {!loading && filteredTeams.length === 0 && (
-            <Card className="p-6 border-border/70 bg-card shadow-card">
+            <Card className="actsix-empty-state">
               <p className="text-sm text-muted-foreground">
                 No teams found. Add your first team to begin.
               </p>
@@ -228,7 +226,7 @@ const ServicePlannerTeamsPage = () => {
           )}
 
           {!loading && filteredTeams.length > 0 && (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {filteredTeams.map((team) => {
                 const teamMembers = getTeamMembers(team.id);
                 const roles = getTeamRoles(team.id);
@@ -246,7 +244,7 @@ const ServicePlannerTeamsPage = () => {
                         navigate(`/service-planner/teams/${team.id}`);
                       }
                     }}
-                    className="flex min-h-[230px] cursor-pointer flex-col border-border/70 bg-card shadow-card overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                    className="actsix-panel-soft flex min-h-[220px] cursor-pointer flex-col overflow-hidden border-border/60 transition hover:-translate-y-0.5 hover:border-brand-teal/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                   >
                     <div className="flex-1 p-5">
                       <div className="flex items-start justify-between gap-4">
@@ -340,8 +338,8 @@ const ServicePlannerTeamsPage = () => {
       </div>
 
       {addTeamOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-2xl border-border/70 bg-card shadow-card p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
+          <Card className="actsix-panel w-full max-w-2xl p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Team</p>
@@ -370,7 +368,7 @@ const ServicePlannerTeamsPage = () => {
                   value={teamName}
                   onChange={(event) => setTeamName(event.target.value)}
                   placeholder="Worship Team"
-                  className="mt-2 border-border/70 bg-background"
+                  className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                 />
               </div>
 
@@ -380,7 +378,7 @@ const ServicePlannerTeamsPage = () => {
                   value={teamDescription}
                   onChange={(event) => setTeamDescription(event.target.value)}
                   placeholder="People who serve in worship services"
-                  className="mt-2 border-border/70 bg-background"
+                  className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                 />
               </div>
 

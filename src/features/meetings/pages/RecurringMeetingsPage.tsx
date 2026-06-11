@@ -234,82 +234,47 @@ const RecurringMeetingsPage = () => {
 
   return (
     <div>
-      <div className="w-full space-y-4 px-4 pb-12 pt-8 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="label-eyebrow">Meetings</p>
-            <h1 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
-              Recurring Meetings
-            </h1>
-            <p className="mt-2 text-base text-muted-foreground">
-              Set up repeated meetings like weekly staff meetings or monthly executive meetings.
-            </p>
-          </div>        </div>
-
-        <div className="flex items-center justify-between gap-4">
-
-
-          <div className="relative max-w-2xl flex-1">
-
-
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-
-
-            <Input
-
-
-              value={search}
-
-
-              onChange={(event) => setSearch(event.target.value)}
-
-
-              placeholder="Search recurring meetings..."
-
-
-              className="h-10 pl-10 border-border/70 bg-card shadow-soft"
-
-
-            />
-
-
-          </div>
-
-
-        
-
-
+      <PageHeader
+        eyebrow="Meetings"
+        title="Recurring Meetings"
+        subtitle="Set up repeated meetings like weekly staff meetings or monthly executive meetings."
+        actions={
           <Button
-
-
             type="button"
-
-
-            className="actsix-btn-primary rounded-xl shrink-0"
-
-
+            size="sm"
+            className="actsix-btn-primary h-10"
             onClick={() => setAddOpen(true)}
-
-
           >
-
-
             <Plus className="h-4 w-4" />
-
-
-            Add Recurring Meeting
-
-
+            Add Recurring
           </Button>
+        }
+      />
 
-
+      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="actsix-panel-soft p-3">
+          <div className="relative max-w-2xl">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search recurring meetings..."
+              className="h-11 rounded-xl border-border/70 bg-background pl-10"
+            />
+          </div>
         </div>
 
-        <Card className="border-border/70 bg-card shadow-card overflow-hidden">
-          <div className="divide-y divide-border">
+        <Card className="actsix-panel overflow-hidden">
+          <div className="divide-y divide-border/70">
             {filteredItems.length === 0 && (
-              <div className="p-6 text-sm text-muted-foreground">
-                No recurring meetings set up yet.
+              <div className="actsix-empty-state m-3 min-h-[9rem] text-left">
+                <div className="flex items-center gap-2 font-semibold text-foreground">
+                  <Repeat className="h-4 w-4 text-brand-teal" />
+                  No recurring meetings set up yet.
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Add a recurring rhythm, then generate the individual meetings as needed.
+                </p>
               </div>
             )}
 
@@ -317,14 +282,14 @@ const RecurringMeetingsPage = () => {
               <Link
                 key={item.id}
                 to={`/meetings/recurring/${item.id}`}
-                className="group flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors"
+                className="group flex items-center gap-4 p-4 transition-colors hover:bg-muted/30"
               >
-                <div className="h-10 w-10 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
                   <Repeat className="h-5 w-5" />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="font-extrabold tracking-tight truncate">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-extrabold tracking-tight">
                     {item.title}
                   </div>
 
@@ -378,13 +343,13 @@ const RecurringMeetingsPage = () => {
                     event.stopPropagation();
                     setDeleteTarget(item);
                   }}
-                  className="h-9 w-9 rounded-lg border border-border/70 bg-background text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
                   aria-label={`Delete ${item.title}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
 
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-teal transition-colors" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand-teal" />
               </Link>
             ))}
           </div>
@@ -393,7 +358,7 @@ const RecurringMeetingsPage = () => {
 
       {addOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-3xl border-border/70 bg-card shadow-card p-6">
+          <Card className="actsix-panel w-full max-w-3xl p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Recurring Meeting</p>
@@ -479,7 +444,7 @@ const RecurringMeetingsPage = () => {
                     <option value="">No linked group</option>
                     {peopleGroupOptions.map((group) => (
                       <option key={group.id} value={group.id}>
-                        {group.name} — {group.members.length} people
+                        {group.name} - {group.members.length} people
                       </option>
                     ))}
                   </select>
@@ -523,7 +488,7 @@ const RecurringMeetingsPage = () => {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="w-full max-w-md border-border/70 bg-card shadow-card p-6">
+          <Card className="actsix-panel w-full max-w-md p-6">
             <div className="h-12 w-12 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center mb-4">
               <Trash2 className="h-5 w-5" />
             </div>

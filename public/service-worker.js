@@ -65,7 +65,10 @@ async function networkFirst(request) {
     cache.put(request, freshResponse.clone());
     return freshResponse;
   } catch (error) {
-    return (await cache.match(request)) || cache.match("/");
+    const cachedResponse = await cache.match(request);
+    const appShellResponse = await cache.match("/");
+
+    return cachedResponse || appShellResponse || serviceUnavailableResponse();
   }
 }
 
@@ -81,7 +84,17 @@ async function staleWhileRevalidate(request) {
 
       return networkResponse;
     })
-    .catch(() => cachedResponse);
+    .catch(() => cachedResponse || serviceUnavailableResponse());
 
   return cachedResponse || fetchPromise;
+}
+
+function serviceUnavailableResponse() {
+  return new Response("ACTSIX is temporarily unavailable offline.", {
+    status: 503,
+    statusText: "Service Unavailable",
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
 }

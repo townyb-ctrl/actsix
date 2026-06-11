@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -769,31 +770,28 @@ const ServicePlannerPage = () => {
 
   return (
     <div>
-      <div className="w-full space-y-4 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
-        <div data-tour="service-planner-actions" className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="label-eyebrow">Service Planner</p>
-            <h1 className="mt-1.5 text-2xl font-extrabold leading-tight md:text-3xl">
-              Services
-            </h1>
-            <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">
-              Create service types, add service dates, and open each service to build the order and serving team.
-            </p>
-          </div>
-
+      <div data-tour="service-planner-actions">
+        <PageHeader
+          eyebrow="Service Planner"
+          title="Services"
+          subtitle="Create service types, add service dates, and open each service to build the order and serving team."
+          actions={
           <Button
             type="button"
             size="sm"
-            className="shrink-0 rounded-lg bg-brand-sage px-4 font-bold text-white shadow-soft hover:bg-brand-sage/90 hover:text-white"
+            className="actsix-btn-primary shrink-0"
             onClick={() => setAddTypeOpen(true)}
           >
             <Plus className="h-4 w-4" />
             Add Service Type
           </Button>
-        </div>
+          }
+        />
+      </div>
 
-        <div data-tour="service-planner-search" className="rounded-lg border border-border/70 bg-card p-3 shadow-soft">
-          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-1.5">
+      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div data-tour="service-planner-search" className="actsix-panel-soft p-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-2">
             <Search className="h-3.5 w-3.5 text-muted-foreground" />
             <Input
               value={search}
@@ -806,13 +804,13 @@ const ServicePlannerPage = () => {
 
         <div data-tour="service-planner-list" className="space-y-6">
           {loading && (
-            <Card className="border-border/70 bg-card p-5 shadow-soft">
-              <p className="text-sm text-muted-foreground">Loading services...</p>
+            <Card className="actsix-panel-soft p-5">
+              <div className="actsix-loading-state">Loading services...</div>
             </Card>
           )}
 
           {!loading && filteredServiceTypes.length === 0 && (
-            <Card className="border-border/70 bg-card p-5 shadow-soft">
+            <Card className="actsix-panel-soft p-5">
               <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
                 <LottieIcon
                   animationData={emptyServicesAnimation}
@@ -1035,9 +1033,9 @@ const ServicePlannerPage = () => {
   return (
                 <Card
                   key={type.id}
-                  className="overflow-hidden border-border/70 bg-card shadow-soft"
+                  className="actsix-panel-soft overflow-hidden"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-sage/25 bg-brand-sage-soft px-4 py-3 shadow-[inset_3px_0_0_hsl(var(--brand-sage))]">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-background/70 px-4 py-3">
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-sage">
                         Service Type
@@ -1056,7 +1054,7 @@ const ServicePlannerPage = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-brand-sage/30 bg-card/70 px-2.5 text-xs font-bold text-brand-sage transition hover:bg-brand-sage/10"
+                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-brand-sage/30 bg-background px-2.5 text-xs font-bold text-brand-sage transition hover:bg-brand-sage/10"
                         onClick={() => openAddService(type)}
                         aria-label="Add service date"
                       >
@@ -1184,7 +1182,7 @@ const ServicePlannerPage = () => {
 
       {addTypeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
+          <Card className="actsix-panel w-full max-w-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Type</p>
@@ -1272,7 +1270,7 @@ const ServicePlannerPage = () => {
 
       {addServiceOpen && selectedServiceType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
+          <Card className="actsix-panel w-full max-w-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Date</p>
@@ -1359,7 +1357,7 @@ const ServicePlannerPage = () => {
 
       {templateOpen && templateServiceType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="max-h-[86vh] w-full max-w-5xl overflow-auto border-border/70 bg-card p-5 shadow-card">
+          <Card className="actsix-panel max-h-[86vh] w-full max-w-5xl overflow-auto p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Template</p>
@@ -1400,7 +1398,7 @@ const ServicePlannerPage = () => {
                       <select
                         value={item.item_type}
                         onChange={(event) => updateTemplateItem(index, "item_type", event.target.value)}
-                        className="h-10 rounded-md border border-border/70 bg-card px-3 text-sm"
+                        className="h-10 rounded-md border border-border/70 bg-background px-3 text-sm"
                       >
                         <option>Song</option>
                         <option>Welcome</option>
@@ -1417,7 +1415,7 @@ const ServicePlannerPage = () => {
                         value={item.title}
                         onChange={(event) => updateTemplateItem(index, "title", event.target.value)}
                         placeholder="Template item title..."
-                        className="border-border/70 bg-card"
+                        className="border-border/70 bg-background"
                       />
 
                       <Input
@@ -1425,7 +1423,7 @@ const ServicePlannerPage = () => {
                         min="1"
                         value={item.duration_minutes}
                         onChange={(event) => updateTemplateItem(index, "duration_minutes", event.target.value)}
-                        className="border-border/70 bg-card"
+                        className="border-border/70 bg-background"
                       />
 
                       <Button
@@ -1441,7 +1439,7 @@ const ServicePlannerPage = () => {
                         value={item.details}
                         onChange={(event) => updateTemplateItem(index, "details", event.target.value)}
                         placeholder="Optional details, key, scripture, or notes..."
-                        className="border-border/70 bg-card md:col-span-4"
+                        className="border-border/70 bg-background md:col-span-4"
                       />
                     </div>
                   ))}
@@ -1476,7 +1474,7 @@ const ServicePlannerPage = () => {
 
       {teamLinkOpen && teamLinkServiceType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl border-border/70 bg-card p-5 shadow-card">
+          <Card className="actsix-panel w-full max-w-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Assign Teams to Service Type</p>

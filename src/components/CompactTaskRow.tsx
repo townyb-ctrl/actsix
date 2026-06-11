@@ -129,17 +129,17 @@ const CompactTaskRow = ({
             @{context}
           </span>
 
-          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground">|</span>
 
           <span className={priorityClass(priority)}>{priority}</span>
 
-          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground">|</span>
 
           <span className="font-mono text-muted-foreground">{minutes}m</span>
 
           {showAssignee && assignedLabel && (
             <>
-              <span className="text-muted-foreground">Â·</span>
+              <span className="text-muted-foreground">|</span>
               <span
                 className={`inline-flex max-w-[180px] items-center gap-1 truncate rounded-full border px-2 py-1 font-semibold ${
                   isAssignedToMe
@@ -155,7 +155,7 @@ const CompactTaskRow = ({
 
           {task.energy && (
             <>
-              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground">|</span>
               <span className="text-muted-foreground">{task.energy} energy</span>
             </>
           )}

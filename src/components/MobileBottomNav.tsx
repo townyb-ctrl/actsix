@@ -43,6 +43,7 @@ type MobileModuleKey =
   | "meetings"
   | "people"
   | "groups"
+  | "sermonHub"
   | "settings";
 
 type MobileDockLink = {
@@ -78,6 +79,7 @@ const detectModule = (pathname: string): MobileModuleKey => {
   if (pathname.startsWith("/service-planner")) return "servicePlanner";
   if (pathname.startsWith("/meetings")) return "meetings";
   if (pathname.startsWith("/groups")) return "groups";
+  if (pathname.startsWith("/sermon-hub")) return "sermonHub";
   if (pathname.startsWith("/people")) return "people";
   if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/tasks/projects") || pathname.startsWith("/projects")) {
@@ -326,6 +328,34 @@ const moduleConfigs: Record<MobileModuleKey, MobileModuleConfig> = {
       },
     ],
   },
+  sermonHub: {
+    key: "sermonHub",
+    title: "Sermon Hub",
+    subtitle: "Sermons, lessons, series, and teaching notes.",
+    primary: { icon: BookOpen, label: "Hub", path: "/sermon-hub" },
+    menuLabel: "Teaching",
+    menuIcon: Menu,
+    menuItems: [
+      {
+        icon: BookOpen,
+        label: "Teaching Hub",
+        path: "/sermon-hub",
+        description: "Sermons, lessons, and series prep.",
+      },
+      {
+        icon: Music,
+        label: "Services",
+        path: "/service-planner/services",
+        description: "Connect teaching to service plans.",
+      },
+      {
+        icon: Inbox,
+        label: "Capture idea",
+        path: "/tasks/inbox",
+        description: "Capture a teaching thought for later.",
+      },
+    ],
+  },
   settings: {
     key: "settings",
     title: "Settings",
@@ -361,6 +391,7 @@ const moduleSwitcherItems: Array<{
   { key: "meetings", icon: Calendar, label: "Meetings", path: "/meetings" },
   { key: "people", icon: Users, label: "People", path: "/people" },
   { key: "groups", icon: FolderKanban, label: "Groups", path: "/groups" },
+  { key: "sermonHub", icon: BookOpen, label: "Teach", path: "/sermon-hub" },
   { key: "projects", icon: FolderKanban, label: "Projects", path: "/tasks/projects" },
 ];
 

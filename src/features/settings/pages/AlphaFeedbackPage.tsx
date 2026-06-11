@@ -128,7 +128,7 @@ export default function AlphaFeedback() {
           <Button
             type="button"
             variant="outline"
-            className="rounded-full gap-2"
+            className="actsix-btn-outline gap-2"
             onClick={loadFeedback}
             disabled={loading || workspaceLoading}
           >
@@ -139,7 +139,7 @@ export default function AlphaFeedback() {
       />
 
       <div className="actsix-page-body space-y-5 py-8">
-        <Card className="flex flex-col gap-3 border-brand-teal/20 bg-brand-teal/5 p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+        <Card className="actsix-panel-soft flex flex-col gap-3 border-brand-teal/20 bg-brand-teal/5 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-brand-teal/10 text-brand-teal">
               <ShieldCheck className="h-5 w-5" />
@@ -155,16 +155,16 @@ export default function AlphaFeedback() {
         </Card>
 
         {loading || workspaceLoading ? (
-          <Card className="border-border/60 p-6 shadow-soft">
+          <Card className="actsix-panel-soft p-6">
             <div className="actsix-loading-state">Loading feedback...</div>
           </Card>
         ) : feedback.length === 0 ? (
-          <Card className="border-border/60 p-6 shadow-soft">
+          <Card className="actsix-panel-soft p-6">
             <div className="actsix-empty-state">No alpha feedback has been submitted yet.</div>
           </Card>
         ) : (
-          <Card className="overflow-hidden border-border/60 shadow-soft">
-            <div className="grid grid-cols-[5.5rem_minmax(12rem,0.9fr)_minmax(0,2.2fr)_8rem] gap-4 border-b border-border/70 bg-muted/35 px-4 py-3 text-xs font-extrabold uppercase tracking-[0.16em] text-muted-foreground max-lg:hidden">
+          <Card className="actsix-panel overflow-hidden">
+            <div className="grid grid-cols-[5.5rem_minmax(12rem,0.9fr)_minmax(0,2.2fr)_8rem] gap-4 border-b border-border/70 bg-background/65 px-4 py-3 text-xs font-extrabold uppercase tracking-wide text-muted-foreground max-lg:hidden">
               <span>Handled</span>
               <span>Info</span>
               <span>Comment</span>
@@ -180,8 +180,8 @@ export default function AlphaFeedback() {
               return (
                 <div
                   key={item.id}
-                  className={`grid gap-3 border-b border-border/70 px-4 py-3 last:border-b-0 lg:grid-cols-[5.5rem_minmax(12rem,0.9fr)_minmax(0,2.2fr)_8rem] lg:items-start lg:gap-4 ${
-                    handled ? "bg-muted/20 text-muted-foreground" : ""
+                  className={`grid gap-3 border-b border-border/70 px-4 py-3 transition last:border-b-0 hover:bg-brand-teal/5 lg:grid-cols-[5.5rem_minmax(12rem,0.9fr)_minmax(0,2.2fr)_8rem] lg:items-start lg:gap-4 ${
+                    handled ? "bg-muted/15 text-muted-foreground" : ""
                   }`}
                 >
                   <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground">

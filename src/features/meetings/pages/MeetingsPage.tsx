@@ -163,21 +163,21 @@ const MeetingsPage = () => {
         subtitle="Plan agendas, record notes, and track action points."
       />
 
-      <div className="w-full space-y-5 px-4 sm:px-6 xl:px-8 2xl:px-10">
-        <div data-tour="meetings-stats" className="grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 shadow-soft md:grid-cols-3">
+      <div className="w-full space-y-4 px-4 sm:px-6 xl:px-8 2xl:px-10">
+        <div data-tour="meetings-stats" className="actsix-panel-soft grid gap-2 p-2 md:grid-cols-3">
           {[
             ["Total meetings", totalCount],
             ["Scheduled", upcomingCount],
             ["Unscheduled", unscheduledCount],
           ].map(([label, value]) => (
-            <div key={label} className="bg-card px-5 py-4">
+            <div key={label} className="rounded-[calc(var(--radius-panel)-0.35rem)] bg-background px-4 py-3">
               <p className="label-eyebrow">{label}</p>
-              <div className="mt-2 text-3xl font-extrabold tracking-tight">{value}</div>
+              <div className="mt-1 text-2xl font-extrabold tracking-tight">{value}</div>
             </div>
           ))}
         </div>
 
-        <div data-tour="meetings-actions" className="rounded-lg border border-border/70 bg-card shadow-soft">
+        <div data-tour="meetings-actions" className="actsix-panel overflow-hidden">
           <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -199,7 +199,7 @@ const MeetingsPage = () => {
             </Button>
           </div>
 
-          <div data-tour="meetings-list" className="divide-y divide-border/70">
+          <div data-tour="meetings-list" className="divide-y divide-border/60">
               {loading && (
                 <div className="actsix-loading-state min-h-[16rem]">
                   Loading meetings...
@@ -326,8 +326,8 @@ const MeetingsPage = () => {
         </div>
       </div>
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <Card className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-b-none border-border/70 bg-card p-4 shadow-card sm:rounded-xl sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 backdrop-blur-sm sm:items-center sm:px-4">
+          <Card className="actsix-panel max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-xl sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Meeting</p>
@@ -357,7 +357,7 @@ const MeetingsPage = () => {
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Executive Meeting"
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -367,7 +367,7 @@ const MeetingsPage = () => {
                     type="date"
                     value={meetingDate}
                     onChange={(event) => setMeetingDate(event.target.value)}
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -377,7 +377,7 @@ const MeetingsPage = () => {
                     type="time"
                     value={meetingTime}
                     onChange={(event) => setMeetingTime(event.target.value)}
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -387,7 +387,7 @@ const MeetingsPage = () => {
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                     placeholder="Location"
-                    className="border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 
@@ -397,7 +397,7 @@ const MeetingsPage = () => {
                     value={googleMeetUrl}
                     onChange={(event) => setGoogleMeetUrl(event.target.value)}
                     placeholder="https://meet.google.com/..."
-                    className="mt-2 border-border/70 bg-background"
+                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
                   />
                 </div>
 

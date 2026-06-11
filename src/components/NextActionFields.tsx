@@ -126,7 +126,7 @@ const NextActionFields = ({
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
             <label className="label-eyebrow">Project</label>
             <ProjectSelect
               value={item.project ?? ""}
@@ -155,7 +155,7 @@ const NextActionFields = ({
             />
           </div>
 
-          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
             <label className="label-eyebrow">Context</label>
             <ContextSelect
               value={item.context ?? "General"}
@@ -164,7 +164,7 @@ const NextActionFields = ({
             />
           </div>
 
-          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
             <label className="label-eyebrow flex items-center gap-2">
               <Clock className="h-3.5 w-3.5" />
               Duration
@@ -179,12 +179,12 @@ const NextActionFields = ({
                   minutes: Number(event.target.value) || 15,
                 })
               }
-              className="mt-2 border-border/70 bg-background"
+              className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
             />
           </div>
 
           {shouldShowAssignedTo && (
-            <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft md:col-span-2">
+            <div className="rounded-xl border border-border/70 bg-background/70 p-4 md:col-span-2">
               <label className="label-eyebrow flex items-center gap-2">
                 <UserRound className="h-3.5 w-3.5" />
                 Assigned To
@@ -220,14 +220,14 @@ const NextActionFields = ({
               </div>
             )}
 
-          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
             <label className="label-eyebrow">Priority</label>
             <select
               value={item.priority ?? "Medium"}
               onChange={(event) =>
                 onChange({ ...item, priority: event.target.value })
               }
-              className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+              className="mt-2 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
             >
               <option>Low</option>
               <option>Medium</option>
@@ -236,14 +236,14 @@ const NextActionFields = ({
             </select>
           </div>
 
-          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
             <label className="label-eyebrow">Energy</label>
             <select
               value={item.energy ?? "Medium"}
               onChange={(event) =>
                 onChange({ ...item, energy: event.target.value })
               }
-              className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+              className="mt-2 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
             >
               <option>Low</option>
               <option>Medium</option>
@@ -251,7 +251,7 @@ const NextActionFields = ({
             </select>
           </div>
 
-          <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
             <label className="label-eyebrow">Due date</label>
             <Input
               type="date"
@@ -259,7 +259,7 @@ const NextActionFields = ({
               onChange={(event) =>
                 onChange({ ...item, due: event.target.value || null })
               }
-              className="mt-2 border-border/70 bg-background"
+              className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
             />
           </div>
         </div>
@@ -271,7 +271,7 @@ const NextActionFields = ({
           <h3 className="font-extrabold tracking-tight">Organization</h3>
         </div>
 
-        <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-soft">
+        <div className="rounded-xl border border-border/70 bg-background/70 p-4">
           <label className="label-eyebrow">Tags</label>
           <Input
             value={Array.isArray(item.tags) ? item.tags.join(", ") : ""}
@@ -284,7 +284,7 @@ const NextActionFields = ({
                   .filter(Boolean),
               })
             }
-            className="mt-2 border-border/70 bg-background"
+            className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
             placeholder="Worship, Admin, Follow-up"
           />
           <p className="text-xs text-muted-foreground mt-2">
