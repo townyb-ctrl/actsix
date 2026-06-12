@@ -91,12 +91,12 @@ export function PeopleMultiSearchSelect({
 
   return (
     <div ref={wrapperRef} className={`relative space-y-2 ${open ? "z-30" : "z-10"}`}>
-      <div className="min-h-12 rounded-[var(--radius-panel)] border border-border/70 bg-background px-3 py-2 transition focus-within:border-brand-teal/50 focus-within:ring-2 focus-within:ring-brand-teal/20">
+      <div className="min-h-10 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-1.5 transition focus-within:border-brand-teal/50 focus-within:ring-2 focus-within:ring-brand-teal/20">
         <div className="flex flex-wrap items-center gap-2">
           {selectedPeople.map((person) => (
             <span
               key={person.id}
-              className="inline-flex max-w-full items-center gap-2 rounded-full border border-brand-teal/20 bg-brand-teal/10 py-1 pl-2 pr-1 text-sm"
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-brand-teal/20 bg-brand-teal/10 py-0.5 pl-2 pr-1 text-sm"
             >
               <PersonAvatar
                 name={person.display_name}
@@ -169,7 +169,7 @@ export function PeopleMultiSearchSelect({
         <div id={listboxId} role="listbox" className="actsix-overlay-surface absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden">
           <div className="max-h-72 overflow-y-auto">
             {filteredPeople.length === 0 ? (
-              <div className="px-4 py-4 text-sm text-muted-foreground">
+              <div className="px-4 py-3 text-sm text-muted-foreground">
                 {emptyText}
               </div>
             ) : (

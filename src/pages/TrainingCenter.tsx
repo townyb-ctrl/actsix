@@ -11,7 +11,6 @@ import {
   Camera,
   Clock3,
   Eye,
-  Filter,
   Folder,
   FolderPlus,
   GraduationCap,
@@ -1537,20 +1536,20 @@ const TrainingCenter = () => {
           </section>
 
           <Card className="actsix-panel-soft overflow-hidden border-border/60">
-            <div className="border-b border-border/70 p-5 sm:p-6">
+            <div className="border-b border-border/70 p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                   <GraduationCap className="h-5 w-5" />
                 </span>
                 <div>
                   <p className="label-eyebrow">Assigned Courses</p>
-                  <h2 className="text-2xl font-extrabold tracking-tight">Training to complete</h2>
+                  <h2 className="text-xl font-extrabold tracking-tight">Training to complete</h2>
                 </div>
               </div>
             </div>
 
             {loading && (
-              <div className="p-5 sm:p-6">
+              <div className="p-4 sm:p-5">
                 <div className="actsix-loading-state" role="status">
                   Loading your training...
                 </div>
@@ -1558,8 +1557,8 @@ const TrainingCenter = () => {
             )}
 
             {!loading && myTrainingAssignments.length === 0 && (
-              <div className="p-5 sm:p-6">
-                <div className="actsix-empty-state bg-card/70 p-5 text-left">
+              <div className="p-4 sm:p-5">
+                <div className="actsix-empty-state bg-card/70 p-4 text-left">
                   No training assigned yet.
                 </div>
               </div>
@@ -1576,7 +1575,7 @@ const TrainingCenter = () => {
                   );
 
                   return (
-                    <div key={assignment.id} className="p-5 sm:p-6">
+                    <div key={assignment.id} className="p-4 sm:p-5">
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-center">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -1903,17 +1902,27 @@ const TrainingCenter = () => {
                   </h2>
                 </div>
 
-                <div className="actsix-view-tabs grid gap-1.5 sm:grid-cols-3 lg:min-w-[25rem]">
+                <div className="actsix-filter-pills lg:min-w-0">
                   {adminViews.map((view) => (
                     <button
                       key={view.id}
                       type="button"
                       onClick={() => setAdminView(view.id)}
-                      className="actsix-view-tab"
+                      className={cn(
+                        "actsix-filter-pill",
+                        adminView === view.id
+                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                          : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                      )}
                       data-state={adminView === view.id ? "active" : "inactive"}
                     >
                       <span className="min-w-0 truncate text-sm font-extrabold">{view.label}</span>
-                      <span className="actsix-view-tab-count">
+                      <span
+                        className={cn(
+                          "actsix-filter-pill-count",
+                          adminView === view.id ? "bg-brand-teal/15 text-brand-teal" : "bg-muted text-muted-foreground"
+                        )}
+                      >
                         {loading ? "..." : view.count}
                       </span>
                     </button>
@@ -2008,9 +2017,9 @@ const TrainingCenter = () => {
           {!loading &&
             folderTiles.map((folder) => (
               <Link key={folder.id} to={`/training?folder=${encodeURIComponent(folder.id)}`} className="group block min-w-0">
-                <Card className="actsix-panel-soft flex min-h-44 flex-col justify-between border-border/60 p-5 transition hover:-translate-y-0.5 hover:border-brand-teal/35 hover:shadow-md">
+                <Card className="actsix-panel-soft flex min-h-40 flex-col justify-between border-border/60 p-4 transition hover:-translate-y-0.5 hover:border-brand-teal/35 hover:shadow-md">
                   <div className="flex items-start justify-between gap-4">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal transition group-hover:bg-brand-teal group-hover:text-white">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal transition group-hover:bg-brand-teal group-hover:text-white">
                       <Folder className="h-5 w-5" />
                     </span>
                     <Badge variant="outline" className="border-border/70 bg-background px-2.5 py-1 text-xs font-extrabold text-muted-foreground">
@@ -2018,7 +2027,7 @@ const TrainingCenter = () => {
                     </Badge>
                   </div>
 
-                  <div className="mt-6 min-w-0">
+                  <div className="mt-4 min-w-0">
                     <h2 className="truncate text-xl font-extrabold tracking-tight text-foreground transition group-hover:text-brand-teal">
                       {folder.name}
                     </h2>
@@ -2031,7 +2040,7 @@ const TrainingCenter = () => {
             ))}
 
           {!loading && folderTiles.length === 0 && (
-            <Card className="actsix-panel-soft border-border/60 p-8 text-center md:col-span-2 xl:col-span-3 2xl:col-span-4">
+            <Card className="actsix-panel-soft border-border/60 p-4 text-center md:col-span-2 xl:col-span-3 2xl:col-span-4">
               <p className="text-lg font-extrabold">No training folders yet</p>
               <p className="mt-2 text-sm font-medium text-muted-foreground">
                 Create a folder from the top action bar to start organizing courses.
@@ -2058,7 +2067,7 @@ const TrainingCenter = () => {
                       <Folder className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
-                      <h2 className="truncate text-2xl font-extrabold tracking-tight">
+                      <h2 className="truncate text-xl font-extrabold tracking-tight">
                         {selectedFolder?.name || "Training Folder"}
                       </h2>
                       <p className="text-sm font-medium text-muted-foreground">
@@ -2069,44 +2078,48 @@ const TrainingCenter = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div className="relative min-w-0 flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="space-y-2">
+                <div className="actsix-search-field sm:max-w-56">
+                  <Search className="actsix-search-icon" />
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search courses in this folder..."
-                    className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-none"
+                    className="actsix-search-input"
                   />
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-2 lg:w-[26rem]">
-                  <label className="relative">
-                    <span className="sr-only">Filter by category</span>
-                    <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <select
-                      value={categoryFilter}
-                      onChange={(event) => setCategoryFilter(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-9 text-sm font-semibold shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                <div className="actsix-filter-pills">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setCategoryFilter(category)}
+                      className={cn(
+                        "actsix-filter-pill",
+                        categoryFilter === category
+                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                          : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                      )}
                     >
-                      {categories.map((category) => (
-                        <option key={category}>{category}</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label>
-                    <span className="sr-only">Filter by status</span>
-                    <select
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                      {category}
+                    </button>
+                  ))}
+                  {["All", "Active", "Draft"].map((status) => (
+                    <button
+                      key={`status-${status}`}
+                      type="button"
+                      onClick={() => setStatusFilter(status)}
+                      className={cn(
+                        "actsix-filter-pill",
+                        statusFilter === status
+                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                          : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                      )}
                     >
-                      <option>All</option>
-                      <option>Active</option>
-                      <option>Draft</option>
-                    </select>
-                  </label>
+                      {status}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -2122,7 +2135,7 @@ const TrainingCenter = () => {
             {!loading && filteredCourses.map((course) => renderCourseCard(course))}
 
             {!loading && filteredCourses.length === 0 && (
-              <Card className="actsix-panel-soft border-border/60 p-8 text-center md:col-span-2 xl:col-span-3 2xl:col-span-4">
+              <Card className="actsix-panel-soft border-border/60 p-4 text-center md:col-span-2 xl:col-span-3 2xl:col-span-4">
                 <p className="text-lg font-extrabold">No courses in this folder</p>
                 <p className="mt-2 text-sm font-medium text-muted-foreground">
                   Add a course to this folder or adjust the course filters.
@@ -2135,14 +2148,14 @@ const TrainingCenter = () => {
 
         {adminView === "progress" && (
         <Card className="actsix-panel-soft overflow-hidden border-border/60">
-          <div className="border-b border-border/70 p-5 sm:p-6">
+          <div className="border-b border-border/70 p-4 sm:p-5">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                 <GraduationCap className="h-5 w-5" />
               </span>
               <div>
                 <p className="label-eyebrow">Overview</p>
-                <h2 className="text-2xl font-extrabold tracking-tight">
+                <h2 className="text-xl font-extrabold tracking-tight">
                   Training Progress Overview
                 </h2>
               </div>
@@ -2199,15 +2212,15 @@ const TrainingCenter = () => {
 
         {adminView === "activity" && (
         <Card className="actsix-panel-soft overflow-hidden border-border/60">
-          <div className="border-b border-border/70 p-5 sm:p-6">
+          <div className="border-b border-border/70 p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                   <Clock3 className="h-5 w-5" />
                 </span>
                 <div>
                   <p className="label-eyebrow">Activity</p>
-                  <h2 className="text-2xl font-extrabold tracking-tight">
+                  <h2 className="text-xl font-extrabold tracking-tight">
                     Recent Training Activity
                   </h2>
                 </div>
@@ -2220,7 +2233,7 @@ const TrainingCenter = () => {
           </div>
 
           {loading && (
-            <div className="p-5 sm:p-6">
+            <div className="p-4 sm:p-5">
               <div className="actsix-loading-state" role="status">
                 Loading training activity...
               </div>
@@ -2228,8 +2241,8 @@ const TrainingCenter = () => {
           )}
 
           {!loading && recentTrainingActivity.length === 0 && (
-            <div className="p-5 sm:p-6">
-              <div className="actsix-empty-state bg-card/70 p-5 text-left">
+            <div className="p-4 sm:p-5">
+              <div className="actsix-empty-state bg-card/70 p-4 text-left">
                 No training activity yet.
               </div>
             </div>
@@ -2240,7 +2253,7 @@ const TrainingCenter = () => {
               {recentTrainingActivity.map((item) => (
                 <div
                   key={item.id}
-                  className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_160px_120px] lg:items-center"
+                  className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_160px_120px] lg:items-center"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -2330,7 +2343,7 @@ const TrainingCenter = () => {
           </p>
 
           {panelMode === "section" && (
-            <div className="mt-6 space-y-5">
+            <div className="mt-5 space-y-4">
               <label className="block">
                 <span className="label-eyebrow">Folder name</span>
                 <Input
@@ -2344,7 +2357,7 @@ const TrainingCenter = () => {
                   }}
                   autoFocus
                   placeholder="Example: New Volunteers"
-                  className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
               </label>
 
@@ -2376,7 +2389,7 @@ const TrainingCenter = () => {
           )}
 
           {panelMode === "course" && selectedCourse && (
-            <div className="mt-6 space-y-5">
+            <div className="mt-5 space-y-4">
               {selectedCourse.cover_image_url && (
                 <div className="aspect-[16/9] overflow-hidden rounded-xl bg-muted">
                   <img
@@ -2591,13 +2604,13 @@ const TrainingCenter = () => {
           )}
 
           {panelMode === "assign" && (
-            <div className="mt-6 space-y-5">
+            <div className="mt-5 space-y-4">
               <label className="block">
                 <span className="label-eyebrow">Course</span>
                 <select
                   value={selectedCourseId}
                   onChange={(event) => setSelectedCourseId(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 >
                   {courses.map((course) => (
                     <option key={course.id} value={course.id}>
@@ -2613,7 +2626,7 @@ const TrainingCenter = () => {
                   type="date"
                   value={assignmentDueDate}
                   onChange={(event) => setAssignmentDueDate(event.target.value)}
-                  className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
               </label>
 
@@ -2667,13 +2680,13 @@ const TrainingCenter = () => {
           )}
 
           {(panelMode === "new" || panelMode === "edit") && (
-            <div className="mt-6 space-y-5">
+            <div className="mt-5 space-y-4">
               <label className="block">
                 <span className="label-eyebrow">Course name</span>
                 <Input
                   value={courseForm.title}
                   onChange={(event) => setCourseForm((current) => ({ ...current, title: event.target.value }))}
-                  className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
               </label>
 
@@ -2685,7 +2698,7 @@ const TrainingCenter = () => {
                     onChange={(event) =>
                       setCourseForm((current) => ({ ...current, category: event.target.value }))
                     }
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                    className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                   />
                 </label>
 
@@ -2696,7 +2709,7 @@ const TrainingCenter = () => {
                     onChange={(event) =>
                       setCourseForm((current) => ({ ...current, sectionId: event.target.value }))
                     }
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                   >
                     <option value="">Unfiled</option>
                     {sections.map((section) => (
@@ -2712,12 +2725,12 @@ const TrainingCenter = () => {
                   <Input
                     type="number"
                     min={1}
-                    value={courseForm.estimatedMinutes}
-                    onChange={(event) =>
-                      setCourseForm((current) => ({ ...current, estimatedMinutes: event.target.value }))
-                    }
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background"
-                  />
+                  value={courseForm.estimatedMinutes}
+                  onChange={(event) =>
+                    setCourseForm((current) => ({ ...current, estimatedMinutes: event.target.value }))
+                  }
+                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                />
                 </label>
               </div>
 
@@ -2769,7 +2782,7 @@ const TrainingCenter = () => {
                       status: event.target.value as TrainingCourse["status"],
                     }))
                   }
-                  className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 >
                   <option>Active</option>
                   <option>Draft</option>
@@ -2796,7 +2809,7 @@ const TrainingCenter = () => {
                   onChange={(event) =>
                     setCourseForm((current) => ({ ...current, suggestedAudience: event.target.value }))
                   }
-                  className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
               </label>
 
@@ -2894,7 +2907,7 @@ const TrainingCenter = () => {
                             updateCourseLesson(lesson.tempId, { title: event.target.value })
                           }
                           placeholder="Example: Ministry vision and expectations"
-                          className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                          className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background shadow-none"
                         />
                       </label>
 

@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Settings as SettingsIcon,
   Sparkles,
+  Tent,
   Users,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -152,6 +153,24 @@ const navSections: NavSection[] = [
       { title: "Teams", url: "/service-planner/teams", icon: Users },
       { title: "Repertoire", url: "/service-planner/repertoire", icon: Music },
     ],
+  },
+  {
+    id: "events",
+    title: "Events",
+    url: "/events",
+    icon: Tent,
+    moduleKey: "events",
+    matchPrefixes: ["/events"],
+    items: [],
+  },
+  {
+    id: "calendar",
+    title: "Calendar",
+    url: "/calendar",
+    icon: CalendarDays,
+    moduleKey: "calendar",
+    matchPrefixes: ["/calendar"],
+    items: [],
   },
   {
     id: "training",

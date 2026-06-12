@@ -776,41 +776,40 @@ const ServicePlannerPage = () => {
           title="Services"
           subtitle="Create service types, add service dates, and open each service to build the order and serving team."
           actions={
-          <Button
-            type="button"
-            size="sm"
-            className="actsix-btn-primary shrink-0"
-            onClick={() => setAddTypeOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Service Type
-          </Button>
+            <>
+              <div data-tour="service-planner-search" className="actsix-search-field sm:w-52 lg:w-60">
+                <Search className="actsix-search-icon" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search services..."
+                  className="actsix-search-input"
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="actsix-btn-primary h-9 shrink-0"
+                onClick={() => setAddTypeOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Add Service Type
+              </Button>
+            </>
           }
         />
       </div>
 
       <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <div data-tour="service-planner-search" className="actsix-panel-soft p-3">
-          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-2">
-            <Search className="h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search service types, dates, or locations..."
-              className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-            />
-          </div>
-        </div>
-
-        <div data-tour="service-planner-list" className="space-y-6">
+        <div data-tour="service-planner-list" className="space-y-4">
           {loading && (
-            <Card className="actsix-panel-soft p-5">
+            <Card className="actsix-panel-soft p-4">
               <div className="actsix-loading-state">Loading services...</div>
             </Card>
           )}
 
           {!loading && filteredServiceTypes.length === 0 && (
-            <Card className="actsix-panel-soft p-5">
+            <Card className="actsix-panel-soft p-4">
               <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
                 <LottieIcon
                   animationData={emptyServicesAnimation}
@@ -1035,12 +1034,12 @@ const ServicePlannerPage = () => {
                   key={type.id}
                   className="actsix-panel-soft overflow-hidden"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-background/70 px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-background/70 px-4 py-2.5">
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-sage">
                         Service Type
                       </p>
-                      <h2 className="mt-0.5 truncate text-2xl font-black leading-tight text-foreground">
+                      <h2 className="mt-0.5 truncate text-xl font-extrabold leading-tight text-foreground">
                         {type.name}
                       </h2>
 
@@ -1100,7 +1099,7 @@ const ServicePlannerPage = () => {
 
                   <div className="divide-y divide-border/60 bg-background/30">
                     {servicesForType.length === 0 && (
-                      <div className="flex items-center gap-3 px-3 py-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground">
                         <LottieIcon
                           animationData={scheduleAnimation}
                           className="h-6 w-6 shrink-0 opacity-80"

@@ -215,7 +215,7 @@ const NextActionFields = ({
             currentProject &&
             canAssignProjectTasks &&
             assignablePeople.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground md:col-span-2">
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground md:col-span-2">
                 Add collaborators to this project before assigning tasks.
               </div>
             )}

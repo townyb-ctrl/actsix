@@ -42,9 +42,9 @@
     --radius-xl: 14px;
     --radius-2xl: 16px;
     --radius-pill: 999px;
-    --radius-control: 0.875rem;
-    --radius-panel: 1.25rem;
-    --radius-overlay: 1.125rem;
+    --radius-control: 0.75rem;
+    --radius-panel: 1rem;
+    --radius-overlay: 1rem;
 
     --space-xs: 4px;
     --space-sm: 8px;
@@ -364,16 +364,16 @@
   }
 
   .actsix-page-stack {
-    @apply space-y-6;
+    @apply space-y-4;
   }
 
   .actsix-empty-state {
-    @apply border border-dashed border-border/80 bg-background/70 px-5 py-7 text-center text-sm font-medium text-muted-foreground;
+    @apply border border-dashed border-border/80 bg-background/70 px-4 py-4 text-center text-sm font-medium text-muted-foreground;
     border-radius: var(--radius-panel);
   }
 
   .actsix-loading-state {
-    @apply border border-border/70 bg-background/55 px-5 py-6 text-sm font-medium text-muted-foreground;
+    @apply border border-border/70 bg-background/55 px-4 py-4 text-sm font-medium text-muted-foreground;
     border-radius: var(--radius-panel);
   }
 
@@ -392,13 +392,13 @@
   }
 
   .actsix-view-tabs {
-    @apply border border-border/70 bg-card p-1.5 shadow-none;
+    @apply border border-border/70 bg-card p-1 shadow-none;
     border-radius: var(--radius-panel);
   }
 
   .actsix-view-tab {
-    @apply flex min-h-[52px] items-center justify-between gap-3 px-3 text-left text-muted-foreground transition hover:bg-brand-teal/5 hover:text-brand-teal;
-    border-radius: calc(var(--radius-panel) - 0.35rem);
+    @apply flex min-h-[42px] items-center justify-between gap-2 px-3 text-left text-muted-foreground transition hover:bg-brand-teal/5 hover:text-brand-teal;
+    border-radius: calc(var(--radius-panel) - 0.25rem);
   }
 
   .actsix-view-tab[data-state="active"] {
@@ -419,16 +419,40 @@
 
   .actsix-interactive-tile {
     @apply border border-border/70 bg-card text-left shadow-none transition hover:border-brand-teal/30 hover:bg-brand-teal/5 active:scale-[0.99];
-    border-radius: var(--radius-panel);
+    border-radius: calc(var(--radius-panel) - 0.125rem);
   }
 
   .actsix-interactive-row {
     @apply border border-border/70 bg-card transition hover:border-brand-teal/25 hover:bg-brand-teal/5;
-    border-radius: var(--radius-panel);
+    border-radius: calc(var(--radius-panel) - 0.125rem);
   }
 
   .actsix-filter-chip {
     @apply inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors;
+  }
+
+  .actsix-search-field {
+    @apply relative w-full;
+  }
+
+  .actsix-search-icon {
+    @apply pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/70;
+  }
+
+  .actsix-search-input {
+    @apply h-7 rounded-full border-border/50 bg-background/45 pl-7 pr-2 text-xs shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-brand-teal/20;
+  }
+
+  .actsix-filter-pills {
+    @apply flex snap-x items-center gap-1 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:overflow-visible sm:pb-0;
+  }
+
+  .actsix-filter-pill {
+    @apply inline-flex min-h-6 shrink-0 snap-start items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition-colors;
+  }
+
+  .actsix-filter-pill-count {
+    @apply rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none;
   }
 
   .actsix-mobile-dock-item {

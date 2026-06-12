@@ -155,11 +155,11 @@ export default function AlphaFeedback() {
         </Card>
 
         {loading || workspaceLoading ? (
-          <Card className="actsix-panel-soft p-6">
+          <Card className="actsix-panel-soft p-4 sm:p-5">
             <div className="actsix-loading-state">Loading feedback...</div>
           </Card>
         ) : feedback.length === 0 ? (
-          <Card className="actsix-panel-soft p-6">
+          <Card className="actsix-panel-soft p-4 sm:p-5">
             <div className="actsix-empty-state">No alpha feedback has been submitted yet.</div>
           </Card>
         ) : (

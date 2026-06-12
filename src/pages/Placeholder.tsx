@@ -6,7 +6,7 @@ export const Placeholder = ({ title, subtitle, eyebrow }: { title: string; subti
   <div>
     <PageHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
     <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-      <Card className="actsix-panel-soft p-8 text-center">
+      <Card className="actsix-panel-soft p-5 text-center">
         <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
           <Construction className="h-5 w-5" />
         </div>

@@ -369,11 +369,11 @@ export function NotificationBell({
       {isMobile && (
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="max-h-[82svh] border-border/70 bg-background">
-            <DrawerHeader className="px-5 pb-2 text-left">
+            <DrawerHeader className="px-4 pb-2 text-left">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Notifications</p>
-                  <DrawerTitle className="text-2xl font-extrabold tracking-tight">
+                  <DrawerTitle className="text-xl font-extrabold tracking-tight">
                     Activity alerts
                   </DrawerTitle>
                   <p className="mt-1 text-sm font-medium text-muted-foreground">
@@ -395,7 +395,7 @@ export function NotificationBell({
               </div>
             </DrawerHeader>
 
-            <div className="min-h-0 flex-1 overflow-hidden px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
+            <div className="min-h-0 flex-1 overflow-hidden px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
               <div className="actsix-panel-soft flex max-h-[55svh] flex-col overflow-hidden">
                 {notificationRows}
               </div>

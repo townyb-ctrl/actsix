@@ -432,10 +432,10 @@ const InboxPage = () => {
       >
         {editingItem && (
           <DialogContent className="flex h-[92svh] max-w-4xl flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:h-[88vh] sm:rounded-xl">
-            <DialogHeader className="border-b border-border/70 p-4 pr-12 text-left sm:p-6 sm:pr-14">
+            <DialogHeader className="border-b border-border/70 p-4 pr-12 text-left sm:p-5 sm:pr-14">
               <div>
                 <p className="label-eyebrow">Clarify Inbox Item</p>
-                <DialogTitle className="mt-1 text-2xl font-extrabold tracking-tight">
+                <DialogTitle className="mt-1 text-xl font-extrabold tracking-tight">
                   Inbox details
                 </DialogTitle>
                 <DialogDescription className="mt-1">
@@ -444,7 +444,7 @@ const InboxPage = () => {
               </div>
             </DialogHeader>
 
-            <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Archive className="h-4 w-4 text-brand-teal" />

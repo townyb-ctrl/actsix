@@ -228,34 +228,34 @@ const TasksDashboardPage = () => {
 
       <div className="actsix-page-body actsix-page-stack">
         <div className="actsix-panel-soft grid gap-px overflow-hidden sm:grid-cols-2 lg:grid-cols-5">
-          <div className="bg-background/55 px-4 py-4">
+          <div className="bg-background/55 px-4 py-3">
             <p className="label-eyebrow">Inbox</p>
-            <div className="mt-1 text-2xl font-extrabold">{counts.inbox}</div>
+            <div className="mt-1 text-xl font-extrabold">{counts.inbox}</div>
           </div>
 
-          <div className="bg-background/55 px-4 py-4">
+          <div className="bg-background/55 px-4 py-3">
             <p className="label-eyebrow">Next Actions</p>
-            <div className="mt-1 text-2xl font-extrabold">{counts.next}</div>
+            <div className="mt-1 text-xl font-extrabold">{counts.next}</div>
           </div>
 
-          <div className="bg-background/55 px-4 py-4">
+          <div className="bg-background/55 px-4 py-3">
             <p className="label-eyebrow">Projects</p>
-            <div className="mt-1 text-2xl font-extrabold">{counts.projects}</div>
+            <div className="mt-1 text-xl font-extrabold">{counts.projects}</div>
           </div>
 
-          <div className="bg-background/55 px-4 py-4">
+          <div className="bg-background/55 px-4 py-3">
             <p className="label-eyebrow">Waiting</p>
-            <div className="mt-1 text-2xl font-extrabold">{counts.waiting}</div>
+            <div className="mt-1 text-xl font-extrabold">{counts.waiting}</div>
           </div>
 
-          <div className="bg-background/55 px-4 py-4">
+          <div className="bg-background/55 px-4 py-3">
             <p className="label-eyebrow">Someday</p>
-            <div className="mt-1 text-2xl font-extrabold">{counts.someday}</div>
+            <div className="mt-1 text-xl font-extrabold">{counts.someday}</div>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card className="actsix-panel-soft p-5 sm:p-6">
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <Card className="actsix-panel-soft p-4 sm:p-5">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-extrabold">
@@ -300,7 +300,7 @@ const TasksDashboardPage = () => {
 
               return (
                 <Link key={area.title} to={area.to}>
-                  <Card className="actsix-panel-soft group p-4 transition-colors hover:border-brand-teal/40">
+                  <Card className="actsix-panel-soft group p-3.5 transition-colors hover:border-brand-teal/40">
                     <div className="flex items-center gap-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                         <Icon className="h-5 w-5" />

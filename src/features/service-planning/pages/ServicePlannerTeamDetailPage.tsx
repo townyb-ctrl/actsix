@@ -120,7 +120,7 @@ const SortableRoleCard = ({ role, disabled = false, children }: SortableRoleCard
       style={style}
       {...attributes}
       {...listeners}
-      className={`flex min-h-[220px] cursor-grab flex-col rounded-2xl border bg-background/70 overflow-hidden will-change-transform transition-[box-shadow,border-color,opacity] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
+      className={`flex min-h-[190px] cursor-grab flex-col rounded-xl border bg-background/70 overflow-hidden will-change-transform transition-[box-shadow,border-color,opacity] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
         isDragging
           ? "z-20 scale-[1.01] border-brand-teal bg-background shadow-md ring-2 ring-brand-teal/15"
           : "border-border/70"
@@ -878,7 +878,7 @@ const ServicePlannerTeamDetailPage = () => {
   if (!team) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="actsix-panel-soft p-6">
+        <Card className="actsix-panel-soft p-4 sm:p-5">
           <p className="text-sm text-muted-foreground">Team not found.</p>
         </Card>
       </div>
@@ -1030,7 +1030,7 @@ const ServicePlannerTeamDetailPage = () => {
                     role={role}
                     disabled={role === "No Role Assigned"}
                   >
-                    <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4">
+                    <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
                       <div className="flex min-w-0 items-center gap-2">
                         <div
                           className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-md bg-transparent text-muted-foreground/70 transition hover:bg-brand-teal/5 hover:text-brand-teal active:cursor-grabbing"
@@ -1133,7 +1133,7 @@ const ServicePlannerTeamDetailPage = () => {
 
         {editingTeam && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
-            <Card className="actsix-panel w-full max-w-2xl overflow-visible p-5 sm:p-6">
+            <Card className="actsix-panel w-full max-w-2xl overflow-visible p-4 sm:p-5">
               <form onSubmit={updateTeam} className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -1212,7 +1212,7 @@ const ServicePlannerTeamDetailPage = () => {
 
         {addRoleOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
-            <Card className="actsix-panel w-full max-w-lg p-5 sm:p-6">
+            <Card className="actsix-panel w-full max-w-lg p-4 sm:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="label-eyebrow">Team Role</p>
@@ -1234,7 +1234,7 @@ const ServicePlannerTeamDetailPage = () => {
                 </Button>
               </div>
 
-              <form onSubmit={createRole} className="mt-6 space-y-4">
+              <form onSubmit={createRole} className="mt-4 space-y-4">
                 <div>
                   <label className="label-eyebrow">Role Name</label>
                   <Input
@@ -1267,7 +1267,7 @@ const ServicePlannerTeamDetailPage = () => {
 
         {addPersonOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
-            <Card className="actsix-panel w-full max-w-2xl p-5 sm:p-6">
+            <Card className="actsix-panel w-full max-w-2xl p-4 sm:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="label-eyebrow">Team Members</p>
@@ -1289,7 +1289,7 @@ const ServicePlannerTeamDetailPage = () => {
                 </Button>
               </div>
 
-              <form onSubmit={createMember} className="mt-6 space-y-4">
+              <form onSubmit={createMember} className="mt-4 space-y-4">
                 <div>
                   <label className="label-eyebrow">Link Existing Person Profile</label>
                   <div className="mt-2">

@@ -399,7 +399,7 @@ const PeopleGroupsPage = () => {
             )}
 
             {!loading && filteredGroups.length === 0 && (
-              <Card className="actsix-panel p-8 text-center">
+              <Card className="actsix-panel p-5 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-brand-sage/10 text-brand-sage">
                   <Users className="h-5 w-5" />
                 </div>
@@ -422,7 +422,7 @@ const PeopleGroupsPage = () => {
                   const displayedLeaders = leaders.slice(0, 3);
 
                   return (
-                    <Card key={group.id} className="group actsix-panel-soft flex min-h-44 flex-col overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-sage/40 hover:shadow-md">
+                    <Card key={group.id} className="group actsix-panel-soft flex min-h-40 flex-col overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-sage/40 hover:shadow-md">
                       <Link
                         to={`/groups/${group.id}`}
                         className="flex min-h-0 flex-1 flex-col p-3"
@@ -434,7 +434,7 @@ const PeopleGroupsPage = () => {
                           <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-brand-teal" />
                         </div>
 
-                        <div className="mt-3 min-w-0">
+                        <div className="mt-2.5 min-w-0">
                           <h2 className="truncate text-lg font-extrabold tracking-tight text-foreground transition group-hover:text-brand-teal">
                             {group.name}
                           </h2>
@@ -443,7 +443,7 @@ const PeopleGroupsPage = () => {
                           </p>
                         </div>
 
-                        <div className="actsix-interactive-row mt-3 bg-background/45 px-3 py-2">
+                        <div className="actsix-interactive-row mt-2.5 bg-background/45 px-3 py-2">
                           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                             People
                           </p>
@@ -452,7 +452,7 @@ const PeopleGroupsPage = () => {
                           </p>
                         </div>
 
-                        <div className="mt-auto pt-3">
+                        <div className="mt-auto pt-2.5">
                           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                             Group Leader{leaders.length === 1 ? "" : "s"}
                           </p>

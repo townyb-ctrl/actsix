@@ -785,8 +785,8 @@ const ProjectDetailPage = () => {
         <PageHeader eyebrow="Tasks" title="Project" subtitle="Loading project..." />
 
         <div className="actsix-page-body">
-          <Card className="actsix-panel p-6 sm:p-7">
-            <div className="actsix-loading-state min-h-[16rem]">
+          <Card className="actsix-panel p-4 sm:p-5">
+            <div className="actsix-loading-state min-h-[12rem]">
               Loading project details...
             </div>
           </Card>
@@ -805,7 +805,7 @@ const ProjectDetailPage = () => {
         />
 
         <div className="actsix-page-body">
-          <Card className="actsix-panel flex max-w-2xl flex-col items-start gap-4 p-6 sm:p-7">
+          <Card className="actsix-panel flex max-w-2xl flex-col items-start gap-4 p-4 sm:p-5">
             <div>
               <p className="text-base font-semibold text-foreground">
                 This project is unavailable right now.
@@ -839,23 +839,21 @@ const ProjectDetailPage = () => {
 
       <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="actsix-panel overflow-hidden">
-          <div className="border-b border-border/70 p-4 sm:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
-                  <UserRound className="h-4 w-4" />
+          <div className="border-b border-border/70 p-3 sm:p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+                  <UserRound className="h-3.5 w-3.5" />
                   Project Summary
                 </div>
 
-                <div className="mt-3">
-                  <span className={`chip ${statusClass(project.status)}`}>
-                    {project.status || "In Progress"}
-                  </span>
-                </div>
+                <span className={`chip px-2 py-0.5 text-[10px] ${statusClass(project.status)}`}>
+                  {project.status || "In Progress"}
+                </span>
               </div>
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1">
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <div className="flex h-7 items-center gap-1.5">
                   <div className="flex -space-x-2">
                     {collaborators.slice(0, 5).map((collaborator) => (
                       <div
@@ -866,8 +864,8 @@ const ProjectDetailPage = () => {
                         <PersonAvatar
                           name={collaborator.people?.display_name}
                           avatarUrl={collaborator.people?.avatar_url}
-                          size="sm"
-                          className="border-2 border-background shadow-sm ring-1 ring-border"
+                          size="xs"
+                          className="border border-background shadow-sm ring-1 ring-border"
                         />
 
                         <button
@@ -882,7 +880,7 @@ const ProjectDetailPage = () => {
                     ))}
                   </div>
 
-                  <span className="text-xs font-extrabold text-muted-foreground">
+                  <span className="text-[11px] font-bold text-muted-foreground">
                     {collaborators.length === 0
                       ? "No collaborators"
                       : `${collaborators.length} collaborator${collaborators.length === 1 ? "" : "s"}`}
@@ -899,10 +897,10 @@ const ProjectDetailPage = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 rounded-lg px-2.5"
+                  className="h-7 rounded-full px-2 text-xs"
                   onClick={() => setAddCollaboratorOpen(true)}
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus className="h-3 w-3" />
                   Add Collaborator
                 </Button>
 
@@ -911,9 +909,10 @@ const ProjectDetailPage = () => {
                   size="icon"
                   title="Edit project"
                   aria-label="Edit project"
+                  className="h-7 w-7 rounded-full"
                   onClick={() => setEditingProject({ ...project })}
                 >
-                  <Edit3 className="h-4 w-4" />
+                  <Edit3 className="h-3.5 w-3.5" />
                 </Button>
 
                 <Button
@@ -921,49 +920,48 @@ const ProjectDetailPage = () => {
                   size="icon"
                   title="Delete project"
                   aria-label="Delete project"
-                  className="text-muted-foreground hover:text-destructive"
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
                   onClick={() => removeProject(project)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
 
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-2 line-clamp-1 text-xs leading-5 text-muted-foreground">
               {project.notes || "Add notes to describe this project, its goal, and what success looks like."}
             </p>
 
-            <div className="mt-5">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="font-extrabold">Progress</p>
-                <p className="font-extrabold">{stats.progress}%</p>
+            <div className="mt-3 flex flex-col gap-2 lg:flex-row lg:items-center">
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center justify-between text-xs font-bold">
+                  <span>Progress</span>
+                  <span>{stats.progress}%</span>
+                </div>
+                <div className="h-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-brand-teal"
+                    style={{ width: `${stats.progress}%` }}
+                  />
+                </div>
               </div>
 
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-brand-teal rounded-full"
-                  style={{ width: `${stats.progress}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="actsix-panel-soft mt-5 grid gap-px overflow-hidden md:grid-cols-3">
-              <div className="bg-background/55 p-3 text-center">
-                <CheckCircle2 className="h-5 w-5 text-brand-teal mx-auto mb-1" />
-                <div className="text-xl font-extrabold">{stats.openTasks.length}</div>
-                <p className="text-[11px] text-muted-foreground">Open Actions</p>
-              </div>
-
-              <div className="bg-background/55 p-3 text-center">
-                <CheckCircle2 className="h-5 w-5 text-brand-sage mx-auto mb-1" />
-                <div className="text-xl font-extrabold">{stats.completedTasks.length}</div>
-                <p className="text-[11px] text-muted-foreground">Completed</p>
-              </div>
-
-              <div className="bg-background/55 p-3 text-center">
-                <Clock3 className="h-5 w-5 text-brand-amber mx-auto mb-1" />
-                <div className="text-xl font-extrabold">{stats.dueSoon}</div>
-                <p className="text-[11px] text-muted-foreground">Due Soon</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-2 text-[11px] font-bold text-muted-foreground">
+                  <CheckCircle2 className="h-3 w-3 text-brand-teal" />
+                  <strong className="text-foreground">{stats.openTasks.length}</strong>
+                  Open
+                </span>
+                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-2 text-[11px] font-bold text-muted-foreground">
+                  <CheckCircle2 className="h-3 w-3 text-brand-sage" />
+                  <strong className="text-foreground">{stats.completedTasks.length}</strong>
+                  Done
+                </span>
+                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-2 text-[11px] font-bold text-muted-foreground">
+                  <Clock3 className="h-3 w-3 text-brand-amber" />
+                  <strong className="text-foreground">{stats.dueSoon}</strong>
+                  Due
+                </span>
               </div>
             </div>
           </div>
@@ -1336,7 +1334,7 @@ const ProjectDetailPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
           <Card className="actsix-panel relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-visible">
             <form onSubmit={addCollaborator} className="flex min-h-0 flex-1 flex-col">
-              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-6">
+              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
                 <div>
                   <p className="label-eyebrow">Project Collaborators</p>
                   <h2 className="text-xl font-extrabold leading-tight">
@@ -1361,7 +1359,7 @@ const ProjectDetailPage = () => {
                 </Button>
               </div>
 
-              <div className="relative z-20 min-h-0 flex-1 space-y-4 overflow-visible p-6">
+              <div className="relative z-20 min-h-0 flex-1 space-y-4 overflow-visible p-4 sm:p-5">
 
               <div>
                 <label className="label-eyebrow">People</label>
@@ -1394,7 +1392,7 @@ const ProjectDetailPage = () => {
               )}
               </div>
 
-              <div className="relative z-10 flex shrink-0 justify-end gap-2 border-t border-border/70 bg-background/95 p-6">
+              <div className="relative z-10 flex shrink-0 justify-end gap-2 border-t border-border/70 bg-background/95 p-4 sm:p-5">
                 <Button
                   type="button"
                   variant="outline"
@@ -1425,7 +1423,7 @@ const ProjectDetailPage = () => {
       {editingSection && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:px-4">
           <Card className="actsix-panel max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-b-none sm:rounded-xl">
-            <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
               <div className="min-w-0">
                 <p className="label-eyebrow">Project Sections</p>
                 <h2 className="text-xl font-extrabold leading-tight">
@@ -1446,7 +1444,7 @@ const ProjectDetailPage = () => {
               </Button>
             </div>
 
-            <div className="space-y-4 p-4 sm:p-6">
+            <div className="space-y-4 p-4 sm:p-5">
               <div>
                 <label className="label-eyebrow">Section name</label>
                 <Input
@@ -1518,7 +1516,7 @@ const ProjectDetailPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 border-t border-border/70 bg-background/95 p-4 sm:flex sm:justify-end sm:p-6">
+            <div className="grid grid-cols-2 gap-2 border-t border-border/70 bg-background/95 p-4 sm:flex sm:justify-end sm:p-5">
               <Button
                 type="button"
                 variant="outline"

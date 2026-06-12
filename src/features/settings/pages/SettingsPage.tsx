@@ -29,18 +29,18 @@ const SettingsPage = () => {
       <PageHeader eyebrow="Settings" title="The studio" subtitle="Account and preferences." />
       <div className="actsix-page-body actsix-page-stack pt-5 pb-10 sm:pt-6">
         {developer && (
-          <Card className="actsix-panel-soft border-brand-teal/25 bg-brand-teal/5 p-6 sm:p-7">
+          <Card className="actsix-panel-soft border-brand-teal/25 bg-brand-teal/5 p-4 sm:p-5">
             <div className="label-eyebrow text-brand-teal">
               Software Developer
             </div>
-            <div className="mt-2 text-2xl font-extrabold tracking-tight">Alpha Feedback</div>
+            <div className="mt-1.5 text-xl font-extrabold tracking-tight">Alpha Feedback</div>
             <p className="mt-2 text-sm text-muted-foreground">
               Review comments submitted by alpha testers from the floating feedback chat.
             </p>
             <Button
               asChild
               variant="outline"
-              className="actsix-btn-outline mt-6 gap-2 border-brand-teal/30 text-brand-teal hover:text-brand-teal"
+              className="actsix-btn-outline mt-4 gap-2 border-brand-teal/30 text-brand-teal hover:text-brand-teal"
             >
               <a href="/settings/alpha-feedback">
                 <MessageSquare className="h-4 w-4" />
@@ -50,17 +50,17 @@ const SettingsPage = () => {
           </Card>
         )}
 
-        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+        <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
           <div className="label-eyebrow">
             Navigation
           </div>
-          <div className="mt-2 text-2xl font-extrabold tracking-tight">Modules</div>
+          <div className="mt-1.5 text-xl font-extrabold tracking-tight">Modules</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Choose which ACTSIX modules appear in your left menu. Home, Tasks, and People stay active for every user.
             Groups is its own module and starts active for every workspace.
           </p>
 
-          <div className="mt-5 overflow-hidden rounded-[var(--radius-panel)] border border-border/70">
+          <div className="mt-4 overflow-hidden rounded-[var(--radius-panel)] border border-border/70">
             {settingsModules.map((moduleKey) => {
               const locked = REQUIRED_MODULES.includes(moduleKey);
               const active = isModuleActive(moduleKey as ActiveModuleKey);
@@ -109,28 +109,28 @@ const SettingsPage = () => {
           </div>
         </Card>
 
-        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+        <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
           <div className="label-eyebrow">
             Admin
           </div>
-          <div className="mt-2 text-2xl font-extrabold tracking-tight">Workspace Settings</div>
+          <div className="mt-1.5 text-xl font-extrabold tracking-tight">Workspace Settings</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Manage your church workspace, join code, secret phrase, and member roles.
           </p>
-          <Button asChild variant="outline" className="actsix-btn-outline mt-6">
+          <Button asChild variant="outline" className="actsix-btn-outline mt-4">
             <a href="/settings/workspace">Open Workspace Settings</a>
           </Button>
         </Card>
 
-        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+        <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
           <div className="label-eyebrow">
             Data
           </div>
-          <div className="mt-2 text-2xl font-extrabold tracking-tight">Import and export</div>
+          <div className="mt-1.5 text-xl font-extrabold tracking-tight">Import and export</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Manage ACTSIX data movement from one place instead of showing these tools across every module.
           </p>
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             <Button variant="outline" className="actsix-btn-outline gap-2">
               <Download className="h-4 w-4" />
               Export
@@ -142,10 +142,10 @@ const SettingsPage = () => {
           </div>
         </Card>
 
-        <Card className="actsix-panel-soft border-border/60 p-6 sm:p-7">
+        <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
           <div className="label-eyebrow">Account</div>
-          <div className="mt-2 text-2xl font-extrabold tracking-tight">{user?.email}</div>
-          <Button variant="outline" className="actsix-btn-outline mt-6" onClick={signOut}>Sign out</Button>
+          <div className="mt-1.5 text-xl font-extrabold tracking-tight">{user?.email}</div>
+          <Button variant="outline" className="actsix-btn-outline mt-4" onClick={signOut}>Sign out</Button>
         </Card>
       </div>
     </div>

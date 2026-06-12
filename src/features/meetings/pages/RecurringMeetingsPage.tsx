@@ -239,31 +239,30 @@ const RecurringMeetingsPage = () => {
         title="Recurring Meetings"
         subtitle="Set up repeated meetings like weekly staff meetings or monthly executive meetings."
         actions={
-          <Button
-            type="button"
-            size="sm"
-            className="actsix-btn-primary h-10"
-            onClick={() => setAddOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Recurring
-          </Button>
+          <>
+            <div className="actsix-search-field sm:w-48 lg:w-56">
+              <Search className="actsix-search-icon" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search recurring..."
+                className="actsix-search-input"
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              className="actsix-btn-primary h-9"
+              onClick={() => setAddOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add Recurring
+            </Button>
+          </>
         }
       />
 
-      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="actsix-panel-soft p-3">
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search recurring meetings..."
-              className="h-11 rounded-xl border-border/70 bg-background pl-10"
-            />
-          </div>
-        </div>
-
+      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="actsix-panel overflow-hidden">
           <div className="divide-y divide-border/70">
             {filteredItems.length === 0 && (
@@ -282,7 +281,7 @@ const RecurringMeetingsPage = () => {
               <Link
                 key={item.id}
                 to={`/meetings/recurring/${item.id}`}
-                className="group flex items-center gap-4 p-4 transition-colors hover:bg-muted/30"
+                className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
                   <Repeat className="h-5 w-5" />
@@ -358,7 +357,7 @@ const RecurringMeetingsPage = () => {
 
       {addOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="actsix-panel w-full max-w-3xl p-6">
+          <Card className="actsix-panel w-full max-w-3xl p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Recurring Meeting</p>
@@ -488,7 +487,7 @@ const RecurringMeetingsPage = () => {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="actsix-panel w-full max-w-md p-6">
+          <Card className="actsix-panel w-full max-w-md p-4 sm:p-5">
             <div className="h-12 w-12 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center mb-4">
               <Trash2 className="h-5 w-5" />
             </div>

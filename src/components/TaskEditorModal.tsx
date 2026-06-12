@@ -104,7 +104,7 @@ const TaskEditorModal = ({
                 onChange={(event) =>
                   onChange({ ...task, title: event.target.value })
                 }
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background shadow-none"
                 placeholder="What needs to be done?"
               />
             </div>
@@ -120,7 +120,7 @@ const TaskEditorModal = ({
                 onChange={(event) =>
                   onChange({ ...task, notes: event.target.value })
                 }
-                className="mt-2 min-h-28 w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                className="mt-2 min-h-24 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-2 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                 placeholder="Add details, links, thoughts, or next-step context..."
               />
             </div>

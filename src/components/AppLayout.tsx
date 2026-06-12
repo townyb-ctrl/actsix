@@ -69,9 +69,9 @@ const ModuleActivationPrompt = ({
   onActivate: () => void;
 }) => (
   <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 xl:px-8 2xl:px-10">
-    <Card className="actsix-panel-soft w-full max-w-xl p-6 text-center">
+    <Card className="actsix-panel-soft w-full max-w-xl p-5 text-center">
       <p className="label-eyebrow">Optional Module</p>
-      <h1 className="mt-2 text-2xl font-extrabold tracking-tight">
+      <h1 className="mt-2 text-xl font-extrabold tracking-tight">
         Activate {MODULE_LABELS[moduleKey]}
       </h1>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">

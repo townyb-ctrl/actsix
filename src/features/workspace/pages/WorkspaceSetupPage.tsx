@@ -62,14 +62,14 @@ const WorkspaceSetupPage = () => {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <Card className="actsix-panel-soft p-5 sm:p-6">
+          <Card className="actsix-panel-soft p-4 sm:p-5">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
               <UsersRound className="h-6 w-6" />
             </div>
 
-            <p className="label-eyebrow mt-5">ACTSIX Alpha</p>
+            <p className="label-eyebrow mt-4">ACTSIX Alpha</p>
 
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight">
+            <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">
               Join the Alpha Testing Workspace
             </h1>
 
@@ -78,7 +78,7 @@ const WorkspaceSetupPage = () => {
               This helps us test the same workflows, find friction quickly, and keep feedback focused.
             </p>
 
-            <div className="mt-5 rounded-xl border border-brand-teal/15 bg-brand-teal/8 p-4">
+            <div className="mt-4 rounded-xl border border-brand-teal/15 bg-brand-teal/8 p-3.5">
               <div className="flex items-start gap-3">
                 <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" />
                 <div>
@@ -93,11 +93,11 @@ const WorkspaceSetupPage = () => {
             </div>
           </Card>
 
-          <Card className="actsix-panel p-5 sm:p-6">
+          <Card className="actsix-panel p-4 sm:p-5">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <p className="label-eyebrow">Join Workspace</p>
-                <h2 className="mt-2 text-2xl font-extrabold tracking-tight">
+                <h2 className="mt-1.5 text-xl font-extrabold tracking-tight">
                   Enter Alpha access details
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">

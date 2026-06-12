@@ -8,6 +8,8 @@ export type ActsixModuleKey =
   | "people"
   | "groups"
   | "sermon_hub"
+  | "events"
+  | "calendar"
   | "resources"
   | "chat"
   | "reports"
@@ -23,6 +25,8 @@ const alphaModules: Record<ActsixModuleKey, boolean> = {
   people: true,
   groups: true,
   sermon_hub: true,
+  events: true,
+  calendar: true,
   resources: false,
   chat: false,
   reports: false,
@@ -41,6 +45,8 @@ const fullModules: Record<ActsixModuleKey, boolean> = {
   people: true,
   groups: true,
   sermon_hub: true,
+  events: true,
+  calendar: true,
   resources: true,
   chat: true,
   reports: true,

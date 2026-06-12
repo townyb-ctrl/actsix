@@ -223,7 +223,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
           )}
 
           {!loading && loadError && (
-            <div className="flex min-h-[10rem] flex-col items-start justify-center gap-3 p-6">
+            <div className="flex min-h-[8rem] flex-col items-start justify-center gap-3 p-4">
               <div>
                 <p className="text-sm font-semibold text-foreground">
                   Could not load this list
@@ -247,7 +247,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
           {!loading && !loadError && items.map((it) => (
             <div
               key={it.id}
-              className="group flex items-center gap-3 p-4 transition-colors hover:bg-muted/30"
+              className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
             >
               <div className="h-1.5 w-1.5 rounded-full bg-brand-teal" />
 
@@ -328,10 +328,10 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
       {editingItem && (
         <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="actsix-panel w-full max-w-xl overflow-hidden">
-            <div className="flex items-start justify-between gap-4 p-6 border-b border-border/70">
+            <div className="flex items-start justify-between gap-4 p-4 sm:p-5 border-b border-border/70">
               <div>
                 <p className="label-eyebrow">Edit Item</p>
-                <h2 className="text-2xl font-extrabold tracking-tight mt-1">
+                <h2 className="text-xl font-extrabold tracking-tight mt-1">
                   {cfg.title}
                 </h2>
               </div>
@@ -342,7 +342,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               </Button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-5 space-y-4">
               <div className="actsix-panel-soft p-4">
                 <label className="label-eyebrow">
                   {cfg.table === "waiting_items" ? "Waiting for" : "Title"}

@@ -186,30 +186,29 @@ const ServicePlannerTeamsPage = () => {
         title="Teams"
         subtitle="Create service teams, define roles, and prepare future team communication."
         actions={
-          <Button
-            type="button"
-            className="actsix-btn-primary shrink-0"
-            onClick={() => setAddTeamOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Team
-          </Button>
+          <>
+            <div className="actsix-search-field sm:w-48 lg:w-56">
+              <Search className="actsix-search-icon" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search teams..."
+                className="actsix-search-input"
+              />
+            </div>
+            <Button
+              type="button"
+              className="actsix-btn-primary h-9 shrink-0"
+              onClick={() => setAddTeamOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add Team
+            </Button>
+          </>
         }
       />
 
       <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <div className="actsix-panel-soft p-3">
-          <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search teams or roles..."
-              className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-none"
-            />
-          </div>
-        </div>
-
         <div>
           {loading && (
             <Card className="actsix-loading-state">
@@ -244,10 +243,10 @@ const ServicePlannerTeamsPage = () => {
                         navigate(`/service-planner/teams/${team.id}`);
                       }
                     }}
-                    className="actsix-panel-soft flex min-h-[220px] cursor-pointer flex-col overflow-hidden border-border/60 transition hover:-translate-y-0.5 hover:border-brand-teal/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                    className="actsix-panel-soft flex min-h-[190px] cursor-pointer flex-col overflow-hidden border-border/60 transition hover:-translate-y-0.5 hover:border-brand-teal/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                   >
-                    <div className="flex-1 p-5">
-                      <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 p-4">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="label-eyebrow">Service Team</p>
                           <h2 className="mt-1 text-xl font-extrabold tracking-tight truncate">
@@ -261,12 +260,12 @@ const ServicePlannerTeamsPage = () => {
                           )}
                         </div>
 
-                        <div className="h-11 w-11 rounded-xl bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
+                        <div className="h-10 w-10 rounded-xl bg-brand-teal/10 text-brand-teal flex items-center justify-center shrink-0">
                           <Users className="h-5 w-5" />
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
                         <Users className="h-4 w-4" />
                         <span className="font-bold text-foreground">
                           {teamMembers.length}
@@ -274,7 +273,7 @@ const ServicePlannerTeamsPage = () => {
                         <span>{teamMembers.length === 1 ? "person" : "people"}</span>
                       </div>
 
-                      <div className="mt-4">
+                      <div className="mt-3">
                         <p className="label-eyebrow">Roles</p>
 
                         {roles.length === 0 ? (
@@ -302,7 +301,7 @@ const ServicePlannerTeamsPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 border-t border-border p-4">
+                    <div className="flex gap-2 border-t border-border p-3">
                       <Button
                         type="button"
                         variant="outline"
@@ -339,7 +338,7 @@ const ServicePlannerTeamsPage = () => {
 
       {addTeamOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
-          <Card className="actsix-panel w-full max-w-2xl p-5 sm:p-6">
+          <Card className="actsix-panel w-full max-w-2xl p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Service Team</p>
@@ -361,7 +360,7 @@ const ServicePlannerTeamsPage = () => {
               </Button>
             </div>
 
-            <form onSubmit={createTeam} className="mt-6 space-y-4">
+            <form onSubmit={createTeam} className="mt-4 space-y-4">
               <div>
                 <label className="label-eyebrow">Team Name</label>
                 <Input

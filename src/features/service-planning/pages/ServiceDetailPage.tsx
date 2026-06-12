@@ -1268,7 +1268,7 @@ const ServiceDetailPage = () => {
 
             <div className="divide-y divide-border/70">
               {orderItems.length === 0 && (
-                <div className="p-6 text-sm text-muted-foreground">
+                <div className="px-4 py-3 text-sm text-muted-foreground">
                   No order items yet. Add songs, welcome, sermon, announcements, and other service elements.
                 </div>
               )}
@@ -1317,7 +1317,7 @@ const ServiceDetailPage = () => {
 
               <Button
                 type="button"
-                className="actsix-btn-primary h-11 w-11 rounded-full p-0"
+                className="actsix-btn-primary h-9 w-9 rounded-lg p-0"
                 onClick={() => {
                   setSelectedTeamId(selectedAssignmentTeamId);
                   setSelectedTeamMemberId("");

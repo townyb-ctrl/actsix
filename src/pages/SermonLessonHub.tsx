@@ -620,14 +620,14 @@ export default function SermonLessonHub() {
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                   placeholder="Title"
-                  className="h-11 rounded-xl border-border/70 bg-background lg:col-span-2"
+                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background lg:col-span-2"
                 />
                 <select
                   value={form.status}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, status: event.target.value as HubItemStatus }))
                   }
-                  className="h-11 rounded-xl border border-border/70 bg-background px-3 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-brand-teal/25"
+                  className="h-10 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-brand-teal/25"
                 >
                   <option value="idea">Idea</option>
                   <option value="drafting">Drafting</option>
@@ -642,25 +642,25 @@ export default function SermonLessonHub() {
                   value={form.series}
                   onChange={(event) => setForm((current) => ({ ...current, series: event.target.value }))}
                   placeholder="Series"
-                  className="h-11 rounded-xl border-border/70 bg-background"
+                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
                 <Input
                   value={form.scripture}
                   onChange={(event) => setForm((current) => ({ ...current, scripture: event.target.value }))}
                   placeholder="Scripture"
-                  className="h-11 rounded-xl border-border/70 bg-background"
+                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
                 <Input
                   value={form.speaker}
                   onChange={(event) => setForm((current) => ({ ...current, speaker: event.target.value }))}
                   placeholder="Speaker"
-                  className="h-11 rounded-xl border-border/70 bg-background"
+                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
                 <Input
                   type="date"
                   value={form.scheduledDate}
                   onChange={(event) => setForm((current) => ({ ...current, scheduledDate: event.target.value }))}
-                  className="h-11 rounded-xl border-border/70 bg-background"
+                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
               </div>
 
@@ -669,13 +669,13 @@ export default function SermonLessonHub() {
                   value={form.audience}
                   onChange={(event) => setForm((current) => ({ ...current, audience: event.target.value }))}
                   placeholder="Audience"
-                  className="h-11 rounded-xl border-border/70 bg-background"
+                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
                 <Input
                   value={form.keyTakeaway}
                   onChange={(event) => setForm((current) => ({ ...current, keyTakeaway: event.target.value }))}
                   placeholder="Key takeaway"
-                  className="h-11 rounded-xl border-border/70 bg-background"
+                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
                 />
               </div>
 
@@ -683,7 +683,7 @@ export default function SermonLessonHub() {
                 value={form.summary}
                 onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))}
                 placeholder="Short summary"
-                className="mt-3 min-h-[76px] resize-none rounded-xl border-border/70 bg-background"
+                className="mt-3 min-h-[68px] resize-none rounded-[var(--radius-control)] border-border/70 bg-background"
               />
             </div>
 
@@ -929,63 +929,48 @@ const HubViewTabs = ({
   activeView: HubView;
   onChange: (view: HubView) => void;
 }) => {
-  const views: Array<{ key: HubView; label: string; description: string; icon: typeof Pencil }> = [
+  const views: Array<{ key: HubView; label: string; icon: typeof Pencil }> = [
     {
       key: "write",
       label: "Write",
-      description: "Composer",
       icon: Pencil,
     },
     {
       key: "resources",
       label: "Resources",
-      description: "Sources & media",
       icon: BookOpen,
     },
     {
       key: "library",
       label: "Library",
-      description: "Prep & archive",
       icon: Archive,
     },
   ];
 
   return (
-    <div className="actsix-view-tabs">
-      <div className="grid gap-1.5 sm:grid-cols-3">
-        {views.map((view) => {
-          const Icon = view.icon;
-          const active = activeView === view.key;
+    <div className="actsix-filter-pills">
+      {views.map((view) => {
+        const Icon = view.icon;
+        const active = activeView === view.key;
 
-          return (
-            <button
-              key={view.key}
-              type="button"
-              className={cn(
-                "actsix-view-tab",
-                active ? "bg-brand-teal text-white shadow-sm" : ""
-              )}
-              data-state={active ? "active" : "inactive"}
-              onClick={() => onChange(view.key)}
-            >
-              <span
-                className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-                  active ? "bg-white/15" : "bg-background"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-extrabold">{view.label}</span>
-                <span className={cn("block text-xs font-semibold", active ? "text-white/75" : "text-muted-foreground")}>
-                  {view.description}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        return (
+          <button
+            key={view.key}
+            type="button"
+            className={cn(
+              "actsix-filter-pill",
+              active
+                ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+            )}
+            data-state={active ? "active" : "inactive"}
+            onClick={() => onChange(view.key)}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {view.label}
+          </button>
+        );
+      })}
     </div>
   );
 };
@@ -1105,7 +1090,7 @@ const SegmentedType = ({
         type="button"
         onClick={() => onChange(type)}
         className={cn(
-          "h-11 rounded-xl border px-3 text-sm font-extrabold transition",
+          "h-10 rounded-[var(--radius-control)] border px-3 text-sm font-extrabold transition",
           value === type
             ? "border-brand-teal bg-brand-teal text-white"
             : "border-border/70 bg-background text-muted-foreground hover:border-brand-teal/30 hover:bg-brand-teal/5 hover:text-brand-teal"
@@ -1225,58 +1210,81 @@ const LibrarySection = ({
   onArchive: (item: HubItem) => void;
   onExportPdf: (item: HubItem) => void;
   onExportWord: (item: HubItem) => void;
-}) => (
+}) => {
+  const typeOptions: Array<{ value: "all" | HubItemType; label: string }> = [
+    { value: "all", label: "All types" },
+    { value: "sermon", label: "Sermons" },
+    { value: "lesson", label: "Lessons" },
+  ];
+  const statusOptions: Array<{ value: "all" | HubItemStatus; label: string }> = archive
+    ? [
+        { value: "all", label: "All status" },
+        { value: "delivered", label: "Delivered" },
+        { value: "archived", label: "Archived" },
+      ]
+    : [
+        { value: "all", label: "All status" },
+        { value: "idea", label: "Idea" },
+        { value: "drafting", label: "Drafting" },
+        { value: "ready", label: "Ready" },
+      ];
+
+  return (
   <section className="actsix-panel p-4 sm:p-5">
     <div data-testid={archive ? "sermon-hub-archive" : "sermon-hub-active"} className="contents">
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
       <div>
         <p className="label-eyebrow">{archive ? "Searchable Archive" : "Library"}</p>
         <h2 className="mt-1 text-xl font-extrabold">{title}</h2>
       </div>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_10rem] lg:w-[38rem]">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="w-full space-y-1.5 lg:w-64">
+        <div className="actsix-search-field">
+          <Search className="actsix-search-icon" />
           <Input
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            className="h-10 rounded-xl border-border/70 bg-background pl-9"
+            className="actsix-search-input"
             placeholder={archive ? "Search archive..." : "Search active prep..."}
           />
         </div>
-        <select
-          value={typeFilter}
-          onChange={(event) => onTypeFilterChange(event.target.value as "all" | HubItemType)}
-          className="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm font-bold outline-none"
-        >
-          <option value="all">All types</option>
-          <option value="sermon">Sermons</option>
-          <option value="lesson">Lessons</option>
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(event) => onStatusFilterChange(event.target.value as "all" | HubItemStatus)}
-          className="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm font-bold outline-none"
-        >
-          <option value="all">All status</option>
-          {archive ? (
-            <>
-              <option value="delivered">Delivered</option>
-              <option value="archived">Archived</option>
-            </>
-          ) : (
-            <>
-              <option value="idea">Idea</option>
-              <option value="drafting">Drafting</option>
-              <option value="ready">Ready</option>
-            </>
-          )}
-        </select>
+        <div className="actsix-filter-pills">
+          {typeOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onTypeFilterChange(option.value)}
+              className={cn(
+                "actsix-filter-pill",
+                typeFilter === option.value
+                  ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                  : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+          {statusOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onStatusFilterChange(option.value)}
+              className={cn(
+                "actsix-filter-pill",
+                statusFilter === option.value
+                  ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                  : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
 
     <div className="mt-4 space-y-3">
       {items.length === 0 ? (
-        <Card className="actsix-panel-soft p-8 text-center">
+        <Card className="actsix-panel-soft p-4 text-center">
           <p className="text-lg font-extrabold">No items found</p>
           <p className="mt-2 text-sm text-muted-foreground">Try a different search or filter.</p>
         </Card>
@@ -1338,7 +1346,8 @@ const LibrarySection = ({
     </div>
     </div>
   </section>
-);
+  );
+};
 
 const StatTile = ({
   icon: Icon,

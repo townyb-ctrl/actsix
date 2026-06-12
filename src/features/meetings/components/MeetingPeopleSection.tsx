@@ -146,7 +146,7 @@ export function MeetingPeopleSection({
 
         <div className="px-4 py-2.5">
           {meetingPeople.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
               No people have been added to this meeting yet. Click <span className="font-semibold text-foreground">Edit People</span> to add individuals, groups, or folders.
             </div>
           ) : (
@@ -239,7 +239,7 @@ export function MeetingPeopleSection({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 p-6">
+          <div className="space-y-4 p-4 sm:p-5">
             <div>
               <p className="label-eyebrow">Recipients</p>
               <div className="mt-3 space-y-4">
@@ -277,7 +277,7 @@ export function MeetingPeopleSection({
               </div>
 
               {inviteRecipients.some((recipient) => !recipient.email.trim()) && (
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                   Some people are missing email addresses and cannot receive real invites yet. This workflow currently only marks invite status as sent.
                 </div>
               )}

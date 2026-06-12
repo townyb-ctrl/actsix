@@ -87,8 +87,8 @@ export function PeopleSearchSelect({
   return (
     <div ref={peopleSearchSelectRef} className={`relative ${zIndexClass} space-y-2`}>
       {selectedPerson ? (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-brand-teal/30 bg-brand-teal/10 px-3 py-2">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex items-center justify-between gap-2.5 rounded-[var(--radius-control)] border border-brand-teal/30 bg-brand-teal/10 px-3 py-2">
+          <div className="flex min-w-0 items-center gap-2.5">
             <PersonAvatar
               name={selectedPerson.display_name}
               avatarUrl={selectedPerson.avatar_url}
@@ -151,14 +151,14 @@ export function PeopleSearchSelect({
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
-            className="h-12 rounded-2xl border-border/70 bg-background pl-11 text-base"
+            className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background pl-10 text-sm"
           />
 
           {showDropdown && (
             <div
               id={listboxId}
               role="listbox"
-              className={`actsix-overlay-surface absolute left-0 right-0 top-14 ${dropdownZIndexClass} overflow-hidden`}
+              className={`actsix-overlay-surface absolute left-0 right-0 top-12 ${dropdownZIndexClass} overflow-hidden`}
             >
               {!showAllOnFocus && cleanSearch.length < 2 && (
                 <div className="px-4 py-3 text-sm text-muted-foreground">

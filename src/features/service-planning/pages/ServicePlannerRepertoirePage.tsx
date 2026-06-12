@@ -14,7 +14,7 @@ const ServicePlannerRepertoirePage = () => {
       />
 
       <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="actsix-panel-soft border-border/60 p-5 sm:p-6">
+        <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="label-eyebrow">Coming Next</p>
@@ -31,7 +31,7 @@ const ServicePlannerRepertoirePage = () => {
             </div>
           </div>
 
-          <Button disabled className="actsix-btn-primary mt-5">
+          <Button disabled className="actsix-btn-primary mt-4">
             <Plus className="h-4 w-4" />
             Add Song
           </Button>

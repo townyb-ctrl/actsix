@@ -777,13 +777,23 @@ ${row.notes}`
   }, [user, workspace?.id]);
 
   return (
-    <div className="w-full min-w-0 space-y-5 pb-10">
+    <div className="w-full min-w-0 space-y-4 pb-10">
       <PageHeader
         eyebrow="People"
         title="People"
         subtitle="Alpha workspace users appear here automatically. Everyone can view the directory; only admins and editors can manage profiles."
         actions={
           <div data-tour="people-actions" className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            <div className="actsix-search-field sm:w-48 lg:w-56">
+              <Search className="actsix-search-icon" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search people..."
+                className="actsix-search-input"
+              />
+            </div>
+
             {canEditPeopleDirectory && duplicateEmailGroups.length > 0 && (
                 <Button
                   type="button"
@@ -830,18 +840,7 @@ ${row.notes}`
       />
 
       <div className="px-4 sm:px-6 xl:px-8 2xl:px-10">
-        <div data-tour="people-search" className="actsix-panel-soft flex min-w-0 flex-col gap-3 p-3 lg:flex-row lg:items-center">
-          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-2">
-          <Search className="h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search people..."
-            className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-          />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div data-tour="people-search" className="actsix-filter-pills">
           {[
             ["all", "All"],
             ["members", "Members"],
@@ -849,7 +848,7 @@ ${row.notes}`
             <button
               key={value}
               type="button"
-              className={`actsix-filter-chip ${
+              className={`actsix-filter-pill ${
                 peopleFilter === value
                   ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
                   : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50"
@@ -866,7 +865,7 @@ ${row.notes}`
           <div className="relative">
             <button
               type="button"
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
+              className={`actsix-filter-pill ${
                 peopleFilter === "custom"
                   ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
                   : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50"
@@ -878,6 +877,7 @@ ${row.notes}`
               aria-label="Custom filters"
               title="Custom filters"
             >
+              <span className="sr-only">Custom filters</span>
               <Filter className="h-3.5 w-3.5" />
             </button>
 
@@ -971,21 +971,20 @@ ${row.notes}`
             )}
           </div>
         </div>
-        </div>
 
         {loading && (
-          <Card className="actsix-panel mt-5 rounded-[1rem] p-6 sm:mt-6">
+          <Card className="actsix-panel mt-4 p-4 sm:mt-5">
             <div className="actsix-loading-state" role="status">Loading people...</div>
           </Card>
         )}
 
         {!loading && filteredPeople.length === 0 && (
-          <Card className="actsix-panel mt-5 rounded-[1rem] p-8 sm:mt-6 sm:p-10">
+          <Card className="actsix-panel mt-4 p-4 sm:mt-5 sm:p-5">
             <div className="actsix-empty-state flex flex-col items-center justify-center text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
               <Users className="h-5 w-5" />
             </div>
-            <h2 className="mt-4 text-lg font-extrabold tracking-tight">
+            <h2 className="mt-3 text-lg font-extrabold tracking-tight">
               No people found
             </h2>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">
@@ -996,7 +995,7 @@ ${row.notes}`
         )}
 
         {!loading && filteredPeople.length > 0 && (
-          <Card data-tour="people-list" className="actsix-panel mt-5 overflow-hidden rounded-[1rem] sm:mt-6">
+          <Card data-tour="people-list" className="actsix-panel mt-4 overflow-hidden sm:mt-5">
           <div className="hidden grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] gap-3 border-b border-border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground md:grid">
             <div>Person</div>
             <div>Phone</div>
@@ -1009,7 +1008,7 @@ ${row.notes}`
               <Link
                 key={person.id}
                 to={`/people/${person.id}`}
-                className="flex min-w-0 flex-col gap-3 px-3.5 py-3 transition hover:bg-brand-teal/5 md:grid md:grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] md:items-center md:gap-3 md:px-3 md:py-2"
+                className="flex min-w-0 flex-col gap-2.5 px-3 py-2.5 transition hover:bg-brand-teal/5 md:grid md:grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] md:items-center md:gap-3 md:px-3 md:py-2"
               >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <PersonAvatar
@@ -1101,7 +1100,7 @@ ${row.notes}`
           setImportOpen(open);
         }}
       >
-        <DialogContent className="max-h-[92svh] max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-6">
+        <DialogContent className="max-h-[92svh] max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-5">
           <DialogHeader>
             <p className="label-eyebrow">People</p>
             <DialogTitle className="text-xl">Import People from CSV</DialogTitle>
@@ -1142,7 +1141,7 @@ ${row.notes}`
             </div>
 
             {csvRows.length > 0 && (
-              <div className="mt-5 overflow-hidden rounded-2xl border border-border/70">
+              <div className="mt-4 overflow-hidden rounded-xl border border-border/70">
                 <div className="hidden grid-cols-[minmax(0,1fr)_160px_minmax(0,1fr)_120px] gap-3 border-b border-border bg-background px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground md:grid">
                   <div>Name</div>
                   <div>Phone</div>
@@ -1220,7 +1219,7 @@ ${row.notes}`
       </Dialog>
 
       <Dialog open={welcomeRecipients.length > 0} onOpenChange={(open) => !open && setWelcomeRecipients([])}>
-        <DialogContent className="max-h-[92svh] max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-6">
+        <DialogContent className="max-h-[92svh] max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-5">
             <DialogHeader>
               <p className="label-eyebrow">People</p>
               <DialogTitle className="text-xl">Invite people to activate their ACTSIX account</DialogTitle>
@@ -1281,7 +1280,7 @@ ${row.notes}`
           setAddPersonOpen(open);
         }}
       >
-        <DialogContent className="max-h-[92svh] max-w-2xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-6">
+        <DialogContent className="max-h-[92svh] max-w-2xl overflow-y-auto rounded-b-none p-4 sm:rounded-[var(--radius-overlay)] sm:p-5">
             <DialogHeader>
               <p className="label-eyebrow">People</p>
               <DialogTitle className="text-xl">Add Person</DialogTitle>

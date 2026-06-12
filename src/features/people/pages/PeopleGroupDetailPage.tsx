@@ -306,7 +306,7 @@ const PeopleGroupDetailPage = () => {
   if (loading) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="actsix-panel p-6">
+        <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-loading-state" role="status">Loading group...</div>
         </Card>
       </div>
@@ -316,7 +316,7 @@ const PeopleGroupDetailPage = () => {
   if (!group) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="actsix-panel p-6">
+        <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-empty-state">Group not found.</div>
           <Button
             type="button"
@@ -440,7 +440,7 @@ const PeopleGroupDetailPage = () => {
         </Card>
 
         <Card className="actsix-panel overflow-hidden">
-        <div className="border-b border-border/70 px-5 py-4">
+        <div className="border-b border-border/70 px-4 py-3">
           <p className="label-eyebrow">Members</p>
           <h2 className="mt-1 text-xl font-extrabold tracking-tight">
             Group people
@@ -449,10 +449,10 @@ const PeopleGroupDetailPage = () => {
 
         {members.length === 0 && (
           <div className="actsix-empty-state m-3 min-h-[10rem] text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
               <Users className="h-5 w-5" />
             </div>
-            <h2 className="mt-4 text-lg font-extrabold tracking-tight">
+            <h2 className="mt-3 text-lg font-extrabold tracking-tight">
               No people added yet
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -469,7 +469,7 @@ const PeopleGroupDetailPage = () => {
               return (
                 <div
                   key={member.id}
-                  className="flex flex-wrap items-center gap-3 px-5 py-4"
+                  className="flex flex-wrap items-center gap-3 px-4 py-3"
                 >
                   <PersonAvatar
                     name={member.people?.display_name}
@@ -615,7 +615,7 @@ const PeopleGroupDetailPage = () => {
       <Dialog open={addPeopleOpen} onOpenChange={setAddPeopleOpen}>
         <DialogContent className="max-w-2xl overflow-visible p-0">
             <form onSubmit={addMembers} className="flex flex-col">
-              <div className="border-b border-border/70 p-6">
+              <div className="border-b border-border/70 p-4 sm:p-5">
                 <DialogHeader className="text-left">
                   <p className="label-eyebrow">People Group</p>
                   <DialogTitle className="text-xl">Add People to {group.name}</DialogTitle>
@@ -625,7 +625,7 @@ const PeopleGroupDetailPage = () => {
                 </DialogHeader>
               </div>
 
-              <div className="space-y-4 p-6">
+              <div className="space-y-4 p-4 sm:p-5">
                 <div>
                   <label className="label-eyebrow">People</label>
                   <div className="mt-2">
@@ -650,7 +650,7 @@ const PeopleGroupDetailPage = () => {
                 </div>
               </div>
 
-              <DialogFooter className="flex justify-end gap-2 border-t border-border/70 bg-background/80 p-6">
+              <DialogFooter className="flex justify-end gap-2 border-t border-border/70 bg-background/80 p-4 sm:p-5">
                 <Button
                   type="button"
                   variant="outline"

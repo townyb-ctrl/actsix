@@ -15,6 +15,7 @@ import {
   Music,
   Plus,
   Settings,
+  Tent,
   Users,
   X,
 } from "lucide-react";
@@ -43,6 +44,8 @@ type MobileModuleKey =
   | "meetings"
   | "people"
   | "groups"
+  | "events"
+  | "calendarModule"
   | "sermonHub"
   | "settings";
 
@@ -79,6 +82,8 @@ const detectModule = (pathname: string): MobileModuleKey => {
   if (pathname.startsWith("/service-planner")) return "servicePlanner";
   if (pathname.startsWith("/meetings")) return "meetings";
   if (pathname.startsWith("/groups")) return "groups";
+  if (pathname.startsWith("/events")) return "events";
+  if (pathname.startsWith("/calendar")) return "calendarModule";
   if (pathname.startsWith("/sermon-hub")) return "sermonHub";
   if (pathname.startsWith("/people")) return "people";
   if (pathname.startsWith("/settings")) return "settings";
@@ -328,6 +333,62 @@ const moduleConfigs: Record<MobileModuleKey, MobileModuleConfig> = {
       },
     ],
   },
+  events: {
+    key: "events",
+    title: "Events",
+    subtitle: "Camps, mission trips, retreats, and outreaches.",
+    primary: { icon: Tent, label: "Events", path: "/events" },
+    menuLabel: "Events",
+    menuIcon: Menu,
+    menuItems: [
+      {
+        icon: Tent,
+        label: "Events",
+        path: "/events",
+        description: "Plan camps, trips, retreats, and outreaches.",
+      },
+      {
+        icon: Users,
+        label: "People",
+        path: "/people",
+        description: "Find volunteers and participants.",
+      },
+      {
+        icon: ListChecks,
+        label: "Actions",
+        path: "/tasks/next",
+        description: "Follow up on event planning tasks.",
+      },
+    ],
+  },
+  calendarModule: {
+    key: "calendarModule",
+    title: "Calendar",
+    subtitle: "ACTSIX and external calendars in one place.",
+    primary: { icon: Calendar, label: "Calendar", path: "/calendar" },
+    menuLabel: "Calendar",
+    menuIcon: Menu,
+    menuItems: [
+      {
+        icon: Calendar,
+        label: "Calendar",
+        path: "/calendar",
+        description: "Month view, agenda, and calendar sync.",
+      },
+      {
+        icon: Tent,
+        label: "Events",
+        path: "/events",
+        description: "Camps, trips, retreats, and outreaches.",
+      },
+      {
+        icon: ClipboardList,
+        label: "Meetings",
+        path: "/meetings",
+        description: "Meeting dates and follow-up.",
+      },
+    ],
+  },
   sermonHub: {
     key: "sermonHub",
     title: "Sermon Hub",
@@ -391,6 +452,8 @@ const moduleSwitcherItems: Array<{
   { key: "meetings", icon: Calendar, label: "Meetings", path: "/meetings" },
   { key: "people", icon: Users, label: "People", path: "/people" },
   { key: "groups", icon: FolderKanban, label: "Groups", path: "/groups" },
+  { key: "events", icon: Tent, label: "Events", path: "/events" },
+  { key: "calendarModule", icon: Calendar, label: "Calendar", path: "/calendar" },
   { key: "sermonHub", icon: BookOpen, label: "Teach", path: "/sermon-hub" },
   { key: "projects", icon: FolderKanban, label: "Projects", path: "/tasks/projects" },
 ];
@@ -653,9 +716,9 @@ export function MobileBottomNav() {
 
       <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
         <DrawerContent className="border-border/70 bg-background">
-          <DrawerHeader className="px-5 pb-2 text-left">
+          <DrawerHeader className="px-4 pb-2 text-left">
             <p className="label-eyebrow">{currentConfig.title}</p>
-            <DrawerTitle className="text-2xl font-extrabold tracking-tight">
+            <DrawerTitle className="text-xl font-extrabold tracking-tight">
               Module menu
             </DrawerTitle>
             <p className="mt-1 text-sm font-medium text-muted-foreground">
@@ -663,7 +726,7 @@ export function MobileBottomNav() {
             </p>
           </DrawerHeader>
 
-          <div className="grid grid-cols-1 gap-2.5 px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
+          <div className="grid grid-cols-1 gap-2 px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-2">
             {currentConfig.menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActivePath(location.pathname, item.path);
@@ -677,7 +740,7 @@ export function MobileBottomNav() {
                     navigate(item.path);
                   }}
                   className={cn(
-                    "actsix-interactive-tile group flex min-h-[68px] items-center gap-3.5 p-3.5 text-left",
+                    "actsix-interactive-tile group flex min-h-[54px] items-center gap-3 p-3 text-left",
                     active
                       ? "border-brand-teal/35 bg-brand-teal/10"
                       : "border-border/70 hover:border-brand-teal/25 hover:bg-brand-teal/5"
@@ -685,7 +748,7 @@ export function MobileBottomNav() {
                 >
                   <div
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center border",
+                      "flex h-10 w-10 shrink-0 items-center justify-center border",
                       active
                         ? "border-brand-teal/20 bg-brand-teal/10 text-brand-teal"
                         : "border-border/70 bg-background text-muted-foreground"
@@ -698,7 +761,7 @@ export function MobileBottomNav() {
                     <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
                       {item.label}
                     </div>
-                    <div className="mt-0.5 truncate text-sm font-medium text-muted-foreground">
+                    <div className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
                       {item.description}
                     </div>
                   </div>
@@ -712,9 +775,9 @@ export function MobileBottomNav() {
 
       <Drawer open={captureOpen} onOpenChange={setCaptureOpen}>
         <DrawerContent className="border-border/70 bg-background">
-          <DrawerHeader className="px-5 pb-2 text-left">
+          <DrawerHeader className="px-4 pb-2 text-left">
             <p className="label-eyebrow">Quick Capture</p>
-            <DrawerTitle className="text-2xl font-extrabold tracking-tight">
+            <DrawerTitle className="text-xl font-extrabold tracking-tight">
               What needs attention?
             </DrawerTitle>
             <p className="mt-1 text-sm font-medium text-muted-foreground">
@@ -722,7 +785,7 @@ export function MobileBottomNav() {
             </p>
           </DrawerHeader>
 
-          <div className="space-y-4 px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
+          <div className="space-y-3 px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
             <Textarea
               value={captureText}
               onChange={(event) => setCaptureText(event.target.value)}

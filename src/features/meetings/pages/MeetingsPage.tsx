@@ -161,6 +161,28 @@ const MeetingsPage = () => {
         eyebrow="Meetings"
         title="Meetings"
         subtitle="Plan agendas, record notes, and track action points."
+        actions={
+          <>
+            <div className="actsix-search-field sm:w-48 lg:w-56">
+              <Search className="actsix-search-icon" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search meetings..."
+                className="actsix-search-input"
+              />
+            </div>
+
+            <Button
+              type="button"
+              className="actsix-btn-primary h-9 shrink-0 px-3"
+              onClick={() => setAddOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add Meeting
+            </Button>
+          </>
+        }
       />
 
       <div className="w-full space-y-4 px-4 sm:px-6 xl:px-8 2xl:px-10">
@@ -172,42 +194,21 @@ const MeetingsPage = () => {
           ].map(([label, value]) => (
             <div key={label} className="rounded-[calc(var(--radius-panel)-0.35rem)] bg-background px-4 py-3">
               <p className="label-eyebrow">{label}</p>
-              <div className="mt-1 text-2xl font-extrabold tracking-tight">{value}</div>
+              <div className="mt-1 text-xl font-extrabold tracking-tight">{value}</div>
             </div>
           ))}
         </div>
 
         <div data-tour="meetings-actions" className="actsix-panel overflow-hidden">
-          <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search meetings..."
-                className="h-11 rounded-xl border-border/70 bg-background pl-10 shadow-none"
-              />
-            </div>
-
-            <Button
-              type="button"
-              className="actsix-btn-primary h-11 shrink-0 rounded-xl px-4"
-              onClick={() => setAddOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Meeting
-            </Button>
-          </div>
-
           <div data-tour="meetings-list" className="divide-y divide-border/60">
               {loading && (
-                <div className="actsix-loading-state min-h-[16rem]">
+                <div className="actsix-loading-state min-h-[12rem]">
                   Loading meetings...
                 </div>
               )}
 
               {!loading && loadError && (
-                <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 p-8 text-center">
+                <div className="flex min-h-[10rem] flex-col items-center justify-center gap-3 p-4 text-center">
                   <p className="text-sm font-semibold text-foreground">
                     Could not load meetings
                   </p>
@@ -221,8 +222,8 @@ const MeetingsPage = () => {
               )}
 
               {!loading && !loadError && filteredMeetings.length === 0 && (
-                <div className="p-8 text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
+                <div className="p-4 text-center">
+                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                     <CalendarDays className="h-5 w-5" />
                   </div>
                   <p className="mt-3 text-sm font-semibold">
@@ -252,7 +253,7 @@ const MeetingsPage = () => {
                 <Link
                   key={meeting.id}
                   to={`/meetings/${meeting.id}`}
-                  className="group flex flex-col gap-4 p-4 transition-colors hover:bg-brand-teal/5 sm:flex-row sm:items-center"
+                  className="group flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-brand-teal/5 sm:flex-row sm:items-center"
                 >
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal ring-1 ring-brand-teal/15">
                     <UsersRound className="h-5 w-5" />
@@ -263,7 +264,7 @@ const MeetingsPage = () => {
                       {meeting.title}
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-medium text-muted-foreground">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
                         <CalendarDays className="h-3.5 w-3.5" />
                         {formatDate(meeting.meeting_date)}
@@ -327,7 +328,7 @@ const MeetingsPage = () => {
       </div>
       {addOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <Card className="actsix-panel max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-xl sm:p-6">
+          <Card className="actsix-panel max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-b-none p-4 sm:rounded-xl sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Meeting</p>

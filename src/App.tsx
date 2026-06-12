@@ -29,6 +29,8 @@ import WorkspaceSettings from "./pages/WorkspaceSettings";
 import AlphaFeedback from "./pages/AlphaFeedback";
 import TrainingCenter from "./pages/TrainingCenter";
 import SermonLessonHub from "./pages/SermonLessonHub";
+import EventManagement from "./pages/EventManagement";
+import CalendarModule from "./pages/CalendarModule";
 import { Recurring, Review, Calendar, Meetups } from "./pages/Placeholder";
 import Auth from "./pages/Auth";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
@@ -72,7 +74,6 @@ const App = () => (
               <Route path="/someday" element={<Someday />} />
               <Route path="/recurring" element={<Recurring />} />
               <Route path="/review" element={<Review />} />
-              <Route path="/calendar" element={<Calendar />} />
               <Route path="/meetups" element={<Meetups />} />
               <Route path="/meetings" element={<Meetings />} />
               <Route path="/service-planner" element={<ServicePlanner />} />
@@ -93,6 +94,9 @@ const App = () => (
               <Route path="/training" element={<TrainingCenter />} />
               <Route path="/training/folders/:folderId" element={<TrainingCenter />} />
               <Route path="/sermon-hub" element={<SermonLessonHub />} />
+              <Route path="/events" element={<EventManagement />} />
+              <Route path="/events/:eventId" element={<EventManagement />} />
+              <Route path="/calendar" element={<CalendarModule />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/workspace" element={<WorkspaceSettings />} />
               <Route path="/settings/alpha-feedback" element={<AlphaFeedback />} />

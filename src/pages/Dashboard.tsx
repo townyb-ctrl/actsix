@@ -268,7 +268,7 @@ const SectionHeader = ({
 const TaskRow = ({ task, compact = false }: { task: Task; compact?: boolean }) => (
   <Link
     to="/tasks/next"
-    className="group flex min-h-[58px] items-center justify-between gap-3 rounded-2xl border border-border/80 bg-background/70 px-3.5 py-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
+    className="group flex min-h-[46px] items-center justify-between gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
   >
     <div className="min-w-0 flex-1">
       <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
@@ -303,9 +303,9 @@ const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
   return (
     <Link
       to={item.to}
-      className="group flex min-h-[62px] items-center gap-3 rounded-2xl border border-border/80 bg-background/70 px-3.5 py-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
+      className="group flex min-h-[50px] items-center gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
     >
-      <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+      <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
@@ -661,7 +661,7 @@ const Dashboard = () => {
         />
 
         <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-          <Card className="actsix-panel-soft p-6">
+          <Card className="actsix-panel-soft p-4 sm:p-5">
             <h2 className="text-2xl font-extrabold tracking-tight">
               Connect ACTSIX to your church
             </h2>
@@ -685,7 +685,7 @@ const Dashboard = () => {
     return (
       <div className="overflow-x-hidden">
         <div className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10">
-          <section className="actsix-panel p-5 sm:p-6">
+          <section className="actsix-panel p-4 sm:p-5">
             <div className="actsix-loading-state" role="status">
               Loading your home overview...
             </div>
@@ -701,7 +701,7 @@ const Dashboard = () => {
         data-tour="home-overview"
         className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10"
       >
-        <section className="actsix-panel-soft p-5 sm:p-6">
+        <section className="actsix-panel-soft p-4 sm:p-5">
           <div className="min-w-0">
             <p className="label-eyebrow text-brand-teal">Home</p>
             <h1 className="mt-1 text-balance text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl">
@@ -891,7 +891,7 @@ const Dashboard = () => {
                   <Link
                     key={project.id}
                     to={`/tasks/projects/${project.id}`}
-                    className="group block rounded-2xl border border-border/80 bg-background/70 p-3.5 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
+                    className="group block rounded-xl border border-border/80 bg-background/70 p-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -936,9 +936,9 @@ const Dashboard = () => {
                 <Link
                   key={meeting.id}
                   to={`/meetings/${meeting.id}`}
-                  className="group flex min-h-[62px] items-center gap-3 rounded-2xl border border-border/80 bg-background/70 px-3.5 py-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
+                  className="group flex min-h-[50px] items-center gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-bronze/10 text-brand-bronze">
+                  <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-bronze/10 text-brand-bronze">
                     <CalendarDays className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -1028,7 +1028,7 @@ const Dashboard = () => {
               {visibleCalendarDays.map((day) => (
                 <div
                   key={day.key}
-                  className={`h-36 rounded-2xl border px-2.5 py-2 ${
+                  className={`h-36 rounded-xl border px-2.5 py-2 ${
                     !day.inMonth
                       ? "border-border/40 bg-background/20"
                       : day.key === todayKey

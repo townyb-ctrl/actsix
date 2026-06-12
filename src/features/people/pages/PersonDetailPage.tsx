@@ -705,7 +705,7 @@ const PersonDetailPage = () => {
   if (loading) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="actsix-panel p-6">
+        <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-loading-state" role="status">Loading person profile...</div>
         </Card>
       </div>
@@ -715,7 +715,7 @@ const PersonDetailPage = () => {
   if (!person) {
     return (
       <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="actsix-panel p-6">
+        <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-empty-state">Person not found.</div>
         </Card>
       </div>
@@ -839,16 +839,16 @@ const PersonDetailPage = () => {
           </div>
         </div>
 
-        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-5">
-            <Card className="actsix-panel-soft bg-background/70 p-5">
+        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
+            <Card className="actsix-panel-soft bg-background/70 p-4">
               <p className="label-eyebrow">Profile Notes</p>
               <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
                 {person.notes || "No notes added yet."}
               </p>
             </Card>
 
-            <Card className="border-border/70 bg-background/70 p-5">
+            <Card className="border-border/70 bg-background/70 p-4">
               <p className="label-eyebrow">Teams & Roles</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                 Ministry connections
@@ -882,7 +882,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="actsix-panel-soft bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Groups</p>
@@ -929,7 +929,7 @@ const PersonDetailPage = () => {
 
                           {membership.role && (
                             <>
-                              <span>·</span>
+                              <span>|</span>
                               <span>{membership.role}</span>
                             </>
                           )}
@@ -941,7 +941,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="actsix-panel-soft bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Project Collaborations</p>
@@ -988,14 +988,14 @@ const PersonDetailPage = () => {
 
                             {collaboration.role && (
                               <>
-                                {linkedProject?.area && <span>·</span>}
+                                {linkedProject?.area && <span>|</span>}
                                 <span>{collaboration.role}</span>
                               </>
                             )}
 
                             {linkedProject?.status && (
                               <>
-                                <span>·</span>
+                                <span>|</span>
                                 <span>{linkedProject.status}</span>
                               </>
                             )}
@@ -1008,7 +1008,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="actsix-panel-soft bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Training</p>
@@ -1050,7 +1050,7 @@ const PersonDetailPage = () => {
                   {trainingAssignments.map((assignment) => (
                     <div
                       key={assignment.id}
-                      className="rounded-[var(--radius-control)] border border-border/70 bg-background/70 p-4"
+                      className="rounded-[var(--radius-control)] border border-border/70 bg-background/70 p-3.5"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -1090,7 +1090,7 @@ const PersonDetailPage = () => {
                         </span>
                       </div>
 
-                      <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_280px] md:items-end">
+                      <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_280px] md:items-end">
                         <div>
                           <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-muted-foreground">
                             <span>Progress</span>
@@ -1153,7 +1153,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="actsix-panel-soft bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="label-eyebrow">Assigned Tasks</p>
@@ -1198,13 +1198,13 @@ const PersonDetailPage = () => {
                           {task.project && <span>{task.project}</span>}
                           {task.priority && (
                             <>
-                              {task.project && <span>·</span>}
+                              {task.project && <span>|</span>}
                               <span>{task.priority}</span>
                             </>
                           )}
                           {task.due && (
                             <>
-                              <span>·</span>
+                              <span>|</span>
                               <span>{formatDate(task.due)}</span>
                             </>
                           )}
@@ -1228,7 +1228,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="actsix-panel-soft bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-4">
               <p className="label-eyebrow">Upcoming Services</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                 Scheduled to serve
@@ -1292,7 +1292,7 @@ const PersonDetailPage = () => {
               )}
             </Card>
 
-            <Card className="actsix-panel-soft bg-background/70 p-5">
+            <Card className="actsix-panel-soft bg-background/70 p-4">
               <p className="label-eyebrow">Past Serving History</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">
                 Previous assignments
@@ -1363,7 +1363,7 @@ const PersonDetailPage = () => {
             </Card>
           </div>
 
-          <Card className="actsix-panel-soft bg-background/70 p-5">
+          <Card className="actsix-panel-soft bg-background/70 p-4">
             <p className="label-eyebrow">Profile Summary</p>
             <div className="mt-4 space-y-3 text-sm">
               <div>

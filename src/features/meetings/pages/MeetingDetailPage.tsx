@@ -342,7 +342,7 @@ function MeetingSourceCombobox({
     <div ref={wrapperRef} className={`relative ${open ? "z-[300]" : "z-[20]"}`}>
       <button
         type="button"
-        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-border/70 bg-background px-4 py-3 text-left text-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
+        className="flex min-h-10 w-full items-center justify-between gap-2.5 rounded-lg border border-border/70 bg-background px-3 py-2.5 text-left text-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
         onClick={() => {
           if (!open) {
             announceOpen();
@@ -361,15 +361,15 @@ function MeetingSourceCombobox({
 
       {open && (
         <div className="actsix-panel absolute left-0 right-0 top-full z-[1200] mt-2 overflow-hidden rounded-xl">
-          <div className="border-b border-border/70 bg-background/95 p-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="border-b border-border/70 bg-background/95 p-2.5">
+            <div className="actsix-search-field">
+              <Search className="actsix-search-icon" />
               <Input
                 value={query}
                 onFocus={announceOpen}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={searchPlaceholder}
-                className="h-11 rounded-xl border-border/70 bg-background pl-9 pr-3 text-sm focus-visible:ring-brand-teal/40"
+                className="actsix-search-input pr-3 focus-visible:ring-brand-teal/40"
                 autoFocus
               />
             </div>
@@ -377,7 +377,7 @@ function MeetingSourceCombobox({
 
           <div className="max-h-64 overflow-y-auto bg-background">
             {filteredOptions.length === 0 && (
-              <div className="px-4 py-5 text-sm text-muted-foreground">
+              <div className="px-4 py-3 text-sm text-muted-foreground">
                 {emptyText}
               </div>
             )}
@@ -1556,12 +1556,12 @@ ${transcriptText.trim()}`;
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           {/* LEFT COLUMN: Minutes + Action Points */}
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Minutes Card */}
             <Card className="actsix-panel overflow-hidden">
-              <div className="border-b border-border/70 bg-background/55 px-5 py-4">
+              <div className="border-b border-border/70 bg-background/55 px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="text-xl font-extrabold tracking-tight">Meeting Minutes</h2>
@@ -1602,7 +1602,7 @@ ${transcriptText.trim()}`;
                 </div>
               </div>
 
-              <div className="px-5 py-4">
+              <div className="px-4 py-3">
                 {minutesToolbarOpen && (
                 <div className="mb-3 flex flex-wrap items-center gap-1.5 border-b border-border/70 pb-3">
                   <Button
@@ -1690,7 +1690,7 @@ ${transcriptText.trim()}`;
                   ref={minutesRef}
                   contentEditable
                   suppressContentEditableWarning
-                  className="minutes-document min-h-[26.25rem] h-[calc(100vh-25rem)] max-h-[58rem] overflow-y-auto cursor-text rounded-2xl border border-border/70 bg-background/70 p-5 text-sm leading-7 text-foreground outline-none transition focus:border-brand-teal/35 focus:bg-background focus:ring-2 focus:ring-brand-teal/15"
+                  className="minutes-document min-h-[26.25rem] h-[calc(100vh-25rem)] max-h-[58rem] overflow-y-auto cursor-text rounded-xl border border-border/70 bg-background/70 p-4 text-sm leading-7 text-foreground outline-none transition focus:border-brand-teal/35 focus:bg-background focus:ring-2 focus:ring-brand-teal/15"
                   data-placeholder="Click here to add meeting notes, decisions, and minutes..."
                   dangerouslySetInnerHTML={{ __html: renderMinutesHtml(meeting.notes || "") }}
                   onKeyDown={(event) => {
@@ -2089,7 +2089,7 @@ ${transcriptText.trim()}`;
           </div>
 
           <div className="grid gap-3 lg:grid-cols-2">
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
+            <div className="rounded-xl border border-border/70 bg-background/70 p-3">
               <label className="label-eyebrow">Add individual</label>
               <div className="mt-2 flex gap-2">
                 <div className="min-w-0 flex-1">
@@ -2114,7 +2114,7 @@ ${transcriptText.trim()}`;
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
+            <div className="rounded-xl border border-border/70 bg-background/70 p-3">
               <label className="label-eyebrow">Add group or folder</label>
               <div className="mt-2 flex gap-2">
                 <div className="min-w-0 flex-1">
@@ -2243,7 +2243,7 @@ ${transcriptText.trim()}`;
 
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
             {meetingPeople.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
                 No people have been added to this meeting yet. Add individuals, groups, or folders in the Meeting People section first.
               </div>
             )}
@@ -2264,7 +2264,7 @@ ${transcriptText.trim()}`;
               return (
                 <div
                   key={meetingPerson.id}
-                  className="rounded-2xl border border-border/70 bg-background p-3"
+                  className="rounded-xl border border-border/70 bg-background p-3"
                 >
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <div className="min-w-0">

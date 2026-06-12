@@ -410,7 +410,7 @@ const RecurringMeetingDetailPage = () => {
         />
 
         <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-          <Card className="actsix-panel p-6">
+          <Card className="actsix-panel p-4 sm:p-5">
             <div className="actsix-empty-state min-h-[10rem] text-left">
               Recurring meeting not found.
             </div>
@@ -631,7 +631,7 @@ const RecurringMeetingDetailPage = () => {
 
       {attendeesOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="actsix-panel w-full max-w-2xl p-6">
+          <Card className="actsix-panel w-full max-w-2xl p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Regular Attendees</p>
@@ -648,7 +648,7 @@ const RecurringMeetingDetailPage = () => {
               </Button>
             </div>
 
-            <div className="mt-6 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <Input
                 value={attendeeInput}
                 onChange={(event) => setAttendeeInput(event.target.value)}
@@ -664,7 +664,7 @@ const RecurringMeetingDetailPage = () => {
               </Button>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {(series.regularAttendees || []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No regular attendees added yet.
@@ -684,7 +684,7 @@ const RecurringMeetingDetailPage = () => {
               )}
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-4 flex justify-end">
               <Button
                 type="button"
                 className="actsix-btn-primary rounded-xl"
@@ -699,7 +699,7 @@ const RecurringMeetingDetailPage = () => {
 
       {agendaOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="actsix-panel max-h-[86vh] w-full max-w-3xl overflow-auto p-6">
+          <Card className="actsix-panel max-h-[86vh] w-full max-w-3xl overflow-auto p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="label-eyebrow">Regular Agenda</p>
@@ -716,7 +716,7 @@ const RecurringMeetingDetailPage = () => {
               </Button>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-4 space-y-4">
               {agendaDraft.map((section, sectionIndex) => (
                 <div key={sectionIndex} className="rounded-xl border border-border/70 bg-background p-4">
                   <div className="flex items-center gap-2">

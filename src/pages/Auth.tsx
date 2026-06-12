@@ -73,8 +73,8 @@ const Auth = () => {
         <div className="text-xs text-sidebar-foreground/40">ACTSIX | 2026</div>
       </div>
 
-      <div className="flex items-center justify-center p-5 sm:p-8">
-        <form onSubmit={handle} className="actsix-panel w-full max-w-sm space-y-6 p-5 sm:p-6">
+      <div className="flex items-center justify-center p-5 sm:p-6">
+        <form onSubmit={handle} className="actsix-panel w-full max-w-sm space-y-5 p-5">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">
               {mode === "signin" ? "Welcome back" : "Create account"}

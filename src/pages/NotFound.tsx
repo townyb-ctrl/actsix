@@ -12,12 +12,12 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="actsix-panel w-full max-w-md p-6 text-center">
-        <div className="mb-6 flex justify-center">
+      <div className="actsix-panel w-full max-w-md p-5 text-center">
+        <div className="mb-5 flex justify-center">
           <Logo />
         </div>
         <p className="label-eyebrow">Page not found</p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight">404</h1>
+        <h1 className="mt-2 text-2xl font-extrabold tracking-tight">404</h1>
         <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
           This route does not exist or has moved.
         </p>

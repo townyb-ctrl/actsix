@@ -570,19 +570,30 @@ const ProjectsPage = () => {
         title="Projects"
         subtitle="Track progress and keep every outcome moving."
         actions={
-          <Button
-            type="button"
-            size="sm"
-            className="actsix-btn-primary h-10"
-            onClick={openNewProjectModal}
-          >
-            <Plus className="h-4 w-4" />
-            Add Project
-          </Button>
+          <>
+            <div className="actsix-search-field sm:w-48 lg:w-56">
+              <Search className="actsix-search-icon" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search projects..."
+                className="actsix-search-input"
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              className="actsix-btn-primary h-9"
+              onClick={openNewProjectModal}
+            >
+              <Plus className="h-4 w-4" />
+              Add Project
+            </Button>
+          </>
         }
       />
 
-      <div className="w-full min-w-0 space-y-5 px-4 pb-12 sm:px-6 md:space-y-6 xl:px-8 2xl:px-10">
+      <div className="w-full min-w-0 space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
 
         <div className="actsix-panel-soft grid gap-px overflow-hidden md:grid-cols-2 xl:grid-cols-4">
           <div className="bg-background/55 px-4 py-3">
@@ -592,7 +603,7 @@ const ProjectsPage = () => {
               </div>
               <div>
                 <p className="label-eyebrow">Total Projects</p>
-                <div className="mt-1 text-2xl font-extrabold">{totalProjects}</div>
+                <div className="mt-1 text-xl font-extrabold">{totalProjects}</div>
               </div>
             </div>
           </div>
@@ -604,7 +615,7 @@ const ProjectsPage = () => {
               </div>
               <div>
                 <p className="label-eyebrow">Active Projects</p>
-                <div className="mt-1 text-2xl font-extrabold">{activeProjects}</div>
+                <div className="mt-1 text-xl font-extrabold">{activeProjects}</div>
               </div>
             </div>
           </div>
@@ -616,7 +627,7 @@ const ProjectsPage = () => {
               </div>
               <div>
                 <p className="label-eyebrow">Needs Action</p>
-                <div className="mt-1 text-2xl font-extrabold">{needsActionProjects}</div>
+                <div className="mt-1 text-xl font-extrabold">{needsActionProjects}</div>
               </div>
             </div>
           </div>
@@ -628,48 +639,35 @@ const ProjectsPage = () => {
               </div>
               <div>
                 <p className="label-eyebrow">Completion Rate</p>
-                <div className="mt-1 text-2xl font-extrabold">{averageProgress}%</div>
+                <div className="mt-1 text-xl font-extrabold">{averageProgress}%</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="actsix-panel-soft space-y-3 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span className="truncate">
-                Showing {filteredProjects.length} of {projects.length} projects
-                {hasActiveFilters ? " with filters applied" : ""}
-              </span>
-            </div>
-
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 px-3 text-muted-foreground hover:text-foreground"
-                  onClick={clearFilters}
-                >
-                  <X className="h-3.5 w-3.5 mr-1.5" />
-                  Clear
-                </Button>
-              )}
-            </div>
+        <div className="-mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="truncate">
+              Showing {filteredProjects.length} of {projects.length} projects
+              {hasActiveFilters ? " with filters applied" : ""}
+            </span>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search projects..."
-              className="h-11 rounded-xl border-border/70 bg-background pl-10"
-            />
-          </div>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 self-start px-2.5 text-xs text-muted-foreground hover:text-foreground sm:self-auto"
+              onClick={clearFilters}
+            >
+              <X className="mr-1.5 h-3.5 w-3.5" />
+              Clear
+            </Button>
+          )}
+        </div>
 
-          <div className="actsix-view-tabs w-full overflow-x-auto [-webkit-overflow-scrolling:touch] sm:w-auto">
+        <div className="actsix-filter-pills">
             {projectViews.map((view) => {
               const active = projectView === view.value;
 
@@ -678,21 +676,32 @@ const ProjectsPage = () => {
                   key={view.value}
                   type="button"
                   onClick={() => setProjectView(view.value)}
-                  className={`actsix-view-tab ${active ? "active" : ""}`}
+                  className={`actsix-filter-pill ${
+                    active
+                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
                 >
                   {view.label}
-                  <span className="actsix-view-tab-count">{view.count}</span>
+                  <span
+                    className={`actsix-filter-pill-count ${
+                      active
+                        ? "bg-brand-teal/15 text-brand-teal"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {view.count}
+                  </span>
                 </button>
               );
             })}
-          </div>
         </div>
 
         <div className="md:hidden">
           <div className="space-y-3">
             {filteredProjects.length === 0 && (
-              <Card className="actsix-empty-state p-7 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+              <Card className="actsix-empty-state p-4 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                   <FolderKanban className="h-5 w-5" />
                 </div>
                 <p className="mt-3 text-sm font-extrabold">No projects match this view.</p>
@@ -710,11 +719,11 @@ const ProjectsPage = () => {
                   key={project.id}
                   type="button"
                   onClick={() => navigate(`/tasks/projects/${project.id}`)}
-                  className="actsix-interactive-tile w-full p-4"
+                  className="actsix-interactive-tile w-full p-3.5"
                 >
                   <div className="flex min-w-0 items-start gap-3">
                     <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${projectIconClass(
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${projectIconClass(
                         index
                       )}`}
                     >
@@ -737,7 +746,7 @@ const ProjectsPage = () => {
                         </span>
                       </div>
 
-                      <div className="actsix-interactive-row mt-3 border-border/60 bg-background/60 p-3">
+                      <div className="actsix-interactive-row mt-2.5 border-border/60 bg-background/60 p-2.5">
                         <p className="label-eyebrow">Next Action</p>
                         <p className="mt-1 line-clamp-2 text-sm font-bold text-foreground">
                           {stats?.nextAction || "No next action set"}
@@ -750,7 +759,7 @@ const ProjectsPage = () => {
                         )}
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="mt-2.5 flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="h-2 overflow-hidden rounded-full bg-muted">
                             <div
@@ -822,7 +831,7 @@ const ProjectsPage = () => {
                           }
                         }}
                       >
-                        <td className="px-4 py-4 min-w-[260px]">
+                        <td className="px-4 py-3 min-w-[260px]">
                           <div className="flex items-center gap-3">
                             <div
                               className={`h-10 w-10 rounded-xl flex items-center justify-center ${projectIconClass(
@@ -841,17 +850,17 @@ const ProjectsPage = () => {
                           </div>
                         </td>
 
-                        <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                           {project.area || "General"}
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`chip ${statusClass(project.status)}`}>
                             {project.status || "In Progress"}
                           </span>
                         </td>
 
-                        <td className="px-4 py-4 min-w-[220px]">
+                        <td className="px-4 py-3 min-w-[220px]">
                           {stats?.nextAction ? (
                             <div>
                               <div className="font-semibold line-clamp-1">{stats.nextAction}</div>
@@ -865,7 +874,7 @@ const ProjectsPage = () => {
                           )}
                         </td>
 
-                        <td className="px-4 py-4 min-w-[150px]">
+                        <td className="px-4 py-3 min-w-[150px]">
                           <div className="flex items-center gap-3">
                             <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
                               <div
@@ -879,7 +888,7 @@ const ProjectsPage = () => {
                           </div>
                         </td>
 
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-3">
                           <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
                             {ownerInitials}
                           </div>

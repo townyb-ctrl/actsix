@@ -70,7 +70,7 @@ const CompactTaskRow = ({
 
   return (
     <div
-      className={`action-row group flex items-start gap-3 px-3.5 py-2.5 ${
+      className={`action-row group flex items-start gap-3 px-3 py-2 ${
         clickable ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40" : ""
       } ${
         isComplete ? "opacity-70" : ""
@@ -117,7 +117,7 @@ const CompactTaskRow = ({
           )}
         </div>
 
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-none">
+        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-none">
           {task.project && (
             <span className="inline-flex max-w-[180px] items-center gap-1 truncate rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 font-semibold text-brand-teal">
               <FolderKanban className="h-3 w-3 shrink-0" />
@@ -162,7 +162,7 @@ const CompactTaskRow = ({
         </div>
 
         {task.notes && (
-          <p className="mt-1.5 line-clamp-1 text-xs text-muted-foreground">
+          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
             {task.notes}
           </p>
         )}
