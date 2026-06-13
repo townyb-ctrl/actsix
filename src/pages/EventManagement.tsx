@@ -23,6 +23,7 @@ import {
   Tent,
   Trash2,
   Users,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
@@ -81,6 +82,7 @@ type EventRegistration = {
   paymentReference?: string;
   paymentUrl?: string;
   externalStatusSyncStatus?: "not_configured" | "queued" | "synced" | "failed";
+  createdAt: string;
   person?: EventPerson | null;
 };
 
@@ -179,6 +181,7 @@ type EventRegistrationColumn = {
   label: string;
   sourceColumn?: string;
   fieldType: "standard" | "event_custom" | "system";
+  origin?: "system" | "sheet_mapping" | "custom_field";
   sortOrder: number;
 };
 
@@ -399,8 +402,9 @@ export default function EventManagement() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | EventStatus>("All");
   const [moduleView, setModuleView] = useState<"overview" | "all" | "templates">("overview");
-  const [workspaceTab, setWorkspaceTab] = useState<"overview" | "portfolios" | "people" | "files" | "communication" | "activity">("overview");
-  const [peopleView, setPeopleView] = useState<"participants" | "team">("participants");
+  const [workspaceTab, setWorkspaceTab] = useState<"overview" | "team" | "registrations" | "communication" | "budget" | "files">("overview");
+  const [teamWorkspaceView, setTeamWorkspaceView] = useState<"team" | "portfolios">("team");
+  const [peopleView, setPeopleView] = useState<"participants" | "readiness" | "team">("participants");
   const [portfolioView, setPortfolioView] = useState("landing");
   const [eventFormStep, setEventFormStep] = useState(0);
   const [eventStartingPoint, setEventStartingPoint] = useState<"template" | "duplicate" | "scratch">("template");
@@ -663,6 +667,7 @@ export default function EventManagement() {
         paymentReference: item.payment_reference || "",
         paymentUrl: item.payment_url || "",
         externalStatusSyncStatus: item.external_status_sync_status || "not_configured",
+        createdAt: item.created_at,
         person: item.people,
       });
       return acc;
@@ -803,6 +808,7 @@ export default function EventManagement() {
         label: item.actsix_field,
         sourceColumn: item.sheet_column,
         fieldType: item.field_type || "event_custom",
+        origin: "sheet_mapping",
         sortOrder: 0,
       })),
       ...(sheetImportsUnavailable ? [] : customFieldResult.data || []).map((item: any) => ({
@@ -811,6 +817,7 @@ export default function EventManagement() {
         label: item.label,
         sourceColumn: item.field_key,
         fieldType: "event_custom",
+        origin: "custom_field",
         sortOrder: Number(item.sort_order || 0),
       })),
     ].reduce<Record<string, EventRegistrationColumn[]>>((acc, item: any) => {
@@ -821,6 +828,7 @@ export default function EventManagement() {
           label: item.label,
           sourceColumn: item.sourceColumn,
           fieldType: item.fieldType,
+          origin: item.origin,
           sortOrder: item.sortOrder,
         });
       }
@@ -1029,6 +1037,14 @@ export default function EventManagement() {
         { label: "Not yet confirmed", count: selectedEvent.registrations.filter((registration) => registration.status !== "Confirmed").length },
       ]
     : [];
+  const selectedEventDaysRemaining = selectedEvent
+    ? Math.ceil((new Date(`${selectedEvent.startsAt}T12:00:00`).getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000)
+    : 0;
+  const selectedEventNextMilestone = selectedEvent?.checklist.find((item) => !item.done)?.label || "No open milestone";
+  const selectedEventCompletedMilestones = selectedEvent?.checklist.filter((item) => item.done).length || 0;
+  const selectedEventIncompleteRegistrations = selectedEvent
+    ? Math.max(0, selectedEvent.registrations.length - selectedEventParticipantReady)
+    : 0;
   const eventTemplates: Array<{ title: string; type: EventType; detail: string }> = [
     { title: "Mission Trip", type: "Mission Trip", detail: "Travel, documents, support raising, safety, team roles" },
     { title: "Youth Camp", type: "Camp", detail: "Registration, forms, transport, rooms, meals, programme" },
@@ -1336,7 +1352,7 @@ export default function EventManagement() {
     await loadEvents();
   };
 
-  const updateRegistration = async (registrationId: string, updates: Record<string, string | number | boolean>) => {
+  const updateRegistration = async (registrationId: string, updates: Record<string, any>) => {
     if (!workspace?.id || !canManageEvents) return;
     const { error } = await (supabase as any)
       .from("event_registrations")
@@ -1352,7 +1368,7 @@ export default function EventManagement() {
     await loadEvents();
   };
 
-  const updateRegistrationWithStatusSync = async (registration: EventRegistration, updates: Record<string, string | number | boolean>) => {
+  const updateRegistrationWithStatusSync = async (registration: EventRegistration, updates: Record<string, any>) => {
     if (!workspace?.id || !selectedEvent || !canManageEvents) return;
     await updateRegistration(registration.id, updates);
     const sheetConnection = selectedEvent.sheetConnections[0];
@@ -1819,6 +1835,45 @@ export default function EventManagement() {
     toast.success("Custom registration column added.");
   };
 
+  const updateCustomRegistrationColumn = async (columnId: string, updates: { label?: string; sort_order?: number }) => {
+    if (!workspace?.id || !selectedEvent || !canManageEvents || !columnId) return;
+    const { error } = await (supabase as any)
+      .from("event_registration_custom_fields")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", columnId)
+      .eq("workspace_id", workspace.id)
+      .eq("event_id", selectedEvent.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await loadEvents();
+    toast.success("Registration column updated.");
+  };
+
+  const deleteCustomRegistrationColumn = async (columnId: string) => {
+    if (!workspace?.id || !selectedEvent || !canManageEvents || !columnId) return;
+    const confirmed = window.confirm("Delete this custom registration column? Existing values stored on imported/manual registrations will remain in the raw registration data.");
+    if (!confirmed) return;
+
+    const { error } = await (supabase as any)
+      .from("event_registration_custom_fields")
+      .delete()
+      .eq("id", columnId)
+      .eq("workspace_id", workspace.id)
+      .eq("event_id", selectedEvent.id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await loadEvents();
+    toast.success("Custom registration column deleted.");
+  };
+
   const addLogisticsItem = async () => {
     if (!workspace?.id || !selectedEvent || !logisticsLabel.trim()) return;
     if (!canManageEvents) {
@@ -1937,6 +1992,98 @@ export default function EventManagement() {
     }
 
     await loadEvents();
+  };
+
+  const createPortfolio = async (portfolioLabel: string) => {
+    if (!workspace?.id || !selectedEvent || !canManageEvents || !portfolioLabel.trim()) return;
+    const label = portfolioLabel.trim();
+    const duplicate = selectedEvent.logistics.some((item) => item.label === label || item.label.startsWith(`${label}:`));
+
+    if (duplicate) {
+      toast.error("That portfolio already exists.");
+      return;
+    }
+
+    const { error } = await (supabase as any).from("event_logistics_items").insert({
+      workspace_id: workspace.id,
+      event_id: selectedEvent.id,
+      label,
+      sort_order: selectedEvent.logistics.length,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setPortfolioView(`portfolio:${label}`);
+    await loadEvents();
+    toast.success("Portfolio added.");
+  };
+
+  const renamePortfolio = async (currentLabel: string, nextLabel: string) => {
+    if (!workspace?.id || !selectedEvent || !canManageEvents || !currentLabel || !nextLabel.trim()) return;
+    const label = nextLabel.trim();
+    if (label === currentLabel) return;
+
+    const duplicate = selectedEvent.logistics.some(
+      (item) =>
+        (item.label === label || item.label.startsWith(`${label}:`)) &&
+        item.label !== currentLabel &&
+        !item.label.startsWith(`${currentLabel}:`)
+    );
+
+    if (duplicate) {
+      toast.error("That portfolio name is already in use.");
+      return;
+    }
+
+    const matchingItems = selectedEvent.logistics.filter((item) => item.label === currentLabel || item.label.startsWith(`${currentLabel}:`));
+    const updates = matchingItems.map((item) =>
+      (supabase as any)
+        .from("event_logistics_items")
+        .update({
+          label: item.label === currentLabel ? label : item.label.replace(`${currentLabel}:`, `${label}:`),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", item.id)
+        .eq("workspace_id", workspace.id)
+    );
+    const results = await Promise.all(updates);
+    const error = results.find((result) => result.error)?.error;
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setPortfolioView(`portfolio:${label}`);
+    await loadEvents();
+    toast.success("Portfolio renamed.");
+  };
+
+  const deletePortfolio = async (portfolioLabel: string) => {
+    if (!workspace?.id || !selectedEvent || !canManageEvents || !portfolioLabel) return;
+    const itemIds = selectedEvent.logistics
+      .filter((item) => item.label === portfolioLabel || item.label.startsWith(`${portfolioLabel}:`))
+      .map((item) => item.id);
+
+    if (itemIds.length === 0) return;
+
+    const { error } = await (supabase as any)
+      .from("event_logistics_items")
+      .delete()
+      .eq("workspace_id", workspace.id)
+      .in("id", itemIds);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setPortfolioView("landing");
+    await loadEvents();
+    toast.success("Portfolio removed.");
   };
 
   const addExpense = async () => {
@@ -2273,23 +2420,17 @@ export default function EventManagement() {
                     </Button>
                   </div>
                 </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <HealthTile label="Planning progress" value={`${readiness}%`} progress={readiness} />
-                  <HealthTile label="Budget used" value={`${money(selectedEventSpent)} / ${money(selectedEvent.budget)}`} progress={selectedEventSpentPercent} />
-                  <HealthTile label="Participants ready" value={`${selectedEventParticipantReady} / ${selectedEvent.registrations.length}`} progress={selectedEventParticipantReadiness} />
-                  <HealthTile label="Open portfolios" value={selectedEventOpenLogistics} progress={selectedEventLogisticsProgress} invert />
-                </div>
               </div>
 
               <div className="overflow-x-auto border-b border-border/70 px-3">
                 <div className="flex min-w-max gap-1 py-2">
                   {[
                     ["overview", LayoutDashboard, "Overview"],
-                    ["portfolios", FolderOpen, "Portfolios"],
-                    ["people", Users, "People"],
+                    ["team", Users, "Team & Portfolios"],
+                    ["registrations", ClipboardCheck, "Registrations"],
+                    ["communication", MessageSquare, "Communication Plan"],
+                    ["budget", DollarSign, "Budget & Finance"],
                     ["files", FileText, "Files"],
-                    ["communication", MessageSquare, "Communication"],
-                    ["activity", Clock3, "Activity"],
                   ].map(([id, Icon, label]) => (
                     <button
                       key={id as string}
@@ -2309,45 +2450,108 @@ export default function EventManagement() {
 
               <div className="p-4">
                 {workspaceTab === "overview" && (
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+                  <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
                     <div className="space-y-4">
-                      <WorkspacePanel title="Attention Required" icon={AlertTriangle}>
-                        {selectedEventAttention.length === 0 ? (
-                          <div className="actsix-empty-state min-h-24 text-sm">No urgent exceptions are visible for this event.</div>
-                        ) : (
-                          <div className="grid gap-2">
-                            {selectedEventAttention.map((item) => (
-                              <div key={item} className="rounded-xl border border-brand-amber/20 bg-brand-amber/10 px-3 py-2 text-sm font-bold text-brand-amber">
-                                {item}
-                              </div>
-                            ))}
+                      <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Next Up</p>
+                            <h3 className="mt-2 text-xl font-extrabold">{selectedEventNextMilestone}</h3>
+                            <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                              {selectedEventDaysRemaining >= 0 ? `${selectedEventDaysRemaining} days until event` : "Event date has passed"}
+                            </p>
                           </div>
-                        )}
-                      </WorkspacePanel>
-                      <WorkspacePanel title="Planning Areas" icon={ShieldCheck}>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {planningAreaCards.map((area) => (
-                            <ProgressCard key={area.label} label={area.label} detail={area.detail} value={area.value} />
-                          ))}
+                          <Button type="button" variant="outline" className="h-8 rounded-xl px-3 text-xs" onClick={() => setWorkspaceTab("communication")}>
+                            Plan
+                          </Button>
                         </div>
-                      </WorkspacePanel>
-                    </div>
-                    <WorkspacePanel title="Event Health" icon={ClipboardCheck}>
-                      <div className="space-y-3">
-                        <HealthRow label="Registration" value={`${selectedEvent.registrations.length}/${selectedEvent.capacity || 0}`} />
-                        <HealthRow label="Confirmed" value={`${selectedEventConfirmedCount}`} />
-                        <HealthRow label="Outstanding balance" value={money(selectedEventOutstandingBalance)} />
-                        <HealthRow label="Budget remaining" value={money(selectedEventBudgetRemaining)} />
                       </div>
-                    </WorkspacePanel>
+
+                      <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+                        <div className="grid gap-2">
+                          <QuietStatusRow label="Registrations" value={`${selectedEvent.registrations.length}/${selectedEvent.capacity || 0}`} detail={`${selectedEventParticipantReady} ready`} onClick={() => setWorkspaceTab("registrations")} />
+                          <QuietStatusRow label="Budget" value={money(selectedEventBudgetRemaining)} detail={`${money(selectedEventSpent)} spent`} onClick={() => setWorkspaceTab("budget")} />
+                          <QuietStatusRow label="Portfolios" value={`${selectedEventOpenLogistics} open`} detail={`${selectedEventLogisticsProgress}% complete`} onClick={() => { setWorkspaceTab("team"); setTeamWorkspaceView("portfolios"); }} />
+                          <QuietStatusRow label="Team" value={`${selectedEvent.collaborators.length || selectedEvent.team.length || 0}`} detail={selectedEvent.owner || "Unassigned lead"} onClick={() => { setWorkspaceTab("team"); setTeamWorkspaceView("team"); }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-extrabold">Recent Activity</h4>
+                          <Button type="button" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setWorkspaceTab("registrations")}>
+                            View
+                          </Button>
+                        </div>
+                        <ActivitySurface event={selectedEvent} compact />
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {workspaceTab === "team" && (
+                  <div className="space-y-4">
+                    <SubTabs value={teamWorkspaceView} onChange={(value) => setTeamWorkspaceView(value as typeof teamWorkspaceView)} items={["team", "portfolios"]} />
+                    {teamWorkspaceView === "team" ? (
+                      <WorkspacePanel title="Team" icon={Users}>
+                        <TeamList
+                          event={selectedEvent}
+                          canManageEvents={canManageEvents}
+                          onRemove={removeCollaborator}
+                          onAdd={() => setCollaboratorOpen(true)}
+                        />
+                      </WorkspacePanel>
+                    ) : (
+                      <WorkspacePanel title="Portfolios" icon={FolderOpen}>
+                        <PortfolioSurface
+                          event={selectedEvent}
+                          view={portfolioView}
+                          onViewChange={(value) => setPortfolioView(value as typeof portfolioView)}
+                          canManageEvents={canManageEvents}
+                          label={logisticsLabel}
+                          setLabel={setLogisticsLabel}
+                          assigneeId={logisticsAssigneeId}
+                          setAssigneeId={setLogisticsAssigneeId}
+                          collaboratorPeople={collaboratorPeople}
+                          onAdd={addLogisticsItem}
+                          onUpdate={updateLogisticsItem}
+                          onDelete={deleteLogisticsItem}
+                          onAssignOwner={assignPortfolioOwner}
+                          onAddTeamMember={addPortfolioTeamMember}
+                          onCreatePortfolio={createPortfolio}
+                          onRenamePortfolio={renamePortfolio}
+                          onDeletePortfolio={deletePortfolio}
+                          budgetProps={{
+                            spent: selectedEventSpent,
+                            remaining: selectedEventBudgetRemaining,
+                            expectedRevenue: selectedEventExpectedParticipantRevenue,
+                            expenseTitle,
+                            setExpenseTitle,
+                            expenseCategory,
+                            setExpenseCategory,
+                            expenseAmount,
+                            setExpenseAmount,
+                            expensePaidById,
+                            setExpensePaidById,
+                            expenseNotes,
+                            setExpenseNotes,
+                            onAddExpense: addExpense,
+                            onDeleteExpense: deleteExpense,
+                            onUpdateRegistration: updateRegistration,
+                          }}
+                        />
+                      </WorkspacePanel>
+                    )}
                   </div>
                 )}
 
-                {workspaceTab === "people" && (
+                {workspaceTab === "registrations" && (
                   <div className="space-y-4">
-                    <SubTabs value={peopleView} onChange={(value) => setPeopleView(value as typeof peopleView)} items={["participants", "team"]} />
+                    <SubTabs value={peopleView} onChange={(value) => setPeopleView(value as typeof peopleView)} items={["participants", "readiness"]} />
                     {peopleView === "readiness" ? (
-                      <WorkspacePanel title="Participants Not Ready" icon={AlertTriangle}>
+                      <WorkspacePanel title="Registration Readiness" icon={AlertTriangle}>
                         <div className="grid gap-2 sm:grid-cols-2">
                           {readinessBuckets.map((bucket) => (
                             <div key={bucket.label} className="flex items-center justify-between rounded-xl border border-border/70 bg-background/55 px-3 py-3">
@@ -2357,12 +2561,8 @@ export default function EventManagement() {
                           ))}
                         </div>
                       </WorkspacePanel>
-                    ) : peopleView === "team" ? (
-                      <WorkspacePanel title="Event Team" icon={Users}>
-                        <TeamList event={selectedEvent} canManageEvents={canManageEvents} onRemove={removeCollaborator} onAdd={() => setCollaboratorOpen(true)} />
-                      </WorkspacePanel>
                     ) : (
-                      <WorkspacePanel title="Participants" icon={Users}>
+                      <WorkspacePanel title="Registrations" icon={ClipboardCheck}>
                         <ParticipantTable
                           event={selectedEvent}
                           canManageEvents={canManageEvents}
@@ -2376,6 +2576,8 @@ export default function EventManagement() {
                           onRemoveSheet={removeGoogleSheetConnection}
                           onUpdateSheetSettings={updateGoogleSheetConnectionSettings}
                           onAddCustomColumn={addCustomRegistrationColumn}
+                          onUpdateCustomColumn={updateCustomRegistrationColumn}
+                          onDeleteCustomColumn={deleteCustomRegistrationColumn}
                           onCreateHostedForm={createHostedRegistrationForm}
                           onGenerateGoogleFormTemplate={generateGoogleFormTemplate}
                           onEnablePayments={enableManualPaymentConfig}
@@ -2386,56 +2588,50 @@ export default function EventManagement() {
                   </div>
                 )}
 
-                {workspaceTab === "portfolios" && (
-                  <div className="space-y-4">
-                    <WorkspacePanel title="Portfolios" icon={FolderOpen}>
-                      <PortfolioSurface
-                        event={selectedEvent}
-                        view={portfolioView}
-                        onViewChange={(value) => setPortfolioView(value as typeof portfolioView)}
-                        canManageEvents={canManageEvents}
-                        label={logisticsLabel}
-                        setLabel={setLogisticsLabel}
-                        assigneeId={logisticsAssigneeId}
-                        setAssigneeId={setLogisticsAssigneeId}
-                        collaboratorPeople={collaboratorPeople}
-                        onAdd={addLogisticsItem}
-                        onUpdate={updateLogisticsItem}
-                        onDelete={deleteLogisticsItem}
-                        onAssignOwner={assignPortfolioOwner}
-                        onAddTeamMember={addPortfolioTeamMember}
-                        budgetProps={{
-                          spent: selectedEventSpent,
-                          remaining: selectedEventBudgetRemaining,
-                          expectedRevenue: selectedEventExpectedParticipantRevenue,
-                          expenseTitle,
-                          setExpenseTitle,
-                          expenseCategory,
-                          setExpenseCategory,
-                          expenseAmount,
-                          setExpenseAmount,
-                          expensePaidById,
-                          setExpensePaidById,
-                          expenseNotes,
-                          setExpenseNotes,
-                          onAddExpense: addExpense,
-                          onDeleteExpense: deleteExpense,
-                        }}
-                      />
-                    </WorkspacePanel>
-                  </div>
+                {workspaceTab === "budget" && (
+                  <WorkspacePanel title="Budget & Finance" icon={DollarSign}>
+                    <BudgetSurface
+                      event={selectedEvent}
+                      spent={selectedEventSpent}
+                      remaining={selectedEventBudgetRemaining}
+                      expectedRevenue={selectedEventExpectedParticipantRevenue}
+                      canManageEvents={canManageEvents}
+                      expenseTitle={expenseTitle}
+                      setExpenseTitle={setExpenseTitle}
+                      expenseCategory={expenseCategory}
+                      setExpenseCategory={setExpenseCategory}
+                      expenseAmount={expenseAmount}
+                      setExpenseAmount={setExpenseAmount}
+                      expensePaidById={expensePaidById}
+                      setExpensePaidById={setExpensePaidById}
+                      expenseNotes={expenseNotes}
+                      setExpenseNotes={setExpenseNotes}
+                      collaboratorPeople={collaboratorPeople}
+                      onAddExpense={addExpense}
+                      onDeleteExpense={deleteExpense}
+                      onUpdateRegistration={updateRegistration}
+                    />
+                  </WorkspacePanel>
+                )}
+
+                {workspaceTab === "communication" && (
+                  <WorkspacePanel title="Communication Plan" icon={Send}>
+                    <CommunicationSurface event={selectedEvent} collaboratorPeople={collaboratorPeople} canManageEvents={canManageEvents} />
+                  </WorkspacePanel>
                 )}
 
                 {workspaceTab === "files" && (
-                  <PlaceholderPanel icon={FileText} title="Files" lines={["Registration Forms", "Consent Documents", "Venue", "Transport", "Budget and Invoices", "Programme", "Safety", "Reports"]} />
-                )}
-                {workspaceTab === "communication" && (
-                  <WorkspacePanel title="Communication" icon={Send}>
-                    <CommunicationSurface event={selectedEvent} collaboratorPeople={collaboratorPeople} />
-                  </WorkspacePanel>
-                )}
-                {workspaceTab === "activity" && (
-                  <PlaceholderPanel icon={Clock3} title="Activity" lines={["Planning updates", "Participant changes", "Budget edits", "Portfolio movement"]} />
+                  <WorkspacePanel title="Files" icon={FileText}>
+                    <FilesSurface
+                      event={selectedEvent}
+                      canManageEvents={canManageEvents}
+                      onCreateHostedForm={createHostedRegistrationForm}
+                      onGenerateGoogleFormTemplate={generateGoogleFormTemplate}
+                      onConnectSheet={() => setSheetConnectOpen(true)}
+                      onSyncSheet={syncGoogleSheetConnection}
+                      syncingSheetId={syncingSheetId}
+                    />
+                    </WorkspacePanel>
                 )}
               </div>
             </Card>
@@ -3428,6 +3624,33 @@ function HealthTile({
   );
 }
 
+function QuietStatusRow({
+  title,
+  label,
+  value,
+  detail,
+  onClick,
+}: {
+  title?: string;
+  label: string;
+  value: string | number;
+  detail: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="grid gap-1 rounded-lg px-2 py-2 text-left transition hover:bg-card/70 sm:grid-cols-[8rem_minmax(0,1fr)_auto] sm:items-center"
+    >
+      <span className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
+      <span className="truncate text-sm font-extrabold text-foreground">{value}</span>
+      <span className="text-xs font-semibold text-muted-foreground sm:text-right">{detail}</span>
+    </button>
+  );
+}
+
 function WorkspacePanel({
   title,
   icon: Icon,
@@ -3539,13 +3762,16 @@ function SubTabs({
 }
 
 const defaultRegistrationColumns: EventRegistrationColumn[] = [
-  { id: "participant", label: "Participant", fieldType: "standard", sortOrder: 0 },
-  { id: "registration", label: "Registration", fieldType: "standard", sortOrder: 1 },
-  { id: "payment", label: "Payment", fieldType: "standard", sortOrder: 2 },
-  { id: "forms", label: "Forms", fieldType: "standard", sortOrder: 3 },
-  { id: "readiness", label: "Readiness", fieldType: "system", sortOrder: 4 },
-  { id: "source", label: "Source", fieldType: "system", sortOrder: 5 },
-  { id: "transport", label: "Transport", fieldType: "standard", sortOrder: 6 },
+  { id: "participant", label: "Participant", fieldType: "system", origin: "system", sortOrder: 0 },
+  { id: "contact", label: "Email / mobile", fieldType: "system", origin: "system", sortOrder: 1 },
+  { id: "registration", label: "Registration status", fieldType: "system", origin: "system", sortOrder: 2 },
+  { id: "source", label: "Source", fieldType: "system", origin: "system", sortOrder: 3 },
+  { id: "linked-person", label: "Linked ACTSIX person", fieldType: "system", origin: "system", sortOrder: 4 },
+  { id: "created", label: "Created date", fieldType: "system", origin: "system", sortOrder: 5 },
+  { id: "payment", label: "Payment", fieldType: "standard", origin: "system", sortOrder: 6 },
+  { id: "forms", label: "Forms", fieldType: "standard", origin: "system", sortOrder: 7 },
+  { id: "readiness", label: "Readiness", fieldType: "system", origin: "system", sortOrder: 8 },
+  { id: "transport", label: "Transport", fieldType: "standard", origin: "system", sortOrder: 9 },
 ];
 
 const registrationColumnValue = (
@@ -3557,9 +3783,12 @@ const registrationColumnValue = (
   if (label.includes("first name") || label === "name" || label.includes("full name") || label.includes("participant")) {
     return registration.person?.display_name || registration.importedDisplayName || "";
   }
+  if (label.includes("email") || label.includes("mobile") || label.includes("contact")) {
+    return registration.person?.email || registration.importedEmail || registration.person?.phone_number || registration.importedMobile || "";
+  }
   if (label.includes("surname")) return registration.importedDisplayName?.split(" ").slice(1).join(" ") || "";
-  if (label.includes("email")) return registration.person?.email || registration.importedEmail || "";
-  if (label.includes("mobile") || label.includes("phone")) return registration.person?.phone_number || registration.importedMobile || "";
+  if (label.includes("linked")) return registration.person ? "Linked" : "Unlinked";
+  if (label.includes("created")) return registration.createdAt ? formatShortDate(new Date(registration.createdAt)) : "";
   if (label.includes("status") || label.includes("registration")) return registration.status;
   if (label.includes("payment")) return registration.amountDue > registration.amountPaid ? `${money(registration.amountDue - registration.amountPaid)} due` : "Paid";
   if (label.includes("forms")) {
@@ -3598,6 +3827,8 @@ function ParticipantTable({
   onRemoveSheet,
   onUpdateSheetSettings,
   onAddCustomColumn,
+  onUpdateCustomColumn,
+  onDeleteCustomColumn,
   onCreateHostedForm,
   onGenerateGoogleFormTemplate,
   onEnablePayments,
@@ -3605,8 +3836,8 @@ function ParticipantTable({
 }: {
   event: EventItem;
   canManageEvents: boolean;
-  onUpdate: (registrationId: string, updates: Record<string, string | number | boolean>) => void;
-  onUpdateWithStatusSync: (registration: EventRegistration, updates: Record<string, string | number | boolean>) => void;
+  onUpdate: (registrationId: string, updates: Record<string, any>) => void;
+  onUpdateWithStatusSync: (registration: EventRegistration, updates: Record<string, any>) => void;
   onRemove: (registrationId: string) => void;
   onAdd: () => void;
   onConnectSheet: () => void;
@@ -3615,18 +3846,26 @@ function ParticipantTable({
   onRemoveSheet: (connectionId?: string) => void;
   onUpdateSheetSettings: (connectionId: string, updates: Record<string, any>) => void;
   onAddCustomColumn: (label: string) => void;
+  onUpdateCustomColumn: (columnId: string, updates: { label?: string; sort_order?: number }) => void;
+  onDeleteCustomColumn: (columnId: string) => void;
   onCreateHostedForm: () => void;
   onGenerateGoogleFormTemplate: () => void;
   onEnablePayments: () => void;
   syncingSheetId: string;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [registrationView, setRegistrationView] = useState("All Registrations");
   const [registrationGroup, setRegistrationGroup] = useState("None");
   const [filterColumnId, setFilterColumnId] = useState("");
   const [filterValue, setFilterValue] = useState("");
   const [sortColumnId, setSortColumnId] = useState("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [customColumnTitle, setCustomColumnTitle] = useState("");
+  const [columnToolsOpen, setColumnToolsOpen] = useState(false);
+  const [editingColumnId, setEditingColumnId] = useState("");
+  const [editingColumnLabel, setEditingColumnLabel] = useState("");
+  const [hiddenColumnIds, setHiddenColumnIds] = useState<string[]>([]);
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const readyCount = event.registrations.filter(
     (registration) =>
       registration.status !== "Cancelled" &&
@@ -3641,8 +3880,27 @@ function ParticipantTable({
   const importedCount = event.registrations.filter((registration) => registration.source === "google_sheets").length;
   const readyPercent = percent(readyCount, event.registrations.length);
   const sheetConnection = event.sheetConnections[0];
-  const hasSheetColumns = event.registrationColumns.length > 0;
-  const displayColumns = hasSheetColumns ? event.registrationColumns : defaultRegistrationColumns;
+  const allColumns = useMemo(() => {
+    const customColumns = event.registrationColumns
+      .map((column) => ({ ...column, origin: column.origin || "custom_field" as const }))
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label));
+    return [...defaultRegistrationColumns, ...customColumns].filter(
+      (column, index, columns) => columns.findIndex((candidate) => candidate.label.toLowerCase() === column.label.toLowerCase()) === index
+    );
+  }, [event.registrationColumns]);
+  useEffect(() => {
+    setColumnOrder((current) => {
+      const nextIds = allColumns.map((column) => column.id);
+      const kept = current.filter((id) => nextIds.includes(id));
+      const added = nextIds.filter((id) => !kept.includes(id));
+      return [...kept, ...added];
+    });
+    setHiddenColumnIds((current) => current.filter((id) => allColumns.some((column) => column.id === id && column.origin !== "system")));
+  }, [allColumns]);
+  const orderedColumns = (columnOrder.length ? columnOrder : allColumns.map((column) => column.id))
+    .map((id) => allColumns.find((column) => column.id === id))
+    .filter(Boolean) as EventRegistrationColumn[];
+  const displayColumns = orderedColumns.filter((column) => column.origin === "system" || !hiddenColumnIds.includes(column.id));
   const latestRuns = sheetConnection
     ? event.importRuns.filter((run) => run.connectionId === sheetConnection.id).slice(0, 5)
     : event.importRuns.slice(0, 5);
@@ -3666,11 +3924,34 @@ function ParticipantTable({
     registration.amountDue <= registration.amountPaid &&
     registration.medicalFormReceived &&
     registration.consentFormReceived;
-  const selectedFilterColumn = displayColumns.find((column) => column.id === filterColumnId);
+  const selectedFilterColumn = allColumns.find((column) => column.id === filterColumnId);
+  const viewDefinitions = [
+    { label: "All Registrations", group: "None" },
+    { label: "Readiness", group: "Readiness" },
+    { label: "Payments", group: "Payment" },
+    { label: "Medical and Dietary", group: "Readiness" },
+    { label: "Transport", group: "None" },
+    { label: "Custom View", group: registrationGroup },
+  ];
+  const activeView = viewDefinitions.find((view) => view.label === registrationView) || viewDefinitions[0];
+  const viewColumns =
+    registrationView === "Payments"
+      ? displayColumns.filter((column) => ["participant", "contact", "registration", "payment", "source"].includes(column.id) || column.label.toLowerCase().includes("payment"))
+      : registrationView === "Medical and Dietary"
+        ? displayColumns.filter((column) => ["participant", "contact", "forms", "readiness"].includes(column.id) || /medical|diet|allergy|consent|emergency/i.test(column.label))
+        : registrationView === "Transport"
+          ? displayColumns.filter((column) => ["participant", "contact", "registration", "transport", "source"].includes(column.id) || /transport|travel|pickup/i.test(column.label))
+          : displayColumns;
+  const matchesViewFilter = (registration: EventRegistration) => {
+    if (registrationView === "Payments") return registration.amountDue > 0 || registration.paymentStatus !== "not_required";
+    if (registrationView === "Medical and Dietary") return !registration.medicalFormReceived || !registration.consentFormReceived || Boolean(registration.emergencyContact);
+    if (registrationView === "Transport") return registration.transportNeeded;
+    return true;
+  };
   const matchesContentFilter = (registration: EventRegistration) => {
     const term = filterValue.trim().toLowerCase();
     if (!term) return true;
-    const columnsToSearch = selectedFilterColumn ? [selectedFilterColumn] : displayColumns;
+    const columnsToSearch = selectedFilterColumn ? [selectedFilterColumn] : viewColumns;
     return columnsToSearch.some((column) =>
       registrationColumnValue(registration, column, sourceLabel).toString().toLowerCase().includes(term)
     );
@@ -3683,10 +3964,10 @@ function ParticipantTable({
     setSortColumnId(columnId);
     setSortDirection("asc");
   };
-  const filteredRegistrations = event.registrations.filter(matchesContentFilter);
+  const filteredRegistrations = event.registrations.filter((registration) => matchesViewFilter(registration) && matchesContentFilter(registration));
   const sortedRegistrations = sortColumnId
     ? [...filteredRegistrations].sort((firstRegistration, secondRegistration) => {
-        const column = displayColumns.find((item) => item.id === sortColumnId);
+        const column = viewColumns.find((item) => item.id === sortColumnId) || allColumns.find((item) => item.id === sortColumnId);
         if (!column) return 0;
         const first = registrationColumnValue(firstRegistration, column, sourceLabel).toString();
         const second = registrationColumnValue(secondRegistration, column, sourceLabel).toString();
@@ -3697,13 +3978,13 @@ function ParticipantTable({
   const groupedRegistrations = sortedRegistrations.reduce<Record<string, EventRegistration[]>>((acc, registration) => {
     const balance = Math.max(0, registration.amountDue - registration.amountPaid);
     const key =
-      registrationGroup === "Readiness"
+      activeView.group === "Readiness"
         ? isReady(registration) ? "Ready" : "Incomplete"
-        : registrationGroup === "Source"
+        : activeView.group === "Source"
           ? sourceLabel(registration)
-          : registrationGroup === "Payment"
+          : activeView.group === "Payment"
             ? balance > 0 ? "Payment outstanding" : "Paid"
-            : registrationGroup === "Status"
+            : activeView.group === "Status"
               ? registration.status
               : "All registrations";
     acc[key] = [...(acc[key] || []), registration];
@@ -3718,139 +3999,345 @@ function ParticipantTable({
     updateConnection({ [column]: { ...current, [key]: !current[key] } });
   };
   const sourceKindLabel = sheetConnection?.sourceKind === "google_form" ? "Google Form responses" : sheetConnection?.sourceKind === "google_sheet" ? "Google Sheet" : "Not detected";
+  const showAdvancedRegistrationTools = false;
+  const systemColumnIds = new Set(defaultRegistrationColumns.map((column) => column.id));
+  const exportCurrentView = () => {
+    const escapeCell = (value: string | number) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = [
+      viewColumns.map((column) => escapeCell(column.label)).join(","),
+      ...sortedRegistrations.map((registration) =>
+        viewColumns.map((column) => escapeCell(registrationColumnValue(registration, column, sourceLabel))).join(",")
+      ),
+    ];
+    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${event.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "event"}-${registrationView.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const moveColumn = (columnId: string, direction: -1 | 1) => {
+    setColumnOrder((current) => {
+      const ids = current.length ? current : allColumns.map((column) => column.id);
+      const index = ids.indexOf(columnId);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= ids.length) return ids;
+      const next = [...ids];
+      const [item] = next.splice(index, 1);
+      next.splice(nextIndex, 0, item);
+      const column = allColumns.find((candidate) => candidate.id === columnId);
+      if (column?.origin === "custom_field") onUpdateCustomColumn(column.id, { sort_order: nextIndex });
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <section className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-brand-teal">Registration intake</p>
-            <h3 className="mt-1 text-lg font-extrabold tracking-tight">Participants</h3>
-            <p className="mt-1 max-w-3xl text-sm font-medium leading-6 text-muted-foreground">
-              Review registrations, sheet sync health, readiness gaps, and event-specific registration columns in one place.
+            <h3 className="text-base font-extrabold tracking-tight">Registration workspace</h3>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">
+              {event.registrations.length} total · {readyCount} ready · {reviewCount} need review
             </p>
           </div>
-          <div className="relative min-w-[16rem]">
+          <div className="flex flex-wrap items-center gap-2">
+            {sheetConnection && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 rounded-full px-3 text-xs"
+                onClick={() => onSyncSheet(sheetConnection.id)}
+                disabled={!canManageEvents || syncingSheetId === sheetConnection.id}
+              >
+                {syncingSheetId === sheetConnection.id ? "Syncing..." : "Sync Sheet"}
+              </Button>
+            )}
+            {!sheetConnection && (
+              <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onConnectSheet} disabled={!canManageEvents}>
+                Connect Sheet
+              </Button>
+            )}
             <Button
               type="button"
-              className="actsix-btn-primary h-10 w-full rounded-xl"
+              variant="outline"
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => {
+                if (hostedFormUrl) {
+                  navigator.clipboard?.writeText(hostedFormUrl);
+                  toast.success("Hosted form link copied.");
+                  return;
+                }
+                onCreateHostedForm();
+              }}
+              disabled={!canManageEvents}
+            >
+              {hostedForm ? "Form Live" : "Publish Form"}
+            </Button>
+            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onEnablePayments} disabled={!canManageEvents}>
+              Payments
+            </Button>
+            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onGenerateGoogleFormTemplate} disabled={!canManageEvents}>
+              Google Form
+            </Button>
+            <div className="relative">
+            <Button
+              type="button"
+              className="actsix-btn-primary h-8 rounded-full px-3 text-xs"
               onClick={() => setActionMenuOpen((open) => !open)}
               disabled={!canManageEvents}
             >
               <Plus className="h-3.5 w-3.5" />
-              Add Registration
+              Add
             </Button>
             {actionMenuOpen && (
-              <div className="absolute right-0 z-10 mt-2 w-full rounded-xl border border-border/70 bg-card p-2 shadow-lg">
+              <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-border/70 bg-card p-2 shadow-lg">
                 <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setActionMenuOpen(false); onAdd(); }}>
                   Add manually
-                </button>
-                <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setActionMenuOpen(false); toast.info("CSV import is queued behind the Google Sheet mapping flow."); }}>
-                  Import CSV
                 </button>
                 <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setActionMenuOpen(false); onConnectSheet(); }}>
                   Connect Google Sheet
                 </button>
-                <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold text-muted-foreground" disabled>
-                  Create ACTSIX registration form later
+                <button
+                  type="button"
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70"
+                  onClick={() => {
+                    setActionMenuOpen(false);
+                    if (hostedFormUrl) {
+                      navigator.clipboard?.writeText(hostedFormUrl);
+                      toast.success("Hosted form link copied.");
+                      return;
+                    }
+                    onCreateHostedForm();
+                  }}
+                >
+                  {hostedForm ? "Copy hosted form link" : "Publish ACTSIX form"}
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_17rem]">
-          <div className="overflow-hidden rounded-2xl border border-brand-teal/15 bg-gradient-to-br from-brand-teal/8 via-background to-card">
-            <div className="flex flex-wrap items-start justify-between gap-4 p-4">
-              <div className="flex min-w-0 gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
-                  <FileText className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="truncate text-base font-extrabold">{sheetConnection?.spreadsheetName || "No sheet connected"}</h4>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-extrabold",
-                        sheetConnection
-                          ? "border-brand-sage/25 bg-brand-sage/10 text-brand-sage"
-                          : "border-brand-amber/25 bg-brand-amber/10 text-brand-amber"
-                      )}
-                    >
-                      {sheetConnection ? "Connected" : "Not connected"}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">
-                    {sheetConnection
-                      ? `${sheetConnection.worksheetName} is connected and ready for manual sync when new responses arrive.`
-                      : "Connect an existing Google Form response Sheet to bring registrations into ACTSIX with your chosen columns."}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {sheetConnection && (
-                  <>
-                    <Button
-                    type="button"
-                    variant="outline"
-                    className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-destructive"
-                    onClick={() => onResetSheetData(sheetConnection.id)}
-                    disabled={!canManageEvents || syncingSheetId === sheetConnection.id}
-                  >
-                    Delete Imported Data
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-destructive"
-                    onClick={() => onRemoveSheet(sheetConnection.id)}
-                    disabled={!canManageEvents || syncingSheetId === sheetConnection.id}
-                  >
-                    Remove Spreadsheet
-                  </Button>
-                  </>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-3">
+          <div className="flex flex-wrap gap-2">
+            {viewDefinitions.map((view) => (
+              <button
+                key={view.label}
+                type="button"
+                onClick={() => {
+                  setRegistrationView(view.label);
+                  if (view.label !== "Custom View") setRegistrationGroup(view.group);
+                  setFilterColumnId("");
+                  setFilterValue("");
+                }}
+                className={cn(
+                  "h-8 rounded-full border px-3 text-xs font-extrabold transition",
+                  registrationView === view.label
+                    ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                    : "border-border/70 bg-background/70 text-muted-foreground hover:border-brand-teal/25 hover:text-brand-teal"
                 )}
-                <Button
-                  type="button"
-                  variant={sheetConnection ? "outline" : "default"}
-                  className={cn("h-8 rounded-full px-3 text-xs", !sheetConnection && "actsix-btn-primary")}
-                  onClick={() => sheetConnection ? onSyncSheet(sheetConnection.id) : onConnectSheet()}
-                  disabled={!canManageEvents || syncingSheetId === sheetConnection?.id}
-                >
-                  {sheetConnection ? (syncingSheetId === sheetConnection.id ? "Syncing..." : "Sync Now") : "Connect Sheet"}
-                </Button>
-              </div>
-            </div>
-            <div className="grid gap-2 border-t border-brand-teal/10 bg-card/70 p-3 sm:grid-cols-4">
-              <HealthRow label="Sync mode" value={sheetConnection?.syncMode === "one_time" ? "One-time" : "Manual"} />
-              <HealthRow label="Last synced" value={sheetConnection?.lastSyncedAt ? formatShortDate(new Date(sheetConnection.lastSyncedAt)) : "Not synced"} />
-              <HealthRow label="Rows imported" value={sheetConnection?.rowsImported || importedCount} />
-              <HealthRow label="Needs review" value={sheetConnection?.rowsRequiringReview || reviewCount} />
-            </div>
+              >
+                {view.label}
+              </button>
+            ))}
           </div>
-
-          <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Readiness</p>
-                <p className="mt-1 text-3xl font-extrabold tracking-tight">{readyPercent}%</p>
-              </div>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-sage/10 text-brand-sage">
-                <CheckCircle2 className="h-5 w-5" />
-              </span>
-            </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-brand-sage" style={{ width: `${readyPercent}%` }} />
-            </div>
-            <p className="mt-3 text-xs font-semibold leading-5 text-muted-foreground">
-              {readyCount} of {event.registrations.length} registrations are confirmed, paid, and have forms received.
-            </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={() => setColumnToolsOpen((open) => !open)}>
+              <ListChecks className="h-3.5 w-3.5" />
+              Columns
+            </Button>
+            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={exportCurrentView} disabled={sortedRegistrations.length === 0}>
+              Export CSV
+            </Button>
           </div>
         </div>
       </section>
 
-      {sheetConnection && (
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="rounded-xl border border-border/70 bg-background/45 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-extrabold">{sheetConnection?.spreadsheetName || "No spreadsheet connected"}</p>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                {sheetConnection
+                  ? `${sheetConnection.worksheetName} · ${sheetConnection.syncMode === "one_time" ? "One-time" : sheetConnection.syncMode} · last synced ${sheetConnection.lastSyncedAt ? formatShortDate(new Date(sheetConnection.lastSyncedAt)) : "never"}`
+                  : "Use a hosted form, Google Sheet, or manual entry to collect registrations."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sheetConnection && (
+                <>
+                  <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={() => onSyncSheet(sheetConnection.id)} disabled={!canManageEvents || syncingSheetId === sheetConnection.id}>
+                    {syncingSheetId === sheetConnection.id ? "Syncing..." : "Sync Now"}
+                  </Button>
+                  <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onConnectSheet} disabled={!canManageEvents}>
+                    Edit Mapping
+                  </Button>
+                  <Button type="button" variant="ghost" className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-destructive" onClick={() => onRemoveSheet(sheetConnection.id)} disabled={!canManageEvents || syncingSheetId === sheetConnection.id}>
+                    Disconnect
+                  </Button>
+                </>
+              )}
+              {!sheetConnection && (
+                <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onConnectSheet} disabled={!canManageEvents}>
+                  Connect Google Sheet
+                </Button>
+              )}
+            </div>
+          </div>
+          {sheetConnection && (
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <HealthRow label="Rows imported" value={sheetConnection.rowsImported} />
+              <HealthRow label="Needs review" value={sheetConnection.rowsRequiringReview} />
+              <HealthRow label="Sync status" value={sheetConnection.status} />
+            </div>
+          )}
+        </div>
+        <div className="rounded-xl border border-border/70 bg-background/45 p-3">
+          <p className="text-sm font-extrabold">Registration form</p>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground">
+            {hostedForm ? "ACTSIX form is published and ready to share." : "Create an ACTSIX registration form for a shareable link."}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3 h-8 rounded-full px-3 text-xs"
+            onClick={() => {
+              if (hostedFormUrl) {
+                navigator.clipboard?.writeText(hostedFormUrl);
+                toast.success("Hosted form link copied.");
+                return;
+              }
+              onCreateHostedForm();
+            }}
+            disabled={!canManageEvents}
+          >
+            {hostedForm ? "Copy Registration Link" : "Create Form"}
+          </Button>
+        </div>
+      </section>
+
+      {columnToolsOpen && (
+        <section className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h4 className="text-sm font-extrabold">Columns</h4>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                System columns are always visible. Custom ACTSIX columns can be renamed, moved, hidden, or deleted.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                value={customColumnTitle}
+                onChange={(event) => setCustomColumnTitle(event.target.value)}
+                placeholder="Add custom column"
+                className="h-8 w-48 rounded-xl bg-background text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 rounded-full px-3 text-xs"
+                onClick={() => {
+                  onAddCustomColumn(customColumnTitle);
+                  setCustomColumnTitle("");
+                }}
+                disabled={!canManageEvents || !customColumnTitle.trim()}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add
+              </Button>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {orderedColumns.map((column, index) => {
+              const isSystem = systemColumnIds.has(column.id) || column.origin === "system";
+              const hidden = hiddenColumnIds.includes(column.id);
+              const isEditing = editingColumnId === column.id;
+              return (
+                <div key={column.id} className="rounded-xl border border-border/60 bg-background/60 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      {isEditing ? (
+                        <form
+                          className="flex gap-2"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            onUpdateCustomColumn(column.id, { label: editingColumnLabel.trim() || column.label });
+                            setEditingColumnId("");
+                            setEditingColumnLabel("");
+                          }}
+                        >
+                          <Input
+                            value={editingColumnLabel}
+                            onChange={(event) => setEditingColumnLabel(event.target.value)}
+                            className="h-8 rounded-lg bg-card text-xs"
+                            autoFocus
+                          />
+                          <Button type="submit" variant="outline" className="h-8 rounded-lg px-2 text-xs" disabled={!editingColumnLabel.trim()}>
+                            Save
+                          </Button>
+                        </form>
+                      ) : (
+                        <>
+                          <p className="truncate text-sm font-extrabold">{column.label}</p>
+                          <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                            {isSystem ? "System" : column.origin === "sheet_mapping" ? "Sheet mapping" : "Custom"}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    <Badge variant="outline" className={cn("shrink-0 rounded-full text-[10px] font-bold", hidden && "text-muted-foreground")}>
+                      {hidden ? "Hidden" : "Visible"}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <Button type="button" variant="ghost" className="h-7 rounded-full px-2 text-[11px]" onClick={() => moveColumn(column.id, -1)} disabled={index === 0}>
+                      Up
+                    </Button>
+                    <Button type="button" variant="ghost" className="h-7 rounded-full px-2 text-[11px]" onClick={() => moveColumn(column.id, 1)} disabled={index === orderedColumns.length - 1}>
+                      Down
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-7 rounded-full px-2 text-[11px]"
+                      onClick={() =>
+                        setHiddenColumnIds((current) =>
+                          current.includes(column.id) ? current.filter((id) => id !== column.id) : [...current, column.id]
+                        )
+                      }
+                      disabled={isSystem}
+                    >
+                      {hidden ? "Show" : "Hide"}
+                    </Button>
+                    {column.origin === "custom_field" && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-7 rounded-full px-2 text-[11px]"
+                          onClick={() => {
+                            setEditingColumnId(column.id);
+                            setEditingColumnLabel(column.label);
+                          }}
+                        >
+                          Rename
+                        </Button>
+                        <Button type="button" variant="ghost" className="h-7 rounded-full px-2 text-[11px] text-muted-foreground hover:text-destructive" onClick={() => onDeleteCustomColumn(column.id)}>
+                          Delete
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {showAdvancedRegistrationTools && sheetConnection && (
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="rounded-2xl border border-border/70 bg-card/85 p-4 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -4039,6 +4526,7 @@ function ParticipantTable({
         </section>
       )}
 
+      {showAdvancedRegistrationTools && (
       <section className="rounded-2xl border border-border/70 bg-card/85 p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -4100,7 +4588,9 @@ function ParticipantTable({
           </div>
         </div>
       </section>
+      )}
 
+      {showAdvancedRegistrationTools && (
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <RegistrationMetricCard label="Ready" value={readyCount} detail="Confirmed, paid, and forms received" icon={CheckCircle2} tone="sage" />
         <RegistrationMetricCard label="Missing payment" value={missingPayment} detail="Payment still needs attention" icon={DollarSign} tone={missingPayment ? "amber" : "neutral"} />
@@ -4108,14 +4598,18 @@ function ParticipantTable({
         <RegistrationMetricCard label="Missing emergency" value={missingEmergency} detail="Emergency contact absent" icon={AlertTriangle} tone={missingEmergency ? "amber" : "neutral"} />
         <RegistrationMetricCard label="Needs review" value={reviewCount} detail="Unlinked or imported records" icon={Users} tone={reviewCount ? "teal" : "neutral"} />
       </section>
+      )}
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/85 p-3 shadow-sm">
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm">
         <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
           Group by
           <select
-            value={registrationGroup}
-            onChange={(event) => setRegistrationGroup(event.target.value)}
-            className="h-9 rounded-xl border border-border/70 bg-background px-3 text-xs font-bold text-foreground outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+            value={activeView.group}
+            onChange={(event) => {
+              setRegistrationView("Custom View");
+              setRegistrationGroup(event.target.value);
+            }}
+            className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-bold text-foreground outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
           >
             <option>None</option>
             <option>Readiness</option>
@@ -4125,14 +4619,13 @@ function ParticipantTable({
           </select>
         </label>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-muted-foreground">Show rows where</span>
           <select
             value={filterColumnId}
             onChange={(event) => setFilterColumnId(event.target.value)}
-            className="h-9 rounded-xl border border-border/70 bg-background px-3 text-xs font-bold text-foreground outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+            className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-bold text-foreground outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
           >
             <option value="">Any column</option>
-            {displayColumns.map((column) => (
+            {viewColumns.map((column) => (
               <option key={column.id} value={column.id}>{column.label}</option>
             ))}
           </select>
@@ -4140,7 +4633,7 @@ function ParticipantTable({
             value={filterValue}
             onChange={(event) => setFilterValue(event.target.value)}
             placeholder={selectedFilterColumn ? `${selectedFilterColumn.label} contains...` : "Column contains..."}
-            className="h-9 w-60 rounded-xl bg-background text-xs font-semibold"
+            className="h-8 w-56 rounded-lg bg-background text-xs font-semibold"
           />
           {(filterColumnId || filterValue) && (
             <Button
@@ -4158,37 +4651,9 @@ function ParticipantTable({
         </div>
       </section>
 
-      {!sheetConnection && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-background/45 p-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold">Custom registration columns</p>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">No Google Sheet is connected. Add event-specific columns for manual registration tracking.</p>
-          </div>
-          <Input
-            value={customColumnTitle}
-            onChange={(event) => setCustomColumnTitle(event.target.value)}
-            placeholder="Column title, e.g. Grade"
-            className="h-8 w-56 rounded-xl bg-card text-xs"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="h-8 rounded-full px-3 text-xs"
-            onClick={() => {
-              onAddCustomColumn(customColumnTitle);
-              setCustomColumnTitle("");
-            }}
-            disabled={!canManageEvents || !customColumnTitle.trim()}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Column
-          </Button>
-        </div>
-      )}
-
       {registrationGroups.map(([group, registrations]) => (
         <div key={group} className="space-y-2">
-          {registrationGroup !== "None" && (
+          {activeView.group !== "None" && (
             <div className="flex items-center justify-between rounded-xl bg-muted/45 px-3 py-2">
               <p className="text-sm font-extrabold">{group}</p>
               <span className="text-xs font-bold text-muted-foreground">{registrations.length} registration{registrations.length === 1 ? "" : "s"}</span>
@@ -4196,7 +4661,7 @@ function ParticipantTable({
           )}
           <RegistrationRows
             registrations={registrations}
-            columns={displayColumns}
+            columns={viewColumns}
             canManageEvents={canManageEvents}
             sourceLabel={sourceLabel}
             sortColumnId={sortColumnId}
@@ -4233,8 +4698,8 @@ function RegistrationRows({
   sortColumnId: string;
   sortDirection: "asc" | "desc";
   onSortColumn: (columnId: string) => void;
-  onUpdate: (registrationId: string, updates: Record<string, string | number | boolean>) => void;
-  onUpdateWithStatusSync: (registration: EventRegistration, updates: Record<string, string | number | boolean>) => void;
+  onUpdate: (registrationId: string, updates: Record<string, any>) => void;
+  onUpdateWithStatusSync: (registration: EventRegistration, updates: Record<string, any>) => void;
   onRemove: (registrationId: string) => void;
 }) {
   const displayColumns = columns.length ? columns : defaultRegistrationColumns;
@@ -4338,6 +4803,32 @@ function RegistrationRows({
                             )}
                           </div>
                         </div>
+                      </td>
+                    );
+                  }
+                  if (column.origin === "custom_field") {
+                    const fieldKey = column.sourceColumn || column.label;
+                    return (
+                      <td key={column.id} className="border-b border-border/50 px-4 py-3.5 align-middle">
+                        <Input
+                          defaultValue={valueForColumn(registration, column)}
+                          onBlur={(event) => {
+                            const nextValue = event.target.value;
+                            const previousValue = registration.customFields?.[fieldKey] || registration.customFields?.[column.label] || "";
+                            if (nextValue === previousValue) return;
+                            onUpdate(registration.id, {
+                              custom_fields: {
+                                ...(registration.customFields || {}),
+                                [fieldKey]: nextValue,
+                              },
+                            });
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") event.currentTarget.blur();
+                          }}
+                          className="h-8 min-w-36 rounded-lg bg-background text-xs font-semibold"
+                          disabled={!canManageEvents}
+                        />
                       </td>
                     );
                   }
@@ -4523,6 +5014,11 @@ function GoogleSheetConnectionModal({
     }));
     setColumnToAdd("");
   };
+  const canOpenStep = (index: number) =>
+    index === 0 ||
+    (index === 1 && detectedColumns.length > 0) ||
+    (index === 2 && detectedColumns.length > 0) ||
+    (index === 3 && mappingPayload.length > 0);
 
   return (
     <ResponsiveModal
@@ -4544,10 +5040,17 @@ function GoogleSheetConnectionModal({
           <button
             key={label}
             type="button"
-            onClick={() => setStep(index)}
+            onClick={() => {
+              if (canOpenStep(index)) setStep(index);
+            }}
+            disabled={!canOpenStep(index)}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs font-extrabold transition",
-              step === index ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal" : "border-border/70 text-muted-foreground hover:text-brand-teal"
+              step === index
+                ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                : canOpenStep(index)
+                  ? "border-border/70 text-muted-foreground hover:text-brand-teal"
+                  : "border-border/50 text-muted-foreground/40"
             )}
           >
             {index + 1}. {label}
@@ -4561,11 +5064,8 @@ function GoogleSheetConnectionModal({
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Step 1</p>
               <h4 className="mt-1 text-lg font-extrabold">Choose the Sheet</h4>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">Sign in, select from Drive, or paste a Google Sheet link.</p>
+              <p className="mt-1 text-sm font-medium text-muted-foreground">Paste a Google Sheet link, name the spreadsheet, and detect the columns ACTSIX should manage.</p>
             </div>
-            <Button type="button" variant="outline" className="h-9 rounded-xl" onClick={() => toast.info("Google authentication needs the backend OAuth connector before it can run.")}>
-              Sign in with Google
-            </Button>
             <label className="block space-y-1">
               <span className="text-xs font-bold text-muted-foreground">Paste Google Sheet link</span>
               <Input value={sheetLink} onChange={(event) => setSheetLink(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." className="h-9 rounded-xl bg-background" />
@@ -4576,27 +5076,21 @@ function GoogleSheetConnectionModal({
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="block space-y-1">
                 <span className="text-xs font-bold text-muted-foreground">Spreadsheet</span>
-                <select
+                <Input
                   value={selectedSpreadsheetName}
                   onChange={(event) => setSpreadsheetName(event.target.value)}
-                  className="h-9 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none"
-                >
-                  <option>{event?.title || "Summer Camp 2026"} Registrations</option>
-                  <option>Holiday Club Responses</option>
-                  <option>Mission Trip Applications</option>
-                </select>
+                  placeholder={`${event?.title || "Event"} Registrations`}
+                  className="h-9 rounded-xl bg-background"
+                />
               </label>
               <label className="block space-y-1">
                 <span className="text-xs font-bold text-muted-foreground">Worksheet</span>
-                <select
+                <Input
                   value={worksheetName}
                   onChange={(event) => setWorksheetName(event.target.value)}
-                  className="h-9 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none"
-                >
-                  <option>Form Responses 1</option>
-                  <option>Registrations</option>
-                  <option>Applications</option>
-                </select>
+                  placeholder="Form Responses 1"
+                  className="h-9 rounded-xl bg-background"
+                />
               </label>
             </div>
             <Button type="button" variant="outline" className="h-9 rounded-xl" onClick={() => previewSheet(1)} disabled={!hasValidSheetLink || previewingSheet}>
@@ -4825,11 +5319,11 @@ function GoogleSheetConnectionModal({
           <div className="rounded-xl border border-border/70 bg-card/70 p-4">
             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Connection Status</p>
             <div className="mt-3 space-y-3">
-              <HealthRow label="Spreadsheet" value={`${event?.title || "Event"} Registrations`} />
-              <HealthRow label="Worksheet" value="Form Responses 1" />
+              <HealthRow label="Spreadsheet" value={selectedSpreadsheetName} />
+              <HealthRow label="Worksheet" value={worksheetName} />
               <HealthRow label="Sync mode" value={syncMode === "automatic" ? "Automatic" : syncMode === "manual" ? "Manual" : "One-time"} />
-              <HealthRow label="Rows detected" value={48} />
-              <HealthRow label="Require review" value={2} />
+              <HealthRow label="Rows detected" value={previewRowCount} />
+              <HealthRow label="Columns mapped" value={mappingPayload.length} />
             </div>
           </div>
         </div>
@@ -4858,7 +5352,7 @@ function GoogleSheetConnectionModal({
             <Button
             type="button"
             className="actsix-btn-primary h-9 rounded-xl"
-            disabled={!hasValidSheetLink}
+            disabled={!hasValidSheetLink || mappingPayload.length === 0}
             onClick={() => {
               onSave({
                 sheetLink,
@@ -5028,46 +5522,217 @@ function BudgetSurface(props: {
   collaboratorPeople: EventPerson[];
   onAddExpense: () => void;
   onDeleteExpense: (expenseId: string) => void;
+  onUpdateRegistration?: (registrationId: string, updates: Record<string, any>) => void;
 }) {
+  const [financeView, setFinanceView] = useState<"budget" | "expenses" | "income" | "payments">("budget");
+  const paymentRows = props.event.registrations.map((registration) => {
+    const displayName = registration.person?.display_name || registration.importedDisplayName || "Unnamed participant";
+    const contact = registration.person?.email || registration.importedEmail || registration.person?.phone_number || registration.importedMobile || "";
+    const balance = Math.max(0, registration.amountDue - registration.amountPaid);
+    return { ...registration, displayName, contact, balance };
+  });
+  const outstandingPayments = paymentRows.reduce((sum, row) => sum + row.balance, 0);
+  const incomeReceived = props.event.received || props.expectedRevenue;
+  const categories = Array.from(
+    props.event.expenses.reduce<Map<string, { amount: number; count: number }>>((acc, expense) => {
+      const label = expense.category || "Uncategorised";
+      const current = acc.get(label) || { amount: 0, count: 0 };
+      acc.set(label, { amount: current.amount + expense.amount, count: current.count + 1 });
+      return acc;
+    }, new Map())
+  ).map(([label, totals]) => ({ label, ...totals }));
+  const fallbackCategories = ["Venue", "Food", "Travel", "Equipment", "Communication"];
+  const plannedCategories = categories.length ? categories : fallbackCategories.map((label) => ({ label, amount: 0, count: 0 }));
+  const categoryBudget = plannedCategories.length ? props.event.budget / plannedCategories.length : 0;
+  const financeTabs: Array<{ id: typeof financeView; label: string }> = [
+    { id: "budget", label: "Budget" },
+    { id: "expenses", label: "Expenses" },
+    { id: "income", label: "Income" },
+    { id: "payments", label: "Participant Payments" },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <HealthRow label="Budgeted" value={money(props.event.budget)} />
         <HealthRow label="Committed" value={money(props.spent)} />
         <HealthRow label="Paid" value={money(props.spent)} />
         <HealthRow label="Remaining" value={money(props.remaining)} />
-        <HealthRow label="Income received" value={money(props.event.received || props.expectedRevenue)} />
+        <HealthRow label="Income received" value={money(incomeReceived)} />
+        <HealthRow label="Outstanding" value={money(outstandingPayments)} />
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        <Input value={props.expenseTitle} onChange={(event) => props.setExpenseTitle(event.target.value)} placeholder="Expense title" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
-        <Input value={props.expenseCategory} onChange={(event) => props.setExpenseCategory(event.target.value)} placeholder="Category" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
-        <Input type="number" value={props.expenseAmount} onChange={(event) => props.setExpenseAmount(Number(event.target.value))} placeholder="Amount" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
-        <select value={props.expensePaidById} onChange={(event) => props.setExpensePaidById(event.target.value)} className="h-8 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!props.canManageEvents}>
-          <option value="">Paid by</option>
-          {props.collaboratorPeople.map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}
-        </select>
-        <Button type="button" className="actsix-btn-primary h-8 rounded-xl text-xs" onClick={props.onAddExpense} disabled={!props.canManageEvents || !props.expenseTitle.trim()}>
-          Add Expense
-        </Button>
+
+      <div className="rounded-xl border border-border/70 bg-background/55 p-1">
+        <div className="flex flex-wrap gap-1">
+          {financeTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setFinanceView(tab.id)}
+              className={cn(
+                "h-9 rounded-lg px-3 text-xs font-extrabold transition",
+                financeView === tab.id ? "bg-brand-teal text-white shadow-sm" : "text-muted-foreground hover:bg-card/70 hover:text-foreground"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <Input value={props.expenseNotes} onChange={(event) => props.setExpenseNotes(event.target.value)} placeholder="Expense notes..." className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
-      <div className="grid gap-2">
-        {props.event.expenses.map((expense) => (
-          <div key={expense.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/70 px-3 py-2">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-extrabold">{expense.title}</p>
-              <p className="truncate text-xs font-medium text-muted-foreground">{expense.category} · {expense.spentAt}</p>
+
+      {financeView === "budget" && (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+            <div className="mb-3">
+              <h4 className="text-sm font-extrabold">Budget by category</h4>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">Category totals come from the expenses already recorded for this event.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-extrabold">{money(expense.amount)}</span>
-              <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={() => props.onDeleteExpense(expense.id)} disabled={!props.canManageEvents}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+            <div className="grid gap-2">
+              {plannedCategories.map((category) => {
+                const used = categoryBudget ? percent(category.amount, categoryBudget) : 0;
+                return (
+                  <div key={category.label} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-extrabold">{category.label}</p>
+                        <p className="text-xs font-semibold text-muted-foreground">{category.count} expense{category.count === 1 ? "" : "s"}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-extrabold">{money(category.amount)}</p>
+                        <p className="text-[11px] font-bold text-muted-foreground">Plan {money(categoryBudget)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className={cn("h-full rounded-full", used > 100 ? "bg-destructive" : "bg-brand-teal")} style={{ width: `${Math.min(100, used)}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        ))}
-      </div>
-      {props.event.expenses.length === 0 && <div className="actsix-empty-state min-h-24 text-sm">Add expenses to track committed and paid amounts.</div>}
+
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+              <h4 className="text-sm font-extrabold">Finance position</h4>
+              <div className="mt-3 space-y-2">
+                <HealthRow label="Budget health" value={props.remaining < 0 ? "Over budget" : "On track"} />
+                <HealthRow label="Per person cost" value={money(props.event.costPerPerson)} />
+                <HealthRow label="Registered" value={`${props.event.registrations.length}/${props.event.capacity}`} />
+              </div>
+            </div>
+            <Button type="button" variant="outline" className="h-9 w-full rounded-xl text-xs" onClick={() => setFinanceView("expenses")}>
+              Add or review expenses
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {financeView === "expenses" && (
+        <div className="space-y-3">
+          <div className="grid gap-2 rounded-xl border border-border/70 bg-background/45 p-3 sm:grid-cols-2 lg:grid-cols-5">
+            <Input value={props.expenseTitle} onChange={(event) => props.setExpenseTitle(event.target.value)} placeholder="Expense title" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
+            <Input value={props.expenseCategory} onChange={(event) => props.setExpenseCategory(event.target.value)} placeholder="Category" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
+            <Input type="number" value={props.expenseAmount} onChange={(event) => props.setExpenseAmount(Number(event.target.value))} placeholder="Amount" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
+            <select value={props.expensePaidById} onChange={(event) => props.setExpensePaidById(event.target.value)} className="h-8 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!props.canManageEvents}>
+              <option value="">Paid by</option>
+              {props.collaboratorPeople.map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}
+            </select>
+            <Button type="button" className="actsix-btn-primary h-8 rounded-xl text-xs" onClick={props.onAddExpense} disabled={!props.canManageEvents || !props.expenseTitle.trim()}>
+              Add Expense
+            </Button>
+            <Input value={props.expenseNotes} onChange={(event) => props.setExpenseNotes(event.target.value)} placeholder="Expense notes or receipt reference..." className="h-8 rounded-xl bg-background text-xs sm:col-span-2 lg:col-span-5" disabled={!props.canManageEvents} />
+          </div>
+          <div className="grid gap-2">
+            {props.event.expenses.map((expense) => (
+              <div key={expense.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-extrabold">{expense.title}</p>
+                  <p className="truncate text-xs font-medium text-muted-foreground">
+                    {expense.category} · {expense.paidBy?.display_name || "No payer"} · {formatShortDate(new Date(expense.spentAt))}
+                  </p>
+                  {expense.notes && <p className="mt-1 truncate text-xs font-semibold text-muted-foreground">{expense.notes}</p>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-extrabold">{money(expense.amount)}</span>
+                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={() => props.onDeleteExpense(expense.id)} disabled={!props.canManageEvents}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {props.event.expenses.length === 0 && <div className="actsix-empty-state min-h-24 text-sm">Add expenses to track committed and paid amounts.</div>}
+        </div>
+      )}
+
+      {financeView === "income" && (
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Participant income</p>
+            <p className="mt-2 text-2xl font-extrabold">{money(paymentRows.reduce((sum, row) => sum + row.amountPaid, 0))}</p>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">{money(outstandingPayments)} still outstanding</p>
+          </div>
+          <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Expected registration income</p>
+            <p className="mt-2 text-2xl font-extrabold">{money(props.expectedRevenue)}</p>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">{props.event.registrations.length} registration records</p>
+          </div>
+          <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Other income recorded</p>
+            <p className="mt-2 text-2xl font-extrabold">{money(props.event.received)}</p>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">Stored on the event summary</p>
+          </div>
+        </div>
+      )}
+
+      {financeView === "payments" && (
+        <div className="overflow-x-auto rounded-xl border border-border/70 bg-background/45">
+          <table className="w-full min-w-[46rem] text-left text-sm">
+            <thead className="border-b border-border/70 bg-muted/40 text-xs font-extrabold text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Participant</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Due</th>
+                <th className="px-3 py-2">Paid</th>
+                <th className="px-3 py-2">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paymentRows.map((row) => (
+                <tr key={row.id} className="border-b border-border/50 last:border-0">
+                  <td className="px-3 py-2">
+                    <p className="font-extrabold">{row.displayName}</p>
+                    <p className="text-xs font-semibold text-muted-foreground">{row.contact || "No contact"}</p>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Badge variant="outline" className="rounded-full text-[10px] font-bold">{row.paymentStatus || row.status}</Badge>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Input
+                      type="number"
+                      defaultValue={row.amountDue}
+                      onBlur={(event) => props.onUpdateRegistration?.(row.id, { amount_due: Number(event.target.value) })}
+                      className="h-8 w-28 rounded-xl bg-background text-xs"
+                      disabled={!props.canManageEvents || !props.onUpdateRegistration}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <Input
+                      type="number"
+                      defaultValue={row.amountPaid}
+                      onBlur={(event) => props.onUpdateRegistration?.(row.id, { amount_paid: Number(event.target.value) })}
+                      className="h-8 w-28 rounded-xl bg-background text-xs"
+                      disabled={!props.canManageEvents || !props.onUpdateRegistration}
+                    />
+                  </td>
+                  <td className="px-3 py-2 font-extrabold">{money(row.balance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {paymentRows.length === 0 && <div className="actsix-empty-state m-3 min-h-24 text-sm">Participant payments appear after registrations are added.</div>}
+        </div>
+      )}
     </div>
   );
 }
@@ -5087,6 +5752,9 @@ function PortfolioSurface(props: {
   onDelete: (itemId: string) => void;
   onAssignOwner: (portfolioLabel: string, personId: string, itemId?: string) => void;
   onAddTeamMember: (portfolioLabel: string, personId: string) => void;
+  onCreatePortfolio: (portfolioLabel: string) => void;
+  onRenamePortfolio: (currentLabel: string, nextLabel: string) => void;
+  onDeletePortfolio: (portfolioLabel: string) => void;
   budgetProps: {
     spent: number;
     remaining: number;
@@ -5103,10 +5771,14 @@ function PortfolioSurface(props: {
     setExpenseNotes: (value: string) => void;
     onAddExpense: () => void;
     onDeleteExpense: (expenseId: string) => void;
+    onUpdateRegistration?: (registrationId: string, updates: Record<string, any>) => void;
   };
 }) {
   const [portfolioDetailTab, setPortfolioDetailTab] = useState<"overview" | "tasks" | "files" | "notes" | "activity">("overview");
   const [portfolioTeamMemberId, setPortfolioTeamMemberId] = useState("");
+  const [newPortfolioLabel, setNewPortfolioLabel] = useState("");
+  const [editingPortfolioLabel, setEditingPortfolioLabel] = useState("");
+  const [editingPortfolioValue, setEditingPortfolioValue] = useState("");
   const sections = eventPortfolios;
   const matchesSection = (item: EventLogisticsItem, section: (typeof eventPortfolios)[number]) => {
     const label = item.label.toLowerCase();
@@ -5194,28 +5866,129 @@ function PortfolioSurface(props: {
 
   return (
     <div className="space-y-4">
-      {portfolioTabs.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {portfolioTabs.map((section) => (
+      <div className="rounded-xl border border-border/70 bg-background/55 p-1">
+          <div className="flex flex-wrap items-center gap-1">
             <button
-              key={section.id}
               type="button"
-              onClick={() => props.onViewChange(section.id)}
+              onClick={() => props.onViewChange("landing")}
               className={cn(
-                "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-xs font-extrabold transition",
-                props.view === section.id
-                  ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                  : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:text-brand-teal"
+                "inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-extrabold transition",
+                props.view === "landing" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:bg-card/70 hover:text-foreground"
               )}
             >
-              {section.label}
-              <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", props.view === section.id ? "bg-brand-teal/15" : "bg-muted")}>
-                {section.items.length}
-              </span>
+              All
             </button>
-          ))}
-        </div>
-      )}
+            {portfolioTabs.map((section) => {
+              const isEditing = editingPortfolioLabel === section.label;
+              return (
+                <div
+                  key={section.id}
+                  className={cn(
+                    "group inline-flex h-9 items-center rounded-lg text-xs font-extrabold transition",
+                    props.view === section.id ? "bg-brand-teal text-white shadow-sm" : "text-muted-foreground hover:bg-card/70 hover:text-foreground"
+                  )}
+                >
+                  {isEditing ? (
+                    <form
+                      className="flex items-center gap-1 px-1"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        props.onRenamePortfolio(section.label, editingPortfolioValue);
+                        setEditingPortfolioLabel("");
+                        setEditingPortfolioValue("");
+                      }}
+                    >
+                      <Input
+                        value={editingPortfolioValue}
+                        onChange={(event) => setEditingPortfolioValue(event.target.value)}
+                        className="h-7 w-32 rounded-md bg-background px-2 text-xs text-foreground"
+                        autoFocus
+                      />
+                      <Button type="submit" variant="ghost" size="icon" className="h-7 w-7 rounded-md text-current" disabled={!props.canManageEvents || !editingPortfolioValue.trim()}>
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-md text-current"
+                        onClick={() => {
+                          setEditingPortfolioLabel("");
+                          setEditingPortfolioValue("");
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </form>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => props.onViewChange(section.id)}
+                        className="inline-flex h-full items-center gap-2 rounded-lg px-3"
+                      >
+                        {section.label}
+                        <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", props.view === section.id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground")}>
+                          {section.items.length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          "mr-0.5 flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:opacity-100",
+                          props.view === section.id ? "hover:bg-white/15" : "hover:bg-muted"
+                        )}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditingPortfolioLabel(section.label);
+                          setEditingPortfolioValue(section.label);
+                        }}
+                        disabled={!props.canManageEvents}
+                        title="Rename portfolio"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          "mr-1 flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:opacity-100",
+                          props.view === section.id ? "hover:bg-white/15" : "hover:bg-muted hover:text-destructive"
+                        )}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          props.onDeletePortfolio(section.label);
+                        }}
+                        disabled={!props.canManageEvents}
+                        title="Remove portfolio"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            <form
+              className="ml-auto flex h-9 min-w-[13rem] items-center gap-1 rounded-lg border border-dashed border-border/70 bg-card/70 px-1"
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onCreatePortfolio(newPortfolioLabel);
+                setNewPortfolioLabel("");
+              }}
+            >
+              <Input
+                value={newPortfolioLabel}
+                onChange={(event) => setNewPortfolioLabel(event.target.value)}
+                placeholder="New portfolio"
+                className="h-7 min-w-0 border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0"
+                disabled={!props.canManageEvents}
+              />
+              <Button type="submit" variant="ghost" size="icon" className="h-7 w-7 rounded-md text-brand-teal" disabled={!props.canManageEvents || !newPortfolioLabel.trim()}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </form>
+          </div>
+      </div>
 
       {props.view === "landing" && (
         <div className="space-y-4">
@@ -5378,23 +6151,6 @@ function PortfolioSurface(props: {
       {activeLabel && portfolioDetailTab === "overview" && (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-4">
-            <div className="rounded-xl border border-border/70 bg-background/45 p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-brand-amber" />
-                <h4 className="text-sm font-extrabold">Attention Required</h4>
-              </div>
-              {portfolioAlerts.length === 0 ? (
-                <div className="actsix-empty-state min-h-20 text-sm">No portfolio-specific alerts right now.</div>
-              ) : (
-                <div className="grid gap-2">
-                  {portfolioAlerts.map((alert) => (
-                    <div key={alert} className="rounded-xl border border-brand-amber/20 bg-brand-amber/10 px-3 py-2 text-sm font-bold text-brand-amber">
-                      {alert}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
             <PortfolioTaskList
               items={portfolioWorkItems}
               canManageEvents={props.canManageEvents}
@@ -5584,6 +6340,7 @@ function PortfolioSurface(props: {
             collaboratorPeople={props.collaboratorPeople}
             onAddExpense={props.budgetProps.onAddExpense}
             onDeleteExpense={props.budgetProps.onDeleteExpense}
+            onUpdateRegistration={props.budgetProps.onUpdateRegistration}
           />
         </div>
       )}
@@ -5676,6 +6433,383 @@ function PortfolioTaskList({
         ))}
         {items.length === 0 && <div className="actsix-empty-state min-h-24 text-sm">No tasks in this portfolio yet.</div>}
       </div>
+    </div>
+  );
+}
+
+function FilesSurface({
+  event,
+  canManageEvents,
+  onCreateHostedForm,
+  onGenerateGoogleFormTemplate,
+  onConnectSheet,
+  onSyncSheet,
+  syncingSheetId,
+}: {
+  event: EventItem;
+  canManageEvents: boolean;
+  onCreateHostedForm: () => void;
+  onGenerateGoogleFormTemplate: () => void;
+  onConnectSheet: () => void;
+  onSyncSheet: (connectionId?: string) => void;
+  syncingSheetId: string;
+}) {
+  const [fileView, setFileView] = useState<"all" | "portfolio" | "registration" | "finance" | "communication">("all");
+  const [fileSearch, setFileSearch] = useState("");
+  const hostedForm = event.registrationForms.find((form) => form.formType === "actsix_hosted" && form.status === "published");
+  const googleTemplate = event.registrationForms.find((form) => form.formType === "google_form_template");
+  const hostedFormUrl = hostedForm ? `${window.location.origin}/register/${hostedForm.publicToken}` : "";
+  const sheetConnection = event.sheetConnections[0];
+  const eventDateLabel = event.startsAt ? formatShortDate(new Date(event.startsAt)) : "Event date";
+  const fileActions = [
+    {
+      id: "hosted-form",
+      title: hostedForm ? hostedForm.title : "ACTSIX-hosted registration form",
+      detail: hostedForm ? `Published ${formatShortDate(new Date(hostedForm.createdAt))}` : "Create a public registration form for this event.",
+      status: hostedForm ? "Published" : "Not created",
+      action: hostedForm ? "Copy link" : "Publish form",
+      onAction: () => {
+        if (hostedFormUrl) {
+          navigator.clipboard?.writeText(hostedFormUrl);
+          toast.success("Hosted form link copied.");
+          return;
+        }
+        onCreateHostedForm();
+      },
+    },
+    {
+      id: "google-template",
+      title: googleTemplate ? googleTemplate.title : "Google Form template",
+      detail: googleTemplate
+        ? `${googleTemplate.schema?.questions?.length || 0} questions generated`
+        : "Generate a question spec to recreate in Google Forms.",
+      status: googleTemplate ? googleTemplate.status : "Not generated",
+      action: "Generate",
+      onAction: onGenerateGoogleFormTemplate,
+    },
+    {
+      id: "sheet",
+      title: sheetConnection?.spreadsheetName || "Registration Sheet",
+      detail: sheetConnection
+        ? `${sheetConnection.worksheetName} · ${sheetConnection.rowsImported} imported`
+        : "Connect a Google Sheet response file.",
+      status: sheetConnection ? sheetConnection.status : "Not connected",
+      action: sheetConnection ? (syncingSheetId === sheetConnection.id ? "Syncing..." : "Sync") : "Connect",
+      onAction: () => sheetConnection ? onSyncSheet(sheetConnection.id) : onConnectSheet(),
+    },
+  ];
+  const startDate = new Date(`${event.startsAt || new Date().toISOString().slice(0, 10)}T12:00:00`);
+  const fileRows = [
+    ...(hostedForm
+      ? [{
+          id: `form-${hostedForm.id}`,
+          name: hostedForm.title,
+          type: "Hosted form",
+          area: "Registration Documents",
+          portfolio: "People",
+          owner: "ACTSIX",
+          date: hostedForm.createdAt,
+          status: hostedForm.status,
+          actionLabel: "Copy link",
+          action: () => {
+            navigator.clipboard?.writeText(hostedFormUrl);
+            toast.success("Hosted form link copied.");
+          },
+        }]
+      : []),
+    ...(googleTemplate
+      ? [{
+          id: `template-${googleTemplate.id}`,
+          name: googleTemplate.title,
+          type: "Google Form spec",
+          area: "Registration Documents",
+          portfolio: "People",
+          owner: "ACTSIX",
+          date: googleTemplate.createdAt,
+          status: googleTemplate.status,
+          actionLabel: "Regenerate",
+          action: onGenerateGoogleFormTemplate,
+        }]
+      : []),
+    ...event.sheetConnections.map((connection) => ({
+      id: `sheet-${connection.id}`,
+      name: connection.spreadsheetName || "Registration Sheet",
+      type: connection.sourceKind === "google_form" ? "Google Form responses" : "Google Sheet",
+      area: "Registration Documents",
+      portfolio: "People",
+      owner: "Google Sheets",
+      date: connection.lastSyncedAt || event.startsAt,
+      status: connection.status,
+      actionLabel: syncingSheetId === connection.id ? "Syncing..." : "Sync",
+      action: () => onSyncSheet(connection.id),
+    })),
+    ...event.expenses.map((expense) => ({
+      id: `expense-${expense.id}`,
+      name: expense.notes ? `${expense.title} support note` : `${expense.title} expense record`,
+      type: "Finance record",
+      area: "Finance Documents",
+      portfolio: "Finance",
+      owner: expense.paidBy?.display_name || "Unassigned",
+      date: expense.spentAt,
+      status: expense.notes ? "Documented" : "Needs receipt",
+      actionLabel: "Open finance",
+      action: undefined,
+    })),
+    ...event.logistics
+      .filter((item) => item.status !== "Done")
+      .map((item) => {
+        const prefix = item.label.includes(":") ? item.label.split(":")[0].trim() : "Portfolio";
+        return {
+          id: `portfolio-${item.id}`,
+          name: item.label,
+          type: "Working file need",
+          area: "Portfolio Files",
+          portfolio: prefix,
+          owner: item.assignee?.display_name || "Unassigned",
+          date: event.startsAt,
+          status: item.status,
+          actionLabel: "Review task",
+          action: undefined,
+        };
+      }),
+    ...communicationSchedules.standard.milestones.slice(0, 6).map((milestone) => ({
+      id: `comms-${milestone.title}`,
+      name: `${milestone.title} asset`,
+      type: "Communication asset",
+      area: "Communication Assets",
+      portfolio: "Comms",
+      owner: milestone.ownerRole,
+      date: addDays(startDate, milestone.offsetDays).toISOString(),
+      status: milestone.approvalStatus,
+      actionLabel: "Plan message",
+      action: undefined,
+    })),
+  ];
+  const viewLabels = [
+    { id: "all" as const, label: "All Files" },
+    { id: "portfolio" as const, label: "By Portfolio" },
+    { id: "registration" as const, label: "Registration Documents" },
+    { id: "finance" as const, label: "Finance Documents" },
+    { id: "communication" as const, label: "Communication Assets" },
+  ];
+  const filteredFileRows = fileRows.filter((row) => {
+    const matchesView =
+      fileView === "all" ||
+      (fileView === "portfolio" && row.area === "Portfolio Files") ||
+      (fileView === "registration" && row.area === "Registration Documents") ||
+      (fileView === "finance" && row.area === "Finance Documents") ||
+      (fileView === "communication" && row.area === "Communication Assets");
+    const query = fileSearch.trim().toLowerCase();
+    const matchesSearch = !query || [row.name, row.type, row.area, row.portfolio, row.owner, row.status].some((value) => `${value}`.toLowerCase().includes(query));
+    return matchesView && matchesSearch;
+  });
+  const groupedPortfolioFiles = Array.from(
+    filteredFileRows.reduce<Map<string, typeof filteredFileRows>>((acc, row) => {
+      acc.set(row.portfolio, [...(acc.get(row.portfolio) || []), row]);
+      return acc;
+    }, new Map())
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 lg:grid-cols-3">
+        {fileActions.map((file) => (
+          <div key={file.id} className="rounded-xl border border-border/70 bg-background/55 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-extrabold">{file.title}</p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{file.detail}</p>
+              </div>
+              <Badge variant="outline" className="shrink-0 rounded-full text-[10px] font-bold">{file.status}</Badge>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 h-8 rounded-full px-3 text-xs"
+              onClick={file.onAction}
+              disabled={!canManageEvents || file.action === "Syncing..."}
+            >
+              {file.action}
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-extrabold">File library</h4>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">Indexed forms, sheets, finance records, portfolio file needs, and communication assets.</p>
+          </div>
+          <Badge variant="outline" className="rounded-full text-[10px] font-bold">{filteredFileRows.length} shown</Badge>
+        </div>
+
+        <div className="mb-3 grid gap-2 lg:grid-cols-[minmax(0,1fr)_16rem]">
+          <div className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-card/60 p-1">
+            {viewLabels.map((view) => (
+              <button
+                key={view.id}
+                type="button"
+                onClick={() => setFileView(view.id)}
+                className={cn(
+                  "h-8 rounded-lg px-3 text-xs font-extrabold transition",
+                  fileView === view.id ? "bg-brand-teal text-white" : "text-muted-foreground hover:bg-background hover:text-foreground"
+                )}
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Input value={fileSearch} onChange={(event) => setFileSearch(event.target.value)} placeholder="Search files..." className="h-9 rounded-xl bg-background pl-8 text-xs" />
+          </div>
+        </div>
+
+        {fileView === "portfolio" ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {groupedPortfolioFiles.map(([portfolio, rows]) => (
+              <div key={portfolio} className="rounded-xl border border-border/60 bg-card/70 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-sm font-extrabold">{portfolio}</p>
+                  <Badge variant="outline" className="rounded-full text-[10px] font-bold">{rows.length}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {rows.map((row) => (
+                    <FileLibraryRow key={row.id} row={row} canManageEvents={canManageEvents} />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {groupedPortfolioFiles.length === 0 && <div className="actsix-empty-state min-h-24 text-sm lg:col-span-2">No portfolio files match this view.</div>}
+          </div>
+        ) : (
+          <div className="grid gap-2">
+            {filteredFileRows.map((row) => (
+              <FileLibraryRow key={row.id} row={row} canManageEvents={canManageEvents} />
+            ))}
+            {filteredFileRows.length === 0 && <div className="actsix-empty-state min-h-24 text-sm">No files match this view.</div>}
+          </div>
+        )}
+
+        <div className="mt-3 rounded-xl border border-dashed border-border/70 bg-card/40 px-3 py-2">
+          <p className="text-xs font-semibold text-muted-foreground">
+            Upload storage is not configured in this page yet. This library indexes the event records ACTSIX already owns, including forms, sheets, finance entries, portfolio tasks, and communication assets for {eventDateLabel}.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FileLibraryRow({
+  row,
+  canManageEvents,
+}: {
+  row: {
+    id: string;
+    name: string;
+    type: string;
+    area: string;
+    portfolio: string;
+    owner: string;
+    date: string;
+    status: string;
+    actionLabel: string;
+    action?: () => void;
+  };
+  canManageEvents: boolean;
+}) {
+  return (
+    <div className="grid gap-2 rounded-xl border border-border/60 bg-card/70 px-3 py-2 md:grid-cols-[minmax(0,1.4fr)_8rem_9rem_8rem_auto] md:items-center">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-extrabold">{row.name}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-muted-foreground">{row.type} · {row.area}</p>
+      </div>
+      <p className="text-xs font-bold text-muted-foreground">{row.portfolio}</p>
+      <p className="truncate text-xs font-bold text-muted-foreground">{row.owner}</p>
+      <div>
+        <p className="text-xs font-bold text-muted-foreground">{row.date ? formatShortDate(new Date(row.date)) : "No date"}</p>
+        <p className="mt-1 text-[11px] font-extrabold text-brand-teal">{row.status}</p>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="h-8 rounded-xl px-3 text-xs"
+        onClick={() => {
+          if (row.action) {
+            row.action();
+            return;
+          }
+          toast.info("This record is indexed from event data. Open the related workspace to edit it.");
+        }}
+        disabled={!canManageEvents || row.actionLabel === "Syncing..."}
+      >
+        {row.actionLabel}
+      </Button>
+    </div>
+  );
+}
+
+function ActivitySurface({ event, compact = false }: { event: EventItem; compact?: boolean }) {
+  const activityItems = [
+    ...event.importRuns.map((run) => ({
+      id: `run-${run.id}`,
+      title: `Import ${run.status}`,
+      detail: `${run.rowsImported} imported · ${run.rowsRequiringReview} review`,
+      when: run.completedAt || run.startedAt,
+      tone: run.status === "failed" ? "destructive" : "teal",
+    })),
+    ...event.syncAuditLogs.map((log) => ({
+      id: `log-${log.id}`,
+      title: log.action.replace(/_/g, " "),
+      detail: log.message,
+      when: log.createdAt,
+      tone: log.severity === "error" ? "destructive" : log.severity === "warning" ? "amber" : "teal",
+    })),
+    ...event.expenses.map((expense) => ({
+      id: `expense-${expense.id}`,
+      title: `Expense added: ${expense.title}`,
+      detail: `${expense.category} · ${money(expense.amount)}`,
+      when: expense.spentAt,
+      tone: "sage",
+    })),
+    ...event.registrations.slice(0, 8).map((registration) => ({
+      id: `registration-${registration.id}`,
+      title: `${registration.person?.display_name || registration.importedDisplayName || "Participant"} is ${registration.status.toLowerCase()}`,
+      detail: registration.source === "google_sheets" ? "Imported from Google Sheet" : "Manual registration",
+      when: registration.createdAt,
+      tone: registration.status === "Cancelled" ? "destructive" : "teal",
+    })),
+  ]
+    .filter((item) => item.when)
+    .sort((a, b) => `${b.when}`.localeCompare(`${a.when}`))
+    .slice(0, compact ? 5 : 12);
+
+  return (
+    <div className="space-y-3">
+      {activityItems.map((item) => (
+        <div key={item.id} className={cn("flex gap-3 rounded-xl border border-border/70 bg-background/55", compact ? "p-2.5" : "p-3")}>
+          <span
+            className={cn(
+              "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+              item.tone === "destructive" ? "bg-destructive" : item.tone === "amber" ? "bg-brand-amber" : item.tone === "sage" ? "bg-brand-sage" : "bg-brand-teal"
+            )}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className={cn("truncate font-extrabold capitalize", compact ? "text-xs" : "text-sm")}>{item.title}</p>
+              <span className="text-[11px] font-bold text-muted-foreground">{formatShortDate(new Date(item.when))}</span>
+            </div>
+            <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{item.detail}</p>
+          </div>
+        </div>
+      ))}
+      {activityItems.length === 0 && (
+        <div className="actsix-empty-state min-h-24 text-sm">
+          Activity will appear when participants, imports, expenses, or sync settings change.
+        </div>
+      )}
     </div>
   );
 }
@@ -5789,9 +6923,29 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
   },
 };
 
-function CommunicationSurface({ event, collaboratorPeople }: { event: EventItem; collaboratorPeople: EventPerson[] }) {
+function CommunicationSurface({
+  event,
+  collaboratorPeople,
+  canManageEvents,
+}: {
+  event: EventItem;
+  collaboratorPeople: EventPerson[];
+  canManageEvents: boolean;
+}) {
   const [preset, setPreset] = useState<CommunicationPreset>("standard");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [customTitle, setCustomTitle] = useState("");
+  const [customChannel, setCustomChannel] = useState("Email");
+  const [customDays, setCustomDays] = useState(-14);
+  const [milestoneOverrides, setMilestoneOverrides] = useState<Record<string, Partial<CommunicationMilestone> & {
+    id?: string;
+    dueDate?: string;
+    owner?: string;
+    complete?: boolean;
+    removed?: boolean;
+    status?: string;
+    assetNote?: string;
+  }>>({});
   const schedule = communicationSchedules[preset];
   const startDate = new Date(`${event.startsAt || new Date().toISOString().slice(0, 10)}T12:00:00`);
   const today = new Date();
@@ -5801,14 +6955,111 @@ function CommunicationSurface({ event, collaboratorPeople }: { event: EventItem;
     event.owner ||
     collaboratorPeople[0]?.display_name ||
     "Unassigned";
-  const generatedItems = schedule.milestones.map((milestone) => {
-    const dueDate = addDays(startDate, milestone.offsetDays);
-    const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
-    const status = daysUntil < 0 ? "Review" : daysUntil <= 7 ? "Due soon" : "Scheduled";
-    return { ...milestone, dueDate, daysUntil, status };
-  });
+  const milestoneId = (milestone: CommunicationMilestone, index: number) => `${preset}-${index}-${milestone.title}-${milestone.offsetDays}`;
+  type CommunicationPlanItem = CommunicationMilestone & {
+    id: string;
+    dueDate: Date;
+    dueDateInput: string;
+    owner: string;
+    status: string;
+    assetNote: string;
+    complete: boolean;
+    daysUntil: number;
+  };
+  const baseGeneratedItems = schedule.milestones
+    .map((milestone, index) => {
+      const id = milestoneId(milestone, index);
+      const override = milestoneOverrides[id] || {};
+      if (override.removed) return null;
+      const dueDate = override.dueDate ? new Date(`${override.dueDate}T12:00:00`) : addDays(startDate, Number(override.offsetDays ?? milestone.offsetDays));
+      const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
+      const computedStatus = override.complete ? "Complete" : daysUntil < 0 ? "Review" : daysUntil <= 7 ? "Due soon" : "Scheduled";
+      return {
+        ...milestone,
+        ...override,
+        id,
+        dueDate,
+        dueDateInput: dueDate.toISOString().slice(0, 10),
+        title: override.title || milestone.title,
+        audience: override.audience || milestone.audience,
+        channel: override.channel || milestone.channel,
+        owner: override.owner || (milestone.ownerRole === "Event Leader" ? communicationOwner : milestone.ownerRole),
+        approvalStatus: override.approvalStatus || milestone.approvalStatus,
+        status: override.status || computedStatus,
+        draft: override.draft || milestone.draft,
+        assetNote: override.assetNote || "",
+        complete: Boolean(override.complete),
+        daysUntil,
+      };
+    })
+    .filter(Boolean) as CommunicationPlanItem[];
+  const customGeneratedItems = Object.entries(milestoneOverrides)
+    .filter(([id, override]) => id.includes("-custom-") && !override.removed)
+    .map(([id, override]) => {
+      const dueDate = override.dueDate ? new Date(`${override.dueDate}T12:00:00`) : addDays(startDate, Number(override.offsetDays || 0));
+      const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
+      const computedStatus = override.complete ? "Complete" : daysUntil < 0 ? "Review" : daysUntil <= 7 ? "Due soon" : "Scheduled";
+      return {
+        timing: override.timing || "Custom",
+        title: override.title || "Custom message",
+        offsetDays: Number(override.offsetDays || 0),
+        audience: override.audience || "Target audience",
+        channel: override.channel || "Email",
+        ownerRole: override.ownerRole || "Comms Owner",
+        approvalStatus: override.approvalStatus || "Draft",
+        draft: override.draft || "Write the message brief and add any artwork or file notes.",
+        id,
+        dueDate,
+        dueDateInput: dueDate.toISOString().slice(0, 10),
+        owner: override.owner || communicationOwner,
+        status: override.status || computedStatus,
+        assetNote: override.assetNote || "",
+        complete: Boolean(override.complete),
+        daysUntil,
+      };
+    }) as CommunicationPlanItem[];
+  const generatedItems = [...baseGeneratedItems, ...customGeneratedItems];
   const selected = generatedItems[selectedIndex] || generatedItems[0];
-  const pendingCount = generatedItems.filter((item) => item.daysUntil >= 0).length;
+  const pendingCount = generatedItems.filter((item) => !item.complete).length;
+  const completedCount = generatedItems.filter((item) => item.complete).length;
+  const updateMilestone = (id: string, updates: Partial<CommunicationMilestone> & { dueDate?: string; owner?: string; complete?: boolean; status?: string; assetNote?: string; removed?: boolean }) => {
+    setMilestoneOverrides((current) => ({
+      ...current,
+      [id]: {
+        ...current[id],
+        ...updates,
+      },
+    }));
+  };
+  const addCustomMilestone = () => {
+    const title = customTitle.trim();
+    if (!title) return;
+    const id = `${preset}-custom-${Date.now()}`;
+    const dueDate = addDays(startDate, customDays).toISOString().slice(0, 10);
+    setMilestoneOverrides((current) => ({
+      ...current,
+      [id]: {
+        id,
+        timing: customDays === 0 ? "Event day" : `${Math.abs(customDays)} day${Math.abs(customDays) === 1 ? "" : "s"} ${customDays < 0 ? "before" : "after"}`,
+        title,
+        offsetDays: customDays,
+        audience: "Target audience",
+        channel: customChannel,
+        ownerRole: "Comms Owner",
+        owner: communicationOwner,
+        approvalStatus: "Draft",
+        status: "Scheduled",
+        draft: "Write the message brief and add any artwork or file notes.",
+        dueDate,
+      },
+    }));
+    setCustomTitle("");
+    setCustomDays(-14);
+    setCustomChannel("Email");
+    setSelectedIndex(generatedItems.length);
+  };
+  const channelOptions = ["Announcement", "Email", "SMS or WhatsApp", "Social media", "Website", "Printed material", "Direct participant message"];
+  const statusOptions = ["Scheduled", "Draft", "Needs review", "Ready", "Sent", "Complete", "Review"];
 
   return (
     <div className="space-y-4">
@@ -5847,11 +7098,42 @@ function CommunicationSurface({ event, collaboratorPeople }: { event: EventItem;
       <div className="grid gap-3 sm:grid-cols-3">
         <HealthRow label="Preset" value={schedule.label} />
         <HealthRow label="Milestones" value={generatedItems.length} />
-        <HealthRow label="Upcoming" value={pendingCount} />
+        <HealthRow label="Open" value={pendingCount} />
+        <HealthRow label="Complete" value={completedCount} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="rounded-xl border border-border/70 bg-background/45 p-3">
+        <div className="space-y-3">
+          <div className="grid gap-2 rounded-xl border border-border/70 bg-background/45 p-3 md:grid-cols-[minmax(0,1fr)_9rem_11rem_auto]">
+            <Input
+              value={customTitle}
+              onChange={(event) => setCustomTitle(event.target.value)}
+              placeholder="Add communication milestone..."
+              className="h-9 rounded-xl bg-background text-xs"
+              disabled={!canManageEvents}
+            />
+            <Input
+              type="number"
+              value={customDays}
+              onChange={(event) => setCustomDays(Number(event.target.value))}
+              className="h-9 rounded-xl bg-background text-xs"
+              disabled={!canManageEvents}
+              aria-label="Days from event date"
+            />
+            <select
+              value={customChannel}
+              onChange={(event) => setCustomChannel(event.target.value)}
+              className="h-9 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none"
+              disabled={!canManageEvents}
+            >
+              {channelOptions.map((channel) => <option key={channel}>{channel}</option>)}
+            </select>
+            <Button type="button" className="actsix-btn-primary h-9 rounded-xl px-3 text-xs" onClick={addCustomMilestone} disabled={!canManageEvents || !customTitle.trim()}>
+              Add
+            </Button>
+          </div>
+
+          <div className="rounded-xl border border-border/70 bg-background/45 p-3">
           <div className="mb-3">
             <h4 className="text-sm font-extrabold">{schedule.label} timeline</h4>
             <p className="mt-1 text-xs font-medium text-muted-foreground">
@@ -5860,41 +7142,69 @@ function CommunicationSurface({ event, collaboratorPeople }: { event: EventItem;
           </div>
           <div className="grid gap-2">
             {generatedItems.map((item, index) => (
-              <button
+              <div
                 key={`${item.title}-${item.offsetDays}`}
-                type="button"
-                onClick={() => setSelectedIndex(index)}
                 className={cn(
-                  "grid gap-2 rounded-xl border p-3 text-left transition sm:grid-cols-[7rem_minmax(0,1fr)_7rem] sm:items-center",
+                  "grid gap-2 rounded-xl border p-3 transition md:grid-cols-[2rem_8rem_minmax(0,1fr)_8rem_auto] md:items-center",
                   selectedIndex === index
                     ? "border-brand-teal/35 bg-brand-teal/5"
                     : "border-border/60 bg-card/70 hover:border-brand-teal/25"
                 )}
               >
+                <input
+                  type="checkbox"
+                  checked={item.complete}
+                  onChange={(event) => updateMilestone(item.id, { complete: event.target.checked, status: event.target.checked ? "Complete" : "Scheduled" })}
+                  className="h-4 w-4 rounded border-border text-brand-teal"
+                  disabled={!canManageEvents}
+                  aria-label={`Mark ${item.title} complete`}
+                />
                 <div>
-                  <p className="text-sm font-extrabold">{formatShortDate(item.dueDate)}</p>
-                  <p className="text-[11px] font-bold text-muted-foreground">{item.timing}</p>
+                  <Input
+                    type="date"
+                    value={item.dueDateInput}
+                    onChange={(event) => updateMilestone(item.id, { dueDate: event.target.value })}
+                    className="h-8 rounded-xl bg-background text-xs"
+                    disabled={!canManageEvents}
+                  />
+                  <p className="mt-1 text-[11px] font-bold text-muted-foreground">{item.timing}</p>
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-extrabold">{item.title}</p>
-                  <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
-                    {item.audience} - {item.channel}
-                  </p>
+                  <Input
+                    value={item.title}
+                    onFocus={() => setSelectedIndex(index)}
+                    onChange={(event) => updateMilestone(item.id, { title: event.target.value })}
+                    className="h-8 rounded-xl bg-background text-xs font-extrabold"
+                    disabled={!canManageEvents}
+                  />
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">{item.audience}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">{item.channel}</span>
+                  </div>
                 </div>
-                <span
+                <button
+                  type="button"
+                  onClick={() => setSelectedIndex(index)}
                   className={cn(
-                    "justify-self-start rounded-full px-2 py-1 text-[11px] font-extrabold sm:justify-self-end",
-                    item.status === "Due soon"
+                    "justify-self-start rounded-full px-2 py-1 text-[11px] font-extrabold md:justify-self-end",
+                    item.status === "Due soon" || item.status === "Needs review"
                       ? "bg-brand-amber/10 text-brand-amber"
                       : item.status === "Review"
                         ? "bg-muted text-muted-foreground"
-                        : "bg-brand-sage/10 text-brand-sage"
+                        : item.status === "Complete" || item.status === "Sent"
+                          ? "bg-brand-sage/10 text-brand-sage"
+                          : "bg-brand-teal/10 text-brand-teal"
                   )}
                 >
                   {item.status}
-                </span>
-              </button>
+                </button>
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => updateMilestone(item.id, { removed: true })} disabled={!canManageEvents}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             ))}
+            {generatedItems.length === 0 && <div className="actsix-empty-state min-h-24 text-sm">Add a milestone to start the communication plan.</div>}
+          </div>
           </div>
         </div>
 
@@ -5903,27 +7213,70 @@ function CommunicationSurface({ event, collaboratorPeople }: { event: EventItem;
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Selected message</p>
-                <h4 className="mt-1 text-lg font-extrabold">{selected.title}</h4>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">{selected.timing} - {formatShortDate(selected.dueDate)}</p>
+                <h4 className="mt-1 text-lg font-extrabold">{selected?.title || "No milestone selected"}</h4>
+                {selected && <p className="mt-1 text-sm font-medium text-muted-foreground">{selected.timing} - {formatShortDate(selected.dueDate)}</p>}
               </div>
-              <Badge variant="outline" className="shrink-0 rounded-full text-[10px] font-bold">{selected.status}</Badge>
+              {selected && <Badge variant="outline" className="shrink-0 rounded-full text-[10px] font-bold">{selected.status}</Badge>}
             </div>
-            <div className="mt-4 space-y-3">
-              <HealthRow label="Audience" value={selected.audience} />
-              <HealthRow label="Channel" value={selected.channel} />
-              <HealthRow label="Owner" value={selected.ownerRole === "Event Leader" ? communicationOwner : selected.ownerRole} />
-              <HealthRow label="Approval" value={selected.approvalStatus} />
-              <HealthRow label="Sent status" value="Not sent" />
-            </div>
+            {selected && (
+              <div className="mt-4 space-y-3">
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground">Audience</span>
+                  <Input value={selected.audience} onChange={(event) => updateMilestone(selected.id, { audience: event.target.value })} className="h-8 rounded-xl bg-background text-xs" disabled={!canManageEvents} />
+                </label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="block space-y-1">
+                    <span className="text-xs font-bold text-muted-foreground">Channel</span>
+                    <select value={selected.channel} onChange={(event) => updateMilestone(selected.id, { channel: event.target.value })} className="h-8 w-full rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
+                      {channelOptions.map((channel) => <option key={channel}>{channel}</option>)}
+                    </select>
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-bold text-muted-foreground">Status</span>
+                    <select value={selected.status} onChange={(event) => updateMilestone(selected.id, { status: event.target.value, complete: event.target.value === "Complete" })} className="h-8 w-full rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
+                      {statusOptions.map((status) => <option key={status}>{status}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground">Owner</span>
+                  <select value={selected.owner} onChange={(event) => updateMilestone(selected.id, { owner: event.target.value })} className="h-8 w-full rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
+                    <option>{communicationOwner}</option>
+                    {collaboratorPeople.map((person) => <option key={person.id}>{person.display_name}</option>)}
+                    <option>Comms Owner</option>
+                    <option>People Owner</option>
+                    <option>Finance Owner</option>
+                    <option>Safety Owner</option>
+                    <option>Event Team</option>
+                  </select>
+                </label>
+                <HealthRow label="Approval" value={selected.approvalStatus} />
+              </div>
+            )}
           </div>
 
-          <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+          {selected && <div className="rounded-xl border border-border/70 bg-background/45 p-4">
             <div className="mb-2 flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-brand-teal" />
               <h4 className="text-sm font-extrabold">Draft message brief</h4>
             </div>
-            <p className="text-sm font-medium leading-6 text-muted-foreground">{selected.draft}</p>
-          </div>
+            <Textarea
+              value={selected.draft}
+              onChange={(event) => updateMilestone(selected.id, { draft: event.target.value })}
+              className="min-h-28 rounded-xl bg-background text-sm"
+              disabled={!canManageEvents}
+            />
+            <label className="mt-3 block space-y-1">
+              <span className="text-xs font-bold text-muted-foreground">Artwork or file note</span>
+              <Input
+                value={selected.assetNote}
+                onChange={(event) => updateMilestone(selected.id, { assetNote: event.target.value })}
+                placeholder="Poster, slide, image, or document needed..."
+                className="h-8 rounded-xl bg-background text-xs"
+                disabled={!canManageEvents}
+              />
+            </label>
+          </div>}
         </div>
       </div>
     </div>
