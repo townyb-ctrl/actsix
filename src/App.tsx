@@ -31,6 +31,7 @@ import TrainingCenter from "./pages/TrainingCenter";
 import SermonLessonHub from "./pages/SermonLessonHub";
 import EventManagement from "./pages/EventManagement";
 import CalendarModule from "./pages/CalendarModule";
+import PublicEventRegistration from "./pages/PublicEventRegistration";
 import { Recurring, Review, Calendar, Meetups } from "./pages/Placeholder";
 import Auth from "./pages/Auth";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
@@ -53,6 +54,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/workspace-setup" element={<WorkspaceSetup />} />
+            <Route path="/register/:token" element={<PublicEventRegistration />} />
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
 

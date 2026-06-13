@@ -1,1 +1,4 @@
 project_id = "ylwyfpmbmhlfjrztvasl"
+
+[functions.event-registration-hosted-form]
+verify_jwt = false

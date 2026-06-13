@@ -3657,7 +3657,7 @@ function ParticipantTable({
   const pendingApprovals = event.registrations.filter((registration) => registration.approvalStatus === "pending").length;
   const queuedStatusUpdates = event.statusSyncQueue.filter((item) => item.status === "queued").length;
   const hostedFormUrl = hostedForm
-    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/event-registration-hosted-form?token=${hostedForm.publicToken}`
+    ? `${window.location.origin}/register/${hostedForm.publicToken}`
     : "";
   const sourceLabel = (registration: EventRegistration) =>
     registration.source === "google_sheets" ? "Google Sheet" : "Manual";
