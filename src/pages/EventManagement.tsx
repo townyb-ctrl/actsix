@@ -390,6 +390,39 @@ const eventPortfolios = [
   },
 ];
 
+const portfolioLabelFromText = (value: string) => {
+  const text = value.trim();
+  if (!text) return "";
+  const prefix = text.split(":")[0]?.trim() || text;
+  const normalizedText = text.toLowerCase();
+  const normalizedPrefix = prefix.toLowerCase();
+  const exact = eventPortfolios.find((portfolio) => portfolio.label.toLowerCase() === normalizedPrefix);
+  if (exact) return exact.label;
+  const matched = eventPortfolios.find(
+    (portfolio) =>
+      portfolio.match.some((keyword) => normalizedText.includes(keyword)) ||
+      portfolio.match.some((keyword) => normalizedPrefix.includes(keyword))
+  );
+  return matched?.label || prefix;
+};
+
+const portfolioLabelsForEvent = (event: EventItem) => {
+  const labels = new Set(eventPortfolios.filter((portfolio) => portfolio.core).map((portfolio) => portfolio.label));
+  event.logistics.forEach((item) => {
+    const label = portfolioLabelFromText(item.label);
+    if (label) labels.add(label);
+  });
+  event.expenses.forEach((expense) => {
+    const label = portfolioLabelFromText(expense.category);
+    if (label) labels.add(label);
+  });
+  return Array.from(labels).sort((a, b) => {
+    const aIndex = eventPortfolios.findIndex((portfolio) => portfolio.label === a);
+    const bIndex = eventPortfolios.findIndex((portfolio) => portfolio.label === b);
+    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex) || a.localeCompare(b);
+  });
+};
+
 export default function EventManagement() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -989,6 +1022,7 @@ export default function EventManagement() {
   }, [events, query, statusFilter]);
 
   const selectedEvent = events.find((event) => event.id === (eventId || selectedId)) || filteredEvents[0] || events[0];
+  const selectedEventPortfolioLabels = selectedEvent ? portfolioLabelsForEvent(selectedEvent) : [];
 
   const stats = useMemo(() => {
     const active = events.filter((event) => event.status !== "Complete").length;
@@ -2129,12 +2163,17 @@ export default function EventManagement() {
       toast.error("You need workspace edit access to manage events.");
       return;
     }
+    const portfolioCategories = portfolioLabelsForEvent(selectedEvent);
+    const normalizedCategory = portfolioLabelFromText(expenseCategory);
+    const category = normalizedCategory && portfolioCategories.includes(normalizedCategory)
+      ? normalizedCategory
+      : portfolioCategories[0] || "Finance";
 
     const { error } = await (supabase as any).from("event_expenses").insert({
       workspace_id: workspace.id,
       event_id: selectedEvent.id,
       title: expenseTitle.trim(),
-      category: expenseCategory.trim() || "General",
+      category,
       amount: Number(expenseAmount) || 0,
       paid_by_person_id: expensePaidById || null,
       notes: expenseNotes.trim(),
@@ -2146,7 +2185,7 @@ export default function EventManagement() {
     }
 
     setExpenseTitle("");
-    setExpenseCategory("General");
+    setExpenseCategory(category);
     setExpenseAmount(0);
     setExpensePaidById("");
     setExpenseNotes("");
@@ -2999,7 +3038,9 @@ export default function EventManagement() {
 
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     <Input value={expenseTitle} onChange={(event) => setExpenseTitle(event.target.value)} placeholder="Expense title" className="h-8 rounded-xl bg-background text-xs" disabled={!canManageEvents} />
-                    <Input value={expenseCategory} onChange={(event) => setExpenseCategory(event.target.value)} placeholder="Category" className="h-8 rounded-xl bg-background text-xs" disabled={!canManageEvents} />
+                    <select value={portfolioLabelFromText(expenseCategory) || selectedEventPortfolioLabels[0] || ""} onChange={(event) => setExpenseCategory(event.target.value)} className="h-8 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
+                      {selectedEventPortfolioLabels.map((label) => <option key={label} value={label}>{label}</option>)}
+                    </select>
                     <Input type="number" value={expenseAmount} onChange={(event) => setExpenseAmount(Number(event.target.value))} placeholder="Amount" className="h-8 rounded-xl bg-background text-xs" disabled={!canManageEvents} />
                     <select value={expensePaidById} onChange={(event) => setExpensePaidById(event.target.value)} className="h-8 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
                       <option value="">Paid by</option>
@@ -3714,14 +3755,48 @@ function WorkspacePanel({
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const tone =
+    title === "Registrations" ? "amber" :
+    title === "Budget & Finance" ? "sage" :
+    title === "Communication Plan" ? "bronze" :
+    title === "Files" ? "coral" :
+    "teal";
+  const toneClass = {
+    teal: {
+      panel: "border-brand-teal/25 bg-gradient-to-br from-brand-teal/5 via-card/70 to-background/40",
+      icon: "bg-brand-teal/15 text-brand-teal",
+      title: "text-brand-teal-dark",
+    },
+    amber: {
+      panel: "border-brand-amber/25 bg-gradient-to-br from-brand-amber/10 via-card/75 to-background/40",
+      icon: "bg-brand-amber/15 text-brand-bronze",
+      title: "text-brand-bronze",
+    },
+    sage: {
+      panel: "border-brand-sage/25 bg-gradient-to-br from-brand-sage/10 via-card/75 to-background/40",
+      icon: "bg-brand-sage/15 text-brand-sage",
+      title: "text-brand-sage",
+    },
+    bronze: {
+      panel: "border-brand-bronze/25 bg-gradient-to-br from-brand-bronze/10 via-card/75 to-background/40",
+      icon: "bg-brand-bronze/15 text-brand-bronze",
+      title: "text-brand-bronze",
+    },
+    coral: {
+      panel: "border-brand-coral/20 bg-gradient-to-br from-brand-coral/10 via-card/75 to-background/40",
+      icon: "bg-brand-coral/10 text-brand-coral",
+      title: "text-brand-coral",
+    },
+  }[tone];
+
   return (
-    <section className="rounded-xl border border-border/70 bg-background/45 p-4">
+    <section className={cn("rounded-xl border p-4", toneClass.panel)}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+          <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", toneClass.icon)}>
             <Icon className="h-3.5 w-3.5" />
           </span>
-          <h3 className="text-sm font-extrabold">{title}</h3>
+          <h3 className={cn("text-sm font-extrabold", toneClass.title)}>{title}</h3>
         </div>
         {actions}
       </div>
@@ -4065,7 +4140,7 @@ function ParticipantTable({
 
   return (
     <div className="space-y-3">
-      <section className="rounded-xl border border-border/70 bg-card/85 px-3 py-2 shadow-sm">
+      <section className="rounded-xl border border-brand-amber/25 bg-gradient-to-r from-brand-amber/10 via-card/90 to-brand-teal/5 px-3 py-2 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-muted-foreground">
@@ -4077,7 +4152,7 @@ function ParticipantTable({
               <Button
                 type="button"
                 variant="outline"
-                className="h-9 w-28 rounded-full px-4 text-sm font-bold"
+                className="h-9 w-28 rounded-full border-brand-amber/35 bg-brand-amber/10 px-4 text-sm font-bold text-brand-bronze hover:bg-brand-amber/15"
                 onClick={() => setRegistrationToolsOpen((open) => !open)}
               >
                 Options
@@ -4122,7 +4197,7 @@ function ParticipantTable({
             <div className="relative">
               <Button
                 type="button"
-                className="actsix-btn-primary h-9 w-28 rounded-full px-4 text-sm font-bold"
+                className="actsix-btn-primary h-9 w-28 rounded-full px-4 text-sm font-bold shadow-md shadow-brand-teal/15"
                 onClick={() => setActionMenuOpen((open) => !open)}
                 disabled={!canManageEvents}
               >
@@ -5403,16 +5478,19 @@ function BudgetSurface(props: {
   });
   const outstandingPayments = paymentRows.reduce((sum, row) => sum + row.balance, 0);
   const incomeReceived = props.event.received || props.expectedRevenue;
+  const portfolioCategoryLabels = portfolioLabelsForEvent(props.event);
   const categories = Array.from(
     props.event.expenses.reduce<Map<string, { amount: number; count: number }>>((acc, expense) => {
-      const label = expense.category || "Uncategorised";
+      const label = portfolioLabelFromText(expense.category) || portfolioCategoryLabels[0] || "Uncategorised";
       const current = acc.get(label) || { amount: 0, count: 0 };
       acc.set(label, { amount: current.amount + expense.amount, count: current.count + 1 });
       return acc;
     }, new Map())
   ).map(([label, totals]) => ({ label, ...totals }));
-  const fallbackCategories = ["Venue", "Food", "Travel", "Equipment", "Communication"];
-  const plannedCategories = categories.length ? categories : fallbackCategories.map((label) => ({ label, amount: 0, count: 0 }));
+  const plannedCategories = portfolioCategoryLabels.map((label) => {
+    const totals = categories.find((category) => category.label === label);
+    return { label, amount: totals?.amount || 0, count: totals?.count || 0 };
+  });
   const categoryBudget = plannedCategories.length ? props.event.budget / plannedCategories.length : 0;
   const financeTabs: Array<{ id: typeof financeView; label: string }> = [
     { id: "budget", label: "Budget" },
@@ -5420,6 +5498,14 @@ function BudgetSurface(props: {
     { id: "income", label: "Income" },
     { id: "payments", label: "Participant Payments" },
   ];
+
+  useEffect(() => {
+    if (!props.canManageEvents || !portfolioCategoryLabels.length) return;
+    const current = portfolioLabelFromText(props.expenseCategory);
+    if (!current || !portfolioCategoryLabels.includes(current)) {
+      props.setExpenseCategory(portfolioCategoryLabels[0]);
+    }
+  }, [portfolioCategoryLabels.join("|"), props.canManageEvents, props.expenseCategory, props.setExpenseCategory]);
 
   return (
     <div className="space-y-3">
@@ -5454,8 +5540,8 @@ function BudgetSurface(props: {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="rounded-xl border border-border/70 bg-background/45 p-4">
             <div className="mb-3">
-              <h4 className="text-sm font-extrabold">Budget by category</h4>
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">Category totals come from the expenses already recorded for this event.</p>
+              <h4 className="text-sm font-extrabold">Budget by portfolio</h4>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">Budget categories follow the same portfolios used to plan this event.</p>
             </div>
             <div className="grid gap-2">
               {plannedCategories.map((category) => {
@@ -5501,7 +5587,9 @@ function BudgetSurface(props: {
         <div className="space-y-3">
           <div className="grid gap-2 rounded-xl border border-border/70 bg-background/45 p-3 sm:grid-cols-2 lg:grid-cols-5">
             <Input value={props.expenseTitle} onChange={(event) => props.setExpenseTitle(event.target.value)} placeholder="Expense title" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
-            <Input value={props.expenseCategory} onChange={(event) => props.setExpenseCategory(event.target.value)} placeholder="Category" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
+            <select value={portfolioLabelFromText(props.expenseCategory) || portfolioCategoryLabels[0] || ""} onChange={(event) => props.setExpenseCategory(event.target.value)} className="h-8 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!props.canManageEvents}>
+              {portfolioCategoryLabels.map((label) => <option key={label} value={label}>{label}</option>)}
+            </select>
             <Input type="number" value={props.expenseAmount} onChange={(event) => props.setExpenseAmount(Number(event.target.value))} placeholder="Amount" className="h-8 rounded-xl bg-background text-xs" disabled={!props.canManageEvents} />
             <select value={props.expensePaidById} onChange={(event) => props.setExpensePaidById(event.target.value)} className="h-8 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!props.canManageEvents}>
               <option value="">Paid by</option>
