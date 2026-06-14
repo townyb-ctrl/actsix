@@ -15,6 +15,7 @@ import {
   ListChecks,
   MapPin,
   MessageSquare,
+  MoreVertical,
   Plane,
   Plus,
   Search,
@@ -99,7 +100,6 @@ type EventSheetConnection = {
   syncFrequencyMinutes?: number | null;
   notificationSettings?: Record<string, boolean>;
   personMatchingRules?: Record<string, boolean>;
-  readinessRules?: Record<string, boolean>;
   transformSettings?: Record<string, string>;
   lastSyncedAt?: string | null;
   rowsImported: number;
@@ -282,11 +282,9 @@ const registrationStatusStyles: Record<RegistrationStatus, string> = {
 };
 
 const money = (value: number) =>
-  new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "ZAR",
+  `R${new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 0,
-  }).format(value || 0);
+  }).format(value || 0)}`;
 
 const percent = (value: number, total: number) => {
   if (!total) return 0;
@@ -324,8 +322,8 @@ const eventPortfolios = [
     id: "people-registration",
     label: "People",
     core: true,
-    match: ["people", "registration", "participant", "forms", "attendance", "readiness", "group allocation"],
-    purpose: "Participants, registrations, event team, group allocation, forms, attendance, and readiness.",
+    match: ["people", "registration", "participant", "forms", "attendance", "group allocation"],
+    purpose: "Participants, registrations, event team, group allocation, forms, and attendance.",
   },
   {
     id: "volunteers-teams",
@@ -404,11 +402,11 @@ export default function EventManagement() {
   const [moduleView, setModuleView] = useState<"overview" | "all" | "templates">("overview");
   const [workspaceTab, setWorkspaceTab] = useState<"overview" | "team" | "registrations" | "communication" | "budget" | "files">("overview");
   const [teamWorkspaceView, setTeamWorkspaceView] = useState<"team" | "portfolios">("team");
-  const [peopleView, setPeopleView] = useState<"participants" | "readiness" | "team">("participants");
   const [portfolioView, setPortfolioView] = useState("landing");
   const [eventFormStep, setEventFormStep] = useState(0);
   const [eventStartingPoint, setEventStartingPoint] = useState<"template" | "duplicate" | "scratch">("template");
   const [duplicateSourceId, setDuplicateSourceId] = useState("");
+  const [eventActionsOpen, setEventActionsOpen] = useState(false);
   const [eventPlanningConfig, setEventPlanningConfig] = useState({
     volunteersTeams: false,
     venueAccommodation: false,
@@ -441,6 +439,53 @@ export default function EventManagement() {
 
   const canManageEvents = ["admin", "editor", "group_leader"].includes(role || "");
 
+  const normalizeEventWorkspace = (event: any): EventItem => ({
+    ...event,
+    budget: Number(event?.budget || 0),
+    received: Number(event?.received || 0),
+    costPerPerson: Number(event?.costPerPerson || 0),
+    capacity: Number(event?.capacity || 0),
+    registered: Number(event?.registered || 0),
+    checklist: event?.checklist || [],
+    team: event?.team || [],
+    logistics: event?.logistics || [],
+    registrations: (event?.registrations || []).map((registration: any) => ({
+      ...registration,
+      amountDue: Number(registration?.amountDue || 0),
+      amountPaid: Number(registration?.amountPaid || 0),
+      reviewReasons: Array.isArray(registration?.reviewReasons) ? registration.reviewReasons : [],
+      customFields: registration?.customFields || {},
+    })),
+    collaborators: event?.collaborators || [],
+    expenses: (event?.expenses || []).map((expense: any) => ({
+      ...expense,
+      amount: Number(expense?.amount || 0),
+    })),
+    sheetConnections: (event?.sheetConnections || []).map((connection: any) => ({
+      ...connection,
+      rowsImported: Number(connection?.rowsImported || 0),
+      rowsRequiringReview: Number(connection?.rowsRequiringReview || 0),
+    })),
+    registrationColumns: event?.registrationColumns || [],
+    importRuns: (event?.importRuns || []).map((run: any) => ({
+      ...run,
+      rowsSeen: Number(run?.rowsSeen || 0),
+      rowsImported: Number(run?.rowsImported || 0),
+      rowsSkipped: Number(run?.rowsSkipped || 0),
+      rowsRequiringReview: Number(run?.rowsRequiringReview || 0),
+    })),
+    importIssues: event?.importIssues || [],
+    syncAuditLogs: event?.syncAuditLogs || [],
+    registrationForms: event?.registrationForms || [],
+    paymentConfig: event?.paymentConfig
+      ? {
+          ...event.paymentConfig,
+          fixedAmount: Number(event.paymentConfig.fixedAmount || 0),
+        }
+      : null,
+    statusSyncQueue: event?.statusSyncQueue || [],
+  });
+
   const loadEvents = async () => {
     if (!workspace?.id) {
       setEvents([]);
@@ -449,6 +494,39 @@ export default function EventManagement() {
     }
 
     setLoading(true);
+
+    if (eventId) {
+      const [workspaceResult, peopleResult] = await Promise.all([
+        (supabase as any).rpc("get_event_workspace", { p_event_id: eventId }),
+        (supabase as any)
+          .from("people")
+          .select("id, display_name, email, phone_number, avatar_url")
+          .eq("workspace_id", workspace.id)
+          .order("display_name", { ascending: true }),
+      ]);
+
+      const missingRpc =
+        workspaceResult.error?.code === "42883" ||
+        workspaceResult.error?.code === "PGRST202" ||
+        workspaceResult.error?.message?.includes("get_event_workspace");
+
+      if (!missingRpc) {
+        setLoading(false);
+        if (workspaceResult.error) {
+          toast.error(workspaceResult.error.message);
+          setEvents([]);
+          return;
+        }
+        if (peopleResult.error) toast.error(peopleResult.error.message);
+
+        const event = workspaceResult.data?.event;
+        const nextEvents = event ? [normalizeEventWorkspace(event)] : [];
+        setPeople(peopleResult.data || []);
+        setEvents(nextEvents);
+        setSelectedId(nextEvents[0]?.id || "");
+        return;
+      }
+    }
 
     const [
       eventResult,
@@ -699,7 +777,6 @@ export default function EventManagement() {
         syncFrequencyMinutes: item.sync_frequency_minutes,
         notificationSettings: item.notification_settings || {},
         personMatchingRules: item.person_matching_rules || {},
-        readinessRules: item.readiness_rules || {},
         transformSettings: item.transform_settings || {},
         lastSyncedAt: item.last_synced_at,
         rowsImported: Number(item.rows_imported || 0),
@@ -948,13 +1025,6 @@ export default function EventManagement() {
     : 0;
   const selectedEventConfirmedCount =
     selectedEvent?.registrations.filter((registration) => registration.status === "Confirmed").length || 0;
-  const selectedEventMissingForms =
-    selectedEvent?.registrations.filter(
-      (registration) => !registration.medicalFormReceived || !registration.consentFormReceived
-    ).length || 0;
-  const readiness = selectedEvent
-    ? percent(selectedEvent.checklist.filter((item) => item.done).length, selectedEvent.checklist.length)
-    : 0;
   const selectedEventOutstandingPayments =
     selectedEvent?.registrations.filter((registration) => registration.amountDue > registration.amountPaid).length || 0;
   const selectedEventTransportNeeded =
@@ -971,46 +1041,24 @@ export default function EventManagement() {
   const selectedEventLogisticsProgress = selectedEvent
     ? percent(selectedEventLogisticsDone, selectedEvent.logistics.length)
     : 0;
-  const selectedEventParticipantReady = selectedEvent
-    ? selectedEvent.registrations.filter(
-        (registration) =>
-          registration.status === "Confirmed" &&
-          registration.amountPaid >= registration.amountDue &&
-          registration.medicalFormReceived &&
-          registration.consentFormReceived
-      ).length
-    : 0;
-  const selectedEventParticipantReadiness = selectedEvent
-    ? percent(selectedEventParticipantReady, selectedEvent.registrations.length)
-    : 0;
   const selectedEventSpentPercent = selectedEvent ? percent(selectedEventSpent, selectedEvent.budget) : 0;
   const selectedEventAttention = selectedEvent
     ? [
-        selectedEventMissingForms ? `${selectedEventMissingForms} participant${selectedEventMissingForms === 1 ? "" : "s"} missing forms` : "",
         selectedEventOutstandingPayments ? `${selectedEventOutstandingPayments} payment${selectedEventOutstandingPayments === 1 ? "" : "s"} outstanding` : "",
         selectedEventOpenLogistics ? `${selectedEventOpenLogistics} portfolio item${selectedEventOpenLogistics === 1 ? "" : "s"} still open` : "",
         selectedEventBudgetRemaining < 0 ? `Budget exceeded by ${money(Math.abs(selectedEventBudgetRemaining))}` : "",
-        readiness < 50 && selectedEvent.checklist.length ? "Planning checklist is below 50%" : "",
       ].filter(Boolean)
     : [];
   const attentionEvents = events
     .map((event) => {
-      const missingForms = event.registrations.filter(
-        (registration) => !registration.medicalFormReceived || !registration.consentFormReceived
-      ).length;
       const openLogistics = event.logistics.filter((item) => item.status !== "Done").length;
       const spent = event.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-      const planningProgress = percent(event.checklist.filter((item) => item.done).length, event.checklist.length);
       const alert =
-        missingForms > 0
-          ? `${missingForms} form${missingForms === 1 ? "" : "s"} outstanding`
-          : event.budget && spent > event.budget
+        event.budget && spent > event.budget
             ? `Budget exceeded by ${money(spent - event.budget)}`
             : openLogistics > 0
               ? `${openLogistics} portfolio item${openLogistics === 1 ? "" : "s"} open`
-              : planningProgress < 50 && event.status !== "Complete"
-                ? "Planning needs attention"
-                : "";
+              : "";
       return { event, alert };
     })
     .filter((item) => item.alert)
@@ -1023,18 +1071,10 @@ export default function EventManagement() {
   const completedEvents = events.filter((event) => event.status === "Complete").slice(-3);
   const planningAreaCards = selectedEvent
     ? [
-        { label: "Planning", value: readiness, detail: `${selectedEventChecklistDone}/${selectedEvent.checklist.length} complete` },
-        { label: "People", value: selectedEventParticipantReadiness, detail: `${selectedEventParticipantReady}/${selectedEvent.registrations.length} ready` },
+        { label: "Planning", value: percent(selectedEventChecklistDone, selectedEvent.checklist.length), detail: `${selectedEventChecklistDone}/${selectedEvent.checklist.length} complete` },
+        { label: "People", value: percent(selectedEventConfirmedCount, selectedEvent.registrations.length), detail: `${selectedEventConfirmedCount}/${selectedEvent.registrations.length} confirmed` },
         { label: "Portfolios", value: selectedEventLogisticsProgress, detail: `${selectedEventLogisticsDone}/${selectedEvent.logistics.length} done` },
         { label: "Budget", value: selectedEvent.budget ? Math.min(100, selectedEventSpentPercent) : 0, detail: `${money(selectedEventSpent)} spent` },
-      ]
-    : [];
-  const readinessBuckets = selectedEvent
-    ? [
-        { label: "Missing consent or medical forms", count: selectedEventMissingForms },
-        { label: "Outstanding payment", count: selectedEventOutstandingPayments },
-        { label: "Transport marked as needed", count: selectedEventTransportNeeded },
-        { label: "Not yet confirmed", count: selectedEvent.registrations.filter((registration) => registration.status !== "Confirmed").length },
       ]
     : [];
   const selectedEventDaysRemaining = selectedEvent
@@ -1042,9 +1082,6 @@ export default function EventManagement() {
     : 0;
   const selectedEventNextMilestone = selectedEvent?.checklist.find((item) => !item.done)?.label || "No open milestone";
   const selectedEventCompletedMilestones = selectedEvent?.checklist.filter((item) => item.done).length || 0;
-  const selectedEventIncompleteRegistrations = selectedEvent
-    ? Math.max(0, selectedEvent.registrations.length - selectedEventParticipantReady)
-    : 0;
   const eventTemplates: Array<{ title: string; type: EventType; detail: string }> = [
     { title: "Mission Trip", type: "Mission Trip", detail: "Travel, documents, support raising, safety, team roles" },
     { title: "Youth Camp", type: "Camp", detail: "Registration, forms, transport, rooms, meals, programme" },
@@ -1497,7 +1534,7 @@ export default function EventManagement() {
       status: "connected",
       connected_by: user.id,
       rows_imported: selectedEvent.registrations.filter((registration) => registration.source === "google_sheets").length,
-      rows_requiring_review: selectedEvent.registrations.filter((registration) => registration.reviewStatus === "review" || registration.reviewStatus === "duplicate").length,
+      rows_requiring_review: 0,
       updated_at: new Date().toISOString(),
     };
 
@@ -1588,7 +1625,7 @@ export default function EventManagement() {
         rows_seen: 48,
         rows_imported: 0,
         rows_requiring_review: 0,
-        summary: { message: "Mapping saved. Sheet API sync is ready to be connected." },
+        summary: { message: "Mapping saved. Sheet API sync can be connected." },
         completed_at: new Date().toISOString(),
       });
 
@@ -1666,7 +1703,7 @@ export default function EventManagement() {
     }
 
     await loadEvents();
-    toast.success(`Google Sheet synced: ${data?.imported || 0} imported, ${data?.review || 0} need review.`);
+    toast.success(`Google Sheet synced: ${data?.imported || 0} imported.`);
   };
 
   const resetGoogleSheetImportData = async (connectionId?: string) => {
@@ -2380,44 +2417,52 @@ export default function EventManagement() {
         {eventId && selectedEvent && (
           <section className="space-y-4">
             <Card className="actsix-panel overflow-hidden">
-              <div className="border-b border-border/70 p-4">
-                <Button asChild variant="ghost" className="mb-3 h-8 px-0 text-muted-foreground hover:bg-transparent hover:text-brand-teal">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
+                <Button asChild variant="ghost" className="h-8 px-0 text-muted-foreground hover:bg-transparent hover:text-brand-teal">
                   <Link to="/events"><ArrowLeft className="h-4 w-4" /> Events</Link>
                 </Button>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-2xl font-extrabold">{selectedEvent.title}</h2>
-                      <Badge variant="outline" className={cn("rounded-full text-[10px] font-bold", statusStyles[selectedEvent.status])}>
-                        {selectedEvent.status}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                      {selectedEvent.startsAt} to {selectedEvent.endsAt} · {selectedEvent.location || "Location needed"}
-                    </p>
-                    <p className="mt-2 text-sm font-medium text-muted-foreground">
-                      Led by {selectedEvent.owner || "Unassigned"} · {selectedEvent.registrations.length} participants · {selectedEventTeamCount} team members
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={() => setParticipantOpen(true)} disabled={!canManageEvents}>
-                      <Users className="h-3.5 w-3.5" />
-                      Open Registration
-                    </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editEvent(selectedEvent)} disabled={!canManageEvents}>
-                      <Edit3 className="h-4 w-4" />
-                    </Button>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={cn("rounded-full text-[10px] font-bold", statusStyles[selectedEvent.status])}>
+                    {selectedEvent.status}
+                  </Badge>
+                  <div className="relative">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
-                      onClick={() => deleteEvent(selectedEvent.id)}
+                      className="h-8 w-8 rounded-full"
+                      onClick={() => setEventActionsOpen((open) => !open)}
                       disabled={!canManageEvents}
-                      title="Delete event"
+                      title="Event actions"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
+                    {eventActionsOpen && (
+                      <div className="absolute right-0 z-10 mt-2 w-40 rounded-xl border border-border/70 bg-card p-2 shadow-lg">
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70"
+                          onClick={() => {
+                            setEventActionsOpen(false);
+                            editEvent(selectedEvent);
+                          }}
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-muted-foreground hover:bg-muted/70 hover:text-destructive"
+                          onClick={() => {
+                            setEventActionsOpen(false);
+                            deleteEvent(selectedEvent.id);
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2469,7 +2514,7 @@ export default function EventManagement() {
 
                       <div className="rounded-xl border border-border/70 bg-background/45 p-4">
                         <div className="grid gap-2">
-                          <QuietStatusRow label="Registrations" value={`${selectedEvent.registrations.length}/${selectedEvent.capacity || 0}`} detail={`${selectedEventParticipantReady} ready`} onClick={() => setWorkspaceTab("registrations")} />
+                          <QuietStatusRow label="Registrations" value={`${selectedEvent.registrations.length}/${selectedEvent.capacity || 0}`} detail={`${selectedEventConfirmedCount} confirmed`} onClick={() => setWorkspaceTab("registrations")} />
                           <QuietStatusRow label="Budget" value={money(selectedEventBudgetRemaining)} detail={`${money(selectedEventSpent)} spent`} onClick={() => setWorkspaceTab("budget")} />
                           <QuietStatusRow label="Portfolios" value={`${selectedEventOpenLogistics} open`} detail={`${selectedEventLogisticsProgress}% complete`} onClick={() => { setWorkspaceTab("team"); setTeamWorkspaceView("portfolios"); }} />
                           <QuietStatusRow label="Team" value={`${selectedEvent.collaborators.length || selectedEvent.team.length || 0}`} detail={selectedEvent.owner || "Unassigned lead"} onClick={() => { setWorkspaceTab("team"); setTeamWorkspaceView("team"); }} />
@@ -2495,97 +2540,87 @@ export default function EventManagement() {
                   <div className="space-y-4">
                     <SubTabs value={teamWorkspaceView} onChange={(value) => setTeamWorkspaceView(value as typeof teamWorkspaceView)} items={["team", "portfolios"]} />
                     {teamWorkspaceView === "team" ? (
-                      <WorkspacePanel title="Team" icon={Users}>
+                      <WorkspacePanel
+                        title="Team"
+                        icon={Users}
+                        actions={
+                          <Button type="button" className="actsix-btn-primary h-8 rounded-full px-3 text-xs" onClick={() => setCollaboratorOpen(true)} disabled={!canManageEvents}>
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Team Member
+                          </Button>
+                        }
+                      >
                         <TeamList
                           event={selectedEvent}
                           canManageEvents={canManageEvents}
                           onRemove={removeCollaborator}
-                          onAdd={() => setCollaboratorOpen(true)}
                         />
                       </WorkspacePanel>
                     ) : (
-                      <WorkspacePanel title="Portfolios" icon={FolderOpen}>
-                        <PortfolioSurface
-                          event={selectedEvent}
-                          view={portfolioView}
-                          onViewChange={(value) => setPortfolioView(value as typeof portfolioView)}
-                          canManageEvents={canManageEvents}
-                          label={logisticsLabel}
-                          setLabel={setLogisticsLabel}
-                          assigneeId={logisticsAssigneeId}
-                          setAssigneeId={setLogisticsAssigneeId}
-                          collaboratorPeople={collaboratorPeople}
-                          onAdd={addLogisticsItem}
-                          onUpdate={updateLogisticsItem}
-                          onDelete={deleteLogisticsItem}
-                          onAssignOwner={assignPortfolioOwner}
-                          onAddTeamMember={addPortfolioTeamMember}
-                          onCreatePortfolio={createPortfolio}
-                          onRenamePortfolio={renamePortfolio}
-                          onDeletePortfolio={deletePortfolio}
-                          budgetProps={{
-                            spent: selectedEventSpent,
-                            remaining: selectedEventBudgetRemaining,
-                            expectedRevenue: selectedEventExpectedParticipantRevenue,
-                            expenseTitle,
-                            setExpenseTitle,
-                            expenseCategory,
-                            setExpenseCategory,
-                            expenseAmount,
-                            setExpenseAmount,
-                            expensePaidById,
-                            setExpensePaidById,
-                            expenseNotes,
-                            setExpenseNotes,
-                            onAddExpense: addExpense,
-                            onDeleteExpense: deleteExpense,
-                            onUpdateRegistration: updateRegistration,
-                          }}
-                        />
-                      </WorkspacePanel>
+                      <PortfolioSurface
+                        event={selectedEvent}
+                        view={portfolioView}
+                        onViewChange={(value) => setPortfolioView(value as typeof portfolioView)}
+                        canManageEvents={canManageEvents}
+                        label={logisticsLabel}
+                        setLabel={setLogisticsLabel}
+                        assigneeId={logisticsAssigneeId}
+                        setAssigneeId={setLogisticsAssigneeId}
+                        collaboratorPeople={collaboratorPeople}
+                        onAdd={addLogisticsItem}
+                        onUpdate={updateLogisticsItem}
+                        onDelete={deleteLogisticsItem}
+                        onAssignOwner={assignPortfolioOwner}
+                        onAddTeamMember={addPortfolioTeamMember}
+                        onCreatePortfolio={createPortfolio}
+                        onRenamePortfolio={renamePortfolio}
+                        onDeletePortfolio={deletePortfolio}
+                        budgetProps={{
+                          spent: selectedEventSpent,
+                          remaining: selectedEventBudgetRemaining,
+                          expectedRevenue: selectedEventExpectedParticipantRevenue,
+                          expenseTitle,
+                          setExpenseTitle,
+                          expenseCategory,
+                          setExpenseCategory,
+                          expenseAmount,
+                          setExpenseAmount,
+                          expensePaidById,
+                          setExpensePaidById,
+                          expenseNotes,
+                          setExpenseNotes,
+                          onAddExpense: addExpense,
+                          onDeleteExpense: deleteExpense,
+                          onUpdateRegistration: updateRegistration,
+                        }}
+                      />
                     )}
                   </div>
                 )}
 
                 {workspaceTab === "registrations" && (
-                  <div className="space-y-4">
-                    <SubTabs value={peopleView} onChange={(value) => setPeopleView(value as typeof peopleView)} items={["participants", "readiness"]} />
-                    {peopleView === "readiness" ? (
-                      <WorkspacePanel title="Registration Readiness" icon={AlertTriangle}>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          {readinessBuckets.map((bucket) => (
-                            <div key={bucket.label} className="flex items-center justify-between rounded-xl border border-border/70 bg-background/55 px-3 py-3">
-                              <span className="text-sm font-bold">{bucket.label}</span>
-                              <span className="text-lg font-extrabold text-brand-teal">{bucket.count}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </WorkspacePanel>
-                    ) : (
-                      <WorkspacePanel title="Registrations" icon={ClipboardCheck}>
-                        <ParticipantTable
-                          event={selectedEvent}
-                          canManageEvents={canManageEvents}
-                          onUpdate={updateRegistration}
-                          onUpdateWithStatusSync={updateRegistrationWithStatusSync}
-                          onRemove={removeRegistration}
-                          onAdd={() => setParticipantOpen(true)}
-                          onConnectSheet={() => setSheetConnectOpen(true)}
-                          onSyncSheet={syncGoogleSheetConnection}
-                          onResetSheetData={resetGoogleSheetImportData}
-                          onRemoveSheet={removeGoogleSheetConnection}
-                          onUpdateSheetSettings={updateGoogleSheetConnectionSettings}
-                          onAddCustomColumn={addCustomRegistrationColumn}
-                          onUpdateCustomColumn={updateCustomRegistrationColumn}
-                          onDeleteCustomColumn={deleteCustomRegistrationColumn}
-                          onCreateHostedForm={createHostedRegistrationForm}
-                          onGenerateGoogleFormTemplate={generateGoogleFormTemplate}
-                          onEnablePayments={enableManualPaymentConfig}
-                          syncingSheetId={syncingSheetId}
-                        />
-                      </WorkspacePanel>
-                    )}
-                  </div>
+                  <WorkspacePanel title="Registrations" icon={ClipboardCheck}>
+                    <ParticipantTable
+                      event={selectedEvent}
+                      canManageEvents={canManageEvents}
+                      onUpdate={updateRegistration}
+                      onUpdateWithStatusSync={updateRegistrationWithStatusSync}
+                      onRemove={removeRegistration}
+                      onAdd={() => setParticipantOpen(true)}
+                      onConnectSheet={() => setSheetConnectOpen(true)}
+                      onSyncSheet={syncGoogleSheetConnection}
+                      onResetSheetData={resetGoogleSheetImportData}
+                      onRemoveSheet={removeGoogleSheetConnection}
+                      onUpdateSheetSettings={updateGoogleSheetConnectionSettings}
+                      onAddCustomColumn={addCustomRegistrationColumn}
+                      onUpdateCustomColumn={updateCustomRegistrationColumn}
+                      onDeleteCustomColumn={deleteCustomRegistrationColumn}
+                      onCreateHostedForm={createHostedRegistrationForm}
+                      onGenerateGoogleFormTemplate={generateGoogleFormTemplate}
+                      onEnablePayments={enableManualPaymentConfig}
+                      syncingSheetId={syncingSheetId}
+                    />
+                  </WorkspacePanel>
                 )}
 
                 {workspaceTab === "budget" && (
@@ -2688,7 +2723,7 @@ export default function EventManagement() {
 
             {!loading && filteredEvents.map((event) => {
               const active = selectedEvent?.id === event.id;
-              const eventReadiness = percent(event.checklist.filter((item) => item.done).length, event.checklist.length);
+              const eventPlanningProgress = percent(event.checklist.filter((item) => item.done).length, event.checklist.length);
               return (
                 <Link
                   key={event.id}
@@ -2719,7 +2754,7 @@ export default function EventManagement() {
                       {event.startsAt}
                     </span>
                     <span>{event.registrations.length}/{event.capacity || 0} registered</span>
-                    <span>{eventReadiness}% ready</span>
+                      <span>{eventPlanningProgress}% planned</span>
                   </div>
                 </Link>
               );
@@ -2745,27 +2780,44 @@ export default function EventManagement() {
                       </div>
                       <p className="mt-1 line-clamp-2 text-sm font-medium text-muted-foreground">{selectedEvent.notes}</p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="relative">
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 rounded-full"
-                        onClick={() => editEvent(selectedEvent)}
+                        onClick={() => setEventActionsOpen((open) => !open)}
                         disabled={!canManageEvents}
+                        title="Event actions"
                       >
-                        <Edit3 className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteEvent(selectedEvent.id)}
-                        disabled={!canManageEvents}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {eventActionsOpen && (
+                        <div className="absolute right-0 z-10 mt-2 w-40 rounded-xl border border-border/70 bg-card p-2 shadow-lg">
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70"
+                            onClick={() => {
+                              setEventActionsOpen(false);
+                              editEvent(selectedEvent);
+                            }}
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-muted-foreground hover:bg-muted/70 hover:text-destructive"
+                            onClick={() => {
+                              setEventActionsOpen(false);
+                              deleteEvent(selectedEvent.id);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2809,11 +2861,11 @@ export default function EventManagement() {
 
                   <div className="mt-3">
                     <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                      <span>Readiness</span>
-                      <span>{readiness}%</span>
+                      <span>Planning</span>
+                      <span>{percent(selectedEventChecklistDone, selectedEvent.checklist.length)}%</span>
                     </div>
                     <div className="h-1 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-brand-teal" style={{ width: `${readiness}%` }} />
+                      <div className="h-full rounded-full bg-brand-teal" style={{ width: `${percent(selectedEventChecklistDone, selectedEvent.checklist.length)}%` }} />
                     </div>
                   </div>
                 </div>
@@ -3564,14 +3616,14 @@ function Metric({ icon: Icon, label, value }: { icon: typeof Tent; label: string
 
 function EventCard({ event }: { event: EventItem }) {
   const done = event.checklist.filter((item) => item.done).length;
-  const readiness = percent(done, event.checklist.length);
+  const planningProgress = percent(done, event.checklist.length);
   const missingForms = event.registrations.filter(
     (registration) => !registration.medicalFormReceived || !registration.consentFormReceived
   ).length;
   const warning = missingForms
     ? `${missingForms} form${missingForms === 1 ? "" : "s"} outstanding`
     : event.expenses.reduce((sum, expense) => sum + expense.amount, 0) > event.budget && event.budget
-      ? "Budget needs review"
+      ? "Budget over plan"
       : event.logistics.some((item) => item.status !== "Done")
         ? "Portfolios still open"
         : "";
@@ -3594,7 +3646,7 @@ function EventCard({ event }: { event: EventItem }) {
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold text-muted-foreground">
         <span>{event.registrations.length}/{event.capacity || 0} participants</span>
-        <span>{readiness}% planned</span>
+        <span>{planningProgress}% planned</span>
       </div>
       {warning && <p className="mt-2 truncate text-xs font-extrabold text-brand-amber">{warning}</p>}
     </Link>
@@ -3654,19 +3706,24 @@ function QuietStatusRow({
 function WorkspacePanel({
   title,
   icon: Icon,
+  actions,
   children,
 }: {
   title: string;
   icon: typeof Tent;
+  actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-xl border border-border/70 bg-background/45 p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-          <Icon className="h-3.5 w-3.5" />
-        </span>
-        <h3 className="text-sm font-extrabold">{title}</h3>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+            <Icon className="h-3.5 w-3.5" />
+          </span>
+          <h3 className="text-sm font-extrabold">{title}</h3>
+        </div>
+        {actions}
       </div>
       {children}
     </section>
@@ -3770,8 +3827,7 @@ const defaultRegistrationColumns: EventRegistrationColumn[] = [
   { id: "created", label: "Created date", fieldType: "system", origin: "system", sortOrder: 5 },
   { id: "payment", label: "Payment", fieldType: "standard", origin: "system", sortOrder: 6 },
   { id: "forms", label: "Forms", fieldType: "standard", origin: "system", sortOrder: 7 },
-  { id: "readiness", label: "Readiness", fieldType: "system", origin: "system", sortOrder: 8 },
-  { id: "transport", label: "Transport", fieldType: "standard", origin: "system", sortOrder: 9 },
+  { id: "transport", label: "Transport", fieldType: "standard", origin: "system", sortOrder: 8 },
 ];
 
 const registrationColumnValue = (
@@ -3797,14 +3853,6 @@ const registrationColumnValue = (
       !registration.medicalFormReceived ? "Medical" : "",
     ].filter(Boolean);
     return missing.length ? `${missing.join(", ")} missing` : "Received";
-  }
-  if (label.includes("readiness")) {
-    const ready =
-      registration.status !== "Cancelled" &&
-      registration.amountDue <= registration.amountPaid &&
-      registration.medicalFormReceived &&
-      registration.consentFormReceived;
-    return ready ? "Ready" : "Incomplete";
   }
   if (label.includes("source")) return sourceLabel(registration);
   if (label.includes("consent")) return registration.consentFormReceived ? "Received" : "Missing";
@@ -3862,23 +3910,14 @@ function ParticipantTable({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [customColumnTitle, setCustomColumnTitle] = useState("");
   const [columnToolsOpen, setColumnToolsOpen] = useState(false);
+  const [registrationToolsOpen, setRegistrationToolsOpen] = useState(false);
   const [editingColumnId, setEditingColumnId] = useState("");
   const [editingColumnLabel, setEditingColumnLabel] = useState("");
   const [hiddenColumnIds, setHiddenColumnIds] = useState<string[]>([]);
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
-  const readyCount = event.registrations.filter(
-    (registration) =>
-      registration.status !== "Cancelled" &&
-      registration.amountDue <= registration.amountPaid &&
-      registration.medicalFormReceived &&
-      registration.consentFormReceived
-  ).length;
   const missingPayment = event.registrations.filter((registration) => registration.amountDue > registration.amountPaid).length;
   const missingConsent = event.registrations.filter((registration) => !registration.consentFormReceived).length;
   const missingEmergency = event.registrations.filter((registration) => !registration.emergencyContact).length;
-  const reviewCount = event.registrations.filter((registration) => !registration.person).length;
-  const importedCount = event.registrations.filter((registration) => registration.source === "google_sheets").length;
-  const readyPercent = percent(readyCount, event.registrations.length);
   const sheetConnection = event.sheetConnections[0];
   const allColumns = useMemo(() => {
     const customColumns = event.registrationColumns
@@ -3919,17 +3958,11 @@ function ParticipantTable({
     : "";
   const sourceLabel = (registration: EventRegistration) =>
     registration.source === "google_sheets" ? "Google Sheet" : "Manual";
-  const isReady = (registration: EventRegistration) =>
-    registration.status !== "Cancelled" &&
-    registration.amountDue <= registration.amountPaid &&
-    registration.medicalFormReceived &&
-    registration.consentFormReceived;
   const selectedFilterColumn = allColumns.find((column) => column.id === filterColumnId);
   const viewDefinitions = [
     { label: "All Registrations", group: "None" },
-    { label: "Readiness", group: "Readiness" },
     { label: "Payments", group: "Payment" },
-    { label: "Medical and Dietary", group: "Readiness" },
+    { label: "Medical and Dietary", group: "None" },
     { label: "Transport", group: "None" },
     { label: "Custom View", group: registrationGroup },
   ];
@@ -3938,7 +3971,7 @@ function ParticipantTable({
     registrationView === "Payments"
       ? displayColumns.filter((column) => ["participant", "contact", "registration", "payment", "source"].includes(column.id) || column.label.toLowerCase().includes("payment"))
       : registrationView === "Medical and Dietary"
-        ? displayColumns.filter((column) => ["participant", "contact", "forms", "readiness"].includes(column.id) || /medical|diet|allergy|consent|emergency/i.test(column.label))
+        ? displayColumns.filter((column) => ["participant", "contact", "forms"].includes(column.id) || /medical|diet|allergy|consent|emergency/i.test(column.label))
         : registrationView === "Transport"
           ? displayColumns.filter((column) => ["participant", "contact", "registration", "transport", "source"].includes(column.id) || /transport|travel|pickup/i.test(column.label))
           : displayColumns;
@@ -3978,9 +4011,7 @@ function ParticipantTable({
   const groupedRegistrations = sortedRegistrations.reduce<Record<string, EventRegistration[]>>((acc, registration) => {
     const balance = Math.max(0, registration.amountDue - registration.amountPaid);
     const key =
-      activeView.group === "Readiness"
-        ? isReady(registration) ? "Ready" : "Incomplete"
-        : activeView.group === "Source"
+      activeView.group === "Source"
           ? sourceLabel(registration)
           : activeView.group === "Payment"
             ? balance > 0 ? "Payment outstanding" : "Paid"
@@ -3995,7 +4026,7 @@ function ParticipantTable({
     if (!sheetConnection) return;
     onUpdateSheetSettings(sheetConnection.id, updates);
   };
-  const toggleConnectionJsonSetting = (column: "notification_settings" | "person_matching_rules" | "readiness_rules", current: Record<string, boolean>, key: string) => {
+  const toggleConnectionJsonSetting = (column: "notification_settings" | "person_matching_rules", current: Record<string, boolean>, key: string) => {
     updateConnection({ [column]: { ...current, [key]: !current[key] } });
   };
   const sourceKindLabel = sheetConnection?.sourceKind === "google_form" ? "Google Form responses" : sheetConnection?.sourceKind === "google_sheet" ? "Google Sheet" : "Not detected";
@@ -4033,188 +4064,98 @@ function ParticipantTable({
   };
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm">
+    <div className="space-y-3">
+      <section className="rounded-xl border border-border/70 bg-card/85 px-3 py-2 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-extrabold tracking-tight">Registration workspace</h3>
-            <p className="mt-1 text-xs font-semibold text-muted-foreground">
-              {event.registrations.length} total · {readyCount} ready · {reviewCount} need review
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-muted-foreground">
+              {event.registrations.length} total · {event.registrations.filter((registration) => registration.status === "Confirmed").length} confirmed · Sheet {sheetConnection ? sheetConnection.status : "not connected"} · Form {hostedForm ? "live" : "not published"}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {sheetConnection && (
+            <div className="relative">
               <Button
                 type="button"
                 variant="outline"
-                className="h-8 rounded-full px-3 text-xs"
-                onClick={() => onSyncSheet(sheetConnection.id)}
-                disabled={!canManageEvents || syncingSheetId === sheetConnection.id}
+                className="h-9 w-28 rounded-full px-4 text-sm font-bold"
+                onClick={() => setRegistrationToolsOpen((open) => !open)}
               >
-                {syncingSheetId === sheetConnection.id ? "Syncing..." : "Sync Sheet"}
+                Options
               </Button>
-            )}
-            {!sheetConnection && (
-              <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onConnectSheet} disabled={!canManageEvents}>
-                Connect Sheet
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              className="h-8 rounded-full px-3 text-xs"
-              onClick={() => {
-                if (hostedFormUrl) {
-                  navigator.clipboard?.writeText(hostedFormUrl);
-                  toast.success("Hosted form link copied.");
-                  return;
-                }
-                onCreateHostedForm();
-              }}
-              disabled={!canManageEvents}
-            >
-              {hostedForm ? "Form Live" : "Publish Form"}
-            </Button>
-            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onEnablePayments} disabled={!canManageEvents}>
-              Payments
-            </Button>
-            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onGenerateGoogleFormTemplate} disabled={!canManageEvents}>
-              Google Form
-            </Button>
+              {registrationToolsOpen && (
+                <div className="absolute right-0 z-10 mt-2 w-60 rounded-xl border border-border/70 bg-card p-2 shadow-lg">
+                  {sheetConnection ? (
+                    <>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); onSyncSheet(sheetConnection.id); }} disabled={!canManageEvents || syncingSheetId === sheetConnection.id}>
+                        {syncingSheetId === sheetConnection.id ? "Syncing sheet..." : "Sync sheet"}
+                      </button>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); onConnectSheet(); }} disabled={!canManageEvents}>
+                        Edit sheet mapping
+                      </button>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold text-muted-foreground hover:bg-muted/70 hover:text-destructive" onClick={() => { setRegistrationToolsOpen(false); onRemoveSheet(sheetConnection.id); }} disabled={!canManageEvents || syncingSheetId === sheetConnection.id}>
+                        Disconnect sheet
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); onConnectSheet(); }} disabled={!canManageEvents}>
+                      Connect sheet
+                    </button>
+                  )}
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); if (hostedFormUrl) { navigator.clipboard?.writeText(hostedFormUrl); toast.success("Hosted form link copied."); return; } onCreateHostedForm(); }} disabled={!canManageEvents}>
+                    {hostedForm ? "Copy registration link" : "Create form"}
+                  </button>
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); onEnablePayments(); }} disabled={!canManageEvents}>
+                    Payments
+                  </button>
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); onGenerateGoogleFormTemplate(); }} disabled={!canManageEvents}>
+                    Google Form
+                  </button>
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); setColumnToolsOpen((open) => !open); }}>
+                    Columns
+                  </button>
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setRegistrationToolsOpen(false); exportCurrentView(); }} disabled={sortedRegistrations.length === 0}>
+                    Export CSV
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="relative">
-            <Button
-              type="button"
-              className="actsix-btn-primary h-8 rounded-full px-3 text-xs"
-              onClick={() => setActionMenuOpen((open) => !open)}
-              disabled={!canManageEvents}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add
-            </Button>
-            {actionMenuOpen && (
-              <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-border/70 bg-card p-2 shadow-lg">
-                <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setActionMenuOpen(false); onAdd(); }}>
-                  Add manually
-                </button>
-                <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setActionMenuOpen(false); onConnectSheet(); }}>
-                  Connect Google Sheet
-                </button>
-                <button
-                  type="button"
-                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70"
-                  onClick={() => {
-                    setActionMenuOpen(false);
-                    if (hostedFormUrl) {
-                      navigator.clipboard?.writeText(hostedFormUrl);
-                      toast.success("Hosted form link copied.");
-                      return;
-                    }
-                    onCreateHostedForm();
-                  }}
-                >
-                  {hostedForm ? "Copy hosted form link" : "Publish ACTSIX form"}
-                </button>
-              </div>
-            )}
-            </div>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-3">
-          <div className="flex flex-wrap gap-2">
-            {viewDefinitions.map((view) => (
-              <button
-                key={view.label}
+              <Button
                 type="button"
-                onClick={() => {
-                  setRegistrationView(view.label);
-                  if (view.label !== "Custom View") setRegistrationGroup(view.group);
-                  setFilterColumnId("");
-                  setFilterValue("");
-                }}
-                className={cn(
-                  "h-8 rounded-full border px-3 text-xs font-extrabold transition",
-                  registrationView === view.label
-                    ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                    : "border-border/70 bg-background/70 text-muted-foreground hover:border-brand-teal/25 hover:text-brand-teal"
-                )}
+                className="actsix-btn-primary h-9 w-28 rounded-full px-4 text-sm font-bold"
+                onClick={() => setActionMenuOpen((open) => !open)}
+                disabled={!canManageEvents}
               >
-                {view.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={() => setColumnToolsOpen((open) => !open)}>
-              <ListChecks className="h-3.5 w-3.5" />
-              Columns
-            </Button>
-            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={exportCurrentView} disabled={sortedRegistrations.length === 0}>
-              Export CSV
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="rounded-xl border border-border/70 bg-background/45 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-extrabold">{sheetConnection?.spreadsheetName || "No spreadsheet connected"}</p>
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                {sheetConnection
-                  ? `${sheetConnection.worksheetName} · ${sheetConnection.syncMode === "one_time" ? "One-time" : sheetConnection.syncMode} · last synced ${sheetConnection.lastSyncedAt ? formatShortDate(new Date(sheetConnection.lastSyncedAt)) : "never"}`
-                  : "Use a hosted form, Google Sheet, or manual entry to collect registrations."}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {sheetConnection && (
-                <>
-                  <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={() => onSyncSheet(sheetConnection.id)} disabled={!canManageEvents || syncingSheetId === sheetConnection.id}>
-                    {syncingSheetId === sheetConnection.id ? "Syncing..." : "Sync Now"}
-                  </Button>
-                  <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onConnectSheet} disabled={!canManageEvents}>
-                    Edit Mapping
-                  </Button>
-                  <Button type="button" variant="ghost" className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-destructive" onClick={() => onRemoveSheet(sheetConnection.id)} disabled={!canManageEvents || syncingSheetId === sheetConnection.id}>
-                    Disconnect
-                  </Button>
-                </>
-              )}
-              {!sheetConnection && (
-                <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs" onClick={onConnectSheet} disabled={!canManageEvents}>
-                  Connect Google Sheet
-                </Button>
+                <Plus className="h-3.5 w-3.5" />
+                Add
+              </Button>
+              {actionMenuOpen && (
+                <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-border/70 bg-card p-2 shadow-lg">
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setActionMenuOpen(false); onAdd(); }}>
+                    Add manually
+                  </button>
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70" onClick={() => { setActionMenuOpen(false); onConnectSheet(); }}>
+                    Connect Google Sheet
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm font-bold hover:bg-muted/70"
+                    onClick={() => {
+                      setActionMenuOpen(false);
+                      if (hostedFormUrl) {
+                        navigator.clipboard?.writeText(hostedFormUrl);
+                        toast.success("Hosted form link copied.");
+                        return;
+                      }
+                      onCreateHostedForm();
+                    }}
+                  >
+                    {hostedForm ? "Copy hosted form link" : "Publish ACTSIX form"}
+                  </button>
+                </div>
               )}
             </div>
           </div>
-          {sheetConnection && (
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              <HealthRow label="Rows imported" value={sheetConnection.rowsImported} />
-              <HealthRow label="Needs review" value={sheetConnection.rowsRequiringReview} />
-              <HealthRow label="Sync status" value={sheetConnection.status} />
-            </div>
-          )}
-        </div>
-        <div className="rounded-xl border border-border/70 bg-background/45 p-3">
-          <p className="text-sm font-extrabold">Registration form</p>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">
-            {hostedForm ? "ACTSIX form is published and ready to share." : "Create an ACTSIX registration form for a shareable link."}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-3 h-8 rounded-full px-3 text-xs"
-            onClick={() => {
-              if (hostedFormUrl) {
-                navigator.clipboard?.writeText(hostedFormUrl);
-                toast.success("Hosted form link copied.");
-                return;
-              }
-              onCreateHostedForm();
-            }}
-            disabled={!canManageEvents}
-          >
-            {hostedForm ? "Copy Registration Link" : "Create Form"}
-          </Button>
         </div>
       </section>
 
@@ -4345,7 +4286,7 @@ function ParticipantTable({
                 <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-brand-teal">Phase 2 sync controls</p>
                 <h3 className="mt-1 text-base font-extrabold">Automation and registration rules</h3>
                 <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">
-                  Control scheduled sync, matching, readiness, notifications, and simple column transformations.
+                  Control scheduled sync, matching, notifications, and simple column transformations.
                 </p>
               </div>
               <Badge variant="outline" className="rounded-full border-brand-teal/20 bg-brand-teal/10 text-[11px] font-extrabold text-brand-teal">
@@ -4409,7 +4350,6 @@ function ParticipantTable({
                 <div className="mt-3 flex flex-wrap gap-2">
                   {[
                     ["new_registrations", "New rows"],
-                    ["review_required", "Review"],
                     ["sync_failed", "Failures"],
                   ].map(([key, label]) => (
                     <button
@@ -4431,32 +4371,6 @@ function ParticipantTable({
             </div>
 
             <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-              <div className="rounded-xl border border-border/60 bg-background/70 p-3">
-                <p className="text-sm font-extrabold">Readiness rules</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {[
-                    ["require_consent", "Consent"],
-                    ["require_medical", "Medical"],
-                    ["require_payment", "Payment"],
-                    ["require_emergency_contact", "Emergency contact"],
-                  ].map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleConnectionJsonSetting("readiness_rules", sheetConnection.readinessRules || {}, key)}
-                      className={cn(
-                        "h-8 rounded-full border px-3 text-xs font-extrabold transition",
-                        (sheetConnection.readinessRules || {})[key] === true || (key === "require_consent" && (sheetConnection.readinessRules || {})[key] !== false)
-                          ? "border-brand-amber/25 bg-brand-amber/10 text-brand-amber"
-                          : "border-border/70 text-muted-foreground hover:text-brand-teal"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div className="rounded-xl border border-border/60 bg-background/70 p-3">
                 <p className="text-sm font-extrabold">Custom transformations</p>
                 <p className="mt-1 text-xs font-semibold text-muted-foreground">Saved on mappings during setup. Supported sync transforms include title case, lower case, upper case, yes/no, and trim.</p>
@@ -4483,7 +4397,7 @@ function ParticipantTable({
                       <span className="text-[11px] font-bold text-muted-foreground">{formatShortDate(new Date(run.startedAt))}</span>
                     </div>
                     <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                      {run.rowsImported} imported, {run.rowsSkipped} skipped, {run.rowsRequiringReview} review
+                      {run.rowsImported} imported, {run.rowsSkipped} skipped
                     </p>
                   </div>
                 ))}
@@ -4553,7 +4467,7 @@ function ParticipantTable({
           <div className="rounded-xl border border-border/60 bg-background/70 p-3">
             <p className="text-sm font-extrabold">ACTSIX-hosted form</p>
             <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
-              {hostedForm ? "Published and ready to share." : "Not published yet."}
+              {hostedForm ? "Published and shareable." : "Not published yet."}
             </p>
             {hostedFormUrl && (
               <button
@@ -4592,17 +4506,31 @@ function ParticipantTable({
 
       {showAdvancedRegistrationTools && (
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <RegistrationMetricCard label="Ready" value={readyCount} detail="Confirmed, paid, and forms received" icon={CheckCircle2} tone="sage" />
         <RegistrationMetricCard label="Missing payment" value={missingPayment} detail="Payment still needs attention" icon={DollarSign} tone={missingPayment ? "amber" : "neutral"} />
         <RegistrationMetricCard label="Missing consent" value={missingConsent} detail="Consent form not received" icon={ShieldCheck} tone={missingConsent ? "amber" : "neutral"} />
         <RegistrationMetricCard label="Missing emergency" value={missingEmergency} detail="Emergency contact absent" icon={AlertTriangle} tone={missingEmergency ? "amber" : "neutral"} />
-        <RegistrationMetricCard label="Needs review" value={reviewCount} detail="Unlinked or imported records" icon={Users} tone={reviewCount ? "teal" : "neutral"} />
       </section>
       )}
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm">
+      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/85 p-2 shadow-sm">
+        <select
+          value={registrationView}
+          onChange={(event) => {
+            const nextView = event.target.value;
+            const definition = viewDefinitions.find((view) => view.label === nextView) || viewDefinitions[0];
+            setRegistrationView(definition.label);
+            if (definition.label !== "Custom View") setRegistrationGroup(definition.group);
+            setFilterColumnId("");
+            setFilterValue("");
+          }}
+          className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-bold text-foreground outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+        >
+          {viewDefinitions.map((view) => (
+            <option key={view.label} value={view.label}>{view.label}</option>
+          ))}
+        </select>
         <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-          Group by
+          Group
           <select
             value={activeView.group}
             onChange={(event) => {
@@ -4612,28 +4540,20 @@ function ParticipantTable({
             className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-bold text-foreground outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
           >
             <option>None</option>
-            <option>Readiness</option>
             <option>Source</option>
             <option>Payment</option>
             <option>Status</option>
           </select>
         </label>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={filterColumnId}
-            onChange={(event) => setFilterColumnId(event.target.value)}
-            className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-bold text-foreground outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-          >
-            <option value="">Any column</option>
-            {viewColumns.map((column) => (
-              <option key={column.id} value={column.id}>{column.label}</option>
-            ))}
-          </select>
+        <div className="ml-auto flex min-w-[16rem] flex-1 flex-wrap items-center justify-end gap-2">
           <Input
             value={filterValue}
-            onChange={(event) => setFilterValue(event.target.value)}
-            placeholder={selectedFilterColumn ? `${selectedFilterColumn.label} contains...` : "Column contains..."}
-            className="h-8 w-56 rounded-lg bg-background text-xs font-semibold"
+            onChange={(event) => {
+              setFilterColumnId("");
+              setFilterValue(event.target.value);
+            }}
+            placeholder="Search registrations..."
+            className="h-8 max-w-sm rounded-lg bg-background text-xs font-semibold"
           />
           {(filterColumnId || filterValue) && (
             <Button
@@ -4673,8 +4593,8 @@ function ParticipantTable({
           />
         </div>
       ))}
-      {event.registrations.length === 0 && <div className="actsix-empty-state mt-3 min-h-24 text-sm">No participants added yet.</div>}
-      {event.registrations.length > 0 && filteredRegistrations.length === 0 && <div className="actsix-empty-state mt-3 min-h-24 text-sm">No registrations match this filter.</div>}
+      {event.registrations.length === 0 && <div className="actsix-empty-state mt-3 min-h-16 text-sm">No participants added yet.</div>}
+      {event.registrations.length > 0 && filteredRegistrations.length === 0 && <div className="actsix-empty-state mt-3 min-h-16 text-sm">No registrations match this filter.</div>}
     </div>
   );
 }
@@ -4707,13 +4627,10 @@ function RegistrationRows({
     registrationColumnValue(registration, column, sourceLabel);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-sm">
-      <div className="border-b border-border/60 bg-card/95 px-4 py-3">
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-sm">
+      <div className="border-b border-border/60 bg-card/95 px-3 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-sm font-extrabold">Participant records</p>
-            <p className="mt-1 text-xs font-semibold text-muted-foreground">Click a column heading to sort. Use the toolbar above for column-specific filtering.</p>
-          </div>
+          <p className="text-sm font-extrabold">Participant records</p>
           <Badge variant="outline" className="rounded-full border-brand-teal/20 bg-brand-teal/10 text-[11px] font-extrabold text-brand-teal">
             {registrations.length} shown
           </Badge>
@@ -4724,7 +4641,7 @@ function RegistrationRows({
         <thead className="bg-muted/40 text-xs font-extrabold text-muted-foreground">
           <tr>
             {displayColumns.map((column, index) => (
-              <th key={column.id} className={cn("border-b border-border/60 px-4 py-3", index === 0 && "min-w-[15rem]")}>
+              <th key={column.id} className={cn("border-b border-border/60 px-3 py-2", index === 0 && "min-w-[15rem]")}>
                 <button
                   type="button"
                   onClick={() => onSortColumn(column.id)}
@@ -4748,19 +4665,13 @@ function RegistrationRows({
         </thead>
         <tbody className="bg-card">
           {registrations.map((registration) => {
-            const balance = Math.max(0, registration.amountDue - registration.amountPaid);
-            const ready =
-              registration.status !== "Cancelled" &&
-              balance === 0 &&
-              registration.medicalFormReceived &&
-              registration.consentFormReceived;
             return (
               <tr key={registration.id} className="group border-b border-border/60 transition hover:bg-brand-teal/5">
                 {displayColumns.map((column) => {
                   const label = column.label.toLowerCase();
                   if (label.includes("registration") || label === "status") {
                     return (
-                      <td key={column.id} className="border-b border-border/50 px-4 py-3.5 align-middle">
+                      <td key={column.id} className="border-b border-border/50 px-3 py-2.5 align-middle">
                         <select value={registration.status} onChange={(event) => onUpdateWithStatusSync(registration, { status: event.target.value })} className={cn("h-8 rounded-full border px-2 text-xs font-extrabold outline-none transition focus:ring-2 focus:ring-brand-teal/15", registrationStatusStyles[registration.status])} disabled={!canManageEvents}>
                           <option>Interested</option>
                           <option>Registered</option>
@@ -4770,18 +4681,9 @@ function RegistrationRows({
                       </td>
                     );
                   }
-                  if (label.includes("readiness")) {
-                    return (
-                      <td key={column.id} className="border-b border-border/50 px-4 py-3.5 align-middle">
-                        <span className={cn("rounded-full border px-2.5 py-1 text-[11px] font-extrabold", ready ? "border-brand-sage/20 bg-brand-sage/10 text-brand-sage" : "border-brand-amber/20 bg-brand-amber/10 text-brand-amber")}>
-                          {ready ? "Ready" : "Incomplete"}
-                        </span>
-                      </td>
-                    );
-                  }
                   if (label.includes("source")) {
                     return (
-                      <td key={column.id} className="border-b border-border/50 px-4 py-3.5 align-middle">
+                      <td key={column.id} className="border-b border-border/50 px-3 py-2.5 align-middle">
                         <span className={cn("rounded-full border px-2.5 py-1 text-[11px] font-extrabold", registration.source === "google_sheets" ? "border-brand-teal/20 bg-brand-teal/10 text-brand-teal" : "border-border/70 bg-background text-muted-foreground")}>
                           {sourceLabel(registration)}
                         </span>
@@ -4790,7 +4692,7 @@ function RegistrationRows({
                   }
                   if (label.includes("participant") || label.includes("name")) {
                     return (
-                      <td key={column.id} className="border-b border-border/50 px-4 py-3.5 align-middle">
+                      <td key={column.id} className="border-b border-border/50 px-3 py-2.5 align-middle">
                         <div className="flex min-w-0 items-center gap-3">
                           <PersonAvatar name={registration.person?.display_name || registration.importedDisplayName} avatarUrl={registration.person?.avatar_url} size="sm" />
                           <div className="min-w-0">
@@ -4809,7 +4711,7 @@ function RegistrationRows({
                   if (column.origin === "custom_field") {
                     const fieldKey = column.sourceColumn || column.label;
                     return (
-                      <td key={column.id} className="border-b border-border/50 px-4 py-3.5 align-middle">
+                      <td key={column.id} className="border-b border-border/50 px-3 py-2.5 align-middle">
                         <Input
                           defaultValue={valueForColumn(registration, column)}
                           onBlur={(event) => {
@@ -4832,9 +4734,9 @@ function RegistrationRows({
                       </td>
                     );
                   }
-                  return <td key={column.id} className="border-b border-border/50 px-4 py-3.5 align-middle text-xs font-bold text-foreground/85">{valueForColumn(registration, column) || <span className="text-muted-foreground/60">-</span>}</td>;
+                  return <td key={column.id} className="border-b border-border/50 px-3 py-2.5 align-middle text-xs font-bold text-foreground/85">{valueForColumn(registration, column) || <span className="text-muted-foreground/60">-</span>}</td>;
                 })}
-                <td className="border-b border-border/50 px-4 py-3.5 text-right align-middle">
+                <td className="border-b border-border/50 px-3 py-2.5 text-right align-middle">
                   {registration.approvalStatus === "pending" && (
                     <div className="mb-1 flex justify-end gap-1">
                       <Button type="button" variant="outline" className="h-7 rounded-full px-2 text-[11px]" onClick={() => onUpdateWithStatusSync(registration, { approval_status: "approved", status: "Confirmed" })} disabled={!canManageEvents}>
@@ -4895,22 +4797,16 @@ function GoogleSheetConnectionModal({
   const [previewRowCount, setPreviewRowCount] = useState(0);
   const defaultFieldDefinitions = [
     { field: "First Name", handling: "Split first word as first name", keywords: ["first", "name", "full name"] },
-    { field: "Surname", handling: "Manually review names after import", keywords: ["surname", "last", "name", "full name"] },
+    { field: "Surname", handling: "Standard field", keywords: ["surname", "last", "name", "full name"] },
     { field: "Email", handling: "Standard field", keywords: ["email", "e-mail"] },
     { field: "Mobile", handling: "Standard field", keywords: ["mobile", "phone", "cell", "contact"] },
     { field: "Registration Date", handling: "Standard field", keywords: ["timestamp", "date", "submitted"] },
     { field: "Age", handling: "Event field", keywords: ["age"] },
     { field: "Dietary Requirements", handling: "Event field", keywords: ["diet", "food", "allergy"] },
-    { field: "Consent Status", handling: "Forms readiness", keywords: ["consent", "permission"] },
-    { field: "Payment Status", handling: "Payment readiness", keywords: ["payment", "paid", "deposit"] },
+    { field: "Consent Status", handling: "Forms", keywords: ["consent", "permission"] },
+    { field: "Payment Status", handling: "Payment", keywords: ["payment", "paid", "deposit"] },
   ];
   const [fieldDefinitions, setFieldDefinitions] = useState(defaultFieldDefinitions);
-  const reviewItems = [
-    "2 possible duplicate submissions will require review",
-    "1 row has no email or mobile number",
-    "Custom fields stay on this event registration",
-  ];
-
   const resetAndClose = () => {
     onOpenChange(false);
     setStep(0);
@@ -4935,7 +4831,7 @@ function GoogleSheetConnectionModal({
     return {
       actsixField: title,
       sheetColumn: column.column,
-      fieldType: handling === "Event field" ? "event_custom" : handling === "Forms readiness" || handling === "Payment readiness" ? "system" : "standard",
+      fieldType: handling === "Event field" ? "event_custom" : handling === "Forms" || handling === "Payment" ? "system" : "standard",
       transform: handling,
       isSensitive: ["medical", "passport", "payment", "allergy"].some((word) => `${title} ${column.column}`.toLowerCase().includes(word)),
     };
@@ -5307,14 +5203,6 @@ function GoogleSheetConnectionModal({
                 </button>
               ))}
             </div>
-            <div className="rounded-xl border border-brand-amber/20 bg-brand-amber/10 p-3">
-              <p className="text-sm font-extrabold text-brand-amber">Sync needs review</p>
-              <div className="mt-2 grid gap-1">
-                {reviewItems.map((item) => (
-                  <p key={item} className="text-sm font-medium text-muted-foreground">{item}</p>
-                ))}
-              </div>
-            </div>
           </div>
           <div className="rounded-xl border border-border/70 bg-card/70 p-4">
             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Connection Status</p>
@@ -5376,12 +5264,10 @@ function TeamList({
   event,
   canManageEvents,
   onRemove,
-  onAdd,
 }: {
   event: EventItem;
   canManageEvents: boolean;
   onRemove: (collaboratorId: string) => void;
-  onAdd: () => void;
 }) {
   const matchesSection = (item: EventLogisticsItem, section: (typeof eventPortfolios)[number]) => {
     const label = item.label.toLowerCase();
@@ -5407,36 +5293,24 @@ function TeamList({
   const hasPortfolioLeadership = portfolioGroups.length > 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button type="button" className="actsix-btn-primary h-8 rounded-full px-3 text-xs" onClick={onAdd} disabled={!canManageEvents}>
-          <Plus className="h-3.5 w-3.5" />
-          Add Team Member
-        </Button>
-      </div>
-
-      <section className="rounded-xl border border-border/60 bg-background/45 p-3">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Event Leadership</p>
-            <p className="mt-1 text-sm font-medium text-muted-foreground">Main event leader and whole-event team roles.</p>
-          </div>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-3 xl:grid-cols-2">
+      <section>
+        <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Event Leadership</p>
+        <div className="grid gap-2">
           {event.owner && (
-            <div className="rounded-xl border border-brand-teal/20 bg-brand-teal/5 px-3 py-2">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-brand-teal/5 px-3 py-2">
               <p className="truncate text-sm font-extrabold">{event.owner}</p>
-              <p className="mt-1 text-xs font-bold text-brand-teal">Event Leader</p>
+              <p className="shrink-0 text-xs font-bold text-brand-teal">Event Leader</p>
             </div>
           )}
           {event.team.map((member) => (
-            <div key={`${member.role}-${member.name}`} className="rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+            <div key={`${member.role}-${member.name}`} className="rounded-lg bg-card/70 px-3 py-2">
               <p className="truncate text-sm font-extrabold">{member.name}</p>
-              <p className="mt-1 truncate text-xs font-bold text-muted-foreground">{member.role}</p>
+              <p className="truncate text-xs font-bold text-muted-foreground">{member.role}</p>
             </div>
           ))}
           {event.collaborators.map((collaborator) => (
-            <div key={collaborator.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/70 px-3 py-2">
+            <div key={collaborator.id} className="flex items-center justify-between gap-3 rounded-lg bg-card/70 px-3 py-2">
               <div className="flex min-w-0 items-center gap-2">
                 <PersonAvatar name={collaborator.person?.display_name} avatarUrl={collaborator.person?.avatar_url} size="sm" />
                 <div className="min-w-0">
@@ -5450,29 +5324,25 @@ function TeamList({
             </div>
           ))}
         </div>
-        {!hasEventLeadership && <div className="actsix-empty-state min-h-24 text-sm">Add an event leader or event team members so ownership is visible.</div>}
+        {!hasEventLeadership && <div className="actsix-empty-state min-h-16 text-sm">Add an event leader or event team members so ownership is visible.</div>}
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-background/45 p-3">
-        <div className="mb-3">
-          <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Portfolio Teams</p>
-          <p className="mt-1 text-sm font-medium text-muted-foreground">Portfolio owners and the people assigned inside each planning area.</p>
-        </div>
-        <div className="grid gap-3 xl:grid-cols-2">
+      <section>
+        <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Portfolio Teams</p>
+        <div className="grid gap-2">
           {portfolioGroups.map((group) => (
-            <div key={group.portfolio.id} className="rounded-xl border border-border/60 bg-card/70 p-3">
-              <div className="flex items-start justify-between gap-3">
+            <div key={group.portfolio.id} className="rounded-lg bg-card/70 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-extrabold">{group.portfolio.label}</p>
-                  <p className="mt-1 text-xs font-medium text-muted-foreground">{group.portfolio.purpose}</p>
                 </div>
                 <Badge variant="outline" className="shrink-0 rounded-full text-[10px] font-bold">
                   {group.team.length + (group.owner ? 1 : 0)} people
                 </Badge>
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="mt-2 grid gap-1.5">
                 {group.owner ? (
-                  <div className="flex items-center gap-2 rounded-xl border border-brand-teal/20 bg-brand-teal/5 px-3 py-2">
+                  <div className="flex items-center gap-2 rounded-lg bg-brand-teal/5 px-2 py-1.5">
                     <PersonAvatar name={group.owner.display_name} avatarUrl={group.owner.avatar_url} size="sm" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-extrabold">{group.owner.display_name}</p>
@@ -5480,12 +5350,12 @@ function TeamList({
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-border/70 px-3 py-2 text-xs font-bold text-muted-foreground">
+                  <div className="rounded-lg border border-dashed border-border/70 px-2 py-1.5 text-xs font-bold text-muted-foreground">
                     No portfolio owner assigned.
                   </div>
                 )}
                 {group.team.map((member) => (
-                  <div key={member.itemId} className="flex items-center gap-2 rounded-xl bg-background/60 px-3 py-2">
+                  <div key={member.itemId} className="flex items-center gap-2 rounded-lg bg-background/60 px-2 py-1.5">
                     <PersonAvatar name={member.person.display_name} avatarUrl={member.person.avatar_url} size="sm" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-extrabold">{member.person.display_name}</p>
@@ -5497,7 +5367,7 @@ function TeamList({
             </div>
           ))}
         </div>
-        {!hasPortfolioLeadership && <div className="actsix-empty-state min-h-24 text-sm">Assign portfolio owners or team members from the Portfolios tab.</div>}
+        {!hasPortfolioLeadership && <div className="actsix-empty-state min-h-16 text-sm">Assign portfolio owners or team members from the Portfolios tab.</div>}
       </section>
     </div>
   );
@@ -5552,7 +5422,7 @@ function BudgetSurface(props: {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <HealthRow label="Budgeted" value={money(props.event.budget)} />
         <HealthRow label="Committed" value={money(props.spent)} />
@@ -5621,7 +5491,7 @@ function BudgetSurface(props: {
               </div>
             </div>
             <Button type="button" variant="outline" className="h-9 w-full rounded-xl text-xs" onClick={() => setFinanceView("expenses")}>
-              Add or review expenses
+              Add expenses
             </Button>
           </div>
         </div>
@@ -5777,6 +5647,7 @@ function PortfolioSurface(props: {
   const [portfolioDetailTab, setPortfolioDetailTab] = useState<"overview" | "tasks" | "files" | "notes" | "activity">("overview");
   const [portfolioTeamMemberId, setPortfolioTeamMemberId] = useState("");
   const [newPortfolioLabel, setNewPortfolioLabel] = useState("");
+  const [portfolioEditMode, setPortfolioEditMode] = useState(false);
   const [editingPortfolioLabel, setEditingPortfolioLabel] = useState("");
   const [editingPortfolioValue, setEditingPortfolioValue] = useState("");
   const sections = eventPortfolios;
@@ -5838,9 +5709,6 @@ function PortfolioSurface(props: {
       };
     })
     .filter((section) => section.core || section.items.length > 0);
-  const availablePortfolioCards = sections.filter(
-    (section) => !activePortfolioCards.some((active) => active.id === section.id)
-  );
   const completedItems = portfolioWorkItems.filter((item) => item.status === "Done").length;
   const openItems = portfolioWorkItems.filter((item) => item.status !== "Done").length;
   const unownedItems = portfolioWorkItems.filter((item) => !item.assigneePersonId).length;
@@ -5865,8 +5733,53 @@ function PortfolioSurface(props: {
     "Portfolio workspace for tasks, files, notes, milestones, ownership, and alerts.";
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border/70 bg-background/55 p-1">
+    <section className="rounded-xl border border-border/70 bg-background/45 p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+            <FolderOpen className="h-3.5 w-3.5" />
+          </span>
+          <h3 className="text-sm font-extrabold">Portfolios</h3>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <form
+            className="flex h-8 min-w-[12rem] items-center gap-1 rounded-full border border-dashed border-border/70 bg-card/70 px-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              props.onCreatePortfolio(newPortfolioLabel);
+              setNewPortfolioLabel("");
+            }}
+          >
+            <Input
+              value={newPortfolioLabel}
+              onChange={(event) => setNewPortfolioLabel(event.target.value)}
+              placeholder="New portfolio"
+              className="h-7 min-w-0 border-0 bg-transparent px-1 text-xs shadow-none focus-visible:ring-0"
+              disabled={!props.canManageEvents}
+            />
+            <Button type="submit" variant="ghost" size="icon" className="h-6 w-6 rounded-full text-brand-teal" disabled={!props.canManageEvents || !newPortfolioLabel.trim()}>
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </form>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-8 rounded-full px-3 text-xs"
+            onClick={() => {
+              setPortfolioEditMode((editing) => !editing);
+              setEditingPortfolioLabel("");
+              setEditingPortfolioValue("");
+            }}
+            disabled={!props.canManageEvents}
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+            {portfolioEditMode ? "Done" : "Edit"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="rounded-xl border border-border/70 bg-background/55 p-1">
           <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"
@@ -5932,73 +5845,52 @@ function PortfolioSurface(props: {
                           {section.items.length}
                         </span>
                       </button>
-                      <button
-                        type="button"
-                        className={cn(
-                          "mr-0.5 flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:opacity-100",
-                          props.view === section.id ? "hover:bg-white/15" : "hover:bg-muted"
-                        )}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setEditingPortfolioLabel(section.label);
-                          setEditingPortfolioValue(section.label);
-                        }}
-                        disabled={!props.canManageEvents}
-                        title="Rename portfolio"
-                      >
-                        <Edit3 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        className={cn(
-                          "mr-1 flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:opacity-100",
-                          props.view === section.id ? "hover:bg-white/15" : "hover:bg-muted hover:text-destructive"
-                        )}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          props.onDeletePortfolio(section.label);
-                        }}
-                        disabled={!props.canManageEvents}
-                        title="Remove portfolio"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {portfolioEditMode && (
+                        <>
+                          <button
+                            type="button"
+                            className={cn(
+                              "mr-0.5 flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:opacity-100",
+                              props.view === section.id ? "hover:bg-white/15" : "hover:bg-muted"
+                            )}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setEditingPortfolioLabel(section.label);
+                              setEditingPortfolioValue(section.label);
+                            }}
+                            disabled={!props.canManageEvents}
+                            title="Rename portfolio"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className={cn(
+                              "mr-1 flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:opacity-100",
+                              props.view === section.id ? "hover:bg-white/15" : "hover:bg-muted hover:text-destructive"
+                            )}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              props.onDeletePortfolio(section.label);
+                            }}
+                            disabled={!props.canManageEvents}
+                            title="Remove portfolio"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
               );
             })}
-            <form
-              className="ml-auto flex h-9 min-w-[13rem] items-center gap-1 rounded-lg border border-dashed border-border/70 bg-card/70 px-1"
-              onSubmit={(event) => {
-                event.preventDefault();
-                props.onCreatePortfolio(newPortfolioLabel);
-                setNewPortfolioLabel("");
-              }}
-            >
-              <Input
-                value={newPortfolioLabel}
-                onChange={(event) => setNewPortfolioLabel(event.target.value)}
-                placeholder="New portfolio"
-                className="h-7 min-w-0 border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0"
-                disabled={!props.canManageEvents}
-              />
-              <Button type="submit" variant="ghost" size="icon" className="h-7 w-7 rounded-md text-brand-teal" disabled={!props.canManageEvents || !newPortfolioLabel.trim()}>
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </form>
           </div>
       </div>
 
       {props.view === "landing" && (
-        <div className="space-y-4">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Event Portfolios</p>
-            <p className="mt-1 text-sm font-medium text-muted-foreground">
-              Organise the event into clear planning areas, each with its own owner, tasks, files, and progress.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             {activePortfolioCards.map((section) => {
               const done = section.items.filter((item) => item.status === "Done").length;
               const open = section.items.filter((item) => item.status !== "Done").length;
@@ -6018,12 +5910,9 @@ function PortfolioSurface(props: {
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") props.onViewChange(`portfolio:${section.label}`);
                   }}
-                  className="cursor-pointer rounded-xl border border-border/60 bg-card/75 p-3 text-left transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
+                  className="cursor-pointer rounded-xl border border-border/60 bg-card/75 px-3 py-2 text-left transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
                 >
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-                      <FolderOpen className="h-5 w-5" />
-                    </span>
+                  <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -6041,7 +5930,7 @@ function PortfolioSurface(props: {
                     </div>
                   </div>
 
-                  <div className="mt-3">
+                  <div className="mt-2">
                     <div className="mb-1 flex items-center justify-between text-[11px] font-bold text-muted-foreground">
                       <span>{section.items.length} tasks · {done} complete</span>
                       <span>{progress}%</span>
@@ -6052,96 +5941,58 @@ function PortfolioSurface(props: {
                   </div>
 
                   {alertText !== "No urgent attention needed" && (
-                    <p className="mt-2 truncate text-xs font-bold text-brand-amber">{alertText}</p>
+                    <p className="mt-1.5 truncate text-xs font-bold text-brand-amber">{alertText}</p>
                   )}
                 </div>
               );
             })}
           </div>
-          {availablePortfolioCards.length > 0 && (
-            <div className="rounded-xl border border-border/60 bg-background/45 p-3">
-              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Available planning areas</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {availablePortfolioCards.map((section) => (
-                  <button
-                    key={section.id}
-                    type="button"
-                    onClick={() => props.onViewChange(section.id)}
-                    className="rounded-full border border-border/70 bg-card/70 px-3 py-1.5 text-xs font-extrabold text-muted-foreground transition hover:border-brand-teal/25 hover:text-brand-teal"
-                  >
-                    {section.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
       {(activeLabel || activeSection) && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-border/60 bg-card/70 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex min-w-0 gap-3">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
-                  <FolderOpen className="h-6 w-6" />
+        <div>
+          <div className="rounded-xl border border-border/60 bg-card/70 p-2.5">
+            <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
+                  <FolderOpen className="h-3.5 w-3.5" />
                 </span>
-                <div className="min-w-0">
-                  <h3 className="truncate text-2xl font-extrabold">{activeLabel || activeSection?.label}</h3>
-                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Event Portfolio · {props.event.title}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 text-[11px] font-extrabold text-brand-teal">
-                      Active
-                    </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate text-lg font-extrabold">{activeLabel || activeSection?.label}</h3>
                     {portfolioAlerts.length > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-amber/20 bg-brand-amber/10 px-2 py-1 text-[11px] font-extrabold text-brand-amber">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-amber/20 bg-brand-amber/10 px-2 py-0.5 text-[11px] font-extrabold text-brand-amber">
                         <AlertTriangle className="h-3 w-3" />
                         {portfolioAlerts.length} alert{portfolioAlerts.length === 1 ? "" : "s"}
                       </span>
                     )}
                   </div>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
+                    {completedItems}/{portfolioWorkItems.length} tasks · {portfolioProgress}% complete · Owner: {portfolioOwner?.display_name || "Unassigned"}
+                  </p>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" className="actsix-btn-primary h-9 rounded-xl px-3 text-xs" onClick={() => setPortfolioDetailTab("tasks")}>
-                  <Plus className="h-3.5 w-3.5" />
-                  Add Task
-                </Button>
-                <Button type="button" variant="outline" className="h-9 rounded-xl px-3 text-xs" onClick={() => props.onViewChange("landing")}>
-                  Portfolio Overview
-                </Button>
-              </div>
             </div>
 
-            <div className="mt-4 grid gap-2 sm:grid-cols-4">
-              <div className="rounded-xl border border-border/60 bg-background/55 px-3 py-2 sm:col-span-2">
-                <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                  <span>Progress</span>
-                  <span>{portfolioProgress}%</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full bg-brand-teal" style={{ width: `${portfolioProgress}%` }} />
-                </div>
               </div>
-              <HealthRow label="Tasks" value={`${completedItems}/${portfolioWorkItems.length}`} />
-              <HealthRow label="Owner" value={portfolioOwner?.display_name || "Unassigned"} />
-            </div>
-
-            <div className="mt-4 overflow-x-auto border-t border-border/70 pt-3">
-              <div className="flex min-w-max gap-1">
+              <div className="overflow-x-auto">
+                <div className="flex min-w-max gap-1">
                 {["overview", "tasks", "files", "notes", "activity"].map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setPortfolioDetailTab(tab as typeof portfolioDetailTab)}
                     className={cn(
-                      "h-8 rounded-full px-3 text-xs font-extrabold capitalize transition",
+                      "h-7 rounded-full px-2.5 text-xs font-extrabold capitalize transition",
                       portfolioDetailTab === tab ? "bg-brand-teal text-white" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                     )}
                   >
                     {tab}
                   </button>
                 ))}
+                </div>
               </div>
             </div>
           </div>
@@ -6149,8 +6000,8 @@ function PortfolioSurface(props: {
       )}
 
       {activeLabel && portfolioDetailTab === "overview" && (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="space-y-4">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="space-y-3">
             <PortfolioTaskList
               items={portfolioWorkItems}
               canManageEvents={props.canManageEvents}
@@ -6158,7 +6009,7 @@ function PortfolioSurface(props: {
               onUpdate={props.onUpdate}
               onDelete={props.onDelete}
             />
-            <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+            <div className="rounded-xl border border-border/70 bg-background/45 p-3">
               <div className="mb-3 flex items-center gap-2">
                 <Clock3 className="h-4 w-4 text-brand-teal" />
                 <h4 className="text-sm font-extrabold">Upcoming Milestones</h4>
@@ -6173,12 +6024,12 @@ function PortfolioSurface(props: {
                     <span className="rounded-full bg-brand-sage/10 px-2 py-1 text-[11px] font-extrabold text-brand-sage">Upcoming</span>
                   </div>
                 ))}
-                {portfolioWorkItems.length === 0 && <div className="actsix-empty-state min-h-20 text-sm">No milestones yet.</div>}
+                {portfolioWorkItems.length === 0 && <div className="actsix-empty-state min-h-14 text-sm">No milestones yet.</div>}
               </div>
             </div>
           </div>
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border/70 bg-background/45 p-3">
               <div className="mb-3 flex items-center gap-2">
                 <Users className="h-4 w-4 text-brand-teal" />
                 <h4 className="text-sm font-extrabold">Portfolio Details</h4>
@@ -6252,14 +6103,14 @@ function PortfolioSurface(props: {
                 <HealthRow label="Budget items" value={activeLabel === "Finance" ? props.event.expenses.length : 0} />
               </div>
             </div>
-            <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+            <div className="rounded-xl border border-border/70 bg-background/45 p-3">
               <div className="mb-3 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-brand-teal" />
                 <h4 className="text-sm font-extrabold">Files</h4>
               </div>
-              <div className="actsix-empty-state min-h-20 text-sm">Attach files to this portfolio as the file library expands.</div>
+              <div className="actsix-empty-state min-h-14 text-sm">Attach files to this portfolio as the file library expands.</div>
             </div>
-            <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+            <div className="rounded-xl border border-border/70 bg-background/45 p-3">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h4 className="text-sm font-extrabold">Notes</h4>
                 <Button type="button" variant="ghost" className="h-7 px-2 text-xs">Edit</Button>
@@ -6344,7 +6195,8 @@ function PortfolioSurface(props: {
           />
         </div>
       )}
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -6568,7 +6420,7 @@ function FilesSurface({
           owner: item.assignee?.display_name || "Unassigned",
           date: event.startsAt,
           status: item.status,
-          actionLabel: "Review task",
+          actionLabel: "Open task",
           action: undefined,
         };
       }),
@@ -6756,7 +6608,7 @@ function ActivitySurface({ event, compact = false }: { event: EventItem; compact
     ...event.importRuns.map((run) => ({
       id: `run-${run.id}`,
       title: `Import ${run.status}`,
-      detail: `${run.rowsImported} imported · ${run.rowsRequiringReview} review`,
+      detail: `${run.rowsImported} imported`,
       when: run.completedAt || run.startedAt,
       tone: run.status === "failed" ? "destructive" : "teal",
     })),
@@ -6834,8 +6686,8 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
     milestones: [
       { timing: "3 weeks before", title: "Initial announcement", offsetDays: -21, audience: "Whole church or group", channel: "Announcement", ownerRole: "Event Leader", approvalStatus: "Draft", draft: "Announce the event, purpose, date, and basic next step." },
       { timing: "2 weeks before", title: "Invitation reminder", offsetDays: -14, audience: "Invited people", channel: "Email", ownerRole: "Event Leader", approvalStatus: "Draft", draft: "Remind people why it matters and ask them to respond." },
-      { timing: "1 week before", title: "Details and RSVP reminder", offsetDays: -7, audience: "Interested people", channel: "Email", ownerRole: "Event Team", approvalStatus: "Needs review", draft: "Confirm time, location, RSVP details, and anything to bring." },
-      { timing: "1 day before", title: "Final reminder", offsetDays: -1, audience: "Confirmed attendees", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Send the final time, location, arrival note, and contact person." },
+      { timing: "1 week before", title: "Details and RSVP reminder", offsetDays: -7, audience: "Interested people", channel: "Email", ownerRole: "Event Team", approvalStatus: "Draft", draft: "Confirm time, location, RSVP details, and anything to bring." },
+      { timing: "1 day before", title: "Final reminder", offsetDays: -1, audience: "Confirmed attendees", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Send the final time, location, arrival note, and contact person." },
       { timing: "1 day after", title: "Thank you", offsetDays: 1, audience: "Attendees and helpers", channel: "Email", ownerRole: "Event Leader", approvalStatus: "Draft", draft: "Thank people warmly and point them to any next step." },
     ],
   },
@@ -6847,9 +6699,9 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
       { timing: "8 weeks before", title: "Official event launch", offsetDays: -56, audience: "Whole church", channel: "Email and announcement", ownerRole: "Comms Owner", approvalStatus: "Needs approval", draft: "Launch registration with the event purpose, dates, location, and cost." },
       { timing: "6 weeks before", title: "Invitation and awareness message", offsetDays: -42, audience: "Target audience", channel: "Email", ownerRole: "Programme Owner", approvalStatus: "Draft", draft: "Invite the right people and explain why they should come." },
       { timing: "4 weeks before", title: "Registration reminder", offsetDays: -28, audience: "Not yet registered", channel: "Email", ownerRole: "People Owner", approvalStatus: "Draft", draft: "Remind people to register and include the clearest action link." },
-      { timing: "2 weeks before", title: "Deadline warning", offsetDays: -14, audience: "Interested and unpaid people", channel: "Email and SMS", ownerRole: "People Owner", approvalStatus: "Needs review", draft: "Warn clearly about registration, payment, and form deadlines." },
-      { timing: "7 days before", title: "Participant information pack", offsetDays: -7, audience: "Registered participants", channel: "Email", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Send arrival details, schedule, packing list, transport, and emergency contact." },
-      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Registered participants", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Confirm final timing, location, transport, and what to bring." },
+      { timing: "2 weeks before", title: "Deadline warning", offsetDays: -14, audience: "Interested and unpaid people", channel: "Email and SMS", ownerRole: "People Owner", approvalStatus: "Draft", draft: "Warn clearly about registration, payment, and form deadlines." },
+      { timing: "7 days before", title: "Participant information pack", offsetDays: -7, audience: "Registered participants", channel: "Email", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Send arrival details, schedule, packing list, transport, and emergency contact." },
+      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Registered participants", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Confirm final timing, location, transport, and what to bring." },
       { timing: "Event day", title: "Operational update if required", offsetDays: 0, audience: "Participants and leaders", channel: "WhatsApp", ownerRole: "Event Leader", approvalStatus: "Optional", draft: "Send only if there is a practical update people need now." },
       { timing: "1 day after", title: "Thank-you message", offsetDays: 1, audience: "Participants and volunteers", channel: "Email", ownerRole: "Event Leader", approvalStatus: "Draft", draft: "Thank everyone and celebrate what happened." },
       { timing: "5 days after", title: "Feedback and follow-up", offsetDays: 5, audience: "Participants", channel: "Email", ownerRole: "Follow-up Owner", approvalStatus: "Draft", draft: "Ask for feedback and explain the next step after the event." },
@@ -6863,9 +6715,9 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
       { timing: "8 weeks before", title: "Launch", offsetDays: -56, audience: "Whole church", channel: "Email and social", ownerRole: "Comms Owner", approvalStatus: "Needs approval", draft: "Open the event with the core details and registration link." },
       { timing: "6 weeks before", title: "Invitation campaign", offsetDays: -42, audience: "Target audience", channel: "Email", ownerRole: "Comms Owner", approvalStatus: "Draft", draft: "Explain the value of attending and repeat the call to action." },
       { timing: "4 weeks before", title: "Registration reminder", offsetDays: -28, audience: "Not yet registered", channel: "Email", ownerRole: "People Owner", approvalStatus: "Draft", draft: "Prompt people who have not responded yet." },
-      { timing: "2 weeks before", title: "Deadline warning", offsetDays: -14, audience: "Interested people", channel: "Email and SMS", ownerRole: "People Owner", approvalStatus: "Needs review", draft: "Make deadlines and consequences clear." },
-      { timing: "1 week before", title: "Participant information", offsetDays: -7, audience: "Registered participants", channel: "Email", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Send practical information in one clear message." },
-      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Registered participants", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Confirm final timing and arrival details." },
+      { timing: "2 weeks before", title: "Deadline warning", offsetDays: -14, audience: "Interested people", channel: "Email and SMS", ownerRole: "People Owner", approvalStatus: "Draft", draft: "Make deadlines and consequences clear." },
+      { timing: "1 week before", title: "Participant information", offsetDays: -7, audience: "Registered participants", channel: "Email", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Send practical information in one clear message." },
+      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Registered participants", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Confirm final timing and arrival details." },
       { timing: "2 days after", title: "Thank you and feedback", offsetDays: 2, audience: "Participants and volunteers", channel: "Email", ownerRole: "Follow-up Owner", approvalStatus: "Draft", draft: "Say thank you and invite feedback while the event is fresh." },
     ],
   },
@@ -6876,10 +6728,10 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
       { timing: "6 months before", title: "Initial interest and save the date", offsetDays: -182, audience: "Potential participants", channel: "Email and announcement", ownerRole: "Event Leader", approvalStatus: "Draft", draft: "Invite early interest and ask people to save the date." },
       { timing: "5 months before", title: "Applications or registration open", offsetDays: -150, audience: "Potential participants", channel: "Email", ownerRole: "People Owner", approvalStatus: "Needs approval", draft: "Explain how to apply or register and what commitment is required." },
       { timing: "3 months before", title: "Payment and preparation reminder", offsetDays: -90, audience: "Registered participants", channel: "Email", ownerRole: "Finance Owner", approvalStatus: "Draft", draft: "Remind people about payments, preparation, and key deadlines." },
-      { timing: "2 months before", title: "Participant confirmation", offsetDays: -60, audience: "Registered participants", channel: "Email", ownerRole: "People Owner", approvalStatus: "Needs review", draft: "Confirm participation and clarify any outstanding requirements." },
-      { timing: "1 month before", title: "Forms and final payment deadline", offsetDays: -30, audience: "Participants with outstanding items", channel: "Email and SMS", ownerRole: "Safety Owner", approvalStatus: "Ready", draft: "Clearly list missing forms, payments, and the final deadline." },
-      { timing: "2 weeks before", title: "Full information pack", offsetDays: -14, audience: "Confirmed participants", channel: "Email", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Send the full schedule, packing list, transport, safety, and contact details." },
-      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Confirmed participants", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Confirm departure or arrival details and last practical reminders." },
+      { timing: "2 months before", title: "Participant confirmation", offsetDays: -60, audience: "Registered participants", channel: "Email", ownerRole: "People Owner", approvalStatus: "Draft", draft: "Confirm participation and clarify any outstanding requirements." },
+      { timing: "1 month before", title: "Forms and final payment deadline", offsetDays: -30, audience: "Participants with outstanding items", channel: "Email and SMS", ownerRole: "Safety Owner", approvalStatus: "Scheduled", draft: "Clearly list missing forms, payments, and the final deadline." },
+      { timing: "2 weeks before", title: "Full information pack", offsetDays: -14, audience: "Confirmed participants", channel: "Email", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Send the full schedule, packing list, transport, safety, and contact details." },
+      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Confirmed participants", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Confirm departure or arrival details and last practical reminders." },
       { timing: "After event", title: "Thank you, feedback, and reporting", offsetDays: 3, audience: "Participants, families, and leaders", channel: "Email", ownerRole: "Follow-up Owner", approvalStatus: "Draft", draft: "Thank people, gather feedback, and share reporting or next steps." },
     ],
   },
@@ -6890,9 +6742,9 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
       { timing: "12 weeks before", title: "Save the date", offsetDays: -84, audience: "Parents and participants", channel: "Announcement", ownerRole: "Comms Owner", approvalStatus: "Draft", draft: "Give families the dates, age group, and early cost estimate." },
       { timing: "8 weeks before", title: "Registration opens", offsetDays: -56, audience: "Parents and participants", channel: "Email", ownerRole: "People Owner", approvalStatus: "Needs approval", draft: "Open registration and explain cost, forms, and places available." },
       { timing: "5 weeks before", title: "Parent information reminder", offsetDays: -35, audience: "Parents", channel: "Email", ownerRole: "Safety Owner", approvalStatus: "Draft", draft: "Remind parents about forms, medication, dietaries, and transport." },
-      { timing: "3 weeks before", title: "Forms and payment chase", offsetDays: -21, audience: "Outstanding families", channel: "Email and SMS", ownerRole: "People Owner", approvalStatus: "Needs review", draft: "List exactly what is outstanding and how to complete it." },
-      { timing: "1 week before", title: "Information pack", offsetDays: -7, audience: "Registered families", channel: "Email", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Send packing list, schedule, venue, transport, and emergency contact details." },
-      { timing: "1 day before", title: "Final camp reminder", offsetDays: -1, audience: "Registered families", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Confirm drop-off time, pickup time, and what to bring." },
+      { timing: "3 weeks before", title: "Forms and payment chase", offsetDays: -21, audience: "Outstanding families", channel: "Email and SMS", ownerRole: "People Owner", approvalStatus: "Draft", draft: "List exactly what is outstanding and how to complete it." },
+      { timing: "1 week before", title: "Information pack", offsetDays: -7, audience: "Registered families", channel: "Email", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Send packing list, schedule, venue, transport, and emergency contact details." },
+      { timing: "1 day before", title: "Final camp reminder", offsetDays: -1, audience: "Registered families", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Confirm drop-off time, pickup time, and what to bring." },
       { timing: "2 days after", title: "Thank you and feedback", offsetDays: 2, audience: "Families and volunteers", channel: "Email", ownerRole: "Follow-up Owner", approvalStatus: "Draft", draft: "Thank families and helpers, then ask for feedback." },
     ],
   },
@@ -6903,10 +6755,10 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
       { timing: "6 months before", title: "Initial interest", offsetDays: -182, audience: "Potential team members", channel: "Announcement and email", ownerRole: "Event Leader", approvalStatus: "Draft", draft: "Invite expressions of interest and explain the mission purpose." },
       { timing: "5 months before", title: "Applications open", offsetDays: -150, audience: "Potential team members", channel: "Email", ownerRole: "People Owner", approvalStatus: "Needs approval", draft: "Explain application steps, dates, cost, and expectations." },
       { timing: "4 months before", title: "Support raising launch", offsetDays: -120, audience: "Mission team", channel: "Email", ownerRole: "Finance Owner", approvalStatus: "Draft", draft: "Give support raising guidance, payment schedule, and key milestones." },
-      { timing: "3 months before", title: "Document reminder", offsetDays: -90, audience: "Mission team", channel: "Email", ownerRole: "Safety Owner", approvalStatus: "Needs review", draft: "Remind the team about passports, visas, consent, medical, and insurance details." },
-      { timing: "1 month before", title: "Final payment and forms deadline", offsetDays: -30, audience: "Mission team", channel: "Email and SMS", ownerRole: "Finance Owner", approvalStatus: "Ready", draft: "List final payments, forms, and documents still outstanding." },
-      { timing: "2 weeks before", title: "Full travel information pack", offsetDays: -14, audience: "Mission team and families", channel: "Email", ownerRole: "Travel Owner", approvalStatus: "Ready", draft: "Send flights, routes, packing list, emergency contact, and itinerary." },
-      { timing: "2 days before", title: "Final travel reminder", offsetDays: -2, audience: "Mission team", channel: "WhatsApp", ownerRole: "Travel Owner", approvalStatus: "Ready", draft: "Confirm meeting time, documents, baggage, and travel contact." },
+      { timing: "3 months before", title: "Document reminder", offsetDays: -90, audience: "Mission team", channel: "Email", ownerRole: "Safety Owner", approvalStatus: "Draft", draft: "Remind the team about passports, visas, consent, medical, and insurance details." },
+      { timing: "1 month before", title: "Final payment and forms deadline", offsetDays: -30, audience: "Mission team", channel: "Email and SMS", ownerRole: "Finance Owner", approvalStatus: "Scheduled", draft: "List final payments, forms, and documents still outstanding." },
+      { timing: "2 weeks before", title: "Full travel information pack", offsetDays: -14, audience: "Mission team and families", channel: "Email", ownerRole: "Travel Owner", approvalStatus: "Scheduled", draft: "Send flights, routes, packing list, emergency contact, and itinerary." },
+      { timing: "2 days before", title: "Final travel reminder", offsetDays: -2, audience: "Mission team", channel: "WhatsApp", ownerRole: "Travel Owner", approvalStatus: "Scheduled", draft: "Confirm meeting time, documents, baggage, and travel contact." },
       { timing: "After event", title: "Thank you, feedback, and reporting", offsetDays: 5, audience: "Team, families, and supporters", channel: "Email", ownerRole: "Follow-up Owner", approvalStatus: "Draft", draft: "Thank supporters, gather feedback, and share reporting." },
     ],
   },
@@ -6916,8 +6768,8 @@ const communicationSchedules: Record<CommunicationPreset, { label: string; descr
     milestones: [
       { timing: "6 weeks before", title: "First announcement", offsetDays: -42, audience: "Target audience", channel: "Announcement", ownerRole: "Comms Owner", approvalStatus: "Draft", draft: "Introduce the event and the clearest next step." },
       { timing: "4 weeks before", title: "Invitation reminder", offsetDays: -28, audience: "Target audience", channel: "Email", ownerRole: "Comms Owner", approvalStatus: "Draft", draft: "Remind people to respond, register, or ask questions." },
-      { timing: "2 weeks before", title: "Deadline or details message", offsetDays: -14, audience: "Interested people", channel: "Email", ownerRole: "Event Team", approvalStatus: "Needs review", draft: "Send deadlines, details, or requirements people need to act on." },
-      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Confirmed people", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Ready", draft: "Confirm final details and what people should do next." },
+      { timing: "2 weeks before", title: "Deadline or details message", offsetDays: -14, audience: "Interested people", channel: "Email", ownerRole: "Event Team", approvalStatus: "Draft", draft: "Send deadlines, details, or requirements people need to act on." },
+      { timing: "2 days before", title: "Final reminder", offsetDays: -2, audience: "Confirmed people", channel: "SMS or WhatsApp", ownerRole: "Event Team", approvalStatus: "Scheduled", draft: "Confirm final details and what people should do next." },
       { timing: "After event", title: "Follow-up", offsetDays: 3, audience: "Participants", channel: "Email", ownerRole: "Follow-up Owner", approvalStatus: "Draft", draft: "Thank people, collect feedback, and share the next step." },
     ],
   },
@@ -6973,7 +6825,7 @@ function CommunicationSurface({
       if (override.removed) return null;
       const dueDate = override.dueDate ? new Date(`${override.dueDate}T12:00:00`) : addDays(startDate, Number(override.offsetDays ?? milestone.offsetDays));
       const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
-      const computedStatus = override.complete ? "Complete" : daysUntil < 0 ? "Review" : daysUntil <= 7 ? "Due soon" : "Scheduled";
+      const computedStatus = override.complete ? "Complete" : daysUntil < 0 ? "Scheduled" : daysUntil <= 7 ? "Due soon" : "Scheduled";
       return {
         ...milestone,
         ...override,
@@ -6998,7 +6850,7 @@ function CommunicationSurface({
     .map(([id, override]) => {
       const dueDate = override.dueDate ? new Date(`${override.dueDate}T12:00:00`) : addDays(startDate, Number(override.offsetDays || 0));
       const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
-      const computedStatus = override.complete ? "Complete" : daysUntil < 0 ? "Review" : daysUntil <= 7 ? "Due soon" : "Scheduled";
+      const computedStatus = override.complete ? "Complete" : daysUntil < 0 ? "Scheduled" : daysUntil <= 7 ? "Due soon" : "Scheduled";
       return {
         timing: override.timing || "Custom",
         title: override.title || "Custom message",
@@ -7017,10 +6869,8 @@ function CommunicationSurface({
         complete: Boolean(override.complete),
         daysUntil,
       };
-    }) as CommunicationPlanItem[];
+  }) as CommunicationPlanItem[];
   const generatedItems = [...baseGeneratedItems, ...customGeneratedItems];
-  const selected = generatedItems[selectedIndex] || generatedItems[0];
-  const pendingCount = generatedItems.filter((item) => !item.complete).length;
   const completedCount = generatedItems.filter((item) => item.complete).length;
   const updateMilestone = (id: string, updates: Partial<CommunicationMilestone> & { dueDate?: string; owner?: string; complete?: boolean; status?: string; assetNote?: string; removed?: boolean }) => {
     setMilestoneOverrides((current) => ({
@@ -7059,224 +6909,108 @@ function CommunicationSurface({
     setSelectedIndex(generatedItems.length);
   };
   const channelOptions = ["Announcement", "Email", "SMS or WhatsApp", "Social media", "Website", "Printed material", "Direct participant message"];
-  const statusOptions = ["Scheduled", "Draft", "Needs review", "Ready", "Sent", "Complete", "Review"];
+  const statusOptions = ["Scheduled", "Draft", "Due soon", "Sent", "Complete"];
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Schedule type</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(Object.keys(communicationSchedules) as CommunicationPreset[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  setPreset(key);
-                  setSelectedIndex(0);
-                }}
-                className={cn(
-                  "h-8 rounded-full border px-3 text-xs font-extrabold transition",
-                  preset === key
-                    ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                    : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:text-brand-teal"
-                )}
-              >
-                {communicationSchedules[key].label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-xl border border-brand-teal/15 bg-brand-teal/5 p-3">
-          <p className="text-sm font-extrabold text-brand-teal">Default principle</p>
-          <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">
-            Communicate early enough for people to plan, often enough for them to remember, and clearly enough for them to act.
-          </p>
-        </div>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-background/45 p-2">
+        <select
+          value={preset}
+          onChange={(event) => {
+            setPreset(event.target.value as CommunicationPreset);
+            setSelectedIndex(0);
+          }}
+          className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-bold outline-none"
+        >
+          {(Object.keys(communicationSchedules) as CommunicationPreset[]).map((key) => (
+            <option key={key} value={key}>{communicationSchedules[key].label}</option>
+          ))}
+        </select>
+        <span className="text-xs font-bold text-muted-foreground">
+          {generatedItems.length} messages · {completedCount} complete
+        </span>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <HealthRow label="Preset" value={schedule.label} />
-        <HealthRow label="Milestones" value={generatedItems.length} />
-        <HealthRow label="Open" value={pendingCount} />
-        <HealthRow label="Complete" value={completedCount} />
+      <div className="grid gap-2 rounded-xl border border-border/70 bg-background/45 p-2 md:grid-cols-[minmax(0,1fr)_7rem_10rem_auto]">
+        <Input
+          value={customTitle}
+          onChange={(event) => setCustomTitle(event.target.value)}
+          placeholder="Add message..."
+          className="h-8 rounded-lg bg-background text-xs"
+          disabled={!canManageEvents}
+        />
+        <Input
+          type="number"
+          value={customDays}
+          onChange={(event) => setCustomDays(Number(event.target.value))}
+          className="h-8 rounded-lg bg-background text-xs"
+          disabled={!canManageEvents}
+          aria-label="Days from event date"
+        />
+        <select
+          value={customChannel}
+          onChange={(event) => setCustomChannel(event.target.value)}
+          className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-semibold outline-none"
+          disabled={!canManageEvents}
+        >
+          {channelOptions.map((channel) => <option key={channel}>{channel}</option>)}
+        </select>
+        <Button type="button" className="actsix-btn-primary h-8 rounded-lg px-3 text-xs" onClick={addCustomMilestone} disabled={!canManageEvents || !customTitle.trim()}>
+          Add
+        </Button>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-3">
-          <div className="grid gap-2 rounded-xl border border-border/70 bg-background/45 p-3 md:grid-cols-[minmax(0,1fr)_9rem_11rem_auto]">
-            <Input
-              value={customTitle}
-              onChange={(event) => setCustomTitle(event.target.value)}
-              placeholder="Add communication milestone..."
-              className="h-9 rounded-xl bg-background text-xs"
-              disabled={!canManageEvents}
-            />
-            <Input
-              type="number"
-              value={customDays}
-              onChange={(event) => setCustomDays(Number(event.target.value))}
-              className="h-9 rounded-xl bg-background text-xs"
-              disabled={!canManageEvents}
-              aria-label="Days from event date"
-            />
-            <select
-              value={customChannel}
-              onChange={(event) => setCustomChannel(event.target.value)}
-              className="h-9 rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none"
-              disabled={!canManageEvents}
-            >
-              {channelOptions.map((channel) => <option key={channel}>{channel}</option>)}
-            </select>
-            <Button type="button" className="actsix-btn-primary h-9 rounded-xl px-3 text-xs" onClick={addCustomMilestone} disabled={!canManageEvents || !customTitle.trim()}>
-              Add
-            </Button>
-          </div>
-
-          <div className="rounded-xl border border-border/70 bg-background/45 p-3">
-          <div className="mb-3">
-            <h4 className="text-sm font-extrabold">{schedule.label} timeline</h4>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">
-              Dates are calculated from {formatShortDate(startDate)}. {schedule.description}
-            </p>
-          </div>
-          <div className="grid gap-2">
-            {generatedItems.map((item, index) => (
-              <div
-                key={`${item.title}-${item.offsetDays}`}
-                className={cn(
-                  "grid gap-2 rounded-xl border p-3 transition md:grid-cols-[2rem_8rem_minmax(0,1fr)_8rem_auto] md:items-center",
-                  selectedIndex === index
-                    ? "border-brand-teal/35 bg-brand-teal/5"
-                    : "border-border/60 bg-card/70 hover:border-brand-teal/25"
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={item.complete}
-                  onChange={(event) => updateMilestone(item.id, { complete: event.target.checked, status: event.target.checked ? "Complete" : "Scheduled" })}
-                  className="h-4 w-4 rounded border-border text-brand-teal"
-                  disabled={!canManageEvents}
-                  aria-label={`Mark ${item.title} complete`}
-                />
-                <div>
-                  <Input
-                    type="date"
-                    value={item.dueDateInput}
-                    onChange={(event) => updateMilestone(item.id, { dueDate: event.target.value })}
-                    className="h-8 rounded-xl bg-background text-xs"
-                    disabled={!canManageEvents}
-                  />
-                  <p className="mt-1 text-[11px] font-bold text-muted-foreground">{item.timing}</p>
-                </div>
-                <div className="min-w-0">
-                  <Input
-                    value={item.title}
-                    onFocus={() => setSelectedIndex(index)}
-                    onChange={(event) => updateMilestone(item.id, { title: event.target.value })}
-                    className="h-8 rounded-xl bg-background text-xs font-extrabold"
-                    disabled={!canManageEvents}
-                  />
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">{item.audience}</span>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">{item.channel}</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedIndex(index)}
-                  className={cn(
-                    "justify-self-start rounded-full px-2 py-1 text-[11px] font-extrabold md:justify-self-end",
-                    item.status === "Due soon" || item.status === "Needs review"
-                      ? "bg-brand-amber/10 text-brand-amber"
-                      : item.status === "Review"
-                        ? "bg-muted text-muted-foreground"
-                        : item.status === "Complete" || item.status === "Sent"
-                          ? "bg-brand-sage/10 text-brand-sage"
-                          : "bg-brand-teal/10 text-brand-teal"
-                  )}
-                >
-                  {item.status}
-                </button>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => updateMilestone(item.id, { removed: true })} disabled={!canManageEvents}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
-            {generatedItems.length === 0 && <div className="actsix-empty-state min-h-24 text-sm">Add a milestone to start the communication plan.</div>}
-          </div>
-          </div>
+      <div className="rounded-xl border border-border/70 bg-background/45">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+          <h4 className="text-sm font-extrabold">{schedule.label} timeline</h4>
+          <span className="text-xs font-semibold text-muted-foreground">From {formatShortDate(startDate)}</span>
         </div>
-
-        <div className="space-y-3">
-          <div className="rounded-xl border border-border/70 bg-background/45 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Selected message</p>
-                <h4 className="mt-1 text-lg font-extrabold">{selected?.title || "No milestone selected"}</h4>
-                {selected && <p className="mt-1 text-sm font-medium text-muted-foreground">{selected.timing} - {formatShortDate(selected.dueDate)}</p>}
-              </div>
-              {selected && <Badge variant="outline" className="shrink-0 rounded-full text-[10px] font-bold">{selected.status}</Badge>}
-            </div>
-            {selected && (
-              <div className="mt-4 space-y-3">
-                <label className="block space-y-1">
-                  <span className="text-xs font-bold text-muted-foreground">Audience</span>
-                  <Input value={selected.audience} onChange={(event) => updateMilestone(selected.id, { audience: event.target.value })} className="h-8 rounded-xl bg-background text-xs" disabled={!canManageEvents} />
-                </label>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="block space-y-1">
-                    <span className="text-xs font-bold text-muted-foreground">Channel</span>
-                    <select value={selected.channel} onChange={(event) => updateMilestone(selected.id, { channel: event.target.value })} className="h-8 w-full rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
-                      {channelOptions.map((channel) => <option key={channel}>{channel}</option>)}
-                    </select>
-                  </label>
-                  <label className="block space-y-1">
-                    <span className="text-xs font-bold text-muted-foreground">Status</span>
-                    <select value={selected.status} onChange={(event) => updateMilestone(selected.id, { status: event.target.value, complete: event.target.value === "Complete" })} className="h-8 w-full rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
-                      {statusOptions.map((status) => <option key={status}>{status}</option>)}
-                    </select>
-                  </label>
-                </div>
-                <label className="block space-y-1">
-                  <span className="text-xs font-bold text-muted-foreground">Owner</span>
-                  <select value={selected.owner} onChange={(event) => updateMilestone(selected.id, { owner: event.target.value })} className="h-8 w-full rounded-xl border border-border/70 bg-background px-2 text-xs font-semibold outline-none" disabled={!canManageEvents}>
-                    <option>{communicationOwner}</option>
-                    {collaboratorPeople.map((person) => <option key={person.id}>{person.display_name}</option>)}
-                    <option>Comms Owner</option>
-                    <option>People Owner</option>
-                    <option>Finance Owner</option>
-                    <option>Safety Owner</option>
-                    <option>Event Team</option>
-                  </select>
-                </label>
-                <HealthRow label="Approval" value={selected.approvalStatus} />
-              </div>
-            )}
-          </div>
-
-          {selected && <div className="rounded-xl border border-border/70 bg-background/45 p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-brand-teal" />
-              <h4 className="text-sm font-extrabold">Draft message brief</h4>
-            </div>
-            <Textarea
-              value={selected.draft}
-              onChange={(event) => updateMilestone(selected.id, { draft: event.target.value })}
-              className="min-h-28 rounded-xl bg-background text-sm"
-              disabled={!canManageEvents}
-            />
-            <label className="mt-3 block space-y-1">
-              <span className="text-xs font-bold text-muted-foreground">Artwork or file note</span>
+        <div className="divide-y divide-border/60">
+          {generatedItems.map((item) => (
+            <div key={`${item.title}-${item.offsetDays}`} className="grid gap-2 px-3 py-2 md:grid-cols-[1.5rem_7.5rem_minmax(0,1fr)_9rem_8rem_2rem] md:items-center">
+              <input
+                type="checkbox"
+                checked={item.complete}
+                onChange={(event) => updateMilestone(item.id, { complete: event.target.checked, status: event.target.checked ? "Complete" : "Scheduled" })}
+                className="h-4 w-4 rounded border-border text-brand-teal"
+                disabled={!canManageEvents}
+                aria-label={`Mark ${item.title} complete`}
+              />
               <Input
-                value={selected.assetNote}
-                onChange={(event) => updateMilestone(selected.id, { assetNote: event.target.value })}
-                placeholder="Poster, slide, image, or document needed..."
-                className="h-8 rounded-xl bg-background text-xs"
+                type="date"
+                value={item.dueDateInput}
+                onChange={(event) => updateMilestone(item.id, { dueDate: event.target.value })}
+                className="h-8 rounded-lg bg-background text-xs"
                 disabled={!canManageEvents}
               />
-            </label>
-          </div>}
+              <Input
+                value={item.title}
+                onChange={(event) => updateMilestone(item.id, { title: event.target.value })}
+                className="h-8 rounded-lg bg-background text-xs font-extrabold"
+                disabled={!canManageEvents}
+              />
+              <select
+                value={item.channel}
+                onChange={(event) => updateMilestone(item.id, { channel: event.target.value })}
+                className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-semibold outline-none"
+                disabled={!canManageEvents}
+              >
+                {channelOptions.map((channel) => <option key={channel}>{channel}</option>)}
+              </select>
+              <select
+                value={item.status}
+                onChange={(event) => updateMilestone(item.id, { status: event.target.value, complete: event.target.value === "Complete" })}
+                className="h-8 rounded-lg border border-border/70 bg-background px-2 text-xs font-semibold outline-none"
+                disabled={!canManageEvents}
+              >
+                {statusOptions.map((status) => <option key={status}>{status}</option>)}
+              </select>
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => updateMilestone(item.id, { removed: true })} disabled={!canManageEvents}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+          {generatedItems.length === 0 && <div className="actsix-empty-state m-3 min-h-20 text-sm">Add a message to start the communication plan.</div>}
         </div>
       </div>
     </div>
