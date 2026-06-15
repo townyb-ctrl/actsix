@@ -210,7 +210,43 @@ const logMessage = async (
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method === "GET") return json({ ok: true, service: "actsix-whatsapp-agent" });
+  if (req.method === "GET") {
+  const url = new URL(req.url);
+
+  const mode = url.searchParams.get("hub.mode");
+  const token = url.searchParams.get("hub.verify_token");
+  const challenge = url.searchParams.get("hub.challenge");
+
+  const expectedToken = Deno.env.get("WHATSAPP_META_VERIFY_TOKEN");
+
+  if (
+    mode === "subscribe" &&
+    expectedToken &&
+    token === expectedToken &&
+    challenge
+  ) {
+    return new Response(challenge, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  }
+
+  console.error("Meta webhook verification failed", {
+    mode,
+    tokenMatches: token === expectedToken,
+    hasChallenge: Boolean(challenge),
+    hasExpectedToken: Boolean(expectedToken),
+  });
+
+  return new Response("Webhook verification failed", {
+    status: 403,
+    headers: {
+      "Content-Type": "text/plain",
+    },
+  });
+}
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
