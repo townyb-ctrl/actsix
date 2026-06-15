@@ -23,7 +23,16 @@ const normalizePhone = (value?: string | null) => {
   return raw.startsWith("+") ? raw : `+${digits}`;
 };
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Johannesburg",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  return formatter.format(new Date());
+};
 
 const formatDate = (value?: string | null) => {
   if (!value) return "";
