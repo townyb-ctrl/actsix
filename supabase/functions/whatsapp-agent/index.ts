@@ -12,15 +12,6 @@ const json = (body: Record<string, unknown>, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
   });
 
-const twiml = (message: string, status = 200) =>
-  new Response(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(message)}</Message></Response>`, {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "text/xml; charset=utf-8" },
-  });
-
-const escapeXml = (value: string) =>
-  value.replace(/[<>&'"]/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[char] || char));
-
 const normalizePhone = (value?: string | null) => {
   const raw = (value || "").replace(/^whatsapp:/i, "").trim();
   const digits = raw.replace(/\D/g, "");
@@ -47,6 +38,7 @@ const cleanTaskTitle = (message: string) => {
   const patterns = [
     /^add\s+["']?(.+?)["']?\s+to\s+(?:my\s+)?tasks?\.?$/i,
     /^add\s+(?:a\s+)?task\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
+    /^create\s+(?:a\s+)?task\s+called\s+["']?(.+?)["']?\.?$/i,
     /^add\s+["']?(.+?)["']?\.?$/i,
     /^task\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
   ];
@@ -68,15 +60,77 @@ const wantsUpcomingServiceSongs = (message: string) =>
 const helpMessage =
   "Hi, I am the ACTSIX WhatsApp agent. Try: What are my tasks for today? | What songs are in the set for the upcoming service? | Add \"Fetch kids\" to tasks";
 
+type InboundMessage = {
+  from: string;
+  message: string;
+  providerMessageId: string;
+  profileName: string;
+  phoneNumberId: string;
+  isMeta: boolean;
+  ignored: boolean;
+  metadata: Record<string, unknown>;
+};
+
+const extractMetaInbound = (body: any): InboundMessage | null => {
+  const change = body?.entry?.[0]?.changes?.[0];
+  const value = change?.value;
+  const message = value?.messages?.[0];
+
+  if (!message) return null;
+  if (message.type !== "text") {
+    return {
+      from: normalizePhone(message.from),
+      message: "",
+      providerMessageId: String(message.id || ""),
+      profileName: String(value?.contacts?.[0]?.profile?.name || ""),
+      phoneNumberId: String(value?.metadata?.phone_number_id || ""),
+      isMeta: true,
+      ignored: true,
+      metadata: body,
+    };
+  }
+
+  return {
+    from: normalizePhone(message.from),
+    message: String(message.text?.body || "").trim(),
+    providerMessageId: String(message.id || ""),
+    profileName: String(value?.contacts?.[0]?.profile?.name || ""),
+    phoneNumberId: String(value?.metadata?.phone_number_id || ""),
+    isMeta: true,
+    ignored: false,
+    metadata: body,
+  };
+};
+
+const isMetaWebhookPayload = (body: any) => Boolean(body?.entry?.[0]?.changes?.[0]?.value);
+
 const parseInbound = async (req: Request) => {
   const contentType = req.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     const body = await req.json();
+    const metaInbound = extractMetaInbound(body);
+    if (metaInbound) return metaInbound;
+    if (isMetaWebhookPayload(body)) {
+      return {
+        from: "",
+        message: "",
+        providerMessageId: "",
+        profileName: "",
+        phoneNumberId: String(body?.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id || ""),
+        isMeta: true,
+        ignored: true,
+        metadata: body,
+      };
+    }
+
     return {
       from: normalizePhone(body.from || body.From || body.phone || body.phone_number),
       message: String(body.body || body.Body || body.message || "").trim(),
       providerMessageId: String(body.message_id || body.MessageSid || body.SmsMessageSid || ""),
-      responseMode: body.response_mode === "json" ? "json" : "twiml",
+      profileName: String(body.profile_name || body.name || ""),
+      phoneNumberId: String(body.phone_number_id || ""),
+      isMeta: false,
+      ignored: false,
       metadata: body,
     };
   }
@@ -89,9 +143,44 @@ const parseInbound = async (req: Request) => {
     from: normalizePhone(String(form.get("From") || form.get("WaId") || "")),
     message: String(form.get("Body") || "").trim(),
     providerMessageId: String(form.get("MessageSid") || form.get("SmsMessageSid") || ""),
-    responseMode: "twiml",
+    profileName: "",
+    phoneNumberId: "",
+    isMeta: false,
+    ignored: false,
     metadata,
   };
+};
+
+const sendMetaTextMessage = async (recipientPhone: string, message: string) => {
+  const accessToken = Deno.env.get("WHATSAPP_META_ACCESS_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_META_PHONE_NUMBER_ID");
+
+  if (!accessToken || !phoneNumberId) {
+    throw new Error("Meta WhatsApp environment is not configured.");
+  }
+
+  const response = await fetch(`https://graph.facebook.com/v23.0/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: recipientPhone.replace(/[+\s]/g, ""),
+      type: "text",
+      text: {
+        preview_url: false,
+        body: message,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Meta WhatsApp send failed (${response.status}): ${errorBody}`);
+  }
 };
 
 const findIdentity = async (adminClient: ReturnType<typeof createClient>, phoneNumber: string) => {
@@ -208,94 +297,136 @@ const logMessage = async (
   });
 };
 
+const hasProcessedProviderMessage = async (adminClient: ReturnType<typeof createClient>, providerMessageId: string) => {
+  if (!providerMessageId) return false;
+
+  const { data, error } = await adminClient
+    .from("whatsapp_agent_messages")
+    .select("id")
+    .eq("direction", "inbound")
+    .eq("provider_message_id", providerMessageId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+};
+
+const processCommand = async (adminClient: ReturnType<typeof createClient>, inbound: InboundMessage) => {
+  let identity = null;
+  let intent = "unknown";
+  let reply = helpMessage;
+
+  identity = await findIdentity(adminClient, inbound.from);
+  if (!identity) {
+    reply = "This WhatsApp number is not linked to ACTSIX yet. Ask a workspace admin to link your number first.";
+    await logMessage(adminClient, null, inbound.from, "inbound", inbound.message, "unlinked", reply, inbound.providerMessageId, inbound.metadata);
+    return { identity, intent: "unlinked", reply };
+  }
+
+  const taskTitle = cleanTaskTitle(inbound.message);
+  if (taskTitle) {
+    intent = "add_task";
+    reply = await addTask(adminClient, identity, taskTitle);
+  } else if (wantsTodayTasks(inbound.message)) {
+    intent = "today_tasks";
+    reply = await getTodayTasks(adminClient, identity);
+  } else if (wantsUpcomingServiceSongs(inbound.message)) {
+    intent = "upcoming_service_songs";
+    reply = await getUpcomingServiceSongs(adminClient, identity);
+  }
+
+  await logMessage(adminClient, identity, inbound.from, "inbound", inbound.message, intent, reply, inbound.providerMessageId, inbound.metadata);
+  await logMessage(adminClient, identity, inbound.from, "outbound", reply, intent, reply, "", {
+    response_to: inbound.providerMessageId,
+    provider: inbound.isMeta ? "meta" : "json",
+    profile_name: inbound.profileName,
+    phone_number_id: inbound.phoneNumberId,
+  });
+
+  return { identity, intent, reply };
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method === "GET") {
-  const url = new URL(req.url);
+    const url = new URL(req.url);
 
-  const mode = url.searchParams.get("hub.mode");
-  const token = url.searchParams.get("hub.verify_token");
-  const challenge = url.searchParams.get("hub.challenge");
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
 
- const expectedToken = Deno.env.get("WHATSAPP_META_VERIFY_TOKEN");
+    const expectedToken = Deno.env.get("WHATSAPP_META_VERIFY_TOKEN");
 
-  if (
-    mode === "subscribe" &&
-    expectedToken &&
-    token === expectedToken &&
-    challenge
-  ) {
-    return new Response(challenge, {
-      status: 200,
+    if (
+      mode === "subscribe" &&
+      expectedToken &&
+      token === expectedToken &&
+      challenge
+    ) {
+      return new Response(challenge, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain",
+        },
+      });
+    }
+
+    console.error("Meta webhook verification failed", {
+      mode,
+      tokenMatches: token === expectedToken,
+      hasChallenge: Boolean(challenge),
+      hasExpectedToken: Boolean(expectedToken),
+    });
+
+    return new Response("Webhook verification failed", {
+      status: 403,
       headers: {
         "Content-Type": "text/plain",
       },
     });
   }
-
-  console.error("Meta webhook verification failed", {
-    mode,
-    tokenMatches: token === expectedToken,
-    hasChallenge: Boolean(challenge),
-    hasExpectedToken: Boolean(expectedToken),
-  });
-
-  return new Response("Webhook verification failed", {
-    status: 403,
-    headers: {
-      "Content-Type": "text/plain",
-    },
-  });
-}
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const webhookSecret = Deno.env.get("WHATSAPP_AGENT_WEBHOOK_SECRET") || "";
   if (!supabaseUrl || !serviceRoleKey) return json({ error: "Supabase function environment is not configured." }, 500);
-
-  if (webhookSecret && req.headers.get("x-actsix-webhook-secret") !== webhookSecret) {
-    return json({ error: "Invalid WhatsApp webhook secret." }, 401);
-  }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
   const inbound = await parseInbound(req);
-  const respond = (message: string, status = 200) =>
-    inbound.responseMode === "json" ? json({ reply: message }, status) : twiml(message, status);
 
-  if (!inbound.from || !inbound.message) return respond("I could not read that WhatsApp message.", 400);
+  if (inbound.ignored) return json({ received: true, ignored: true });
 
-  let identity = null;
-  let intent = "unknown";
-  let reply = helpMessage;
+  if (!inbound.isMeta) {
+    if (!inbound.from || !inbound.message) return json({ reply: "I could not read that WhatsApp message." }, 400);
+
+    try {
+      const { reply } = await processCommand(adminClient, inbound);
+      return json({ reply });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "WhatsApp agent failed.";
+      return json({ reply: "Sorry, I could not complete that ACTSIX request just now.", error: message }, 500);
+    }
+  }
+
+  if (!inbound.providerMessageId || !inbound.message) return json({ received: true, ignored: true });
+
+  let commandProcessed = false;
 
   try {
-    identity = await findIdentity(adminClient, inbound.from);
-    if (!identity) {
-      reply = "This WhatsApp number is not linked to ACTSIX yet. Ask a workspace admin to link your number first.";
-      await logMessage(adminClient, null, inbound.from, "inbound", inbound.message, "unlinked", reply, inbound.providerMessageId, inbound.metadata);
-      return respond(reply);
+    if (await hasProcessedProviderMessage(adminClient, inbound.providerMessageId)) {
+      return json({ received: true, duplicate: true });
     }
 
-    const taskTitle = cleanTaskTitle(inbound.message);
-    if (taskTitle) {
-      intent = "add_task";
-      reply = await addTask(adminClient, identity, taskTitle);
-    } else if (wantsTodayTasks(inbound.message)) {
-      intent = "today_tasks";
-      reply = await getTodayTasks(adminClient, identity);
-    } else if (wantsUpcomingServiceSongs(inbound.message)) {
-      intent = "upcoming_service_songs";
-      reply = await getUpcomingServiceSongs(adminClient, identity);
-    }
-
-    await logMessage(adminClient, identity, inbound.from, "inbound", inbound.message, intent, reply, inbound.providerMessageId, inbound.metadata);
-    await logMessage(adminClient, identity, inbound.from, "outbound", reply, intent, reply, "", { response_to: inbound.providerMessageId });
-    return respond(reply);
+    const { reply } = await processCommand(adminClient, inbound);
+    commandProcessed = true;
+    await sendMetaTextMessage(inbound.from, reply);
+    return json({ received: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "WhatsApp agent failed.";
-    reply = "Sorry, I could not complete that ACTSIX request just now.";
-    await logMessage(adminClient, identity, inbound.from, "inbound", inbound.message, "error", message, inbound.providerMessageId, inbound.metadata);
-    return respond(reply, 500);
+    if (!commandProcessed) {
+      await logMessage(adminClient, null, inbound.from, "inbound", inbound.message, "error", message, inbound.providerMessageId, inbound.metadata);
+    }
+    return json({ received: true, error: "Sorry, I could not complete that ACTSIX request just now." }, 500);
   }
 });
