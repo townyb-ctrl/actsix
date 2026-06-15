@@ -348,6 +348,11 @@ const processCommand = async (adminClient: ReturnType<typeof createClient>, inbo
 };
 
 Deno.serve(async (req) => {
+  console.log("ACTSIX WhatsApp request received", {
+  method: req.method,
+  url: req.url,
+  contentType: req.headers.get("content-type"),
+});
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method === "GET") {
     const url = new URL(req.url);
