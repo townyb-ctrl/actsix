@@ -210,17 +210,27 @@ const findIdentity = async (adminClient: ReturnType<typeof createClient>, phoneN
 };
 
 const getTodayTasks = async (adminClient: ReturnType<typeof createClient>, identity: any) => {
+  const personalTaskFilter = identity.person_id
+    ? `user_id.eq.${identity.auth_user_id},assigned_person_id.eq.${identity.person_id}`
+    : `user_id.eq.${identity.auth_user_id}`;
+
   const { data, error } = await adminClient
     .from("tasks")
     .select("title, due, priority, project")
-    .eq("user_id", identity.auth_user_id)
     .eq("complete", false)
     .eq("due", todayIso())
+    .or(personalTaskFilter)
     .order("priority", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(10);
 
   if (error) throw error;
+  console.log("WhatsApp today tasks query", {
+    today: todayIso(),
+    authUserId: identity.auth_user_id,
+    personId: identity.person_id,
+    count: data?.length || 0,
+  });
   if (!data?.length) return "You have no open tasks due today.";
 
   return [
