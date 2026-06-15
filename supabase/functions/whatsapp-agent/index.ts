@@ -154,6 +154,11 @@ const parseInbound = async (req: Request) => {
 const sendMetaTextMessage = async (recipientPhone: string, message: string) => {
   const accessToken = Deno.env.get("WHATSAPP_META_ACCESS_TOKEN");
   const phoneNumberId = Deno.env.get("WHATSAPP_META_PHONE_NUMBER_ID");
+  console.log("ACTSIX WhatsApp Meta config", {
+  hasAccessToken: Boolean(accessToken),
+  hasPhoneNumberId: Boolean(phoneNumberId),
+  phoneNumberId,
+});
 
   if (!accessToken || !phoneNumberId) {
     throw new Error("Meta WhatsApp environment is not configured.");
@@ -399,6 +404,15 @@ Deno.serve(async (req) => {
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
   const inbound = await parseInbound(req);
+  console.log("ACTSIX WhatsApp inbound parsed", {
+  isMeta: inbound.isMeta,
+  ignored: inbound.ignored,
+  from: inbound.from,
+  hasMessage: Boolean(inbound.message),
+  providerMessageId: inbound.providerMessageId,
+  profileName: inbound.profileName,
+  phoneNumberId: inbound.phoneNumberId,
+});
 
   if (inbound.ignored) return json({ received: true, ignored: true });
 
@@ -425,6 +439,10 @@ Deno.serve(async (req) => {
 
     const { reply } = await processCommand(adminClient, inbound);
     commandProcessed = true;
+    console.log("ACTSIX WhatsApp sending reply", {
+  to: inbound.from,
+  replyPreview: reply.slice(0, 120),
+});
     await sendMetaTextMessage(inbound.from, reply);
     return json({ received: true });
   } catch (error) {
