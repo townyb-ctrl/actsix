@@ -182,10 +182,17 @@ const sendMetaTextMessage = async (recipientPhone: string, message: string) => {
     }),
   });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Meta WhatsApp send failed (${response.status}): ${errorBody}`);
-  }
+  const responseText = await response.text();
+
+console.log("ACTSIX WhatsApp Meta send response", {
+  status: response.status,
+  ok: response.ok,
+  body: responseText,
+});
+
+if (!response.ok) {
+  throw new Error(`Meta WhatsApp send failed (${response.status}): ${responseText}`);
+}
 };
 
 const findIdentity = async (adminClient: ReturnType<typeof createClient>, phoneNumber: string) => {
@@ -424,6 +431,9 @@ Deno.serve(async (req) => {
       return json({ reply });
     } catch (error) {
       const message = error instanceof Error ? error.message : "WhatsApp agent failed.";
+      console.error("ACTSIX WhatsApp send/process error", {
+  message,
+});
       return json({ reply: "Sorry, I could not complete that ACTSIX request just now.", error: message }, 500);
     }
   }
