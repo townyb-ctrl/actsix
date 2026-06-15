@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  const expectedToken = Deno.env.get("WHATSAPP_META_VERIFY_TOKEN");
+  const expectedToken = Deno.env.get(70c702a9a1987ebc0b9873de3ae95f9a4cb653d3a6984ddc8a4fd742f8d0d7ea);
 
   if (
     mode === "subscribe" &&
