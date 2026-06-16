@@ -168,11 +168,11 @@ const sendMetaTextMessage = async (
   const accessToken = Deno.env.get("WHATSAPP_META_ACCESS_TOKEN");
   const fallbackPhoneNumberId = Deno.env.get("WHATSAPP_META_PHONE_NUMBER_ID");
   const phoneNumberId = inboundPhoneNumberId || fallbackPhoneNumberId;
-  console.log("ACTSIX WhatsApp Meta config", {
-  hasAccessToken: Boolean(accessToken),
-  hasPhoneNumberId: Boolean(phoneNumberId),
-  phoneNumberId,
-});
+  console.log("ACTSIX WhatsApp Meta send config", {
+    hasAccessToken: Boolean(accessToken),
+    hasPhoneNumberId: Boolean(phoneNumberId),
+    phoneNumberIdSource: inboundPhoneNumberId ? "inbound_webhook" : "supabase_secret",
+  });
 
   if (!accessToken || !phoneNumberId) {
     throw new Error("Meta WhatsApp environment is not configured.");
@@ -198,15 +198,14 @@ const sendMetaTextMessage = async (
 
   const responseText = await response.text();
 
-console.log("ACTSIX WhatsApp Meta send response", {
-  status: response.status,
-  ok: response.ok,
-  body: responseText,
-});
+  console.log("ACTSIX WhatsApp Meta send response", {
+    status: response.status,
+    ok: response.ok,
+  });
 
-if (!response.ok) {
-  throw new Error(`Meta WhatsApp send failed (${response.status}): ${responseText}`);
-}
+  if (!response.ok) {
+    throw new Error(`Meta WhatsApp send failed (${response.status}): ${responseText}`);
+  }
 };
 
 const findIdentity = async (adminClient: ReturnType<typeof createClient>, phoneNumber: string) => {
@@ -436,14 +435,12 @@ Deno.serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
   const inbound = await parseInbound(req);
   console.log("ACTSIX WhatsApp inbound parsed", {
-  isMeta: inbound.isMeta,
-  ignored: inbound.ignored,
-  from: inbound.from,
-  hasMessage: Boolean(inbound.message),
-  providerMessageId: inbound.providerMessageId,
-  profileName: inbound.profileName,
-  phoneNumberId: inbound.phoneNumberId,
-});
+    isMeta: inbound.isMeta,
+    ignored: inbound.ignored,
+    hasMessage: Boolean(inbound.message),
+    hasProviderMessageId: Boolean(inbound.providerMessageId),
+    hasPhoneNumberId: Boolean(inbound.phoneNumberId),
+  });
 
   if (inbound.ignored) return json({ received: true, ignored: true });
 
@@ -456,8 +453,8 @@ Deno.serve(async (req) => {
     } catch (error) {
       const message = error instanceof Error ? error.message : "WhatsApp agent failed.";
       console.error("ACTSIX WhatsApp send/process error", {
-  message,
-});
+        message,
+      });
       return json({ reply: "Sorry, I could not complete that ACTSIX request just now.", error: message }, 500);
     }
   }
@@ -474,9 +471,9 @@ Deno.serve(async (req) => {
     const { reply } = await processCommand(adminClient, inbound);
     commandProcessed = true;
     console.log("ACTSIX WhatsApp sending reply", {
-  to: inbound.from,
-  replyPreview: reply.slice(0, 120),
-});
+      hasRecipient: Boolean(inbound.from),
+      replyLength: reply.length,
+    });
     await sendMetaTextMessage(inbound.from, reply, inbound.phoneNumberId);
     return json({ received: true });
   } catch (error) {
@@ -485,17 +482,16 @@ Deno.serve(async (req) => {
       await logMessage(adminClient, null, inbound.from, "inbound", inbound.message, "error", message, inbound.providerMessageId, inbound.metadata);
     }
     console.error("ACTSIX WhatsApp send/process error", {
-  message,
-  inboundPhoneNumberId: inbound.phoneNumberId,
-});
+      message,
+      hasInboundPhoneNumberId: Boolean(inbound.phoneNumberId),
+    });
 
-return json(
-  {
-    received: true,
-    error: "Reply send failed.",
-    detail: message,
-  },
-  200,
-);
+    return json(
+      {
+        received: true,
+        error: "Reply send failed.",
+      },
+      200,
+    );
   }
 });
