@@ -16,9 +16,16 @@ type ProjectSelectProps = {
   onChange: (value: string) => void;
   onProjectChange?: (project: Project | null) => void;
   onCreated?: () => void | Promise<void>;
+  selectClassName?: string;
 };
 
-const ProjectSelect = ({ value, onChange, onProjectChange, onCreated }: ProjectSelectProps) => {
+const ProjectSelect = ({
+  value,
+  onChange,
+  onProjectChange,
+  onCreated,
+  selectClassName,
+}: ProjectSelectProps) => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [creating, setCreating] = useState(false);
@@ -102,7 +109,7 @@ const ProjectSelect = ({ value, onChange, onProjectChange, onCreated }: ProjectS
           onChange(event.target.value);
           onProjectChange?.(selectedProject);
         }}
-        className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+        className={selectClassName ?? "mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"}
       >
         <option value="__create_new__">+ Create new project...</option>
         <option value="">No project</option>

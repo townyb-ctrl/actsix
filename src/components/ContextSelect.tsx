@@ -15,6 +15,7 @@ type ContextSelectProps = {
   value: string;
   onChange: (value: string) => void;
   onCreated?: () => void | Promise<void>;
+  selectClassName?: string;
 };
 
 const fallbackContexts = [
@@ -27,7 +28,7 @@ const fallbackContexts = [
   "Waiting",
 ];
 
-const ContextSelect = ({ value, onChange, onCreated }: ContextSelectProps) => {
+const ContextSelect = ({ value, onChange, onCreated, selectClassName }: ContextSelectProps) => {
   const { user } = useAuth();
   const [contexts, setContexts] = useState<Context[]>([]);
   const [creating, setCreating] = useState(false);
@@ -100,7 +101,7 @@ const ContextSelect = ({ value, onChange, onCreated }: ContextSelectProps) => {
           setCreating(false);
           onChange(event.target.value);
         }}
-        className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+        className={selectClassName ?? "mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"}
       >
         <option value="__create_new__">+ Create new context...</option>
 

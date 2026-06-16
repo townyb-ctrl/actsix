@@ -12,6 +12,8 @@ type NextActionFieldsProps = {
   item: any;
   onChange: (item: any) => void;
   onRefreshOptions?: () => void | Promise<void>;
+  showOrganization?: boolean;
+  variant?: "default" | "inbox";
 };
 
 type ProjectRecord = {
@@ -29,6 +31,8 @@ const NextActionFields = ({
   item,
   onChange,
   onRefreshOptions,
+  showOrganization = true,
+  variant = "default",
 }: NextActionFieldsProps) => {
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
@@ -117,6 +121,25 @@ const NextActionFields = ({
 
   if (!item) return null;
 
+  const durationOptions = [2, 5, 10, 15, 20, 25, 30, 45, 60, 90, 120];
+  const fieldClassName =
+    variant === "inbox"
+      ? "rounded-xl border border-brand-teal/20 bg-white p-4 shadow-sm"
+      : "rounded-xl border border-border/70 bg-background/70 p-4";
+  const mainFieldClassName =
+    variant === "inbox"
+      ? "rounded-xl border border-brand-teal/20 bg-white p-4 shadow-sm"
+      : "rounded-xl border border-border/70 bg-background/70 p-4";
+  const inputClassName =
+    variant === "inbox"
+      ? "mt-2 h-10 rounded-xl border-brand-teal/20 bg-white shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+      : "mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none";
+  const selectClassName =
+    variant === "inbox"
+      ? "mt-2 h-10 w-full rounded-xl border border-brand-teal/20 bg-white px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+      : "mt-2 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15";
+  const labelClassName = "label-eyebrow flex h-5 items-center gap-2";
+
   return (
     <>
       <section>
@@ -126,8 +149,8 @@ const NextActionFields = ({
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label className="label-eyebrow">Project</label>
+          <div className={mainFieldClassName}>
+            <label className={labelClassName}>Project</label>
             <ProjectSelect
               value={item.project ?? ""}
               onChange={(project) =>
@@ -152,26 +175,28 @@ const NextActionFields = ({
                 })
               }
               onCreated={onRefreshOptions}
+              selectClassName={selectClassName}
             />
           </div>
 
-          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label className="label-eyebrow">Context</label>
-            <ContextSelect
-              value={item.context ?? "General"}
-              onChange={(context) => onChange({ ...item, context })}
-              onCreated={onRefreshOptions}
-            />
-          </div>
-
-          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label className="label-eyebrow flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5" />
-              Duration
-            </label>
+          <div className={mainFieldClassName}>
+            <label className={labelClassName}>Due date</label>
             <Input
-              type="number"
-              min="1"
+              type="date"
+              value={item.due ?? ""}
+              onChange={(event) =>
+                onChange({ ...item, due: event.target.value || null })
+              }
+              className={inputClassName}
+            />
+          </div>
+
+          <div className={mainFieldClassName}>
+            <label className={labelClassName}>
+              <Clock className="h-3.5 w-3.5" />
+              Est. Duration
+            </label>
+            <select
               value={item.minutes ?? 15}
               onChange={(event) =>
                 onChange({
@@ -179,12 +204,59 @@ const NextActionFields = ({
                   minutes: Number(event.target.value) || 15,
                 })
               }
-              className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
+              className={selectClassName}
+            >
+              {durationOptions.map((minutes) => (
+                <option key={minutes} value={minutes}>
+                  {minutes} min
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={mainFieldClassName}>
+            <label className={labelClassName}>Energy</label>
+            <select
+              value={item.energy ?? "Medium"}
+              onChange={(event) =>
+                onChange({ ...item, energy: event.target.value })
+              }
+              className={selectClassName}
+            >
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+            </select>
+          </div>
+
+          <div className={mainFieldClassName}>
+            <label className={labelClassName}>Priority</label>
+            <select
+              value={item.priority ?? "Medium"}
+              onChange={(event) =>
+                onChange({ ...item, priority: event.target.value })
+              }
+              className={selectClassName}
+            >
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+              <option>Urgent</option>
+            </select>
+          </div>
+
+          <div className={mainFieldClassName}>
+            <label className={labelClassName}>Context</label>
+            <ContextSelect
+              value={item.context ?? "General"}
+              onChange={(context) => onChange({ ...item, context })}
+              onCreated={onRefreshOptions}
+              selectClassName={selectClassName}
             />
           </div>
 
           {shouldShowAssignedTo && (
-            <div className="rounded-xl border border-border/70 bg-background/70 p-4 md:col-span-2">
+            <div className={`${fieldClassName} md:col-span-2`}>
               <label className="label-eyebrow flex items-center gap-2">
                 <UserRound className="h-3.5 w-3.5" />
                 Assigned To
@@ -219,79 +291,38 @@ const NextActionFields = ({
                 Add collaborators to this project before assigning tasks.
               </div>
             )}
+        </div>
+      </section>
 
-          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label className="label-eyebrow">Priority</label>
-            <select
-              value={item.priority ?? "Medium"}
-              onChange={(event) =>
-                onChange({ ...item, priority: event.target.value })
-              }
-              className="mt-2 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-              <option>Urgent</option>
-            </select>
+      {showOrganization && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Tags className="h-4 w-4 text-brand-teal" />
+            <h3 className="font-extrabold tracking-tight">Organization</h3>
           </div>
 
           <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label className="label-eyebrow">Energy</label>
-            <select
-              value={item.energy ?? "Medium"}
-              onChange={(event) =>
-                onChange({ ...item, energy: event.target.value })
-              }
-              className="mt-2 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-            </select>
-          </div>
-
-          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label className="label-eyebrow">Due date</label>
+            <label className="label-eyebrow">Tags</label>
             <Input
-              type="date"
-              value={item.due ?? ""}
+              value={Array.isArray(item.tags) ? item.tags.join(", ") : ""}
               onChange={(event) =>
-                onChange({ ...item, due: event.target.value || null })
+                onChange({
+                  ...item,
+                  tags: event.target.value
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter(Boolean),
+                })
               }
               className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
+              placeholder="Worship, Admin, Follow-up"
             />
+            <p className="text-xs text-muted-foreground mt-2">
+              Separate tags with commas.
+            </p>
           </div>
-        </div>
-      </section>
-
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Tags className="h-4 w-4 text-brand-teal" />
-          <h3 className="font-extrabold tracking-tight">Organization</h3>
-        </div>
-
-        <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-          <label className="label-eyebrow">Tags</label>
-          <Input
-            value={Array.isArray(item.tags) ? item.tags.join(", ") : ""}
-            onChange={(event) =>
-              onChange({
-                ...item,
-                tags: event.target.value
-                  .split(",")
-                  .map((tag) => tag.trim())
-                  .filter(Boolean),
-              })
-            }
-            className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
-            placeholder="Worship, Admin, Follow-up"
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            Separate tags with commas.
-          </p>
-        </div>
-      </section>
+        </section>
+      )}
     </>
   );
 };

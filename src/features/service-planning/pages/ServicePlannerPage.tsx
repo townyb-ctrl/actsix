@@ -368,10 +368,12 @@ const ServicePlannerPage = () => {
     });
   }, [serviceTypes, services, search]);
 
-  const fetchData = async () => {
+  const fetchData = async ({ showLoading = false } = {}) => {
     if (!user) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const [{ data: typeData, error: typeError }, { data: serviceData, error: serviceError }] =
       await Promise.all([
@@ -436,7 +438,7 @@ const ServicePlannerPage = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData({ showLoading: true });
   }, [user]);
 
   const resetTypeForm = () => {

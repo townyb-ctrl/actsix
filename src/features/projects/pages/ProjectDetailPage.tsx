@@ -148,10 +148,12 @@ const ProjectDetailPage = () => {
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
 
-  const load = async () => {
+  const load = async ({ showLoading = false } = {}) => {
     if (!user || !projectId || !currentPerson?.workspace_id) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
     setLoadError(null);
 
     const { data: projectData, error: projectError } = await getProject(projectId);
@@ -291,7 +293,7 @@ const ProjectDetailPage = () => {
     }
 
     if (user && projectId && currentPerson?.workspace_id) {
-      load();
+      load({ showLoading: true });
       return;
     }
 

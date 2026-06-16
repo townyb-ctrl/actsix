@@ -78,10 +78,12 @@ const ServicePlannerTeamsPage = () => {
     });
   }, [teams, members, search]);
 
-  const fetchTeams = async () => {
+  const fetchTeams = async ({ showLoading = false } = {}) => {
     if (!user) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const [{ data: teamData, error: teamError }, { data: memberData, error: memberError }] =
       await Promise.all([
@@ -116,7 +118,7 @@ const ServicePlannerTeamsPage = () => {
   };
 
   useEffect(() => {
-    fetchTeams();
+    fetchTeams({ showLoading: true });
   }, [user]);
 
   const resetTeamForm = () => {

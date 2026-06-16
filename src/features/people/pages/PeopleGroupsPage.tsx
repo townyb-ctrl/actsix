@@ -62,10 +62,12 @@ const PeopleGroupsPage = () => {
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
 
-  const load = async () => {
+  const load = async ({ showLoading = false } = {}) => {
     if (!user) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const [
       { data: folderData, error: folderError },
@@ -102,7 +104,7 @@ const PeopleGroupsPage = () => {
   };
 
   useEffect(() => {
-    load();
+    load({ showLoading: true });
   }, [user]);
 
   const filteredGroups = useMemo(() => {

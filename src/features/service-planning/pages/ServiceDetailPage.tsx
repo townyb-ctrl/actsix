@@ -296,10 +296,12 @@ const ServiceDetailPage = () => {
     setRoleName(member.role_name || "");
   };
 
-  const fetchService = async () => {
+  const fetchService = async ({ showLoading = false } = {}) => {
     if (!user || !serviceId) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const { data: serviceData, error: serviceError } = await supabase
       .from("service_instances")
@@ -616,7 +618,7 @@ const ServiceDetailPage = () => {
   };
 
   useEffect(() => {
-    fetchService();
+    fetchService({ showLoading: true });
   }, [user, serviceId, currentPerson?.workspace_id]);
 
   useEffect(() => {

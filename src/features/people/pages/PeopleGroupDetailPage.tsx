@@ -90,10 +90,12 @@ const PeopleGroupDetailPage = () => {
   const [memberRole, setMemberRole] = useState("");
   const [groupMessage, setGroupMessage] = useState("");
 
-  const load = async () => {
+  const load = async ({ showLoading = false } = {}) => {
     if (!user || !groupId) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const [
       { data: groupData, error: groupError },
@@ -147,7 +149,7 @@ const PeopleGroupDetailPage = () => {
   };
 
   useEffect(() => {
-    load();
+    load({ showLoading: true });
   }, [user, groupId]);
 
   const availablePeople = useMemo(() => {

@@ -44,10 +44,12 @@ const MeetingsPage = () => {
   const [location, setLocation] = useState("");
   const [googleMeetUrl, setGoogleMeetUrl] = useState("");
 
-  const load = async () => {
+  const load = async ({ showLoading = false } = {}) => {
     if (!user) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
     setLoadError(null);
 
     const { data, error } = await supabase
@@ -69,7 +71,7 @@ const MeetingsPage = () => {
 
   useEffect(() => {
     if (user) {
-      load();
+      load({ showLoading: true });
       return;
     }
 

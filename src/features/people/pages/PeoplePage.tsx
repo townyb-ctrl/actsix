@@ -298,10 +298,12 @@ const PeoplePage = () => {
     await fetchPeople();
   };
 
-  const fetchPeople = async () => {
+  const fetchPeople = async ({ showLoading = false } = {}) => {
     if (!user || !workspace?.id) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const { data, error } = await (supabase as any)
       .from("people")
@@ -320,7 +322,7 @@ const PeoplePage = () => {
   };
 
   useEffect(() => {
-    fetchPeople();
+    fetchPeople({ showLoading: true });
   }, [user, workspace?.id]);
 
   const parseCsvLine = (line: string) => {

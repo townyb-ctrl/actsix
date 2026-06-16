@@ -28,7 +28,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = async ({ showLoading = false } = {}) => {
     if (!user) {
       setItems([]);
       setProjects([]);
@@ -36,7 +36,9 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
       return;
     }
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
     setLoadError(null);
 
     const { data, error } = await supabase
@@ -79,7 +81,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   };
 
   useEffect(() => {
-    if (user) load();
+    if (user) load({ showLoading: true });
   }, [user, cfg.table]);
 
   const add = async (e: React.FormEvent) => {

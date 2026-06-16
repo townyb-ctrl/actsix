@@ -286,10 +286,12 @@ const ServicePlannerTeamDetailPage = () => {
     toast.success("Role order updated");
   };
 
-  const fetchTeam = async () => {
+  const fetchTeam = async ({ showLoading = false } = {}) => {
     if (!user || !teamId) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const [
       { data: teamData, error: teamError },
@@ -411,7 +413,7 @@ const ServicePlannerTeamDetailPage = () => {
   };
 
   useEffect(() => {
-    fetchTeam();
+    fetchTeam({ showLoading: true });
   }, [user, teamId, currentPerson?.workspace_id]);
 
   const resetMemberForm = () => {

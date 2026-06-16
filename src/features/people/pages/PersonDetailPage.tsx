@@ -218,10 +218,12 @@ const PersonDetailPage = () => {
 
   const canManageTraining = ["admin", "editor", "group_leader"].includes(role || "");
 
-  const fetchPerson = async () => {
+  const fetchPerson = async ({ showLoading = false } = {}) => {
     if (!user || !personId || !currentPerson?.workspace_id) return;
 
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
 
     const { data, error } = await (supabase as any)
       .from("people")
@@ -408,7 +410,7 @@ const PersonDetailPage = () => {
   };
 
   useEffect(() => {
-    fetchPerson();
+    fetchPerson({ showLoading: true });
   }, [user, personId, currentPerson?.workspace_id]);
 
   const cancelEdit = () => {

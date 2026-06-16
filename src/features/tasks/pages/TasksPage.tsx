@@ -92,13 +92,15 @@ const TasksPage = () => {
   const [energyFilter, setEnergyFilter] = useState("All");
   const [sortBy, setSortBy] = useState("due");
 
-  const load = async () => {
+  const load = async ({ showLoading = false } = {}) => {
     if (!user) {
       setLoadingTasks(false);
       return;
     }
 
-    setLoadingTasks(true);
+    if (showLoading) {
+      setLoadingTasks(true);
+    }
 
     const { data, error } = await supabase
       .from("tasks")
@@ -117,7 +119,7 @@ const TasksPage = () => {
   };
 
   useEffect(() => {
-    if (user) load();
+    if (user) load({ showLoading: true });
   }, [user, currentPerson?.id]);
 
   const uniqueProjects = useMemo(() => {
