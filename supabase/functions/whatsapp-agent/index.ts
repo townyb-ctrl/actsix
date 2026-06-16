@@ -66,6 +66,38 @@ const wantsTodayTasks = (message: string) =>
 const wantsUpcomingServiceSongs = (message: string) =>
   /\b(songs?|set|setlist|worship)\b/i.test(message) && /\b(upcoming|next|service|sunday)\b/i.test(message);
 
+const extractTaskBullets = (message: string): string[] => {
+  const bullets = message
+    .split(/\r?\n/)
+    .map((line) => {
+      const match = line.match(/^\s*(?:[-•*]|\d+[\.)])\s+(.+?)\s*$/);
+      return match?.[1]?.trim() || "";
+    })
+    .filter((title) => title.length >= 3)
+    .slice(0, 20);
+
+  return bullets.length >= 2 ? bullets : [];
+};
+
+const isTeamThisWeekCommand = (message: string): boolean => {
+  const normalized = message
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[?!.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return (
+    /\bwho(?:s|se| is) on the team this week\b/.test(normalized) ||
+    /\bwho(?:s| is) serving this week\b/.test(normalized) ||
+    /\bwho(?:s| is) serving this sunday\b/.test(normalized) ||
+    /\bworship team\b/.test(normalized) ||
+    /\bteam this week\b/.test(normalized) ||
+    /\bteam this sunday\b/.test(normalized) ||
+    /\bserving this week\b/.test(normalized)
+  );
+};
+
 const helpMessage =
   "Hi, I am the ACTSIX WhatsApp agent. Try: What are my tasks for today? | What songs are in the set for the upcoming service? | Add \"Fetch kids\" to tasks";
 
@@ -78,6 +110,13 @@ type InboundMessage = {
   isMeta: boolean;
   ignored: boolean;
   metadata: Record<string, unknown>;
+};
+
+type WhatsAppIdentity = {
+  id: string;
+  workspace_id: string;
+  auth_user_id: string;
+  person_id?: string | null;
 };
 
 const extractMetaInbound = (body: any): InboundMessage | null => {
@@ -271,6 +310,46 @@ const addTask = async (adminClient: ReturnType<typeof createClient>, identity: a
   return `Added to your ACTSIX inbox: ${title}`;
 };
 
+const createTasksFromBullets = async (
+  adminClient: ReturnType<typeof createClient>,
+  identity: WhatsAppIdentity,
+  bullets: string[],
+): Promise<string> => {
+  let createdCount = 0;
+
+  for (const title of bullets) {
+    const { error } = await adminClient.from("tasks").insert({
+      id: crypto.randomUUID(),
+      title,
+      user_id: identity.auth_user_id,
+      context: "General",
+      priority: "Medium",
+      energy: "Medium",
+      minutes: 15,
+      notes: "Added from WhatsApp.",
+      project: "",
+      project_id: null,
+      tags: ["whatsapp"],
+      assigned_person_id: identity.person_id || null,
+      due: null,
+      complete: false,
+    });
+
+    if (!error) createdCount += 1;
+  }
+
+  console.log("ACTSIX WhatsApp bulk task creation complete", {
+    requestedCount: bullets.length,
+    createdCount,
+  });
+
+  if (createdCount === bullets.length) {
+    return [`Added ${createdCount} tasks:`, ...bullets.map((title) => `• ${title}`)].join("\n");
+  }
+
+  return `I added ${createdCount} tasks, but ${bullets.length - createdCount} could not be saved.`;
+};
+
 const getUpcomingServiceSongs = async (adminClient: ReturnType<typeof createClient>, identity: any) => {
   const { data: service, error: serviceError } = await adminClient
     .from("service_instances")
@@ -303,6 +382,67 @@ const getUpcomingServiceSongs = async (adminClient: ReturnType<typeof createClie
   if (!songs.length) return `${heading}\nNo songs are in the service order yet.`;
 
   return [heading, ...songs.map((song, index) => `${index + 1}. ${song.title}${song.details ? ` - ${song.details}` : ""}`)].join("\n");
+};
+
+const formatServiceDate = (value?: string | null) => {
+  if (!value) return "No date";
+  return new Date(`${value}T12:00:00`).toLocaleDateString("en-ZA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+};
+
+const getUpcomingWorshipTeam = async (
+  adminClient: ReturnType<typeof createClient>,
+  identity: WhatsAppIdentity,
+): Promise<string> => {
+  const { data: service, error: serviceError } = await adminClient
+    .from("service_instances")
+    .select("id, title, service_date, start_time")
+    .eq("user_id", identity.auth_user_id)
+    .gte("service_date", todayIso())
+    .order("service_date", { ascending: true })
+    .order("start_time", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (serviceError) throw serviceError;
+
+  if (!service) {
+    console.log("ACTSIX WhatsApp upcoming worship team query complete", {
+      foundService: false,
+      memberCount: 0,
+    });
+    return "I could not find an upcoming service yet.";
+  }
+
+  const { data: assignments, error: assignmentError } = await adminClient
+    .from("service_team_assignments")
+    .select("role_name, person_name, sort_order")
+    .eq("service_id", service.id)
+    .eq("user_id", identity.auth_user_id)
+    .order("sort_order", { ascending: true });
+
+  if (assignmentError) throw assignmentError;
+
+  const members = assignments || [];
+  console.log("ACTSIX WhatsApp upcoming worship team query complete", {
+    foundService: true,
+    memberCount: members.length,
+  });
+
+  if (!members.length) return "I found the next service, but no worship team has been assigned yet.";
+
+  const serviceTime = service.start_time ? `, ${service.start_time.slice(0, 5)}` : "";
+  const serviceTitle = service.title ? `${service.title} — ` : "";
+
+  return [
+    `Next service: ${serviceTitle}${formatServiceDate(service.service_date)}${serviceTime}`,
+    "",
+    "Worship team:",
+    ...members.map((member) => `• ${member.role_name || "Team"} — ${member.person_name}`),
+  ].join("\n");
 };
 
 const logMessage = async (
@@ -356,16 +496,25 @@ const processCommand = async (adminClient: ReturnType<typeof createClient>, inbo
     return { identity, intent: "unlinked", reply };
   }
 
-  const taskTitle = cleanTaskTitle(inbound.message);
-  if (taskTitle) {
-    intent = "add_task";
-    reply = await addTask(adminClient, identity, taskTitle);
-  } else if (wantsTodayTasks(inbound.message)) {
-    intent = "today_tasks";
-    reply = await getTodayTasks(adminClient, identity);
-  } else if (wantsUpcomingServiceSongs(inbound.message)) {
-    intent = "upcoming_service_songs";
-    reply = await getUpcomingServiceSongs(adminClient, identity);
+  const bullets = extractTaskBullets(inbound.message);
+  if (bullets.length >= 2) {
+    intent = "bulk_add_tasks";
+    reply = await createTasksFromBullets(adminClient, identity, bullets);
+  } else if (isTeamThisWeekCommand(inbound.message)) {
+    intent = "upcoming_worship_team";
+    reply = await getUpcomingWorshipTeam(adminClient, identity);
+  } else {
+    const taskTitle = cleanTaskTitle(inbound.message);
+    if (taskTitle) {
+      intent = "add_task";
+      reply = await addTask(adminClient, identity, taskTitle);
+    } else if (wantsTodayTasks(inbound.message)) {
+      intent = "today_tasks";
+      reply = await getTodayTasks(adminClient, identity);
+    } else if (wantsUpcomingServiceSongs(inbound.message)) {
+      intent = "upcoming_service_songs";
+      reply = await getUpcomingServiceSongs(adminClient, identity);
+    }
   }
 
   await logMessage(adminClient, identity, inbound.from, "inbound", inbound.message, intent, reply, inbound.providerMessageId, inbound.metadata);
