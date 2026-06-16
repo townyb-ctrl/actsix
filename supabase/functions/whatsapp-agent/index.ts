@@ -238,10 +238,7 @@ const getTodayTasks = async (adminClient: ReturnType<typeof createClient>, ident
     .limit(10);
 
   if (error) throw error;
-  console.log("WhatsApp today tasks query", {
-    today: todayIso(),
-    authUserId: identity.auth_user_id,
-    personId: identity.person_id,
+  console.log("ACTSIX WhatsApp today tasks query complete", {
     count: data?.length || 0,
   });
   if (!data?.length) return "You have no open tasks due today.";
