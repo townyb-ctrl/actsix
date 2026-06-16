@@ -98,6 +98,31 @@ const isTeamThisWeekCommand = (message: string): boolean => {
   );
 };
 
+const isGreetingCommand = (message: string): boolean => {
+  const normalized = message
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[?!.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return /^(hi|hello|hey|good morning|good afternoon|good evening)$/.test(normalized);
+};
+
+const getSouthAfricaGreetingPeriod = (): "Good morning" | "Good afternoon" | "Good evening" => {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-ZA", {
+      timeZone: "Africa/Johannesburg",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(new Date()),
+  );
+
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  return "Good evening";
+};
+
 const helpMessage =
   "Hi, I am the ACTSIX WhatsApp agent. Try: What are my tasks for today? | What songs are in the set for the upcoming service? | Add \"Fetch kids\" to tasks";
 
@@ -117,6 +142,11 @@ type WhatsAppIdentity = {
   workspace_id: string;
   auth_user_id: string;
   person_id?: string | null;
+  display_name?: string | null;
+  people?: {
+    first_name?: string | null;
+    display_name?: string | null;
+  } | null;
 };
 
 const extractMetaInbound = (body: any): InboundMessage | null => {
@@ -250,7 +280,7 @@ const sendMetaTextMessage = async (
 const findIdentity = async (adminClient: ReturnType<typeof createClient>, phoneNumber: string) => {
   const { data, error } = await adminClient
     .from("whatsapp_agent_identities")
-    .select("*, workspaces(name)")
+    .select("*, workspaces(name), people(first_name, display_name)")
     .eq("phone_number", phoneNumber)
     .eq("status", "active")
     .order("created_at", { ascending: true })
@@ -308,6 +338,33 @@ const addTask = async (adminClient: ReturnType<typeof createClient>, identity: a
 
   if (error) throw error;
   return `Added to your ACTSIX inbox: ${title}`;
+};
+
+const getPreferredFirstName = (identity: WhatsAppIdentity) => {
+  const linkedPerson = Array.isArray(identity.people) ? identity.people[0] : identity.people;
+  const rawName = linkedPerson?.first_name || linkedPerson?.display_name || identity.display_name || "";
+  const firstName = rawName.trim().split(/\s+/)[0] || "";
+  return firstName;
+};
+
+const buildGreetingReply = (identity: WhatsAppIdentity): string => {
+  const name = getPreferredFirstName(identity);
+  const period = getSouthAfricaGreetingPeriod();
+  const greetingLine = name ? `Hey, ${name}. ${period}.` : `Hey there. ${period}.`;
+
+  console.log("ACTSIX WhatsApp greeting reply generated", {
+    hasName: Boolean(name),
+  });
+
+  return `${greetingLine}
+
+I’m your ACTSIX Assistant.
+
+You can ask me things like:
+• What are my tasks for today?
+• Who’s on the team this week?
+
+You can also send me a bullet list and I’ll add each item as a task.`;
 };
 
 const createTasksFromBullets = async (
@@ -496,24 +553,29 @@ const processCommand = async (adminClient: ReturnType<typeof createClient>, inbo
     return { identity, intent: "unlinked", reply };
   }
 
-  const bullets = extractTaskBullets(inbound.message);
-  if (bullets.length >= 2) {
-    intent = "bulk_add_tasks";
-    reply = await createTasksFromBullets(adminClient, identity, bullets);
-  } else if (isTeamThisWeekCommand(inbound.message)) {
-    intent = "upcoming_worship_team";
-    reply = await getUpcomingWorshipTeam(adminClient, identity);
+  if (isGreetingCommand(inbound.message)) {
+    intent = "greeting";
+    reply = buildGreetingReply(identity);
   } else {
-    const taskTitle = cleanTaskTitle(inbound.message);
-    if (taskTitle) {
-      intent = "add_task";
-      reply = await addTask(adminClient, identity, taskTitle);
-    } else if (wantsTodayTasks(inbound.message)) {
-      intent = "today_tasks";
-      reply = await getTodayTasks(adminClient, identity);
-    } else if (wantsUpcomingServiceSongs(inbound.message)) {
-      intent = "upcoming_service_songs";
-      reply = await getUpcomingServiceSongs(adminClient, identity);
+    const bullets = extractTaskBullets(inbound.message);
+    if (bullets.length >= 2) {
+      intent = "bulk_add_tasks";
+      reply = await createTasksFromBullets(adminClient, identity, bullets);
+    } else if (isTeamThisWeekCommand(inbound.message)) {
+      intent = "upcoming_worship_team";
+      reply = await getUpcomingWorshipTeam(adminClient, identity);
+    } else {
+      const taskTitle = cleanTaskTitle(inbound.message);
+      if (taskTitle) {
+        intent = "add_task";
+        reply = await addTask(adminClient, identity, taskTitle);
+      } else if (wantsTodayTasks(inbound.message)) {
+        intent = "today_tasks";
+        reply = await getTodayTasks(adminClient, identity);
+      } else if (wantsUpcomingServiceSongs(inbound.message)) {
+        intent = "upcoming_service_songs";
+        reply = await getUpcomingServiceSongs(adminClient, identity);
+      }
     }
   }
 
@@ -530,10 +592,9 @@ const processCommand = async (adminClient: ReturnType<typeof createClient>, inbo
 
 Deno.serve(async (req) => {
   console.log("ACTSIX WhatsApp request received", {
-  method: req.method,
-  url: req.url,
-  contentType: req.headers.get("content-type"),
-});
+    method: req.method,
+    contentType: req.headers.get("content-type"),
+  });
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method === "GET") {
     const url = new URL(req.url);
