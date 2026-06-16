@@ -484,6 +484,18 @@ Deno.serve(async (req) => {
     if (!commandProcessed) {
       await logMessage(adminClient, null, inbound.from, "inbound", inbound.message, "error", message, inbound.providerMessageId, inbound.metadata);
     }
-    return json({ received: true, error: "Sorry, I could not complete that ACTSIX request just now." }, 500);
+    console.error("ACTSIX WhatsApp send/process error", {
+  message,
+  inboundPhoneNumberId: inbound.phoneNumberId,
+});
+
+return json(
+  {
+    received: true,
+    error: "Reply send failed.",
+    detail: message,
+  },
+  200,
+);
   }
 });
