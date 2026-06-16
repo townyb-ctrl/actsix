@@ -350,7 +350,7 @@ const getPreferredFirstName = (identity: WhatsAppIdentity) => {
 const buildGreetingReply = (identity: WhatsAppIdentity): string => {
   const name = getPreferredFirstName(identity);
   const period = getSouthAfricaGreetingPeriod();
-  const greetingLine = name ? `Hey, ${name}. ${period}.` : `Hey there. ${period}.`;
+  const greetingLine = name ? `${period}, ${name}.` : `${period}.`;
 
   console.log("ACTSIX WhatsApp greeting reply generated", {
     hasName: Boolean(name),
@@ -358,7 +358,7 @@ const buildGreetingReply = (identity: WhatsAppIdentity): string => {
 
   return `${greetingLine}
 
-I’m your ACTSIX Assistant.
+What do you need?
 
 You can ask me things like:
 • What are my tasks for today?
