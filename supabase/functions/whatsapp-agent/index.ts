@@ -160,9 +160,14 @@ const parseInbound = async (req: Request) => {
   };
 };
 
-const sendMetaTextMessage = async (recipientPhone: string, message: string) => {
+const sendMetaTextMessage = async (
+  recipientPhone: string,
+  message: string,
+  inboundPhoneNumberId?: string,
+) => {
   const accessToken = Deno.env.get("WHATSAPP_META_ACCESS_TOKEN");
-  const phoneNumberId = Deno.env.get("WHATSAPP_META_PHONE_NUMBER_ID");
+  const fallbackPhoneNumberId = Deno.env.get("WHATSAPP_META_PHONE_NUMBER_ID");
+  const phoneNumberId = inboundPhoneNumberId || fallbackPhoneNumberId;
   console.log("ACTSIX WhatsApp Meta config", {
   hasAccessToken: Boolean(accessToken),
   hasPhoneNumberId: Boolean(phoneNumberId),
@@ -472,7 +477,7 @@ Deno.serve(async (req) => {
   to: inbound.from,
   replyPreview: reply.slice(0, 120),
 });
-    await sendMetaTextMessage(inbound.from, reply);
+    await sendMetaTextMessage(inbound.from, reply, inbound.phoneNumberId);
     return json({ received: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "WhatsApp agent failed.";
