@@ -43,13 +43,16 @@ const formatDate = (value?: string | null) => {
   });
 };
 
-const cleanTaskTitle = (message: string) => {
+const cleanInboxTitle = (message: string) => {
   const patterns = [
     /^add\s+["']?(.+?)["']?\s+to\s+(?:my\s+)?tasks?\.?$/i,
+    /^add\s+["']?(.+?)["']?\s+to\s+(?:my\s+)?inbox\.?$/i,
     /^add\s+(?:a\s+)?task\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
+    /^capture\s+["']?(.+?)["']?\s+(?:in|to)\s+(?:my\s+)?inbox\.?$/i,
     /^create\s+(?:a\s+)?task\s+called\s+["']?(.+?)["']?\.?$/i,
     /^add\s+["']?(.+?)["']?\.?$/i,
     /^task\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
+    /^inbox\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
   ];
 
   for (const pattern of patterns) {
@@ -143,7 +146,7 @@ const getSouthAfricaGreetingPeriod = (): "Good morning" | "Good afternoon" | "Go
 };
 
 const helpMessage =
-  "Hi, I am the ACTSIX WhatsApp agent. Try: What are my tasks for today? | What are my open tasks? | What songs are in the set for the upcoming service? | Add \"Fetch kids\" to tasks";
+  "Hi, I am the ACTSIX WhatsApp agent. Try: What are my tasks for today? | What are my open tasks? | What songs are in the set for the upcoming service? | Add \"Fetch kids\" to inbox";
 
 type InboundMessage = {
   from: string;
@@ -388,26 +391,17 @@ const getOpenTasks = async (adminClient: ReturnType<typeof createClient>, identi
   return lines.join("\n");
 };
 
-const addTask = async (adminClient: ReturnType<typeof createClient>, identity: any, title: string) => {
-  const { error } = await adminClient.from("tasks").insert({
+const addInboxItem = async (adminClient: ReturnType<typeof createClient>, identity: WhatsAppIdentity, title: string) => {
+  const { error } = await adminClient.from("inbox_items").insert({
     id: crypto.randomUUID(),
     title,
     user_id: identity.auth_user_id,
-    context: "General",
-    priority: "Medium",
-    energy: "Medium",
-    minutes: 15,
-    notes: "Added from WhatsApp.",
-    project: "",
-    project_id: null,
-    tags: ["whatsapp"],
     assigned_person_id: identity.person_id || null,
-    due: null,
-    complete: false,
+    notes: "Captured from WhatsApp.",
   });
 
   if (error) throw error;
-  return `Added to your ACTSIX inbox: ${title}`;
+  return `Captured in your ACTSIX Inbox: ${title}`;
 };
 
 const getPreferredFirstName = (identity: WhatsAppIdentity) => {
@@ -642,10 +636,10 @@ const processCommand = async (adminClient: ReturnType<typeof createClient>, inbo
       intent = "open_tasks";
       reply = await getOpenTasks(adminClient, identity);
     } else {
-      const taskTitle = cleanTaskTitle(inbound.message);
-      if (taskTitle) {
-        intent = "add_task";
-        reply = await addTask(adminClient, identity, taskTitle);
+      const inboxTitle = cleanInboxTitle(inbound.message);
+      if (inboxTitle) {
+        intent = "capture_inbox";
+        reply = await addInboxItem(adminClient, identity, inboxTitle);
       } else if (wantsUpcomingServiceSongs(inbound.message)) {
         intent = "upcoming_service_songs";
         reply = await getUpcomingServiceSongs(adminClient, identity);
