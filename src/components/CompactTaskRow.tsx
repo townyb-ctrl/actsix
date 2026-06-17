@@ -1,4 +1,4 @@
-import { CalendarDays, Edit3, FolderKanban, Trash2, UserRound } from "lucide-react";
+import { CalendarDays, Edit3, FolderKanban, RotateCcw, Trash2, UserRound } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -52,6 +52,7 @@ const CompactTaskRow = ({
   const context = task.context || "General";
   const priority = task.priority || "Medium";
   const minutes = task.minutes || 15;
+  const isRecurringTask = Boolean(task.recurring_template_id);
   const clickable = Boolean(onEdit);
   const assignedTo =
     task.assignedPersonName ||
@@ -122,6 +123,13 @@ const CompactTaskRow = ({
             <span className="inline-flex max-w-[180px] items-center gap-1 truncate rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 font-semibold text-brand-teal">
               <FolderKanban className="h-3 w-3 shrink-0" />
               <span className="truncate">{task.project}</span>
+            </span>
+          )}
+
+          {isRecurringTask && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 font-semibold text-brand-teal">
+              <RotateCcw className="h-3 w-3 shrink-0" />
+              Recurring
             </span>
           )}
 
