@@ -29,7 +29,6 @@ import WorkspaceSettings from "./pages/WorkspaceSettings";
 import AlphaFeedback from "./pages/AlphaFeedback";
 import TrainingCenter from "./pages/TrainingCenter";
 import SermonLessonHub from "./pages/SermonLessonHub";
-import EventManagement from "./pages/EventManagement";
 import CalendarModule from "./pages/CalendarModule";
 import PublicEventRegistration from "./pages/PublicEventRegistration";
 import { Recurring, Review, Calendar, Meetups } from "./pages/Placeholder";
@@ -96,8 +95,6 @@ const App = () => (
               <Route path="/training" element={<TrainingCenter />} />
               <Route path="/training/folders/:folderId" element={<TrainingCenter />} />
               <Route path="/sermon-hub" element={<SermonLessonHub />} />
-              <Route path="/events" element={<EventManagement />} />
-              <Route path="/events/:eventId" element={<EventManagement />} />
               <Route path="/calendar" element={<CalendarModule />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/workspace" element={<WorkspaceSettings />} />

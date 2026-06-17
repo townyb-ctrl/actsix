@@ -2,11 +2,11 @@ import type { ActsixModuleKey } from "@/lib/releaseMode";
 
 export type ActiveModuleKey = Extract<
   ActsixModuleKey,
-  "home" | "tasks" | "people" | "groups" | "meetings" | "service_planner" | "sermon_hub" | "events" | "calendar"
+  "home" | "tasks" | "people" | "groups" | "meetings" | "service_planner" | "sermon_hub" | "calendar"
 >;
 
 export const REQUIRED_MODULES: ActiveModuleKey[] = ["home", "tasks", "people"];
-export const OPTIONAL_MODULES: ActiveModuleKey[] = ["groups", "meetings", "service_planner", "events", "calendar", "sermon_hub"];
+export const OPTIONAL_MODULES: ActiveModuleKey[] = ["groups", "meetings", "service_planner", "calendar", "sermon_hub"];
 
 export const DEFAULT_ACTIVE_MODULES: Record<ActiveModuleKey, boolean> = {
   home: true,
@@ -15,7 +15,6 @@ export const DEFAULT_ACTIVE_MODULES: Record<ActiveModuleKey, boolean> = {
   groups: true,
   meetings: false,
   service_planner: false,
-  events: true,
   calendar: true,
   sermon_hub: true,
 };
@@ -27,7 +26,6 @@ export const MODULE_LABELS: Record<ActiveModuleKey, string> = {
   groups: "Groups",
   meetings: "Meetings",
   service_planner: "Service Planner",
-  events: "Events",
   calendar: "Calendar",
   sermon_hub: "Sermon / Lesson Hub",
 };
@@ -39,7 +37,6 @@ export const MODULE_DESCRIPTIONS: Record<ActiveModuleKey, string> = {
   groups: "People folders, ministry groups, and team lists.",
   meetings: "Agendas, minutes, recurring meetings, and action points.",
   service_planner: "Service dates, teams, order of service, and repertoire.",
-  events: "Church camps, mission trips, retreats, outreaches, and event logistics.",
   calendar: "Unified ministry calendar with Google, Outlook, and Apple sync setup.",
   sermon_hub: "Sermon planning, lesson outlines, teaching series, and reusable notes.",
 };
@@ -69,7 +66,6 @@ export const getModuleKeyForPath = (pathname: string): ActiveModuleKey => {
   if (pathname === "/people" || pathname.startsWith("/people/")) return "people";
   if (pathname === "/groups" || pathname.startsWith("/groups/")) return "groups";
   if (pathname === "/sermon-hub" || pathname.startsWith("/sermon-hub/")) return "sermon_hub";
-  if (pathname === "/events" || pathname.startsWith("/events/")) return "events";
   if (pathname === "/calendar" || pathname.startsWith("/calendar/")) return "calendar";
   if (pathname === "/meetings" || pathname.startsWith("/meetings/")) return "meetings";
   if (pathname === "/service-planner" || pathname.startsWith("/service-planner/")) {

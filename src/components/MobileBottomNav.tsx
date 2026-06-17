@@ -15,7 +15,6 @@ import {
   Music,
   Plus,
   Settings,
-  Tent,
   Users,
   X,
 } from "lucide-react";
@@ -44,7 +43,6 @@ type MobileModuleKey =
   | "meetings"
   | "people"
   | "groups"
-  | "events"
   | "calendarModule"
   | "sermonHub"
   | "settings";
@@ -82,7 +80,6 @@ const detectModule = (pathname: string): MobileModuleKey => {
   if (pathname.startsWith("/service-planner")) return "servicePlanner";
   if (pathname.startsWith("/meetings")) return "meetings";
   if (pathname.startsWith("/groups")) return "groups";
-  if (pathname.startsWith("/events")) return "events";
   if (pathname.startsWith("/calendar")) return "calendarModule";
   if (pathname.startsWith("/sermon-hub")) return "sermonHub";
   if (pathname.startsWith("/people")) return "people";
@@ -333,34 +330,6 @@ const moduleConfigs: Record<MobileModuleKey, MobileModuleConfig> = {
       },
     ],
   },
-  events: {
-    key: "events",
-    title: "Events",
-    subtitle: "Camps, mission trips, retreats, and outreaches.",
-    primary: { icon: Tent, label: "Events", path: "/events" },
-    menuLabel: "Events",
-    menuIcon: Menu,
-    menuItems: [
-      {
-        icon: Tent,
-        label: "Events",
-        path: "/events",
-        description: "Plan camps, trips, retreats, and outreaches.",
-      },
-      {
-        icon: Users,
-        label: "People",
-        path: "/people",
-        description: "Find volunteers and participants.",
-      },
-      {
-        icon: ListChecks,
-        label: "Actions",
-        path: "/tasks/next",
-        description: "Follow up on event planning tasks.",
-      },
-    ],
-  },
   calendarModule: {
     key: "calendarModule",
     title: "Calendar",
@@ -374,12 +343,6 @@ const moduleConfigs: Record<MobileModuleKey, MobileModuleConfig> = {
         label: "Calendar",
         path: "/calendar",
         description: "Month view, agenda, and calendar sync.",
-      },
-      {
-        icon: Tent,
-        label: "Events",
-        path: "/events",
-        description: "Camps, trips, retreats, and outreaches.",
       },
       {
         icon: ClipboardList,
@@ -452,7 +415,6 @@ const moduleSwitcherItems: Array<{
   { key: "meetings", icon: Calendar, label: "Meetings", path: "/meetings" },
   { key: "people", icon: Users, label: "People", path: "/people" },
   { key: "groups", icon: FolderKanban, label: "Groups", path: "/groups" },
-  { key: "events", icon: Tent, label: "Events", path: "/events" },
   { key: "calendarModule", icon: Calendar, label: "Calendar", path: "/calendar" },
   { key: "sermonHub", icon: BookOpen, label: "Teach", path: "/sermon-hub" },
   { key: "projects", icon: FolderKanban, label: "Projects", path: "/tasks/projects" },
