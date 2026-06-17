@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  CalendarClock,
   CalendarDays,
   ChevronDown,
   Clock,
@@ -108,6 +109,7 @@ const navSections: NavSection[] = [
       { title: "Projects", url: "/tasks/projects", icon: FolderKanban, badgeKey: "projects" },
       { title: "Waiting For", url: "/tasks/waiting", icon: Clock, badgeKey: "waiting_items" },
       { title: "Someday / Maybe", url: "/tasks/someday", icon: Sparkles, badgeKey: "someday_items" },
+      { title: "Recurring", url: "/tasks/recurring", icon: CalendarClock },
     ],
   },
   {

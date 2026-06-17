@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
+import RecurringTasks from "./features/tasks/pages/RecurringTasksPage";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Inbox from "./pages/Inbox";
@@ -31,7 +32,7 @@ import TrainingCenter from "./pages/TrainingCenter";
 import SermonLessonHub from "./pages/SermonLessonHub";
 import CalendarModule from "./pages/CalendarModule";
 import PublicEventRegistration from "./pages/PublicEventRegistration";
-import { Recurring, Review, Calendar, Meetups } from "./pages/Placeholder";
+import { Review, Calendar, Meetups } from "./pages/Placeholder";
 import Auth from "./pages/Auth";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound.tsx";
@@ -64,7 +65,7 @@ const App = () => (
               <Route path="/tasks/inbox" element={<Inbox />} />
               <Route path="/tasks/waiting" element={<Waiting />} />
               <Route path="/tasks/someday" element={<Someday />} />
-              <Route path="/tasks/recurring" element={<Recurring />} />
+              <Route path="/tasks/recurring" element={<RecurringTasks />} />
               <Route path="/tasks/review" element={<Review />} />
               <Route path="/tasks/calendar" element={<Calendar />} />
               <Route path="/tasks/meetups" element={<Meetups />} />
@@ -73,7 +74,7 @@ const App = () => (
               <Route path="/inbox" element={<Inbox />} />
               <Route path="/waiting" element={<Waiting />} />
               <Route path="/someday" element={<Someday />} />
-              <Route path="/recurring" element={<Recurring />} />
+              <Route path="/recurring" element={<RecurringTasks />} />
               <Route path="/review" element={<Review />} />
               <Route path="/meetups" element={<Meetups />} />
               <Route path="/meetings" element={<Meetings />} />
@@ -109,7 +110,6 @@ const App = () => (
 );
 
 export default App;
-
 
 
 

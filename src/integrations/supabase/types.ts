@@ -1378,6 +1378,105 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_task_templates: {
+        Row: {
+          assigned_person_id: string | null
+          context: string
+          created_at: string
+          creation_mode: string
+          description: string
+          end_after_occurrences: number | null
+          end_condition: string
+          end_date: string | null
+          energy: string
+          first_due_date: string
+          frequency: string
+          generated_count: number
+          id: string
+          interval: number
+          last_generated_task_id: string | null
+          minutes: number
+          next_due_date: string | null
+          priority: string
+          project: string
+          project_id: string | null
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_person_id?: string | null
+          context?: string
+          created_at?: string
+          creation_mode?: string
+          description?: string
+          end_after_occurrences?: number | null
+          end_condition?: string
+          end_date?: string | null
+          energy?: string
+          first_due_date: string
+          frequency?: string
+          generated_count?: number
+          id?: string
+          interval?: number
+          last_generated_task_id?: string | null
+          minutes?: number
+          next_due_date?: string | null
+          priority?: string
+          project?: string
+          project_id?: string | null
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_person_id?: string | null
+          context?: string
+          created_at?: string
+          creation_mode?: string
+          description?: string
+          end_after_occurrences?: number | null
+          end_condition?: string
+          end_date?: string | null
+          energy?: string
+          first_due_date?: string
+          frequency?: string
+          generated_count?: number
+          id?: string
+          interval?: number
+          last_generated_task_id?: string | null
+          minutes?: number
+          next_due_date?: string | null
+          priority?: string
+          project?: string
+          project_id?: string | null
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_task_templates_last_generated_task_id_fkey"
+            columns: ["last_generated_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_task_templates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_person_id: string | null
@@ -1396,6 +1495,8 @@ export type Database = {
           priority: string
           project: string
           project_id: string | null
+          recurring_occurrence_number: number | null
+          recurring_template_id: string | null
           section_id: string | null
           start_time: string | null
           tags: string[]
@@ -1420,6 +1521,8 @@ export type Database = {
           priority?: string
           project?: string
           project_id?: string | null
+          recurring_occurrence_number?: number | null
+          recurring_template_id?: string | null
           section_id?: string | null
           start_time?: string | null
           tags?: string[]
@@ -1444,6 +1547,8 @@ export type Database = {
           priority?: string
           project?: string
           project_id?: string | null
+          recurring_occurrence_number?: number | null
+          recurring_template_id?: string | null
           section_id?: string | null
           start_time?: string | null
           tags?: string[]
@@ -1457,6 +1562,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_recurring_template_id_fkey"
+            columns: ["recurring_template_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_task_templates"
             referencedColumns: ["id"]
           },
           {

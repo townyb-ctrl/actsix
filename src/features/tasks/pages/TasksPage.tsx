@@ -22,6 +22,7 @@ import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectS
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { personalNextActionFilter } from "@/lib/taskVisibility";
 import { QuickCaptureDialog } from "@/components/QuickCaptureDialog";
+import { createNextRecurringTaskOnCompletion } from "@/features/tasks/api/recurringTasksApi";
 
 const priorityWeight: Record<string, number> = {
   Urgent: 4,
@@ -259,6 +260,15 @@ const TasksPage = () => {
     if (error) {
       toast.error(error.message);
       return;
+    }
+
+    if (nextComplete) {
+      try {
+        const createdNext = await createNextRecurringTaskOnCompletion(task);
+        if (createdNext) toast.success("Next recurring task created");
+      } catch (recurringError: any) {
+        toast.error(recurringError.message || "Task completed, but the next recurring task was not created.");
+      }
     }
 
     await syncProjectStatsById(task.project_id);
