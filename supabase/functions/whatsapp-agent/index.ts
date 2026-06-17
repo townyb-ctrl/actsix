@@ -63,6 +63,25 @@ const cleanTaskTitle = (message: string) => {
 const wantsTodayTasks = (message: string) =>
   /\b(tasks?|to[- ]?dos?|todo)\b/i.test(message) && /\b(today|due today|for today)\b/i.test(message);
 
+const isOpenTasksCommand = (message: string): boolean => {
+  const normalized = message
+    .toLowerCase()
+    .replace(/['`]/g, "")
+    .replace(/[?!.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!/\b(tasks?|to[- ]?dos?|todo)\b/.test(normalized)) return false;
+  if (/\b(today|due today|for today)\b/.test(normalized)) return false;
+
+  return (
+    /\b(open|incomplete|all)\s+(?:my\s+)?(?:tasks?|to[- ]?dos?|todo)\b/.test(normalized) ||
+    /\b(?:show|list)\s+(?:my\s+)?(?:open|incomplete|all)?\s*(?:tasks?|to[- ]?dos?|todo)\b/.test(normalized) ||
+    /\bwhat\s+are\s+(?:my\s+)?(?:open|incomplete|all)?\s*(?:tasks?|to[- ]?dos?|todo)\b/.test(normalized) ||
+    /\bwhat\s+(?:tasks?|to[- ]?dos?|todo)\s+do\s+i\s+have\b/.test(normalized)
+  );
+};
+
 const wantsUpcomingServiceSongs = (message: string) =>
   /\b(songs?|set|setlist|worship)\b/i.test(message) && /\b(upcoming|next|service|sunday)\b/i.test(message);
 
@@ -70,7 +89,7 @@ const extractTaskBullets = (message: string): string[] => {
   const bullets = message
     .split(/\r?\n/)
     .map((line) => {
-      const match = line.match(/^\s*(?:[-•*]|\d+[\.)])\s+(.+?)\s*$/);
+      const match = line.match(/^\s*(?:[-\u2022*]|\d+[\.)])\s+(.+?)\s*$/);
       return match?.[1]?.trim() || "";
     })
     .filter((title) => title.length >= 3)
@@ -124,7 +143,7 @@ const getSouthAfricaGreetingPeriod = (): "Good morning" | "Good afternoon" | "Go
 };
 
 const helpMessage =
-  "Hi, I am the ACTSIX WhatsApp agent. Try: What are my tasks for today? | What songs are in the set for the upcoming service? | Add \"Fetch kids\" to tasks";
+  "Hi, I am the ACTSIX WhatsApp agent. Try: What are my tasks for today? | What are my open tasks? | What songs are in the set for the upcoming service? | Add \"Fetch kids\" to tasks";
 
 type InboundMessage = {
   from: string;
@@ -318,6 +337,57 @@ const getTodayTasks = async (adminClient: ReturnType<typeof createClient>, ident
   ].join("\n");
 };
 
+const formatShortTaskDate = (value?: string | null) => {
+  if (!value) return "No date";
+  const today = todayIso();
+  if (value === today) return "Today";
+
+  const tomorrow = new Date(`${today}T12:00:00`);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowIso = tomorrow.toISOString().slice(0, 10);
+  if (value === tomorrowIso) return "Tomorrow";
+
+  return new Date(`${value}T12:00:00`).toLocaleDateString("en-ZA", {
+    day: "numeric",
+    month: "short",
+  });
+};
+
+const getOpenTasks = async (adminClient: ReturnType<typeof createClient>, identity: WhatsAppIdentity): Promise<string> => {
+  const personalTaskFilter = identity.person_id
+    ? `user_id.eq.${identity.auth_user_id},assigned_person_id.eq.${identity.person_id}`
+    : `user_id.eq.${identity.auth_user_id}`;
+
+  const { data, error, count } = await adminClient
+    .from("tasks")
+    .select("title, due, priority, project", { count: "exact" })
+    .eq("complete", false)
+    .or(personalTaskFilter)
+    .order("due", { ascending: true, nullsFirst: false })
+    .order("priority", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) throw error;
+  console.log("ACTSIX WhatsApp open tasks query complete", {
+    count: data?.length || 0,
+  });
+  if (!data?.length) return "You have no open tasks right now.";
+
+  const totalCount = count ?? data.length;
+  const lines = [
+    `You have ${totalCount} open tasks:`,
+    "",
+    ...data.map((task) => `\u2022 ${task.title}${task.project ? ` (${task.project})` : ""} \u2014 ${formatShortTaskDate(task.due)}`),
+  ];
+
+  if (totalCount > data.length) {
+    lines.push("", "Showing the first 10.");
+  }
+
+  return lines.join("\n");
+};
+
 const addTask = async (adminClient: ReturnType<typeof createClient>, identity: any, title: string) => {
   const { error } = await adminClient.from("tasks").insert({
     id: crypto.randomUUID(),
@@ -361,13 +431,14 @@ const buildGreetingReply = (identity: WhatsAppIdentity): string => {
 What do you need?
 
 You can ask me things like:
-• What are my tasks for today?
-• Who’s on the team this week?
+\u2022 What are my tasks for today?
+\u2022 What are my open tasks?
+\u2022 Who is on the team this week?
 
-You can also send me a bullet list and I’ll add each item as a task.`;
+You can also send me a bullet list and I'll capture each item in your Inbox.`;
 };
 
-const createTasksFromBullets = async (
+const createInboxItemsFromBullets = async (
   adminClient: ReturnType<typeof createClient>,
   identity: WhatsAppIdentity,
   bullets: string[],
@@ -375,36 +446,36 @@ const createTasksFromBullets = async (
   let createdCount = 0;
 
   for (const title of bullets) {
-    const { error } = await adminClient.from("tasks").insert({
+    const { error } = await adminClient.from("inbox_items").insert({
       id: crypto.randomUUID(),
       title,
       user_id: identity.auth_user_id,
-      context: "General",
-      priority: "Medium",
-      energy: "Medium",
-      minutes: 15,
-      notes: "Added from WhatsApp.",
-      project: "",
-      project_id: null,
-      tags: ["whatsapp"],
       assigned_person_id: identity.person_id || null,
-      due: null,
-      complete: false,
+      notes: "Captured from WhatsApp.",
     });
 
     if (!error) createdCount += 1;
   }
 
-  console.log("ACTSIX WhatsApp bulk task creation complete", {
+  console.log("ACTSIX WhatsApp bulk inbox capture complete", {
     requestedCount: bullets.length,
     createdCount,
   });
 
   if (createdCount === bullets.length) {
-    return [`Added ${createdCount} tasks:`, ...bullets.map((title) => `• ${title}`)].join("\n");
+    return [
+      `Captured ${createdCount} inbox items:`,
+      ...bullets.map((title) => `\u2022 ${title}`),
+      "",
+      "You can process them in ACTSIX Inbox.",
+    ].join("\n");
   }
 
-  return `I added ${createdCount} tasks, but ${bullets.length - createdCount} could not be saved.`;
+  if (createdCount > 0) {
+    return `I captured ${createdCount} inbox items, but ${bullets.length - createdCount} could not be saved.`;
+  }
+
+  return "I could not capture those inbox items just now.";
 };
 
 const getUpcomingServiceSongs = async (adminClient: ReturnType<typeof createClient>, identity: any) => {
@@ -559,19 +630,22 @@ const processCommand = async (adminClient: ReturnType<typeof createClient>, inbo
   } else {
     const bullets = extractTaskBullets(inbound.message);
     if (bullets.length >= 2) {
-      intent = "bulk_add_tasks";
-      reply = await createTasksFromBullets(adminClient, identity, bullets);
+      intent = "bulk_capture_inbox";
+      reply = await createInboxItemsFromBullets(adminClient, identity, bullets);
     } else if (isTeamThisWeekCommand(inbound.message)) {
       intent = "upcoming_worship_team";
       reply = await getUpcomingWorshipTeam(adminClient, identity);
+    } else if (wantsTodayTasks(inbound.message)) {
+      intent = "today_tasks";
+      reply = await getTodayTasks(adminClient, identity);
+    } else if (isOpenTasksCommand(inbound.message)) {
+      intent = "open_tasks";
+      reply = await getOpenTasks(adminClient, identity);
     } else {
       const taskTitle = cleanTaskTitle(inbound.message);
       if (taskTitle) {
         intent = "add_task";
         reply = await addTask(adminClient, identity, taskTitle);
-      } else if (wantsTodayTasks(inbound.message)) {
-        intent = "today_tasks";
-        reply = await getTodayTasks(adminClient, identity);
       } else if (wantsUpcomingServiceSongs(inbound.message)) {
         intent = "upcoming_service_songs";
         reply = await getUpcomingServiceSongs(adminClient, identity);
