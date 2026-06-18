@@ -1567,6 +1567,7 @@ const ProjectDetailPage = () => {
         saving={savingTask}
         eyebrow="Edit Project Action"
         description="Edit this project action using the shared ACTSIX task editor."
+        projectSections={projectSectionsAvailable ? sections : undefined}
         onChange={setEditingTask}
         onClose={() => setEditingTask(null)}
         onSave={saveTask}

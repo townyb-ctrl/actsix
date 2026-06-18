@@ -17,6 +17,11 @@ type TaskEditorModalProps = {
   title?: string;
   description?: string;
   saveLabel?: string;
+  projectSections?: Array<{
+    id: string;
+    name: string;
+    status?: string | null;
+  }>;
   onChange: (task: any) => void;
   onClose: () => void;
   onSave: () => void;
@@ -31,6 +36,7 @@ const TaskEditorModal = ({
   title = "Task details",
   description = "Edit this task using the shared ACTSIX task editor.",
   saveLabel = "Save changes",
+  projectSections,
   onChange,
   onClose,
   onSave,
@@ -42,8 +48,10 @@ const TaskEditorModal = ({
   const titleId = "task-editor-title";
   const descriptionId = "task-editor-description";
   const destinationId = "task-editor-destination";
+  const sectionId = "task-editor-project-section";
   const taskTitleId = "task-editor-task-title";
   const notesId = "task-editor-notes";
+  const canChooseProjectSection = Boolean(projectSections);
 
   return (
     <div
@@ -94,6 +102,37 @@ const TaskEditorModal = ({
               </p>
             </div>
           </section>
+
+          {canChooseProjectSection && (
+            <section>
+              <div className="actsix-interactive-row bg-background/45 p-3">
+                <label htmlFor={sectionId} className="label-eyebrow">
+                  Project section
+                </label>
+                <select
+                  id={sectionId}
+                  value={task.section_id ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      ...task,
+                      section_id: event.target.value || null,
+                    })
+                  }
+                  className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                >
+                  <option value="">General</option>
+                  {(projectSections || []).map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Move this task between General and the sections in this project.
+                </p>
+              </div>
+            </section>
+          )}
 
           <section className="grid gap-3">
             <div className="actsix-interactive-row bg-background/45 p-3">
