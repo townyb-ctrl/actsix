@@ -105,7 +105,7 @@ const TasksPage = () => {
 
     const { data, error } = await supabase
       .from("tasks")
-      .select("*")
+      .select("*, project_sections(name)")
       .or(personalNextActionFilter(currentPerson?.id))
       .order("created_at", { ascending: false });
 

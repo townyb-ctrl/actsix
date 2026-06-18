@@ -34,6 +34,17 @@ const priorityClass = (priority?: string | null) => {
   return "text-brand-amber font-semibold";
 };
 
+const getProjectSectionName = (task: any) => {
+  const section =
+    task.projectSection ||
+    task.project_section ||
+    task.project_sections ||
+    task.section;
+
+  if (Array.isArray(section)) return section[0]?.name || "";
+  return section?.name || task.section_name || "";
+};
+
 const CompactTaskRow = ({
   task,
   showCheckbox = true,
@@ -53,6 +64,9 @@ const CompactTaskRow = ({
   const priority = task.priority || "Medium";
   const minutes = task.minutes || 15;
   const isRecurringTask = Boolean(task.recurring_template_id);
+  const sectionName = getProjectSectionName(task);
+  const projectLabel =
+    task.project && sectionName ? `${task.project}:${sectionName}` : task.project;
   const clickable = Boolean(onEdit);
   const assignedTo =
     task.assignedPersonName ||
@@ -119,10 +133,10 @@ const CompactTaskRow = ({
         </div>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-none">
-          {task.project && (
-            <span className="inline-flex max-w-[180px] items-center gap-1 truncate rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 font-semibold text-brand-teal">
+          {projectLabel && (
+            <span className="inline-flex max-w-[240px] items-center gap-1 truncate rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 font-semibold text-brand-teal">
               <FolderKanban className="h-3 w-3 shrink-0" />
-              <span className="truncate">{task.project}</span>
+              <span className="truncate">{projectLabel}</span>
             </span>
           )}
 

@@ -31,6 +31,7 @@ type Task = {
   minutes?: number | null;
   complete?: boolean | null;
   created_at?: string | null;
+  project_sections?: { name?: string | null } | { name?: string | null }[] | null;
 };
 
 type Project = {
@@ -362,7 +363,7 @@ const Dashboard = () => {
       ] = await Promise.all([
         supabase
           .from("tasks")
-          .select("*")
+          .select("*, project_sections(name)")
           .or(personalNextActionFilter(currentPerson?.id))
           .eq("complete", false)
           .order("due", { ascending: true, nullsFirst: false }),

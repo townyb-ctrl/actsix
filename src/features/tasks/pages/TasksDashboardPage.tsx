@@ -64,7 +64,7 @@ const TasksDashboardPage = () => {
         supabase.from("someday_items").select("id", { count: "exact", head: true }),
         supabase
           .from("tasks")
-          .select("*")
+          .select("*, project_sections(name)")
           .or(personalNextActionFilter(currentPerson?.id))
           .eq("complete", false)
           .order("created_at", { ascending: false }),
