@@ -3,11 +3,10 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
-  CalendarDays,
   ChevronRight,
-  Clock3,
   ListChecks,
   Music,
+  Settings2,
   UsersRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -19,6 +18,23 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { personalNextActionFilter } from "@/lib/taskVisibility";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DashboardCustomizeBar } from "@/features/dashboard/components/DashboardCustomizeBar";
+import { DashboardGrid } from "@/features/dashboard/components/DashboardGrid";
+import { WidgetLibraryModal } from "@/features/dashboard/components/WidgetLibraryModal";
+import { WidgetSettingsModal } from "@/features/dashboard/components/WidgetSettingsModal";
+import { widgetDefinitions } from "@/features/dashboard/data/widgetDefinitions";
+import { useDashboardLayout } from "@/features/dashboard/hooks/useDashboardLayout";
+import type { UserDashboardWidget } from "@/features/dashboard/types/dashboardTypes";
 
 type Task = {
   id: string;
@@ -98,13 +114,6 @@ type CalendarDay = {
   inMonth: boolean;
 };
 
-const priorityWeight: Record<string, number> = {
-  Urgent: 4,
-  High: 3,
-  Medium: 2,
-  Low: 1,
-};
-
 const startOfToday = () => {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -176,74 +185,10 @@ const formatTime = (value?: string | null) => {
   });
 };
 
-const getServiceStartDateTime = (service: ServiceInstance) => {
-  const [hour = "0", minute = "0"] = (service.start_time || "00:00").split(":");
-  const date = new Date(`${service.service_date}T00:00:00`);
-  date.setHours(Number(hour), Number(minute), 0, 0);
-  return date;
-};
-
-const getServiceCountdownLabel = (service: ServiceInstance | null, now: Date) => {
-  if (!service?.service_date) return null;
-
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-
-  const serviceDay = new Date(`${service.service_date}T00:00:00`);
-  const dayDiff = Math.round(
-    (serviceDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (dayDiff === 1) return "Tomorrow";
-  if (dayDiff > 1) return `${dayDiff} days`;
-  if (dayDiff < 0) return null;
-  if (!service.start_time) return "Today";
-
-  const startDateTime = getServiceStartDateTime(service);
-  const minutesUntil = Math.ceil((startDateTime.getTime() - now.getTime()) / (1000 * 60));
-
-  if (minutesUntil <= 0) return "Now";
-  if (minutesUntil < 60) return `${minutesUntil}m to go`;
-
-  const hoursUntil = Math.ceil(minutesUntil / 60);
-  return `${hoursUntil}h to go`;
-};
-
-const priorityClass = (priority?: string | null) => {
-  if (priority === "Urgent") return "bg-brand-danger/10 text-brand-danger border-brand-danger/20";
-  if (priority === "High") return "bg-brand-bronze/10 text-brand-bronze border-brand-bronze/20";
-  return "bg-brand-teal/10 text-brand-teal border-brand-teal/20";
-};
-
-const projectProgress = (project: Project, tasks: Task[]) => {
-  const projectTasks = tasks.filter(
-    (task) => task.project_id === project.id || (!task.project_id && task.project === project.name)
-  );
-  const openTasks = projectTasks.filter((task) => !task.complete);
-  const completedTasks = projectTasks.filter((task) => task.complete);
-
-  const progress =
-    projectTasks.length === 0
-      ? project.progress ?? 0
-      : Math.round((completedTasks.length / projectTasks.length) * 100);
-
-  return {
-    openTasks: projectTasks.length > 0 ? openTasks.length : project.open_tasks || 0,
-    progress,
-    nextAction: openTasks[0]?.title || project.next_action || "No next action set",
-  };
-};
-
 const EmptyState = ({ children }: { children: string }) => (
   <div className="actsix-empty-state">
     {children}
   </div>
-);
-
-const DotSeparator = () => (
-  <span aria-hidden="true" className="text-muted-foreground/45">
-    /
-  </span>
 );
 
 const SectionHeader = ({
@@ -264,38 +209,6 @@ const SectionHeader = ({
     </div>
     {action && <div className="shrink-0">{action}</div>}
   </div>
-);
-
-const TaskRow = ({ task, compact = false }: { task: Task; compact?: boolean }) => (
-  <Link
-    to="/tasks/next"
-    className="group flex min-h-[46px] items-center justify-between gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
-  >
-    <div className="min-w-0 flex-1">
-      <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
-        {task.title}
-      </div>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold text-muted-foreground">
-        <span>{task.due ? formatShortDate(task.due) : "No due date"}</span>
-        {(task.context || task.project) && <DotSeparator />}
-        {task.context && <span className="truncate">{task.context}</span>}
-        {!task.context && task.project && <span className="truncate">{task.project}</span>}
-        {task.minutes && !compact && (
-          <>
-            <DotSeparator />
-            <span>{task.minutes} min</span>
-          </>
-        )}
-      </div>
-    </div>
-    <span
-      className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-extrabold ${priorityClass(
-        task.priority
-      )}`}
-    >
-      {task.priority || "Medium"}
-    </span>
-  </Link>
 );
 
 const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
@@ -336,10 +249,24 @@ const Dashboard = () => {
   const [nextService, setNextService] = useState<ServiceInstance | null>(null);
   const [serviceOrderItems, setServiceOrderItems] = useState<ServiceOrderItem[]>([]);
   const [serviceTeamAssignments, setServiceTeamAssignments] = useState<ServiceTeamAssignment[]>([]);
-  const [serviceView, setServiceView] = useState<"plan" | "team">("plan");
   const [calendarView, setCalendarView] = useState<"month" | "week">("month");
   const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
+  const [customizeMode, setCustomizeMode] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [settingsWidget, setSettingsWidget] = useState<UserDashboardWidget | null>(null);
+  const {
+    layout,
+    savedState,
+    addWidget,
+    removeWidget,
+    moveWidget,
+    reorderWidget,
+    resizeWidget,
+    updateWidgetSettings,
+    resetLayout,
+  } = useDashboardLayout(user?.id, widgetDefinitions);
 
   useEffect(() => {
     if (!user) return;
@@ -432,61 +359,6 @@ const Dashboard = () => {
   }, []);
 
   const todayKey = useMemo(() => toDateKey(startOfToday()), []);
-
-  const importantTasks = useMemo(() => {
-    return [...tasks]
-      .sort((a, b) => {
-        const priorityDiff =
-          (priorityWeight[b.priority || "Medium"] || 0) -
-          (priorityWeight[a.priority || "Medium"] || 0);
-
-        if (priorityDiff !== 0) return priorityDiff;
-
-        const aDue = a.due ? new Date(`${a.due}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
-        const bDue = b.due ? new Date(`${b.due}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
-
-        return aDue - bDue;
-      })
-      .slice(0, 5);
-  }, [tasks]);
-
-  const todaysTasks = useMemo(() => {
-    return tasks
-      .filter((task) => task.due === todayKey)
-      .sort(
-        (a, b) =>
-          (priorityWeight[b.priority || "Medium"] || 0) -
-          (priorityWeight[a.priority || "Medium"] || 0)
-      )
-      .slice(0, 5);
-  }, [tasks, todayKey]);
-
-  const activeProjects = useMemo(() => {
-    return projects
-      .filter((project) => !project.status?.toLowerCase().includes("complete"))
-      .sort((a, b) => {
-        const aStats = projectProgress(a, projectTasks);
-        const bStats = projectProgress(b, projectTasks);
-        return bStats.openTasks - aStats.openTasks;
-      })
-      .slice(0, 4);
-  }, [projects, projectTasks]);
-
-  const dueTodayCount = tasks.filter((task) => task.due === todayKey).length;
-  const activeProjectCount = projects.filter(
-    (project) => !project.status?.toLowerCase().includes("complete")
-  ).length;
-
-  const upcomingMeetings = useMemo(() => {
-    const endKey = toDateKey(addDays(startOfToday(), 6));
-
-    return meetings
-      .filter((meeting) => {
-        if (!meeting.meeting_date) return false;
-        return meeting.meeting_date >= todayKey && meeting.meeting_date <= endKey;
-      })
-      .slice(0, 5);
-  }, [meetings, todayKey]);
 
   const calendarItems = useMemo<CalendarItem[]>(() => {
     const meetingItems = meetings.map((meeting) => ({
@@ -608,6 +480,35 @@ const Dashboard = () => {
 
   const visibleCalendarDays = calendarView === "week" ? weekDays : calendarDays;
 
+  const widgetData = useMemo(
+    () => ({
+      tasks,
+      projectTasks,
+      projects,
+      meetings,
+      nextService,
+      serviceOrderItems,
+      serviceTeamAssignments,
+      now,
+      todayKey,
+    }),
+    [
+      meetings,
+      nextService,
+      now,
+      projectTasks,
+      projects,
+      serviceOrderItems,
+      serviceTeamAssignments,
+      tasks,
+      todayKey,
+    ]
+  );
+
+  const settingsDefinition = settingsWidget
+    ? widgetDefinitions.find((definition) => definition.id === settingsWidget.definitionId)
+    : undefined;
+
   const mobileAgendaItems = useMemo(() => {
     const endKey = toDateKey(addDays(startOfToday(), 6));
     return calendarItems
@@ -645,12 +546,6 @@ const Dashboard = () => {
       }),
     [now]
   );
-
-  const serviceCountdownLabel = useMemo(() => {
-    return getServiceCountdownLabel(nextService, now);
-  }, [nextService, now]);
-
-  const nextServiceTitle = nextService?.title || nextService?.service_types?.name || "Upcoming service";
 
   if (!workspaceLoading && !workspace) {
     return (
@@ -703,263 +598,57 @@ const Dashboard = () => {
         className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10"
       >
         <section className="actsix-panel-soft p-4 sm:p-5">
-          <div className="min-w-0">
-            <p className="label-eyebrow text-brand-teal">Home</p>
-            <h1 className="mt-1 text-balance text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl">
-              {greeting}, {firstName}
-            </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-extrabold text-muted-foreground sm:text-sm">
-              <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
-                {dateLabel}
-              </span>
-              <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
-                {clockLabel}
-              </span>
-              {workspace?.name && (
-                <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-brand-teal">
-                  {workspace.name}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="label-eyebrow text-brand-teal">Home</p>
+              <h1 className="mt-1 text-balance text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl">
+                {greeting}, {firstName}
+              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-extrabold text-muted-foreground sm:text-sm">
+                <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
+                  {dateLabel}
                 </span>
-              )}
+                <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
+                  {clockLabel}
+                </span>
+                {workspace?.name && (
+                  <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-brand-teal">
+                    {workspace.name}
+                  </span>
+                )}
+              </div>
             </div>
+            <Button
+              className="actsix-btn-primary h-10 shrink-0 px-3 text-xs"
+              onClick={() => setCustomizeMode(true)}
+            >
+              <Settings2 className="h-4 w-4" />
+              Customize Dashboard
+            </Button>
           </div>
         </section>
 
+        {customizeMode && (
+          <DashboardCustomizeBar
+            savedState={savedState}
+            onAddWidget={() => setLibraryOpen(true)}
+            onResetLayout={() => setResetConfirmOpen(true)}
+            onDone={() => setCustomizeMode(false)}
+          />
+        )}
 
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(390px,0.8fr)] 2xl:grid-cols-[minmax(0,1.25fr)_minmax(430px,0.75fr)]">
-          <Card className="actsix-panel min-w-0 overflow-hidden">
-            <SectionHeader
-              eyebrow="Tasks"
-              title="Due Today"
-              action={
-                <span className="rounded-full bg-brand-teal/15 px-2.5 py-1 text-xs font-extrabold text-brand-teal">
-                  {dueTodayCount}
-                </span>
-              }
-            />
-            <div className="space-y-3 p-4 sm:p-5">
-              {todaysTasks.length === 0 && <EmptyState>No tasks due today.</EmptyState>}
-              {todaysTasks.slice(0, 5).map((task) => (
-                <TaskRow key={task.id} task={task} />
-              ))}
-
-              {importantTasks.length > 0 && (
-                <div className="pt-2">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
-                      High priority
-                    </p>
-                    <Link to="/tasks/next" className="text-xs font-extrabold text-brand-teal">
-                      Open tasks
-                    </Link>
-                  </div>
-                  <div className="space-y-2">
-                    {importantTasks.slice(0, 2).map((task) => (
-                      <TaskRow key={`important-${task.id}`} task={task} compact />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          <Card className="actsix-panel min-w-0 overflow-hidden">
-            <SectionHeader
-              eyebrow="Service Planner"
-              title="Next Service"
-              action={
-                nextService && serviceCountdownLabel ? (
-                  <span className="rounded-full border border-brand-teal/25 bg-brand-teal/15 px-2.5 py-1 text-xs font-extrabold text-brand-teal">
-                    {serviceCountdownLabel}
-                  </span>
-                ) : null
-              }
-            />
-
-            {!nextService ? (
-              <div className="p-3 sm:p-4">
-                <EmptyState>No upcoming service dates found.</EmptyState>
-              </div>
-            ) : (
-              <div className="space-y-2.5 p-3 sm:p-4">
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-teal/15 bg-brand-teal/5 px-3 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-base font-extrabold leading-tight tracking-tight text-foreground">
-                      {nextServiceTitle}
-                    </h3>
-                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5 text-brand-teal" />
-                        {formatDate(nextService.service_date)}
-                      </span>
-                      {formatTime(nextService.start_time) && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock3 className="h-3.5 w-3.5 text-brand-teal" />
-                          {formatTime(nextService.start_time)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <Button asChild className="actsix-btn-primary h-9 shrink-0 px-3 text-xs">
-                    <Link to={`/service-planner/services/${nextService.id}`}>
-                      Open
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                </div>
-
-                <div className="actsix-segmented grid grid-cols-2 bg-background/70">
-                  {(["plan", "team"] as const).map((view) => (
-                    <button
-                      key={view}
-                      type="button"
-                      onClick={() => setServiceView(view)}
-                      data-state={serviceView === view ? "active" : "inactive"}
-                      className="actsix-segmented-item min-h-[36px] flex-1 px-2 text-sm font-extrabold"
-                    >
-                      {view === "plan" ? "Plan" : "Team"}
-                    </button>
-                  ))}
-                </div>
-
-                {serviceView === "plan" ? (
-                  <div className="space-y-1.5">
-                    {serviceOrderItems.length === 0 && (
-                      <EmptyState>No order items added for this service yet.</EmptyState>
-                    )}
-                    {serviceOrderItems.slice(0, 2).map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex min-h-[42px] items-center justify-between gap-2 rounded-xl border border-border/80 bg-background/70 px-3 py-2"
-                      >
-                        <span className="min-w-0 truncate text-sm font-bold">{item.title}</span>
-                        <span className="shrink-0 rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-extrabold capitalize text-brand-teal">
-                          {item.duration_minutes ? `${item.duration_minutes}m` : item.item_type}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    {serviceTeamAssignments.length === 0 && (
-                      <EmptyState>No team assignments added yet.</EmptyState>
-                    )}
-                    {serviceTeamAssignments.slice(0, 2).map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className="flex min-h-[42px] items-center justify-between gap-2 rounded-xl border border-border/80 bg-background/70 px-3 py-2"
-                      >
-                        <span className="min-w-0 truncate text-sm font-bold">
-                          {assignment.role_name}
-                        </span>
-                        <span className="shrink-0 max-w-[52%] truncate text-right text-xs font-semibold text-muted-foreground">
-                          {assignment.person_name || "Unassigned"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <Link
-                  to={`/service-planner/services/${nextService.id}`}
-                  className="actsix-btn-outline inline-flex min-h-[38px] w-full gap-1.5 px-3 text-sm font-extrabold text-brand-teal sm:w-auto"
-                >
-                  View full service
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            )}
-          </Card>
-
-
-          <Card className="actsix-panel min-w-0 overflow-hidden">
-            <SectionHeader
-              eyebrow="Projects"
-              title="Active Momentum"
-              action={
-                <span className="rounded-full bg-brand-sage/15 px-2.5 py-1 text-xs font-extrabold text-brand-sage">
-                  {activeProjectCount} active
-                </span>
-              }
-            />
-            <div className="space-y-3 p-4 sm:p-5">
-              {activeProjects.length === 0 && <EmptyState>No active projects yet.</EmptyState>}
-              {activeProjects.slice(0, 4).map((project) => {
-                const stats = projectProgress(project, projectTasks);
-                const progress = Math.min(Math.max(stats.progress, 0), 100);
-
-                return (
-                  <Link
-                    key={project.id}
-                    to={`/tasks/projects/${project.id}`}
-                    className="group block rounded-xl border border-border/80 bg-background/70 p-3 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
-                          {project.name}
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-muted-foreground">
-                          {stats.nextAction}
-                        </p>
-                      </div>
-                      <span className="shrink-0 font-mono text-sm font-extrabold text-brand-teal">
-                        {progress}%
-                      </span>
-                    </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-brand-teal" style={{ width: `${progress}%` }} />
-                    </div>
-                    <p className="mt-2 text-xs font-bold text-muted-foreground">
-                      {stats.openTasks} open task{stats.openTasks === 1 ? "" : "s"}
-                    </p>
-                  </Link>
-                );
-              })}
-            </div>
-          </Card>
-
-          <Card className="actsix-panel min-w-0 overflow-hidden">
-            <SectionHeader
-              eyebrow="Meetings"
-              title="Upcoming Meetings"
-              action={
-                <span className="rounded-full bg-brand-bronze/15 px-2.5 py-1 text-xs font-extrabold text-brand-bronze">
-                  {upcomingMeetings.length}
-                </span>
-              }
-            />
-            <div className="space-y-3 p-4 sm:p-5">
-              {upcomingMeetings.length === 0 && (
-                <EmptyState>No meetings in the next 6 days.</EmptyState>
-              )}
-              {upcomingMeetings.map((meeting) => (
-                <Link
-                  key={meeting.id}
-                  to={`/meetings/${meeting.id}`}
-                  className="group flex min-h-[50px] items-center gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
-                >
-                  <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-bronze/10 text-brand-bronze">
-                    <CalendarDays className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
-                      {meeting.title}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs font-semibold text-muted-foreground">
-                      <span>{formatAgendaDate(meeting.meeting_date)}</span>
-                      {formatTime(meeting.meeting_time) && (
-                        <span>{formatTime(meeting.meeting_time)}</span>
-                      )}
-                      {meeting.location && <span className="truncate">{meeting.location}</span>}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </Link>
-              ))}
-            </div>
-          </Card>
-        </section>
+        <DashboardGrid
+          widgets={layout.widgets}
+          definitions={widgetDefinitions}
+          data={widgetData}
+          customizeMode={customizeMode}
+          onMoveWidget={moveWidget}
+          onReorderWidget={reorderWidget}
+          onResizeWidget={resizeWidget}
+          onRemoveWidget={removeWidget}
+          onConfigureWidget={setSettingsWidget}
+          onUpdateWidgetSettings={updateWidgetSettings}
+        />
 
         <Card className="actsix-panel min-w-0 overflow-hidden md:hidden">
           <SectionHeader
@@ -1079,6 +768,46 @@ const Dashboard = () => {
             </div>
           </div>
         </Card>
+
+        <WidgetLibraryModal
+          open={libraryOpen}
+          definitions={widgetDefinitions}
+          onOpenChange={setLibraryOpen}
+          onAddWidget={addWidget}
+        />
+
+        <WidgetSettingsModal
+          open={Boolean(settingsWidget)}
+          widget={settingsWidget}
+          definition={settingsDefinition}
+          onOpenChange={(open) => {
+            if (!open) setSettingsWidget(null);
+          }}
+          onSave={updateWidgetSettings}
+        />
+
+        <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset dashboard layout?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will restore the default ACTSIX dashboard widgets and sizes for your account.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="actsix-btn-outline">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="actsix-btn-primary"
+                onClick={() => {
+                  resetLayout();
+                  setResetConfirmOpen(false);
+                }}
+              >
+                Reset Layout
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
