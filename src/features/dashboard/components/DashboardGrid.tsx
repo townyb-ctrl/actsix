@@ -23,10 +23,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 const sizeClasses: Record<WidgetSize, string> = {
-  small: "md:col-span-6 xl:col-span-3 md:row-span-3",
-  medium: "md:col-span-6 xl:col-span-4 md:row-span-4",
-  large: "md:col-span-12 xl:col-span-6 md:row-span-5",
-  full: "md:col-span-12 xl:col-span-12 md:row-span-4",
+  small: "md:col-span-6 xl:col-span-3 md:row-span-2",
+  medium: "md:col-span-6 xl:col-span-4 md:row-span-3",
+  large: "md:col-span-12 xl:col-span-6 md:row-span-4",
+  full: "md:col-span-12 xl:col-span-12 md:row-span-3",
 };
 
 type DashboardGridProps = {
@@ -165,7 +165,7 @@ export function DashboardGrid({
       onDragEnd={handleWidgetDragEnd}
     >
       <SortableContext items={widgets.map((widget) => widget.id)} strategy={rectSortingStrategy}>
-        <section className="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-12 md:auto-rows-[72px]">
+        <section className="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-12 md:auto-rows-[76px]">
           {widgets.map((widget, index) => {
             const definition = definitions.find((item) => item.id === widget.definitionId);
             if (!definition) return null;

@@ -329,7 +329,7 @@ export function NotificationBell({
         type="button"
         className={
           tone === "topbar"
-            ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground transition hover:border-brand-teal/30 hover:bg-brand-teal/5 hover:text-brand-teal"
+            ? "relative flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background/85 p-0 text-muted-foreground transition hover:border-brand-teal/30 hover:bg-brand-teal/5 hover:text-brand-teal"
             : tone === "dock"
               ? "actsix-mobile-dock-item group flex min-h-[58px] flex-col items-center justify-center gap-1"
             : `relative flex items-center justify-center rounded-xl transition ${
@@ -348,7 +348,7 @@ export function NotificationBell({
         <span
           className={`relative flex items-center justify-center ${
             tone === "topbar"
-              ? "h-9 w-9"
+              ? "h-8 w-8"
               : tone === "dock"
                 ? "actsix-mobile-dock-icon h-9 w-9 group-hover:bg-brand-teal/5"
               : "h-7 w-7 rounded-md bg-sidebar-accent/40"

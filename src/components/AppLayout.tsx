@@ -211,14 +211,14 @@ export default function AppLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full overflow-x-hidden bg-gradient-content md:flex">
+      <div className="min-h-screen w-full overflow-x-hidden overscroll-none bg-gradient-sidebar md:flex">
         
-        <div className="hidden md:flex">
+        <div className="relative z-10 hidden md:flex">
           <AppSidebar />
         </div>
 
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col pb-[calc(7.6rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
-          <header className="sticky top-0 z-10 flex min-h-[3.75rem] items-center gap-2 border-b border-border/70 bg-background/90 px-4 py-2 backdrop-blur-xl sm:px-4 xl:px-6">
+        <div className="relative z-20 flex min-h-screen min-w-0 flex-1 flex-col overscroll-none bg-[#fbfaf7] pb-[calc(7.6rem+env(safe-area-inset-bottom))] md:h-screen md:overflow-hidden md:rounded-tl-[2rem] md:pb-0">
+          <header className="sticky top-0 z-10 flex min-h-11 items-center gap-2 border-b border-border/45 bg-[#fbfaf7]/90 px-4 py-1.5 backdrop-blur-xl sm:px-4 xl:px-6">
             
             {/* FULL TEXT LOGO IN HEADER (Mobile Only) */}
             <Link to="/" className="mr-1 flex shrink-0 items-center md:hidden">
@@ -244,7 +244,7 @@ export default function AppLayout() {
                 size="icon"
                 variant="outline"
                 data-tour="quick-capture"
-                className="hidden h-10 w-10 rounded-full border-brand-teal bg-brand-teal text-white shadow-sm hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white md:inline-flex"
+                className="hidden h-8 w-8 rounded-full border-brand-teal bg-brand-teal p-0 text-white shadow-sm hover:border-brand-teal-dark hover:bg-brand-teal-dark hover:text-white md:inline-flex"
                 onClick={() => setQuickCaptureOpen(true)}
                 title="Quick Capture"
                 aria-label="Quick Capture"
@@ -260,7 +260,7 @@ export default function AppLayout() {
                 <button
                   type="button"
                   data-tour="account-menu"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-card p-0 text-foreground shadow-sm outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-card p-0 text-foreground shadow-sm outline-none ring-brand-teal/30 transition hover:border-brand-teal/35 hover:bg-brand-teal/5 focus-visible:ring-4"
                   onClick={() => setProfileMenuOpen((open) => !open)}
                   title="Open account menu"
                   aria-label="Open account menu"
@@ -269,7 +269,7 @@ export default function AppLayout() {
                   <PersonAvatar
                     name={accountName}
                     avatarUrl={currentPerson?.avatar_url}
-                    size="md"
+                    size="sm"
                     className="ring-1 ring-border"
                   />
                 </button>
@@ -336,14 +336,14 @@ export default function AppLayout() {
               onActivate={activateRouteModule}
             />
           ) : (
-            <main className={`flex-1 ${isHomeRoute ? "" : "md:px-4 xl:px-6 2xl:px-8"}`}>
+            <main className={`flex-1 overflow-y-auto overscroll-contain ${isHomeRoute ? "" : "md:px-4 xl:px-6 2xl:px-8"}`}>
               <Outlet />
             </main>
           )}
 
-          <footer className="hidden min-h-16 items-center justify-center border-t border-border/70 bg-background/85 px-4 py-3 text-sm text-muted-foreground backdrop-blur md:flex sm:px-6 xl:px-8 2xl:px-10">
+          <footer className="hidden min-h-12 items-center justify-center border-t border-border/45 bg-[#fbfaf7]/88 px-4 py-2 text-xs text-muted-foreground backdrop-blur md:flex sm:px-6 xl:px-8 2xl:px-10">
             <div className="flex items-center justify-center gap-3 text-center">
-              <img src={actsixLogo} alt="ACTSIX" className="h-11 w-auto object-contain brightness-0" />
+              <img src={actsixLogo} alt="ACTSIX" className="h-8 w-auto object-contain brightness-0" />
             </div>
           </footer>
 

@@ -318,8 +318,11 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-gradient-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border bg-transparent">
+    <Sidebar
+      collapsible="icon"
+      className="!border-r-0 border-r-0 [&_[data-sidebar=sidebar]]:overflow-hidden [&_[data-sidebar=sidebar]]:!border-r-0 [&_[data-sidebar=sidebar]]:border-r-0 [&_[data-sidebar=sidebar]]:bg-gradient-sidebar"
+    >
+      <SidebarHeader className="border-b border-sidebar-border/55 bg-transparent">
         <div
           className={
             collapsed
@@ -356,12 +359,12 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent data-tour="sidebar-primary-nav">
             {!collapsed && isAlphaMode && (
-              <div className="mx-1.5 mb-2 rounded-xl border border-brand-teal/35 bg-brand-teal/15 px-3 py-1.5 text-[12px] font-bold text-brand-teal-bright">
+              <div className="mx-4 mb-2 rounded-xl border border-brand-teal/35 bg-brand-teal/15 px-3 py-1.5 text-[12px] font-bold text-brand-teal-bright">
                 {getReleaseLabel()} Mode
               </div>
             )}
 
-            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 px-1"}>
+            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 pl-3 pr-5"}>
               {visibleSections.map((section) => {
                 const SectionIcon = section.icon;
                 const sectionActive = section.id === activeSection?.id;
@@ -394,7 +397,7 @@ export function AppSidebar() {
                           className={cn(
                             "flex h-10 w-full items-center overflow-hidden rounded-xl transition-colors",
                             sectionActive
-                              ? "bg-brand-teal text-white shadow-[0_10px_24px_rgba(45,140,140,0.22)]"
+                              ? "bg-sidebar-foreground text-sidebar shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_14px_28px_rgba(0,0,0,0.2)]"
                               : "text-sidebar-foreground/74 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                           )}
                         >
@@ -413,7 +416,7 @@ export function AppSidebar() {
                             className={cn(
                               "flex h-full w-10 shrink-0 items-center justify-center transition-colors",
                               sectionActive
-                                ? "text-white/90 hover:bg-white/10"
+                                ? "text-sidebar/80 hover:bg-sidebar/5"
                                 : "text-sidebar-foreground/45 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground"
                             )}
                             onClick={() => toggleSection(section.id)}
@@ -430,7 +433,7 @@ export function AppSidebar() {
                         </div>
 
                         {sectionOpen && (
-                          <div className="ml-[1.45rem] mt-1 space-y-0.5 border-l border-sidebar-border/70 pb-0.5 pl-2.5">
+                          <div className="ml-[1.45rem] mr-1.5 mt-1 space-y-0.5 border-l border-sidebar-border/70 pb-0.5 pl-2.5">
                             {section.items.map((item) => {
                               const ItemIcon = item.icon;
                               const itemActive = isItemActive(section, item);
@@ -492,7 +495,7 @@ export function AppSidebar() {
                         className={cn(
                           "flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left transition-colors",
                           sectionActive
-                            ? "bg-brand-teal text-white shadow-[0_10px_24px_rgba(45,140,140,0.22)]"
+                            ? "bg-sidebar-foreground text-sidebar shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_14px_28px_rgba(0,0,0,0.2)]"
                             : "text-sidebar-foreground/74 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                         )}
                       >
@@ -508,7 +511,7 @@ export function AppSidebar() {
             </SidebarMenu>
 
             {!collapsed && inactiveOptionalSections.length > 0 && (
-              <div className="mx-1.5 mt-3 border-t border-sidebar-border/70 pt-2.5">
+              <div className="mx-4 mt-3 border-t border-sidebar-border/70 pt-2.5">
                 <p className="px-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-sidebar-foreground/40">
                   Available Modules
                 </p>

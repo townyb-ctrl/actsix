@@ -62,11 +62,11 @@ export function DashboardWidgetCard({
   return (
     <Card
       className={cn(
-        "actsix-panel group flex min-h-[220px] min-w-0 flex-col overflow-hidden transition md:h-full md:min-h-0",
-        customizeMode && "ring-1 ring-brand-teal/20"
+        "group flex min-h-[220px] min-w-0 flex-col overflow-hidden rounded-[1.2rem] border border-border/60 bg-card/82 shadow-[0_1px_0_rgba(207,198,181,0.4)] transition duration-200 hover:border-brand-teal/22 hover:bg-card md:h-full md:min-h-0",
+        customizeMode && "border-brand-teal/28 bg-brand-teal/5 ring-1 ring-brand-teal/15"
       )}
     >
-      <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3.5 sm:px-5">
+      <div className="flex items-start justify-between gap-3 border-b border-border/45 px-4 py-3.5 sm:px-5">
         <div className="flex min-w-0 items-start gap-2">
           {customizeMode && (
             <button
@@ -95,7 +95,14 @@ export function DashboardWidgetCard({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-8 w-8 shrink-0 text-muted-foreground transition",
+                !customizeMode && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              )}
+            >
               <MoreHorizontal className="h-4 w-4" />
               <span className="sr-only">Widget actions</span>
             </Button>
@@ -137,7 +144,7 @@ export function DashboardWidgetCard({
       </div>
 
       {customizeMode && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-border/60 bg-brand-teal/5 px-4 py-2 sm:px-5">
+        <div className="flex flex-wrap items-center gap-2 border-b border-brand-teal/15 bg-background/60 px-4 py-2 sm:px-5">
           <span className="rounded-full border border-border/70 bg-background/80 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">
             {sizeLabels[widget.size]}
           </span>
@@ -162,7 +169,7 @@ export function DashboardWidgetCard({
             Down
           </Button>
           <span className="ml-auto hidden text-[11px] font-bold text-muted-foreground sm:inline">
-            Drag to reorder / resize from menu
+            Drag handle or use menu
           </span>
         </div>
       )}

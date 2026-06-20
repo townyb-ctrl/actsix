@@ -290,6 +290,10 @@ export function FeedbackBubble() {
     toast.success("Feedback sent. Thank you!");
   };
 
+  if (location.pathname === "/") {
+    return null;
+  }
+
   return (
     <div
       className="fixed z-[900]"

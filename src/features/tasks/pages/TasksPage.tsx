@@ -353,37 +353,6 @@ const TasksPage = () => {
         eyebrow="Workflow"
         title="Next Actions"
         subtitle="The next thing to do, in any context."
-        actions={
-          <>
-            <div className="actsix-search-field sm:w-48 lg:w-56">
-              <Search className="actsix-search-icon" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search next actions..."
-                className="actsix-search-input"
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              className={`actsix-btn-outline h-9 min-h-9 gap-1.5 px-2.5 text-xs ${
-                hasActiveFilters
-                  ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal"
-                  : ""
-              }`}
-              onClick={() => setShowFilters((value) => !value)}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filters
-              {hasActiveFilters && (
-                <span className="ml-1 rounded-full bg-brand-teal/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-teal">
-                  On
-                </span>
-              )}
-            </Button>
-          </>
-        }
       />
 
       <div className="-mt-1 w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
@@ -462,45 +431,15 @@ const TasksPage = () => {
           )}
         </div>
 
-        <div className="actsix-filter-pills">
-            {dateViews.map((view) => {
-              const active = dateView === view.value;
-
-              return (
-                <button
-                  key={view.value}
-                  type="button"
-                  onClick={() => setDateView(view.value)}
-                  className={`actsix-filter-pill ${
-                    active
-                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  }`}
-                >
-                  {view.label}
-                  <span
-                    className={`actsix-filter-pill-count ${
-                      active
-                        ? "bg-brand-teal/15 text-brand-teal"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {view.count}
-                  </span>
-                </button>
-              );
-            })}
-        </div>
-
         {showFilters && (
-          <Card className="actsix-panel-soft p-4 sm:p-5">
-            <div className="grid md:grid-cols-5 gap-2">
+          <Card className="rounded-2xl border border-border/65 bg-card/80 px-3 py-2 shadow-none">
+            <div className="grid gap-2 md:grid-cols-5">
               <div>
-                <label className="label-eyebrow flex h-4 items-center">Project</label>
+                <label className="label-eyebrow flex h-3 items-center text-[9px]">Project</label>
                 <select
                   value={projectFilter}
                   onChange={(event) => setProjectFilter(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
                 >
                   <option>All</option>
                   {uniqueProjects.map((project) => (
@@ -510,11 +449,11 @@ const TasksPage = () => {
               </div>
 
               <div>
-                <label className="label-eyebrow flex h-4 items-center">Context</label>
+                <label className="label-eyebrow flex h-3 items-center text-[9px]">Context</label>
                 <select
                   value={contextFilter}
                   onChange={(event) => setContextFilter(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
                 >
                   <option>All</option>
                   {uniqueContexts.map((context) => (
@@ -524,11 +463,11 @@ const TasksPage = () => {
               </div>
 
               <div>
-                <label className="label-eyebrow flex h-4 items-center">Priority</label>
+                <label className="label-eyebrow flex h-3 items-center text-[9px]">Priority</label>
                 <select
                   value={priorityFilter}
                   onChange={(event) => setPriorityFilter(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
                 >
                   <option>All</option>
                   {uniquePriorities.map((priority) => (
@@ -538,11 +477,11 @@ const TasksPage = () => {
               </div>
 
               <div>
-                <label className="label-eyebrow flex h-4 items-center">Energy</label>
+                <label className="label-eyebrow flex h-3 items-center text-[9px]">Energy</label>
                 <select
                   value={energyFilter}
                   onChange={(event) => setEnergyFilter(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
                 >
                   <option>All</option>
                   {uniqueEnergies.map((energy) => (
@@ -552,14 +491,14 @@ const TasksPage = () => {
               </div>
 
               <div>
-                <label className="label-eyebrow flex h-4 items-center gap-1">
-                  <ArrowUpDown className="h-3 w-3" />
+                <label className="label-eyebrow flex h-3 items-center gap-1 text-[9px]">
+                  <ArrowUpDown className="h-2.5 w-2.5" />
                   Sort
                 </label>
                 <select
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm"
+                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
                 >
                   <option value="due">Due date</option>
                   <option value="priority">Priority</option>
@@ -573,13 +512,70 @@ const TasksPage = () => {
         )}
 
         <section>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-extrabold tracking-tight">
-              Open
-              <span className="ml-2 rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs font-extrabold text-muted-foreground">
-                {filteredOpen.length}
-              </span>
-            </h2>
+          <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h2 className="shrink-0 text-lg font-extrabold tracking-tight">
+                Open
+                <span className="ml-2 rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs font-extrabold text-muted-foreground">
+                  {filteredOpen.length}
+                </span>
+              </h2>
+              <div className="actsix-filter-pills min-w-0 flex-1">
+                {dateViews.map((view) => {
+                  const active = dateView === view.value;
+
+                  return (
+                    <button
+                      key={view.value}
+                      type="button"
+                      onClick={() => setDateView(view.value)}
+                      className={`actsix-filter-pill ${
+                        active
+                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                          : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      }`}
+                    >
+                      {view.label}
+                      <span
+                        className={`actsix-filter-pill-count ${
+                          active
+                            ? "bg-brand-teal/15 text-brand-teal"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {view.count}
+                      </span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setShowFilters((value) => !value)}
+                  className={`actsix-filter-pill ${
+                    showFilters || hasActiveFilters
+                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
+                >
+                  <SlidersHorizontal className="h-3 w-3" />
+                  Filters
+                  {hasActiveFilters && (
+                    <span className="actsix-filter-pill-count bg-brand-teal/15 text-brand-teal">
+                      On
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="actsix-search-field sm:w-56 lg:w-64">
+              <Search className="actsix-search-icon" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search next actions..."
+                className="actsix-search-input"
+              />
+            </div>
           </div>
 
           <Card data-tour="tasks-list" className="actsix-panel space-y-1.5 p-2">

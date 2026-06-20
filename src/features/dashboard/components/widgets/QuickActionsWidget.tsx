@@ -4,7 +4,7 @@ import type { DashboardWidgetRenderProps } from "@/features/dashboard/types/dash
 
 const actions = [
   { label: "Capture task", to: "/tasks/next", icon: ClipboardList },
-  { label: "Open inbox", to: "/inbox", icon: Inbox },
+  { label: "Open inbox", to: "/tasks/inbox", icon: Inbox },
   { label: "Plan service", to: "/service-planner", icon: CalendarPlus },
   { label: "Review people", to: "/people", icon: UsersRound },
   { label: "Projects", to: "/tasks/projects", icon: FolderPlus },

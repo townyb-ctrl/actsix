@@ -784,107 +784,61 @@ ${row.notes}`
         eyebrow="People"
         title="People"
         subtitle="Alpha workspace users appear here automatically. Everyone can view the directory; only admins and editors can manage profiles."
-        actions={
-          <div data-tour="people-actions" className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-            <div className="actsix-search-field sm:w-48 lg:w-56">
-              <Search className="actsix-search-icon" />
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search people..."
-                className="actsix-search-input"
-              />
-            </div>
-
-            {canEditPeopleDirectory && duplicateEmailGroups.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="actsix-btn-outline border-brand-teal/40 text-brand-teal hover:text-brand-teal"
-                  onClick={mergeDuplicateEmailProfiles}
-                >
-                <Merge className="h-4 w-4" />
-                Merge Duplicates
-              </Button>
-            )}
-
-            {canEditPeopleDirectory && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="actsix-btn-outline"
-                  onClick={() => {
-                    setCsvRows([]);
-                    setCsvError("");
-                    setImportOpen(true);
-                  }}
-                >
-                  <Upload className="h-4 w-4" />
-                  Import CSV
-                </Button>
-
-                <Button
-                  type="button"
-                  size="sm"
-                  className="actsix-btn-primary"
-                  onClick={() => setAddPersonOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Person
-                </Button>
-              </>
-            )}
-          </div>
-        }
       />
 
       <div className="px-4 sm:px-6 xl:px-8 2xl:px-10">
-        <div data-tour="people-search" className="actsix-filter-pills">
-          {[
-            ["all", "All"],
-            ["members", "Members"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={`actsix-filter-pill ${
-                peopleFilter === value
-                  ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
-                  : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50"
-              }`}
-              onClick={() => {
-                setPeopleFilter(value);
-                setCustomFilterOpen(false);
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        <div data-tour="people-search" className="mb-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 xl:justify-self-start">
+            <h2 className="shrink-0 text-lg font-extrabold tracking-tight">
+              Directory
+              <span className="ml-2 rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs font-extrabold text-muted-foreground">
+                {filteredPeople.length}
+              </span>
+            </h2>
 
-          <div className="relative">
-            <button
-              type="button"
-              className={`actsix-filter-pill ${
-                peopleFilter === "custom"
-                  ? "border-brand-teal bg-brand-teal/10 text-brand-teal"
-                  : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50"
-              }`}
-              onClick={() => {
-                setCustomFilterOpen((open) => !open);
-                setPeopleFilter("custom");
-              }}
-              aria-label="Custom filters"
-              title="Custom filters"
-            >
-              <span className="sr-only">Custom filters</span>
-              <Filter className="h-3.5 w-3.5" />
-            </button>
+            <div className="actsix-filter-pills min-w-0 flex-1">
+              {[
+                ["all", "All"],
+                ["members", "Members"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`actsix-filter-pill ${
+                    peopleFilter === value
+                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
+                  onClick={() => {
+                    setPeopleFilter(value);
+                    setCustomFilterOpen(false);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
 
-            {customFilterOpen && (
-              <div className="actsix-overlay-surface absolute right-0 top-10 z-50 w-[min(18rem,calc(100vw-2rem))] p-4 sm:left-0 sm:right-auto">
+              <div className="relative">
+                <button
+                  type="button"
+                  className={`actsix-filter-pill ${
+                    peopleFilter === "custom"
+                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
+                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
+                  onClick={() => {
+                    setCustomFilterOpen((open) => !open);
+                    setPeopleFilter("custom");
+                  }}
+                  aria-label="Custom filters"
+                  title="Custom filters"
+                >
+                  <Filter className="h-3 w-3" />
+                  Filters
+                </button>
+
+                {customFilterOpen && (
+                  <div className="actsix-overlay-surface absolute right-0 top-10 z-50 w-[min(18rem,calc(100vw-2rem))] p-4 sm:left-0 sm:right-auto">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-extrabold tracking-tight">
@@ -970,18 +924,74 @@ ${row.notes}`
                   </Button>
                 </div>
               </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="actsix-search-field sm:w-56 lg:w-64 xl:justify-self-center">
+            <Search className="actsix-search-icon" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search people..."
+              className="actsix-search-input"
+            />
+          </div>
+
+          <div data-tour="people-actions" className="flex flex-wrap items-center gap-2 xl:justify-self-end">
+            {canEditPeopleDirectory && duplicateEmailGroups.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-full border-brand-teal/35 bg-brand-teal/10 px-3 text-xs font-bold text-brand-teal hover:bg-brand-teal/15 hover:text-brand-teal"
+                onClick={mergeDuplicateEmailProfiles}
+              >
+                <Merge className="h-3.5 w-3.5" />
+                Merge Duplicates
+              </Button>
+            )}
+
+            {canEditPeopleDirectory && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-full border-brand-teal/25 bg-brand-teal/10 px-3 text-xs font-bold text-brand-teal-dark hover:bg-brand-teal/15 hover:text-brand-teal-dark"
+                  onClick={() => {
+                    setCsvRows([]);
+                    setCsvError("");
+                    setImportOpen(true);
+                  }}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Import CSV
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full bg-brand-teal px-3 text-xs font-bold text-white shadow-sm hover:bg-brand-teal-dark"
+                  onClick={() => setAddPersonOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Person
+                </Button>
+              </>
             )}
           </div>
         </div>
 
         {loading && (
-          <Card className="actsix-panel mt-4 p-4 sm:mt-5">
+          <Card className="actsix-panel p-4">
             <div className="actsix-loading-state" role="status">Loading people...</div>
           </Card>
         )}
 
         {!loading && filteredPeople.length === 0 && (
-          <Card className="actsix-panel mt-4 p-4 sm:mt-5 sm:p-5">
+          <Card className="actsix-panel p-4 sm:p-5">
             <div className="actsix-empty-state flex flex-col items-center justify-center text-center">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
               <Users className="h-5 w-5" />
@@ -997,7 +1007,7 @@ ${row.notes}`
         )}
 
         {!loading && filteredPeople.length > 0 && (
-          <Card data-tour="people-list" className="actsix-panel mt-4 overflow-hidden sm:mt-5">
+          <Card data-tour="people-list" className="actsix-panel overflow-hidden">
           <div className="hidden grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] gap-3 border-b border-border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground md:grid">
             <div>Person</div>
             <div>Phone</div>

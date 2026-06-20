@@ -211,6 +211,28 @@ const SectionHeader = ({
   </div>
 );
 
+const HomePanel = ({
+  eyebrow,
+  title,
+  children,
+  className = "",
+}: {
+  eyebrow: string;
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) => (
+  <Card className={`min-w-0 overflow-hidden rounded-[1.2rem] border border-border/50 bg-card shadow-[0_1px_0_rgba(207,198,181,0.32)] ${className}`}>
+    <div className="border-b border-border/40 px-5 py-4 sm:px-6">
+      <p className="label-eyebrow">{eyebrow}</p>
+      <h2 className="mt-0.5 text-lg font-extrabold tracking-tight text-foreground">
+        {title}
+      </h2>
+    </div>
+    <div className="p-5 sm:p-6">{children}</div>
+  </Card>
+);
+
 const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
   const Icon = item.icon;
 
@@ -249,7 +271,7 @@ const Dashboard = () => {
   const [nextService, setNextService] = useState<ServiceInstance | null>(null);
   const [serviceOrderItems, setServiceOrderItems] = useState<ServiceOrderItem[]>([]);
   const [serviceTeamAssignments, setServiceTeamAssignments] = useState<ServiceTeamAssignment[]>([]);
-  const [calendarView, setCalendarView] = useState<"month" | "week">("month");
+  const [calendarView, setCalendarView] = useState<"month" | "week">("week");
   const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
   const [customizeMode, setCustomizeMode] = useState(false);
@@ -509,6 +531,30 @@ const Dashboard = () => {
     ? widgetDefinitions.find((definition) => definition.id === settingsWidget.definitionId)
     : undefined;
 
+  const renderHomeWidget = (
+    definitionId: string,
+    settings: UserDashboardWidget["settings"] = {}
+  ) => {
+    const definition = widgetDefinitions.find((item) => item.id === definitionId);
+    if (!definition) return null;
+
+    const WidgetComponent = definition.component;
+    const widget: UserDashboardWidget = {
+      id: `home-${definitionId}`,
+      definitionId,
+      size: definition.defaultSize,
+      settings,
+    };
+
+    return (
+      <WidgetComponent
+        widget={widget}
+        data={widgetData}
+        updateSettings={() => undefined}
+      />
+    );
+  };
+
   const mobileAgendaItems = useMemo(() => {
     const endKey = toDateKey(addDays(startOfToday(), 6));
     return calendarItems
@@ -595,9 +641,9 @@ const Dashboard = () => {
     <div className="overflow-x-hidden">
       <div
         data-tour="home-overview"
-        className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10"
+        className="mx-auto flex w-full max-w-[92rem] flex-col gap-6 px-5 pb-28 pt-6 sm:px-8 md:gap-7 md:pb-14 xl:px-10 2xl:max-w-[104rem] 2xl:px-12"
       >
-        <section className="actsix-panel-soft p-4 sm:p-5">
+        <section className="rounded-[1.35rem] border border-border/45 bg-card p-5 shadow-[0_1px_0_rgba(207,198,181,0.3)] sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <p className="label-eyebrow text-brand-teal">Home</p>
@@ -605,10 +651,10 @@ const Dashboard = () => {
                 {greeting}, {firstName}
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-extrabold text-muted-foreground sm:text-sm">
-                <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
+                <span className="rounded-full border border-border/55 bg-white px-3 py-1">
                   {dateLabel}
                 </span>
-                <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1">
+                <span className="rounded-full border border-border/55 bg-white px-3 py-1">
                   {clockLabel}
                 </span>
                 {workspace?.name && (
@@ -619,36 +665,15 @@ const Dashboard = () => {
               </div>
             </div>
             <Button
-              className="actsix-btn-primary h-10 shrink-0 px-3 text-xs"
-              onClick={() => setCustomizeMode(true)}
+              variant={customizeMode ? "default" : "outline"}
+              className={customizeMode ? "actsix-btn-primary h-10 shrink-0 px-3 text-xs" : "actsix-btn-outline h-10 shrink-0 px-3 text-xs"}
+              onClick={() => setCustomizeMode((active) => !active)}
             >
               <Settings2 className="h-4 w-4" />
-              Customize Dashboard
+              {customizeMode ? "Finish Editing" : "Edit Layout"}
             </Button>
           </div>
         </section>
-
-        {customizeMode && (
-          <DashboardCustomizeBar
-            savedState={savedState}
-            onAddWidget={() => setLibraryOpen(true)}
-            onResetLayout={() => setResetConfirmOpen(true)}
-            onDone={() => setCustomizeMode(false)}
-          />
-        )}
-
-        <DashboardGrid
-          widgets={layout.widgets}
-          definitions={widgetDefinitions}
-          data={widgetData}
-          customizeMode={customizeMode}
-          onMoveWidget={moveWidget}
-          onReorderWidget={reorderWidget}
-          onResizeWidget={resizeWidget}
-          onRemoveWidget={removeWidget}
-          onConfigureWidget={setSettingsWidget}
-          onUpdateWidgetSettings={updateWidgetSettings}
-        />
 
         <Card className="actsix-panel min-w-0 overflow-hidden md:hidden">
           <SectionHeader
@@ -768,6 +793,56 @@ const Dashboard = () => {
             </div>
           </div>
         </Card>
+
+        {customizeMode ? (
+          <>
+            <DashboardCustomizeBar
+              savedState={savedState}
+              onAddWidget={() => setLibraryOpen(true)}
+              onResetLayout={() => setResetConfirmOpen(true)}
+              onDone={() => setCustomizeMode(false)}
+            />
+
+            <DashboardGrid
+              widgets={layout.widgets}
+              definitions={widgetDefinitions}
+              data={widgetData}
+              customizeMode={customizeMode}
+              onMoveWidget={moveWidget}
+              onReorderWidget={reorderWidget}
+              onResizeWidget={resizeWidget}
+              onRemoveWidget={removeWidget}
+              onConfigureWidget={setSettingsWidget}
+              onUpdateWidgetSettings={updateWidgetSettings}
+            />
+          </>
+        ) : (
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_minmax(23rem,0.88fr)]">
+            <div className="space-y-6">
+              <HomePanel eyebrow="Today" title="Next Actions">
+                {renderHomeWidget("todays-tasks", { itemLimit: 6 })}
+              </HomePanel>
+
+              <HomePanel eyebrow="Momentum" title="Active Projects">
+                {renderHomeWidget("my-projects", { itemLimit: 4 })}
+              </HomePanel>
+            </div>
+
+            <div className="space-y-6">
+              <HomePanel eyebrow="Upcoming" title="Next Service">
+                {renderHomeWidget("upcoming-services", { itemLimit: 3 })}
+              </HomePanel>
+
+              <HomePanel eyebrow="Follow-up" title="People to Check In On">
+                {renderHomeWidget("people-followups", { itemLimit: 4 })}
+              </HomePanel>
+
+              <HomePanel eyebrow="Start" title="Quick Actions">
+                {renderHomeWidget("quick-actions")}
+              </HomePanel>
+            </div>
+          </section>
+        )}
 
         <WidgetLibraryModal
           open={libraryOpen}

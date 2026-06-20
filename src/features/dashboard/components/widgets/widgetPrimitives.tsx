@@ -10,7 +10,9 @@ import {
 } from "@/features/dashboard/utils/dashboardLayoutUtils";
 
 export const WidgetEmptyState = ({ children }: { children: string }) => (
-  <div className="actsix-empty-state">{children}</div>
+  <div className="rounded-xl border border-dashed border-border/65 bg-white px-4 py-5 text-center text-sm font-medium text-muted-foreground">
+    {children}
+  </div>
 );
 
 export const DotSeparator = () => (
@@ -22,7 +24,7 @@ export const DotSeparator = () => (
 export const WidgetTaskRow = ({ task }: { task: DashboardTask }) => (
   <Link
     to="/tasks/next"
-    className="group flex min-h-[46px] items-center justify-between gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
+    className="group flex min-h-[50px] items-center justify-between gap-3 rounded-xl border border-border/65 bg-white px-4 py-3 transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
   >
     <div className="min-w-0 flex-1">
       <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
@@ -62,7 +64,7 @@ export const WidgetLinkRow = ({
 }) => (
   <Link
     to={to}
-    className="group flex min-h-[50px] items-center gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
+    className="group flex min-h-[52px] items-center gap-3 rounded-xl border border-border/65 bg-white px-4 py-3 transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
   >
     <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconClassName}`}>
       <Icon className="h-4 w-4" />

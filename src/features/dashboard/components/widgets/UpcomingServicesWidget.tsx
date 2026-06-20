@@ -14,7 +14,7 @@ export function UpcomingServicesWidget({ data }: DashboardWidgetRenderProps) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-brand-teal/15 bg-brand-teal/5 p-3">
+      <div className="rounded-xl border border-brand-teal/15 bg-white p-4">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
             <Music className="h-4 w-4" />
@@ -41,7 +41,7 @@ export function UpcomingServicesWidget({ data }: DashboardWidgetRenderProps) {
         {data.serviceOrderItems.slice(0, 3).map((item) => (
           <div
             key={item.id}
-            className="flex min-h-[42px] items-center justify-between gap-2 rounded-xl border border-border/80 bg-background/70 px-3 py-2"
+            className="flex min-h-[42px] items-center justify-between gap-2 rounded-xl border border-border/65 bg-white px-3 py-2"
           >
             <span className="min-w-0 truncate text-sm font-bold">{item.title}</span>
             <span className="shrink-0 rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-extrabold capitalize text-brand-teal">
