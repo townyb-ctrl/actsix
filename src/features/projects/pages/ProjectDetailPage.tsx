@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  CalendarDays,
   ChevronDown,
   CheckCircle2,
   Clock3,
@@ -45,12 +46,14 @@ import {
   updateProjectNameOnTasks,
   updateProjectNotes,
   updateProjectTaskCompletion,
+  upsertProjectCalendarEvent,
   upsertProjectSection,
 } from "@/features/projects/api/projectsApi";
 
 type Person = {
   id: string;
   user_id: string;
+  auth_user_id?: string | null;
   display_name: string;
   avatar_url: string | null;
   email: string | null;
@@ -117,6 +120,32 @@ const isMissingProjectSectionsSchema = (error?: { message?: string; code?: strin
   );
 };
 
+const GENERAL_SECTION_ID = "__general";
+
+const toLocalDateTimeInput = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.slice(0, 16);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+};
+
+const toIsoDateTime = (value?: string | null) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+const formatProjectDate = (value?: string | null) => {
+  if (!value) return "";
+
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 const ProjectDetailPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
@@ -135,7 +164,8 @@ const ProjectDetailPage = () => {
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [openSectionIds, setOpenSectionIds] = useState<Record<string, boolean>>({});
   const [openCompletedSectionIds, setOpenCompletedSectionIds] = useState<Record<string, boolean>>({});
-  const [isUnsectionedOpen, setIsUnsectionedOpen] = useState(false);
+  const [isUnsectionedOpen, setIsUnsectionedOpen] = useState(true);
+  const [isGeneralCompletedOpen, setIsGeneralCompletedOpen] = useState(false);
   const [sectionTaskDrafts, setSectionTaskDrafts] = useState<Record<string, { title: string; due: string; assigned_person_id: string }>>({});
   const [notesDraft, setNotesDraft] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
@@ -313,11 +343,28 @@ const ProjectDetailPage = () => {
     return { openTasks, completedTasks, dueSoon, progress };
   }, [tasks, project]);
 
+  const projectOwner = useMemo(() => {
+    if (!project) return null;
+
+    return (
+      people.find((person) => person.id === project.owner_person_id) ||
+      people.find((person) => person.auth_user_id === project.user_id) ||
+      null
+    );
+  }, [people, project]);
+
   const assignableProjectPeople = useMemo(() => {
-    return collaborators
+    const collaboratorPeople = collaborators
       .map((collaborator) => collaborator.people)
       .filter(Boolean) as PeopleSearchPerson[];
-  }, [collaborators]);
+
+    if (!projectOwner) return collaboratorPeople;
+
+    return [
+      projectOwner,
+      ...collaboratorPeople.filter((person) => person.id !== projectOwner.id),
+    ];
+  }, [collaborators, projectOwner]);
 
   const collaboratorPeopleById = useMemo(() => {
     return new Map(
@@ -479,10 +526,11 @@ const ProjectDetailPage = () => {
     load();
   };
 
-  const addProjectAction = async (sectionId: string, event?: React.FormEvent) => {
+  const addProjectAction = async (sectionId: string | null, event?: React.FormEvent) => {
     event?.preventDefault();
 
-    const draft = sectionTaskDrafts[sectionId] || {
+    const draftKey = sectionId || GENERAL_SECTION_ID;
+    const draft = sectionTaskDrafts[draftKey] || {
       title: "",
       due: "",
       assigned_person_id: "",
@@ -496,7 +544,6 @@ const ProjectDetailPage = () => {
       user_id: user.id,
       project: project.name,
       project_id: project.id,
-      section_id: sectionId,
       context: "General",
       priority: "Medium",
       energy: "Medium",
@@ -508,6 +555,7 @@ const ProjectDetailPage = () => {
       tags: [],
       assigned_person_id: draft.assigned_person_id || null,
       due: draft.due || null,
+      ...(projectSectionsAvailable && sectionId ? { section_id: sectionId } : {}),
     });
 
     if (error) {
@@ -524,7 +572,7 @@ const ProjectDetailPage = () => {
     );
     setSectionTaskDrafts((current) => ({
       ...current,
-      [sectionId]: { title: "", due: "", assigned_person_id: "" },
+      [draftKey]: { title: "", due: "", assigned_person_id: "" },
     }));
     toast.success("Next action added");
     load();
@@ -743,15 +791,61 @@ const ProjectDetailPage = () => {
     setSavingProject(true);
 
     try {
+      const projectPayload = {
+        ...editingProject,
+        name: nextName,
+        notes: editingProject.notes || "",
+        due_date: editingProject.due_date || null,
+        is_event: Boolean(editingProject.is_event),
+        event_start_at: toIsoDateTime(editingProject.event_start_at),
+        event_end_at: toIsoDateTime(editingProject.event_end_at),
+        calendar_event_id: editingProject.calendar_event_id || null,
+      };
+
+      if (
+        editingProject.add_to_calendar &&
+        !projectPayload.due_date &&
+        !projectPayload.event_start_at
+      ) {
+        toast.error("Add a complete-by date or event start before adding it to the calendar.");
+        return;
+      }
+
       const { error } = await updateProject(editingProject.id, {
           name: nextName,
           area: editingProject.area || "General",
           status: editingProject.status || "In Progress",
           notes: editingProject.notes || "",
+          owner_person_id: editingProject.owner_person_id || projectOwner?.id || currentPerson?.id || null,
+          due_date: editingProject.due_date || null,
+          is_event: Boolean(editingProject.is_event),
+          event_start_at: toIsoDateTime(editingProject.event_start_at),
+          event_end_at: toIsoDateTime(editingProject.event_end_at),
+          calendar_event_id: editingProject.calendar_event_id || null,
           updated_at: new Date().toISOString(),
         });
 
       if (error) throw error;
+
+      if (editingProject.add_to_calendar && currentPerson?.workspace_id) {
+        const { data: calendarEvent, error: calendarError } =
+          await upsertProjectCalendarEvent({
+            project: projectPayload,
+            userId: user.id,
+            workspaceId: currentPerson.workspace_id,
+          });
+
+        if (calendarError) throw calendarError;
+
+        if (calendarEvent?.id && calendarEvent.id !== projectPayload.calendar_event_id) {
+          const { error: calendarProjectError } = await updateProject(editingProject.id, {
+            calendar_event_id: calendarEvent.id,
+            updated_at: new Date().toISOString(),
+          });
+
+          if (calendarProjectError) throw calendarProjectError;
+        }
+      }
 
       if (previousName !== nextName) {
         const { error: taskError } = await updateProjectNameOnTasks({
@@ -912,7 +1006,14 @@ const ProjectDetailPage = () => {
                   title="Edit project"
                   aria-label="Edit project"
                   className="h-7 w-7 rounded-full"
-                  onClick={() => setEditingProject({ ...project })}
+                  onClick={() =>
+                    setEditingProject({
+                      ...project,
+                      event_start_at: toLocalDateTimeInput(project.event_start_at),
+                      event_end_at: toLocalDateTimeInput(project.event_end_at),
+                      add_to_calendar: Boolean(project.calendar_event_id),
+                    })
+                  }
                 >
                   <Edit3 className="h-3.5 w-3.5" />
                 </Button>
@@ -933,6 +1034,24 @@ const ProjectDetailPage = () => {
             <p className="mt-2 line-clamp-1 text-xs leading-5 text-muted-foreground">
               {project.notes || "Add notes to describe this project, its goal, and what success looks like."}
             </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-background/55 px-2.5">
+                <UserRound className="h-3.5 w-3.5 text-brand-teal" />
+                {projectOwner?.display_name || "Creator"}
+              </span>
+              {project.is_event && project.event_start_at ? (
+                <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-background/55 px-2.5">
+                  <CalendarDays className="h-3.5 w-3.5 text-brand-amber" />
+                  Event {formatProjectDate(project.event_start_at)}
+                </span>
+              ) : project.due_date ? (
+                <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-background/55 px-2.5">
+                  <Clock3 className="h-3.5 w-3.5 text-brand-amber" />
+                  Complete by {formatProjectDate(project.due_date)}
+                </span>
+              ) : null}
+            </div>
 
             <div className="mt-3 flex flex-col gap-2 lg:flex-row lg:items-center">
               <div className="min-w-0 flex-1">
@@ -1212,7 +1331,16 @@ const ProjectDetailPage = () => {
               </div>
             )}
 
-            {unsectionedTasks.length > 0 && (
+            {(() => {
+              const generalDraft = sectionTaskDrafts[GENERAL_SECTION_ID] || {
+                title: "",
+                due: "",
+                assigned_person_id: "",
+              };
+              const generalOpenTasks = unsectionedTasks.filter((task) => !task.complete);
+              const generalCompletedTasks = unsectionedTasks.filter((task) => task.complete);
+
+              return (
               <div className="mt-4 rounded-xl border border-dashed border-border bg-background/65 p-3">
                 <button
                   type="button"
@@ -1236,7 +1364,56 @@ const ProjectDetailPage = () => {
 
                 {isUnsectionedOpen && (
                   <div className="mt-2 space-y-1.5">
-                    {unsectionedTasks.map((task) => (
+                    <form
+                      onSubmit={(event) => addProjectAction(null, event)}
+                      className="rounded-xl border border-border/70 bg-background p-3"
+                    >
+                      <Input
+                        value={generalDraft.title}
+                        onChange={(event) =>
+                          updateSectionTaskDraft(GENERAL_SECTION_ID, { title: event.target.value })
+                        }
+                        placeholder="Add task to General..."
+                        className="h-11 border-border/70 bg-background"
+                      />
+
+                      <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem_auto]">
+                        <PeopleSearchSelect
+                          people={assignableProjectPeople}
+                          selectedPersonId={generalDraft.assigned_person_id}
+                          onSelect={(personId) =>
+                            updateSectionTaskDraft(GENERAL_SECTION_ID, {
+                              assigned_person_id: personId,
+                            })
+                          }
+                          placeholder="Assign..."
+                          emptyText="No project people found."
+                          showAllOnFocus
+                        />
+
+                        <Input
+                          type="date"
+                          value={generalDraft.due}
+                          onChange={(event) =>
+                            updateSectionTaskDraft(GENERAL_SECTION_ID, { due: event.target.value })
+                          }
+                          className="h-11 border-border/70 bg-background"
+                        />
+
+                        <Button type="submit" className="actsix-btn-primary h-11 rounded-lg px-4">
+                          Add
+                        </Button>
+                      </div>
+                    </form>
+
+                    {unsectionedTasks.length === 0 && (
+                      <div className="actsix-empty-state min-h-[6.5rem] gap-2 p-3 text-left text-sm">
+                        <ListChecks className="h-4 w-4 text-brand-teal" />
+                        No General tasks yet.
+                      </div>
+                    )}
+
+                    {generalOpenTasks.map((task) => (
                       <CompactTaskRow
                         key={task.id}
                         task={task}
@@ -1246,10 +1423,46 @@ const ProjectDetailPage = () => {
                         onDelete={(task) => removeTask(task.id)}
                       />
                     ))}
+
+                    {generalCompletedTasks.length > 0 && (
+                      <div className="rounded-lg border border-border/70 bg-background p-2">
+                        <button
+                          type="button"
+                          className="flex min-h-9 w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-xs font-extrabold text-muted-foreground transition hover:bg-brand-teal/5"
+                          aria-expanded={isGeneralCompletedOpen}
+                          onClick={() => setIsGeneralCompletedOpen((open) => !open)}
+                        >
+                          <span className="inline-flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-brand-sage" />
+                            Complete
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            {generalCompletedTasks.length}
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isGeneralCompletedOpen ? "rotate-180" : ""}`} />
+                          </span>
+                        </button>
+
+                        {isGeneralCompletedOpen && (
+                          <div className="mt-1 space-y-1.5">
+                            {generalCompletedTasks.map((task) => (
+                              <CompactTaskRow
+                                key={task.id}
+                                task={task}
+                                showAssignee
+                                onToggle={toggleTask}
+                                onEdit={(task) => setEditingTask({ ...task })}
+                                onDelete={(task) => removeTask(task.id)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+              );
+            })()}
           </div>
 
           <div className="border-b border-border/70 p-5">

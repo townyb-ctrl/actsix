@@ -730,12 +730,18 @@ export type Database = {
       projects: {
         Row: {
           area: string
+          calendar_event_id: string | null
           created_at: string
+          due_date: string | null
+          event_end_at: string | null
+          event_start_at: string | null
           id: string
+          is_event: boolean
           name: string
           next_action: string
           notes: string
           open_tasks: number
+          owner_person_id: string | null
           position: number
           progress: number
           status: string
@@ -744,12 +750,18 @@ export type Database = {
         }
         Insert: {
           area?: string
+          calendar_event_id?: string | null
           created_at?: string
+          due_date?: string | null
+          event_end_at?: string | null
+          event_start_at?: string | null
           id?: string
+          is_event?: boolean
           name: string
           next_action?: string
           notes?: string
           open_tasks?: number
+          owner_person_id?: string | null
           position?: number
           progress?: number
           status?: string
@@ -758,12 +770,18 @@ export type Database = {
         }
         Update: {
           area?: string
+          calendar_event_id?: string | null
           created_at?: string
+          due_date?: string | null
+          event_end_at?: string | null
+          event_start_at?: string | null
           id?: string
+          is_event?: boolean
           name?: string
           next_action?: string
           notes?: string
           open_tasks?: number
+          owner_person_id?: string | null
           position?: number
           progress?: number
           status?: string

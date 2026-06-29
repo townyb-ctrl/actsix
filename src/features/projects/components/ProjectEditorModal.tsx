@@ -1,4 +1,4 @@
-import { FolderKanban, Save, Trash2, X } from "lucide-react";
+import { CalendarDays, FolderKanban, Save, Trash2, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,11 @@ const ProjectEditorModal = ({
   const nameId = "project-editor-name";
   const areaId = "project-editor-area";
   const statusId = "project-editor-status";
+  const dueDateId = "project-editor-due-date";
+  const isEventId = "project-editor-is-event";
+  const eventStartId = "project-editor-event-start";
+  const eventEndId = "project-editor-event-end";
+  const calendarReminderId = "project-editor-calendar-reminder";
   const notesId = "project-editor-notes";
 
   return (
@@ -124,6 +129,89 @@ const ProjectEditorModal = ({
                   <option>On Hold</option>
                   <option>Completed</option>
                 </select>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-brand-teal" />
+              <h3 className="font-extrabold">Schedule</h3>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-border/70 bg-background/45 p-3">
+                <label htmlFor={dueDateId} className="label-eyebrow">Complete by</label>
+                <Input
+                  id={dueDateId}
+                  type="date"
+                  value={project.due_date ?? ""}
+                  onChange={(event) =>
+                    onChange({ ...project, due_date: event.target.value || null })
+                  }
+                  className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                />
+              </div>
+
+              <div className="rounded-lg border border-border/70 bg-background/45 p-3">
+                <label htmlFor={calendarReminderId} className="label-eyebrow">Calendar</label>
+                <label className="mt-3 flex min-h-11 items-center gap-3 rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold">
+                  <input
+                    id={calendarReminderId}
+                    type="checkbox"
+                    checked={Boolean(project.add_to_calendar || project.calendar_event_id)}
+                    onChange={(event) =>
+                      onChange({ ...project, add_to_calendar: event.target.checked })
+                    }
+                    className="h-4 w-4 accent-brand-teal"
+                  />
+                  Add reminder to calendar
+                </label>
+              </div>
+
+              <div className="rounded-lg border border-border/70 bg-background/45 p-3 md:col-span-2">
+                <label className="flex items-center gap-3 text-sm font-semibold">
+                  <input
+                    id={isEventId}
+                    type="checkbox"
+                    checked={Boolean(project.is_event)}
+                    onChange={(event) =>
+                      onChange({ ...project, is_event: event.target.checked })
+                    }
+                    className="h-4 w-4 accent-brand-teal"
+                  />
+                  This project is an event
+                </label>
+
+                {project.is_event && (
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label htmlFor={eventStartId} className="label-eyebrow">Event starts</label>
+                      <Input
+                        id={eventStartId}
+                        type="datetime-local"
+                        value={project.event_start_at ?? ""}
+                        onChange={(event) =>
+                          onChange({ ...project, event_start_at: event.target.value || null })
+                        }
+                        className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor={eventEndId} className="label-eyebrow">Event ends</label>
+                      <Input
+                        id={eventEndId}
+                        type="datetime-local"
+                        value={project.event_end_at ?? ""}
+                        onChange={(event) =>
+                          onChange({ ...project, event_end_at: event.target.value || null })
+                        }
+                        className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>

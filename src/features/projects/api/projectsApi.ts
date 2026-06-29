@@ -17,14 +17,14 @@ export const getProjectTasks = (projectId?: string) => {
 export const getWorkspacePeople = (workspaceId?: string | null) =>
   (supabase as any)
     .from("people")
-    .select("id, user_id, display_name, avatar_url, email, phone_number")
+    .select("id, user_id, auth_user_id, display_name, avatar_url, email, phone_number")
     .eq("workspace_id", workspaceId ?? EMPTY_WORKSPACE_ID)
     .order("display_name", { ascending: true });
 
 export const getWorkspacePersonOptions = (workspaceId?: string | null) =>
   (supabase as any)
     .from("people")
-    .select("id, display_name, avatar_url, email, phone_number")
+    .select("id, user_id, auth_user_id, display_name, avatar_url, email, phone_number")
     .eq("workspace_id", workspaceId ?? EMPTY_WORKSPACE_ID)
     .order("display_name", { ascending: true });
 
@@ -192,3 +192,58 @@ export const updateProjectNameOnTasks = ({
       updated_at: new Date().toISOString(),
     })
     .eq("project_id", projectId);
+
+export const upsertProjectCalendarEvent = async ({
+  project,
+  userId,
+  workspaceId,
+}: {
+  project: Record<string, any>;
+  userId: string;
+  workspaceId: string;
+}) => {
+  const startsAt =
+    project.is_event && project.event_start_at
+      ? project.event_start_at
+      : project.due_date
+        ? `${project.due_date}T09:00:00`
+        : null;
+
+  if (!startsAt) {
+    return { data: null, error: null };
+  }
+
+  const startDate = new Date(startsAt);
+  const endDate = project.is_event && project.event_end_at
+    ? new Date(project.event_end_at)
+    : new Date(startDate.getTime() + 60 * 60 * 1000);
+
+  const payload = {
+    workspace_id: workspaceId,
+    user_id: userId,
+    title: project.is_event ? project.name : `Project due: ${project.name}`,
+    calendar_name: "ACTSIX",
+    source: "actsix",
+    starts_at: startDate.toISOString(),
+    ends_at: endDate.toISOString(),
+    all_day: !project.is_event,
+    location: "",
+    description: project.notes || "",
+    status: project.status === "Completed" ? "Tentative" : "Confirmed",
+    updated_at: new Date().toISOString(),
+  };
+
+  return project.calendar_event_id
+    ? (supabase as any)
+        .from("calendar_events")
+        .update(payload)
+        .eq("id", project.calendar_event_id)
+        .eq("workspace_id", workspaceId)
+        .select("id")
+        .single()
+    : (supabase as any)
+        .from("calendar_events")
+        .insert(payload)
+        .select("id")
+        .single();
+};

@@ -1,37 +1,50 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Apple,
+  Bell,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock3,
-  ExternalLink,
   MapPin,
   Plus,
-  RefreshCw,
   Search,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import TaskEditorModal from "@/components/TaskEditorModal";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { supabase } from "@/integrations/supabase/client";
+import { syncProjectStatsForIds } from "@/lib/syncProjectStats";
+import { personalNextActionFilter } from "@/lib/taskVisibility";
 import { cn } from "@/lib/utils";
 
-type CalendarSource = "actsix" | "google" | "outlook" | "apple";
+type CalendarSource = "actsix" | "task" | "google" | "outlook" | "apple";
 type CalendarStatus = "Tentative" | "Confirmed" | "Cancelled";
 type SyncProvider = "google" | "outlook" | "apple";
 type SyncStatus = "Not Connected" | "Connected" | "Needs Attention";
 
 type CalendarEvent = {
   id: string;
+  entityId: string;
+  entityType: "event" | "task";
   title: string;
   calendarName: string;
   source: CalendarSource;
@@ -41,6 +54,7 @@ type CalendarEvent = {
   location: string;
   description: string;
   status: CalendarStatus;
+  task?: any;
 };
 
 type SyncConnection = {
@@ -72,6 +86,7 @@ type AppleSyncForm = {
 
 const sourceStyles: Record<CalendarSource, string> = {
   actsix: "border-brand-teal/25 bg-brand-teal/10 text-brand-teal",
+  task: "border-brand-amber/25 bg-brand-amber/10 text-brand-amber",
   google: "border-brand-sage/25 bg-brand-sage/10 text-brand-sage",
   outlook: "border-primary/20 bg-primary/10 text-primary",
   apple: "border-border/70 bg-muted text-muted-foreground",
@@ -137,9 +152,29 @@ const formatDay = (value: string) =>
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
 const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
+const getTaskCalendarRange = (task: any) => {
+  const due = task.due || "";
+  const hasTime = Boolean(task.start_time);
+  const startsAt = due.includes("T")
+    ? due
+    : `${due}T${hasTime ? task.start_time : "00:00:00"}`;
+  const startDate = new Date(startsAt);
+  const endDate = hasTime
+    ? new Date(startDate.getTime() + Math.max(Number(task.minutes) || 15, 15) * 60 * 1000)
+    : new Date(`${due}T23:59:59`);
+
+  return {
+    startsAt,
+    endsAt: endDate.toISOString(),
+    allDay: !hasTime,
+  };
+};
+
 export default function CalendarModule() {
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
   const { workspace } = useCurrentWorkspace();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [connections, setConnections] = useState<SyncConnection[]>([]);
   const [visibleMonth, setVisibleMonth] = useState(startOfMonth(new Date()));
@@ -152,10 +187,12 @@ export default function CalendarModule() {
   const [appleSyncForm, setAppleSyncForm] = useState<AppleSyncForm>(emptyAppleSyncForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingTask, setEditingTask] = useState<any | null>(null);
+  const [savingTask, setSavingTask] = useState(false);
   const [syncingApple, setSyncingApple] = useState(false);
 
   const loadCalendar = async () => {
-    if (!workspace?.id) {
+    if (!workspace?.id || !user?.id) {
       setEvents([]);
       setConnections([]);
       setLoading(false);
@@ -163,7 +200,7 @@ export default function CalendarModule() {
     }
 
     setLoading(true);
-    const [eventResult, connectionResult] = await Promise.all([
+    const [eventResult, connectionResult, taskResult] = await Promise.all([
       (supabase as any)
         .from("calendar_events")
         .select("*")
@@ -174,6 +211,13 @@ export default function CalendarModule() {
         .select("*")
         .eq("workspace_id", workspace.id)
         .order("provider", { ascending: true }),
+      (supabase as any)
+        .from("tasks")
+        .select("*, project_sections(name), recurring_task_templates(frequency, interval)")
+        .or(personalNextActionFilter(currentPerson?.id))
+        .eq("complete", false)
+        .not("due", "is", null)
+        .order("due", { ascending: true }),
     ]);
     setLoading(false);
 
@@ -184,21 +228,44 @@ export default function CalendarModule() {
 
     if (eventResult.error) toast.error(eventResult.error.message);
     if (connectionResult.error) toast.error(connectionResult.error.message);
+    if (taskResult.error) toast.error(taskResult.error.message);
 
-    setEvents(
-      (eventResult.data || []).map((event: any) => ({
-        id: event.id,
-        title: event.title,
-        calendarName: event.calendar_name,
-        source: event.source,
-        startsAt: event.starts_at,
-        endsAt: event.ends_at,
-        allDay: event.all_day,
-        location: event.location,
-        description: event.description,
-        status: event.status,
-      }))
-    );
+    const calendarEvents = (eventResult.data || []).map((event: any) => ({
+      id: `event-${event.id}`,
+      entityId: event.id,
+      entityType: "event" as const,
+      title: event.title,
+      calendarName: event.calendar_name,
+      source: event.source,
+      startsAt: event.starts_at,
+      endsAt: event.ends_at,
+      allDay: event.all_day,
+      location: event.location,
+      description: event.description,
+      status: event.status,
+    }));
+
+    const taskEvents = (taskResult.data || []).map((task: any) => {
+      const range = getTaskCalendarRange(task);
+
+      return {
+        id: `task-${task.id}`,
+        entityId: task.id,
+        entityType: "task" as const,
+        title: task.title,
+        calendarName: "Tasks",
+        source: "task" as const,
+        startsAt: range.startsAt,
+        endsAt: range.endsAt,
+        allDay: range.allDay,
+        location: task.location || "",
+        description: task.notes || "",
+        status: "Confirmed" as CalendarStatus,
+        task,
+      };
+    });
+
+    setEvents([...calendarEvents, ...taskEvents]);
 
     setConnections(
       (connectionResult.data || []).map((connection: any) => ({
@@ -214,7 +281,7 @@ export default function CalendarModule() {
 
   useEffect(() => {
     loadCalendar();
-  }, [workspace?.id]);
+  }, [workspace?.id, user?.id, currentPerson?.id]);
 
   const monthStart = startOfMonth(visibleMonth);
   const monthEnd = endOfMonth(visibleMonth);
@@ -255,6 +322,7 @@ export default function CalendarModule() {
   const sourceOptions: Array<{ value: "all" | CalendarSource; label: string }> = [
     { value: "all", label: "All" },
     { value: "actsix", label: "ACTSIX" },
+    { value: "task", label: "Tasks" },
     { value: "google", label: "Google" },
     { value: "outlook", label: "Outlook" },
     { value: "apple", label: "Apple" },
@@ -267,7 +335,12 @@ export default function CalendarModule() {
   };
 
   const editEvent = (event: CalendarEvent) => {
-    setEditingId(event.id);
+    if (event.entityType === "task") {
+      setEditingTask({ ...event.task });
+      return;
+    }
+
+    setEditingId(event.entityId);
     setForm({
       title: event.title,
       startsAt: toInputDateTime(event.startsAt),
@@ -344,6 +417,47 @@ export default function CalendarModule() {
 
     await loadCalendar();
     toast.success("Calendar event removed");
+  };
+
+  const saveTask = async () => {
+    if (!editingTask) return;
+
+    setSavingTask(true);
+
+    const previousProjectId = editingTask.project_id || null;
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: editingTask.title || "",
+        notes: editingTask.notes || "",
+        project: editingTask.project || "",
+        project_id: editingTask.project_id || null,
+        context: editingTask.context || "General",
+        priority: editingTask.priority || "Medium",
+        energy: editingTask.energy || "Medium",
+        minutes: Number(editingTask.minutes) || 15,
+        due: editingTask.due || null,
+        tags: Array.isArray(editingTask.tags) ? editingTask.tags : [],
+        assigned_person_id: editingTask.assigned_person_id || null,
+        complete: Boolean(editingTask.complete),
+        completed_at: editingTask.complete
+          ? editingTask.completed_at || new Date().toISOString()
+          : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", editingTask.id);
+
+    setSavingTask(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    await syncProjectStatsForIds([previousProjectId, editingTask.project_id]);
+    setEditingTask(null);
+    await loadCalendar();
+    toast.success("Task updated");
   };
 
   const connectProvider = async (provider: SyncProvider) => {
@@ -439,10 +553,31 @@ export default function CalendarModule() {
                 className="actsix-search-input"
               />
             </div>
-            <Button type="button" className="actsix-btn-primary h-8 rounded-full px-3 text-xs" onClick={openNewEvent}>
-              <Plus className="h-3.5 w-3.5" />
-              New Event
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" className="actsix-btn-primary h-8 rounded-full px-3 text-xs">
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  className="gap-2"
+                  onSelect={openNewEvent}
+                >
+                  <CalendarDays className="h-4 w-4 text-brand-teal" />
+                  Event
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onSelect={() => navigate("/reminders")}
+                >
+                  <Bell className="h-4 w-4 text-brand-amber" />
+                  Reminder
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         }
       />
@@ -472,21 +607,14 @@ export default function CalendarModule() {
           })}
         </div>
 
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric icon={CalendarDays} label="This Month" value={visibleEvents.length} />
-          <Metric icon={Clock3} label="Upcoming" value={upcomingEvents.length} />
-          <Metric icon={RefreshCw} label="Connected Syncs" value={connectedCount} />
-          <Metric icon={ExternalLink} label="Providers" value="Google, Outlook, Apple" />
-        </section>
-
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_17.5rem]">
           <Card className="actsix-panel overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-3 py-2.5">
               <div>
                 <p className="label-eyebrow">
                   {visibleMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
                 </p>
-                <h2 className="mt-1 text-lg font-extrabold">Month View</h2>
+                <h2 className="sr-only">Month View</h2>
               </div>
               <div className="flex items-center gap-1">
                 <Button
@@ -547,7 +675,7 @@ export default function CalendarModule() {
                           onClick={() => editEvent(event)}
                           className={cn("block w-full truncate rounded-md border px-1.5 py-1 text-left text-[11px] font-bold", sourceStyles[event.source])}
                         >
-                          {formatTime(event.startsAt, event.allDay)} {event.title}
+                          {event.allDay ? event.title : `${formatTime(event.startsAt, event.allDay)} ${event.title}`}
                         </button>
                       ))}
                     </div>
@@ -557,48 +685,48 @@ export default function CalendarModule() {
             </div>
           </Card>
 
-          <aside className="space-y-4">
-            <Card className="actsix-panel p-3">
+          <aside className="space-y-2.5">
+            <Card className="actsix-panel bg-background/55 p-2 shadow-none">
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="label-eyebrow">Agenda</p>
-                  <h2 className="mt-1 text-lg font-extrabold">Upcoming</h2>
+                  <h2 className="mt-0.5 text-sm font-extrabold">Upcoming</h2>
                 </div>
                 {loading && <span className="text-xs font-bold text-muted-foreground">Loading...</span>}
               </div>
 
-              <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+              <div className="mt-1.5 max-h-[20rem] space-y-1.5 overflow-y-auto pr-1">
                 {!loading && upcomingEvents.length === 0 && (
-                  <div className="actsix-empty-state min-h-20 text-left text-sm">
+                  <div className="actsix-empty-state min-h-16 text-left text-xs">
                     No upcoming calendar events.
                   </div>
                 )}
                 {upcomingEvents.map((event) => (
-                  <div key={event.id} className="rounded-xl border border-border/60 bg-background/60 p-2.5">
-                    <div className="flex items-start justify-between gap-2">
+                  <div key={event.id} className="rounded-md border border-border/50 bg-background/45 px-2 py-1.5">
+                    <div className="flex items-start justify-between gap-1.5">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-extrabold">{event.title}</p>
-                        <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                        <p className="truncate text-xs font-extrabold">{event.title}</p>
+                        <p className="mt-0.5 truncate text-[11px] font-semibold text-muted-foreground">
                           {formatDay(event.startsAt)} · {formatTime(event.startsAt, event.allDay)}
                         </p>
                       </div>
-                      <Badge variant="outline" className={cn("rounded-full text-[10px] font-bold", sourceStyles[event.source])}>
-                        {event.source}
+                      <Badge variant="outline" className={cn("shrink-0 rounded-full px-1.5 py-0 text-[9px] font-bold", sourceStyles[event.source])}>
+                        {event.source === "task" ? "task" : event.source}
                       </Badge>
                     </div>
                     {event.location && (
-                      <p className="mt-2 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <p className="mt-1 flex items-center gap-1 truncate text-[11px] font-medium text-muted-foreground">
                         <MapPin className="h-3 w-3" />
                         {event.location}
                       </p>
                     )}
-                    <div className="mt-2 flex justify-end gap-1">
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => editEvent(event)}>
-                        <CalendarDays className="h-3.5 w-3.5" />
+                    <div className="mt-1 flex justify-end gap-0.5">
+                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editEvent(event)}>
+                        <CalendarDays className="h-3 w-3" />
                       </Button>
-                      {event.source === "actsix" && (
-                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={() => deleteEvent(event.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
+                      {event.entityType === "event" && event.source === "actsix" && (
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-full text-muted-foreground hover:text-destructive" onClick={() => deleteEvent(event.entityId)}>
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
@@ -607,40 +735,45 @@ export default function CalendarModule() {
               </div>
             </Card>
 
-            <Card className="actsix-panel p-3">
-              <p className="label-eyebrow">Calendar Sync</p>
-              <div className="mt-3 space-y-2">
+            <Card className="actsix-panel bg-background/55 p-2 shadow-none">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="label-eyebrow">Sync</p>
+                  <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
+                    {connectedCount} connected
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-1.5 divide-y divide-border/50 overflow-hidden rounded-md border border-border/50 bg-background/35">
                 {(["google", "outlook", "apple"] as SyncProvider[]).map((provider) => {
                   const connection = connections.find((item) => item.provider === provider);
                   const Icon = providerIcons[provider];
                   const status = connection?.status || "Not Connected";
 
                   return (
-                    <div key={provider} className="rounded-xl border border-border/60 bg-background/60 p-3">
-                      <div className="flex items-center justify-between gap-3">
+                    <div key={provider} className="px-2 py-1.5">
+                      <div className="flex items-center gap-2">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-                            <Icon className="h-4 w-4" />
+                          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-teal/10 text-brand-teal">
+                            <Icon className="h-3 w-3" />
                           </span>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-extrabold">{syncLabels[provider]}</p>
-                            <p className="truncate text-xs font-semibold text-muted-foreground">
+                            <p className="truncate text-[11px] font-extrabold">{syncLabels[provider]}</p>
+                            <p className="truncate text-[10px] font-semibold text-muted-foreground">
                               {connection?.accountLabel || "Not configured"}
                             </p>
                           </div>
                         </div>
-                        <Badge variant="outline" className={cn("rounded-full text-[10px] font-bold", status === "Connected" ? "border-brand-sage/25 bg-brand-sage/10 text-brand-sage" : status === "Needs Attention" ? "border-brand-amber/25 bg-brand-amber/10 text-brand-amber" : "border-border/70 bg-muted text-muted-foreground")}>
-                          {status}
-                        </Badge>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-medium text-muted-foreground">
-                          {provider === "apple" ? "Import through CalDAV with an app-specific password." : "OAuth setup required for live sync."}
-                        </p>
-                        <Button type="button" variant="outline" className="h-7 rounded-full px-2 text-xs" onClick={() => connectProvider(provider)}>
+                        <Button type="button" variant="ghost" className="ml-auto h-6 shrink-0 rounded-full px-2 text-[11px] text-muted-foreground hover:text-brand-teal" onClick={() => connectProvider(provider)}>
                           {provider === "apple" && status === "Connected" ? "Sync" : "Connect"}
                         </Button>
                       </div>
+                      {status !== "Not Connected" && (
+                        <Badge variant="outline" className={cn("mt-1 rounded-full px-1.5 py-0 text-[9px] font-bold", status === "Connected" ? "border-brand-sage/25 bg-brand-sage/10 text-brand-sage" : "border-brand-amber/25 bg-brand-amber/10 text-brand-amber")}>
+                          {status}
+                        </Badge>
+                      )}
                     </div>
                   );
                 })}
@@ -774,20 +907,17 @@ export default function CalendarModule() {
           </Button>
         </div>
       </ResponsiveModal>
-    </div>
-  );
-}
 
-function Metric({ icon: Icon, label, value }: { icon: typeof CalendarDays; label: string; value: string | number }) {
-  return (
-    <Card className="actsix-panel-soft flex items-center gap-3 p-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-        <Icon className="h-4 w-4" />
-      </span>
-      <div className="min-w-0">
-        <p className="label-eyebrow truncate">{label}</p>
-        <p className="mt-0.5 truncate text-lg font-extrabold">{value}</p>
-      </div>
-    </Card>
+      <TaskEditorModal
+        task={editingTask}
+        saving={savingTask}
+        eyebrow="Calendar Task"
+        description="Edit this dated task from the shared ACTSIX task editor."
+        onChange={setEditingTask}
+        onClose={() => setEditingTask(null)}
+        onSave={saveTask}
+        onRefreshOptions={loadCalendar}
+      />
+    </div>
   );
 }

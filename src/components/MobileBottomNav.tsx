@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   BookOpen,
+  Bell,
   Calendar,
   CheckSquare,
   ChevronRight,
@@ -80,6 +81,7 @@ const detectModule = (pathname: string): MobileModuleKey => {
   if (pathname.startsWith("/service-planner")) return "servicePlanner";
   if (pathname.startsWith("/meetings")) return "meetings";
   if (pathname.startsWith("/groups")) return "groups";
+  if (pathname.startsWith("/reminders")) return "calendarModule";
   if (pathname.startsWith("/calendar")) return "calendarModule";
   if (pathname.startsWith("/sermon-hub")) return "sermonHub";
   if (pathname.startsWith("/people")) return "people";
@@ -343,6 +345,12 @@ const moduleConfigs: Record<MobileModuleKey, MobileModuleConfig> = {
         label: "Calendar",
         path: "/calendar",
         description: "Month view, agenda, and calendar sync.",
+      },
+      {
+        icon: Bell,
+        label: "Reminders",
+        path: "/reminders",
+        description: "Personal date-based things to remember.",
       },
       {
         icon: ClipboardList,

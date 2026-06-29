@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Bell,
   CalendarClock,
   CalendarDays,
   ChevronDown,
@@ -161,8 +162,11 @@ const navSections: NavSection[] = [
     url: "/calendar",
     icon: CalendarDays,
     moduleKey: "calendar",
-    matchPrefixes: ["/calendar"],
-    items: [],
+    matchPrefixes: ["/calendar", "/reminders"],
+    items: [
+      { title: "Calendar", url: "/calendar", icon: CalendarDays },
+      { title: "Reminders", url: "/reminders", icon: Bell, badgeKey: "reminders_open" },
+    ],
   },
   {
     id: "training",
@@ -277,7 +281,7 @@ export function AppSidebar() {
     if (!user) return;
 
     (async () => {
-      const [inbox, tasksOpen, projects, waiting, someday] = await Promise.all([
+      const [inbox, tasksOpen, projects, waiting, someday, reminders] = await Promise.all([
         supabase.from("inbox_items").select("id", { count: "exact", head: true }),
         supabase
           .from("tasks")
@@ -287,6 +291,10 @@ export function AppSidebar() {
         supabase.from("projects").select("id", { count: "exact", head: true }),
         supabase.from("waiting_items").select("id", { count: "exact", head: true }),
         supabase.from("someday_items").select("id", { count: "exact", head: true }),
+        (supabase as any)
+          .from("reminders")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
       ]);
 
       setCounts({
@@ -295,6 +303,7 @@ export function AppSidebar() {
         projects: projects.count ?? 0,
         waiting_items: waiting.count ?? 0,
         someday_items: someday.count ?? 0,
+        reminders_open: reminders.count ?? 0,
       });
     })();
   }, [user, pathname, currentPerson?.id]);

@@ -10,6 +10,7 @@ import {
   Activity,
   BarChart3,
   CalendarDays,
+  ChevronDown,
   CheckCircle2,
   Clock3,
   Edit3,
@@ -41,15 +42,23 @@ import {
   updateProjectNameOnTasks,
   updateProjectNotes,
   updateProjectTaskCompletion,
+  upsertProjectCalendarEvent,
 } from "@/features/projects/api/projectsApi";
 
 type Project = {
   id: string;
   name: string;
   user_id: string;
+  owner_person_id?: string | null;
   area?: string | null;
   status?: string | null;
   notes?: string | null;
+  due_date?: string | null;
+  is_event?: boolean | null;
+  event_start_at?: string | null;
+  event_end_at?: string | null;
+  calendar_event_id?: string | null;
+  add_to_calendar?: boolean;
   next_action?: string | null;
   progress?: number | null;
   open_tasks?: number | null;
@@ -79,6 +88,8 @@ type Task = {
 
 type PersonOption = {
   id: string;
+  user_id?: string | null;
+  auth_user_id?: string | null;
   display_name: string;
   email?: string | null;
   phone_number?: string | null;
@@ -152,6 +163,17 @@ const getProjectStats = (project: Project, tasks: Task[]) => {
   };
 };
 
+const isProjectComplete = (
+  project: Project,
+  stats?: ReturnType<typeof getProjectStats>
+) => stats?.progress === 100 || project.status?.toLowerCase().includes("complete");
+
+const toIsoDateTime = (value?: string | null) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
 const ProjectsPage = () => {
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
@@ -171,6 +193,7 @@ const ProjectsPage = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [savingProject, setSavingProject] = useState(false);
   const [newProjectCollaboratorIds, setNewProjectCollaboratorIds] = useState<string[]>([]);
+  const [isCompletedProjectsOpen, setIsCompletedProjectsOpen] = useState(false);
 
   const projectStats = useMemo(() => {
     return projects.reduce<Record<string, ReturnType<typeof getProjectStats>>>(
@@ -186,7 +209,7 @@ const ProjectsPage = () => {
 
   const completedProjects = projects.filter((project) => {
     const stats = projectStats[project.id];
-    return stats?.progress === 100 || project.status?.toLowerCase().includes("complete");
+    return isProjectComplete(project, stats);
   }).length;
 
   const needsActionProjects = projects.filter((project) => {
@@ -225,7 +248,7 @@ const ProjectsPage = () => {
         (projectView === "active" && (stats?.progress ?? 0) < 100) ||
         (projectView === "needs-action" &&
           Boolean(stats && stats.openTasks.length === 0 && stats.progress < 100)) ||
-        (projectView === "completed" && (stats?.progress ?? 0) === 100);
+        (projectView === "completed" && isProjectComplete(project, stats));
 
       return matchesSearch && matchesView;
     });
@@ -239,6 +262,34 @@ const ProjectsPage = () => {
   }, [projects, projectStats, search, projectView]);
 
   const hasActiveFilters = Boolean(search.trim()) || projectView !== "all";
+
+  const projectOwnerByProjectId = useMemo(() => {
+    return projects.reduce<Record<string, PersonOption | null>>((acc, project) => {
+      acc[project.id] =
+        people.find((person) => person.id === project.owner_person_id) ||
+        people.find((person) => person.auth_user_id === project.user_id) ||
+        null;
+      return acc;
+    }, {});
+  }, [people, projects]);
+
+  const visibleActiveProjects = useMemo(
+    () =>
+      filteredProjects.filter((project) =>
+        projectView === "completed"
+          ? false
+          : !isProjectComplete(project, projectStats[project.id])
+      ),
+    [filteredProjects, projectStats, projectView]
+  );
+
+  const visibleCompletedProjects = useMemo(
+    () =>
+      filteredProjects.filter((project) =>
+        isProjectComplete(project, projectStats[project.id])
+      ),
+    [filteredProjects, projectStats]
+  );
 
   const clearFilters = () => {
     setSearch("");
@@ -257,6 +308,12 @@ const ProjectsPage = () => {
       setNotesDraft(selectedProject.notes || "");
     }
   }, [selectedProject?.id]);
+
+  useEffect(() => {
+    if (projectView === "completed") {
+      setIsCompletedProjectsOpen(true);
+    }
+  }, [projectView]);
 
   const load = async () => {
     if (!user) return;
@@ -481,15 +538,30 @@ const ProjectsPage = () => {
       const projectPayload = {
         id: editingProject.id,
         user_id: user.id,
+        owner_person_id: editingProject.owner_person_id || currentPerson?.id || null,
         name: nextName,
         area: editingProject.area || "General",
         status: editingProject.status || "In Progress",
         notes: editingProject.notes || "",
+        due_date: editingProject.due_date || null,
+        is_event: Boolean(editingProject.is_event),
+        event_start_at: toIsoDateTime(editingProject.event_start_at),
+        event_end_at: toIsoDateTime(editingProject.event_end_at),
+        calendar_event_id: editingProject.calendar_event_id || null,
         next_action: editingProject.next_action || "",
         progress: editingProject.progress || 0,
         open_tasks: editingProject.open_tasks || 0,
         updated_at: new Date().toISOString(),
       };
+
+      if (
+        (editingProject as any).add_to_calendar &&
+        !projectPayload.due_date &&
+        !projectPayload.event_start_at
+      ) {
+        toast.error("Add a complete-by date or event start before adding it to the calendar.");
+        return;
+      }
 
       const { error } = isNewProject
         ? await createProject({
@@ -499,6 +571,26 @@ const ProjectsPage = () => {
         : await updateProject(editingProject.id, projectPayload);
 
       if (error) throw error;
+
+      if ((editingProject as any).add_to_calendar && currentPerson?.workspace_id) {
+        const { data: calendarEvent, error: calendarError } =
+          await upsertProjectCalendarEvent({
+            project: projectPayload,
+            userId: user.id,
+            workspaceId: currentPerson.workspace_id,
+          });
+
+        if (calendarError) throw calendarError;
+
+        if (calendarEvent?.id && calendarEvent.id !== projectPayload.calendar_event_id) {
+          const { error: calendarProjectError } = await updateProject(editingProject.id, {
+            calendar_event_id: calendarEvent.id,
+            updated_at: new Date().toISOString(),
+          });
+
+          if (calendarProjectError) throw calendarProjectError;
+        }
+      }
 
       if (isNewProject && newProjectCollaboratorIds.length > 0) {
         const { error: collaboratorError } = await addProjectCollaborators({
@@ -547,6 +639,13 @@ const ProjectsPage = () => {
       area: "General",
       status: "In Progress",
       notes: "",
+      owner_person_id: currentPerson?.id || null,
+      due_date: null,
+      is_event: false,
+      event_start_at: null,
+      event_end_at: null,
+      calendar_event_id: null,
+      add_to_calendar: false,
       next_action: "",
       progress: 0,
       open_tasks: 0,
@@ -711,8 +810,9 @@ const ProjectsPage = () => {
               </Card>
             )}
 
-            {filteredProjects.map((project, index) => {
+            {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => {
               const stats = projectStats[project.id];
+              const owner = projectOwnerByProjectId[project.id];
 
               return (
                 <button
@@ -737,7 +837,7 @@ const ProjectsPage = () => {
                             {project.name}
                           </h2>
                           <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
-                            {project.area || "General"}
+                            {project.area || "General"} · {owner?.display_name || "Creator"}
                           </p>
                         </div>
 
@@ -780,6 +880,71 @@ const ProjectsPage = () => {
                 </button>
               );
             })}
+
+            {visibleCompletedProjects.length > 0 && projectView !== "completed" && (
+              <Card className="actsix-panel overflow-hidden">
+                <button
+                  type="button"
+                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                  aria-expanded={isCompletedProjectsOpen}
+                  onClick={() => setIsCompletedProjectsOpen((open) => !open)}
+                >
+                  <span className="inline-flex items-center gap-2 text-sm font-extrabold">
+                    <CheckCircle2 className="h-4 w-4 text-brand-sage" />
+                    Complete
+                  </span>
+                  <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                    {visibleCompletedProjects.length}
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isCompletedProjectsOpen ? "rotate-180" : ""}`} />
+                  </span>
+                </button>
+
+                {isCompletedProjectsOpen && (
+                  <div className="space-y-3 border-t border-border/70 p-3">
+                    {visibleCompletedProjects.map((project, index) => {
+                      const stats = projectStats[project.id];
+                      const owner = projectOwnerByProjectId[project.id];
+
+                      return (
+                        <button
+                          key={project.id}
+                          type="button"
+                          onClick={() => navigate(`/tasks/projects/${project.id}`)}
+                          className="actsix-interactive-tile w-full p-3.5"
+                        >
+                          <div className="flex min-w-0 items-start gap-3">
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${projectIconClass(index)}`}>
+                              <FolderKanban className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0 flex-1 text-left">
+                              <div className="flex min-w-0 items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <h2 className="truncate text-base font-extrabold tracking-tight">{project.name}</h2>
+                                  <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
+                                    {project.area || "General"} · {owner?.display_name || "Creator"}
+                                  </p>
+                                </div>
+                                <span className={`chip shrink-0 ${statusClass(project.status)}`}>
+                                  {project.status || "Completed"}
+                                </span>
+                              </div>
+                              <div className="mt-2.5 flex items-center justify-between gap-3">
+                                <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+                                  <div className="h-full rounded-full bg-brand-teal" style={{ width: `${stats?.progress ?? 0}%` }} />
+                                </div>
+                                <span className="shrink-0 text-xs font-extrabold text-muted-foreground">
+                                  {stats?.progress ?? 0}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            )}
           </div>
         </div>
 
@@ -794,6 +959,7 @@ const ProjectsPage = () => {
                     <th className="px-4 py-3 label-eyebrow">Status</th>
                     <th className="px-4 py-3 label-eyebrow">Next Action</th>
                     <th className="px-4 py-3 label-eyebrow">Progress</th>
+                    <th className="px-4 py-3 label-eyebrow">Schedule</th>
                     <th className="px-4 py-3 label-eyebrow">Owner</th>
                   </tr>
                 </thead>
@@ -801,16 +967,17 @@ const ProjectsPage = () => {
                 <tbody>
                   {filteredProjects.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                         No projects match this view.
                       </td>
                     </tr>
                   )}
 
-                  {filteredProjects.map((project, index) => {
+                  {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => {
                     const stats = projectStats[project.id];
                     const isSelected = selectedProject?.id === project.id;
-                    const ownerInitials = getInitials(project.name);
+                    const owner = projectOwnerByProjectId[project.id];
+                    const ownerInitials = getInitials(owner?.display_name || project.name);
 
                     return (
                       <tr
@@ -888,14 +1055,127 @@ const ProjectsPage = () => {
                           </div>
                         </td>
 
+                        <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-muted-foreground">
+                          {project.is_event && project.event_start_at ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              {formatDate(project.event_start_at)}
+                            </span>
+                          ) : project.due_date ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <Clock3 className="h-3.5 w-3.5" />
+                              Due {formatDate(project.due_date)}
+                            </span>
+                          ) : (
+                            "No date"
+                          )}
+                        </td>
+
                         <td className="px-4 py-3">
-                          <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-                            {ownerInitials}
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                              {ownerInitials}
+                            </div>
+                            <span className="max-w-[9rem] truncate text-xs font-semibold text-muted-foreground">
+                              {owner?.display_name || "Creator"}
+                            </span>
                           </div>
                         </td>
                       </tr>
                     );
                   })}
+
+                  {visibleCompletedProjects.length > 0 && projectView !== "completed" && (
+                    <>
+                      <tr className="border-b border-border/70 bg-muted/20">
+                        <td colSpan={7} className="p-0">
+                          <button
+                            type="button"
+                            className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                            aria-expanded={isCompletedProjectsOpen}
+                            onClick={() => setIsCompletedProjectsOpen((open) => !open)}
+                          >
+                            <span className="inline-flex items-center gap-2 text-sm font-extrabold">
+                              <CheckCircle2 className="h-4 w-4 text-brand-sage" />
+                              Complete
+                            </span>
+                            <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                              {visibleCompletedProjects.length}
+                              <ChevronDown className={`h-4 w-4 transition-transform ${isCompletedProjectsOpen ? "rotate-180" : ""}`} />
+                            </span>
+                          </button>
+                        </td>
+                      </tr>
+
+                      {isCompletedProjectsOpen &&
+                        visibleCompletedProjects.map((project, index) => {
+                          const stats = projectStats[project.id];
+                          const owner = projectOwnerByProjectId[project.id];
+                          const ownerInitials = getInitials(owner?.display_name || project.name);
+
+                          return (
+                            <tr
+                              key={project.id}
+                              className="cursor-pointer border-b border-border/60 bg-background/60 transition-colors hover:bg-muted/30"
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`Open project ${project.name}`}
+                              onClick={() => navigate(`/tasks/projects/${project.id}`)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  navigate(`/tasks/projects/${project.id}`);
+                                }
+                              }}
+                            >
+                              <td className="min-w-[260px] px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${projectIconClass(index)}`}>
+                                    <FolderKanban className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <div className="font-extrabold tracking-tight">{project.name}</div>
+                                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                                      {project.notes || "No description yet"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{project.area || "General"}</td>
+                              <td className="whitespace-nowrap px-4 py-3">
+                                <span className={`chip ${statusClass(project.status)}`}>{project.status || "Completed"}</span>
+                              </td>
+                              <td className="min-w-[220px] px-4 py-3 text-muted-foreground">Complete</td>
+                              <td className="min-w-[150px] px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                                    <div className="h-full rounded-full bg-brand-teal" style={{ width: `${stats?.progress ?? 0}%` }} />
+                                  </div>
+                                  <span className="font-mono text-xs text-muted-foreground">{stats?.progress ?? 0}%</span>
+                                </div>
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 text-xs font-semibold text-muted-foreground">
+                                {project.is_event && project.event_start_at
+                                  ? formatDate(project.event_start_at)
+                                  : project.due_date
+                                    ? `Due ${formatDate(project.due_date)}`
+                                    : "No date"}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                                    {ownerInitials}
+                                  </div>
+                                  <span className="max-w-[9rem] truncate text-xs font-semibold text-muted-foreground">
+                                    {owner?.display_name || "Creator"}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>

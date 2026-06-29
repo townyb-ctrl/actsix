@@ -105,7 +105,7 @@ const TasksPage = () => {
 
     const { data, error } = await supabase
       .from("tasks")
-      .select("*, project_sections(name)")
+      .select("*, project_sections(name), recurring_task_templates(frequency, interval)")
       .or(personalNextActionFilter(currentPerson?.id))
       .order("created_at", { ascending: false });
 
@@ -595,6 +595,8 @@ const TasksPage = () => {
               <CompactTaskRow
                 key={task.id}
                 task={task}
+                showSourceCue
+                showNotes={false}
                 onToggle={toggle}
                 onEdit={(task) => setEditingTask({ ...task })}
                 onDelete={remove}
@@ -642,6 +644,8 @@ const TasksPage = () => {
                   <CompactTaskRow
                     key={task.id}
                     task={task}
+                    showSourceCue
+                    showNotes={false}
                     onToggle={toggle}
                     onEdit={(task) => setEditingTask({ ...task })}
                     onDelete={remove}

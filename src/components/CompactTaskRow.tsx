@@ -2,11 +2,14 @@ import { CalendarDays, Edit3, FolderKanban, RotateCcw, Trash2, UserRound } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import type { RecurringFrequency } from "@/features/tasks/types/recurringTasks";
 
 type CompactTaskRowProps = {
   task: any;
   showCheckbox?: boolean;
   showAssignee?: boolean;
+  showSourceCue?: boolean;
+  showNotes?: boolean;
   onToggle?: (task: any) => void;
   onEdit?: (task: any) => void;
   onDelete?: (task: any) => void;
@@ -45,10 +48,50 @@ const getProjectSectionName = (task: any) => {
   return section?.name || task.section_name || "";
 };
 
+const getRecurringLabel = (task: any) => {
+  const template =
+    task.recurringTaskTemplate ||
+    task.recurring_task_template ||
+    task.recurring_task_templates ||
+    task.recurring_template;
+
+  const frequency = template?.frequency as RecurringFrequency | undefined;
+  const interval = Math.max(1, Number(template?.interval) || 1);
+
+  if (!frequency) return "Recurring";
+
+  const singleLabels: Record<RecurringFrequency, string> = {
+    daily: "Daily",
+    weekly: "Weekly",
+    monthly: "Monthly",
+    quarterly: "Quarterly",
+    yearly: "Yearly",
+  };
+
+  if (interval === 1) return singleLabels[frequency];
+
+  const pluralLabels: Record<RecurringFrequency, string> = {
+    daily: "days",
+    weekly: "weeks",
+    monthly: "months",
+    quarterly: "quarters",
+    yearly: "years",
+  };
+
+  return `Every ${interval} ${pluralLabels[frequency]}`;
+};
+
+const isSystemCaptureNote = (notes?: string | null) => {
+  const clean = notes?.trim().toLowerCase();
+  return clean === "captured from whatsapp." || clean === "captured from whatsapp";
+};
+
 const CompactTaskRow = ({
   task,
   showCheckbox = true,
   showAssignee = false,
+  showSourceCue = false,
+  showNotes = true,
   onToggle,
   onEdit,
   onDelete,
@@ -60,13 +103,17 @@ const CompactTaskRow = ({
   const dueLabel = formatShortDate(task.due);
   const isComplete = Boolean(task.complete);
   const title = task.title || task.item || "Untitled item";
+  const displayNotes = isSystemCaptureNote(task.notes) ? "" : task.notes;
   const context = task.context || "General";
   const priority = task.priority || "Medium";
   const minutes = task.minutes || 15;
   const isRecurringTask = Boolean(task.recurring_template_id);
+  const recurringLabel = getRecurringLabel(task);
   const sectionName = getProjectSectionName(task);
   const projectLabel =
     task.project && sectionName ? `${task.project}:${sectionName}` : task.project;
+  const isProjectTask = Boolean(task.project_id || task.project || sectionName);
+  const hasLeadingCue = isProjectTask || isRecurringTask;
   const clickable = Boolean(onEdit);
   const assignedTo =
     task.assignedPersonName ||
@@ -85,7 +132,7 @@ const CompactTaskRow = ({
 
   return (
     <div
-      className={`action-row group flex items-start gap-3 px-3 py-2 ${
+      className={`action-row group flex items-center gap-2.5 px-3 py-1.5 ${
         clickable ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40" : ""
       } ${
         isComplete ? "opacity-70" : ""
@@ -105,6 +152,32 @@ const CompactTaskRow = ({
           : undefined
       }
     >
+      {showSourceCue && (
+        <div
+          className={`flex h-8 w-8 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border ${
+            !hasLeadingCue
+              ? "pointer-events-none border-transparent bg-transparent text-transparent"
+              : isProjectTask
+              ? "border-brand-teal/25 bg-brand-teal/10 text-brand-teal"
+              : "border-brand-amber/25 bg-brand-amber/10 text-brand-amber"
+          }`}
+          title={
+            isProjectTask && isRecurringTask
+              ? "Project recurring task"
+              : isProjectTask
+                ? "Project task"
+                : "Recurring task"
+          }
+        >
+          {isProjectTask && (
+            <FolderKanban className="h-3.5 w-3.5" />
+          )}
+          {isRecurringTask && (
+            <RotateCcw className={isProjectTask ? "h-3 w-3" : "h-3.5 w-3.5"} />
+          )}
+        </div>
+      )}
+
       {showCheckbox && (
         <span onClick={(event) => event.stopPropagation()} className="mt-0.5 shrink-0">
           <Checkbox
@@ -134,16 +207,16 @@ const CompactTaskRow = ({
 
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-none">
           {projectLabel && (
-            <span className="inline-flex max-w-[240px] items-center gap-1 truncate rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 font-semibold text-brand-teal">
-              <FolderKanban className="h-3 w-3 shrink-0" />
+            <span className="inline-flex max-w-[280px] items-center gap-1.5 truncate rounded-md border border-brand-teal/30 bg-brand-teal/10 px-2.5 py-1.5 text-[11px] font-extrabold text-brand-teal">
+              <FolderKanban className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{projectLabel}</span>
             </span>
           )}
 
           {isRecurringTask && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-1 font-semibold text-brand-teal">
-              <RotateCcw className="h-3 w-3 shrink-0" />
-              Recurring
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-amber/35 bg-brand-amber/15 px-2.5 py-1.5 text-[11px] font-extrabold text-brand-amber">
+              <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+              {recurringLabel}
             </span>
           )}
 
@@ -183,9 +256,9 @@ const CompactTaskRow = ({
           )}
         </div>
 
-        {task.notes && (
+        {showNotes && displayNotes && (
           <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-            {task.notes}
+            {displayNotes}
           </p>
         )}
       </div>
