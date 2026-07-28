@@ -47,12 +47,12 @@ const cleanInboxTitle = (message: string) => {
   const patterns = [
     /^add\s+["']?(.+?)["']?\s+to\s+(?:my\s+)?tasks?\.?$/i,
     /^add\s+["']?(.+?)["']?\s+to\s+(?:my\s+)?inbox\.?$/i,
-    /^add\s+(?:a\s+)?task\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
+    /^add\s+(?:a\s+)?task\s*[:-]\s*["']?(.+?)["']?\.?$/i,
     /^capture\s+["']?(.+?)["']?\s+(?:in|to)\s+(?:my\s+)?inbox\.?$/i,
     /^create\s+(?:a\s+)?task\s+called\s+["']?(.+?)["']?\.?$/i,
     /^add\s+["']?(.+?)["']?\.?$/i,
-    /^task\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
-    /^inbox\s*[:\-]\s*["']?(.+?)["']?\.?$/i,
+    /^task\s*[:-]\s*["']?(.+?)["']?\.?$/i,
+    /^inbox\s*[:-]\s*["']?(.+?)["']?\.?$/i,
   ];
 
   for (const pattern of patterns) {
@@ -92,7 +92,7 @@ const extractTaskBullets = (message: string): string[] => {
   const bullets = message
     .split(/\r?\n/)
     .map((line) => {
-      const match = line.match(/^\s*(?:[-\u2022*]|\d+[\.)])\s+(.+?)\s*$/);
+      const match = line.match(/^\s*(?:[-\u2022*]|\d+[.)])\s+(.+?)\s*$/);
       return match?.[1]?.trim() || "";
     })
     .filter((title) => title.length >= 3)
