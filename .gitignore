@@ -33,3 +33,5 @@ dist/
 transcriber/.venv/
 transcriber/.env
 supabase/.temp/
+.aider*
+.env
