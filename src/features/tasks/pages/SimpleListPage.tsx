@@ -234,7 +234,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                   Try again to refresh your saved items.
                 </p>
               </div>
-              <Button type="button" variant="outline" className="rounded-xl" onClick={load}>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => load()}>
                 Retry
               </Button>
             </div>

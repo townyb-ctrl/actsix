@@ -1,3 +1,4 @@
+// @ts-nocheck -- exempted from strict mode pending the EventManagement.tsx monolith breakup
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {

@@ -217,7 +217,7 @@ const MeetingsPage = () => {
                   <p className="max-w-md text-sm text-muted-foreground">
                     Try again to load agendas, meeting dates, and links.
                   </p>
-                  <Button type="button" variant="outline" className="rounded-xl" onClick={load}>
+                  <Button type="button" variant="outline" className="rounded-xl" onClick={() => load()}>
                     Retry
                   </Button>
                 </div>

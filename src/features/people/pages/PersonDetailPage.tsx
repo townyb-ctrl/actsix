@@ -380,7 +380,7 @@ const PersonDetailPage = () => {
       toast.error(trainingCourseError.message);
     }
 
-    const nextTrainingCourses = trainingCourseData || [];
+    const nextTrainingCourses: TrainingCourse[] = trainingCourseData || [];
     setTrainingCourses(nextTrainingCourses);
 
     const trainingCourseIds = Array.from(

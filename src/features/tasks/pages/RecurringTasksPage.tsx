@@ -244,11 +244,13 @@ const RecurringTasksPage = () => {
 
       <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <div className="grid gap-3 md:grid-cols-3">
-          {[
-            ["Active", counts.active, CheckCircle2],
-            ["Paused", counts.paused, Pause],
-            ["Ended", counts.ended, XCircle],
-          ].map(([label, count, Icon]) => (
+          {(
+            [
+              ["Active", counts.active, CheckCircle2],
+              ["Paused", counts.paused, Pause],
+              ["Ended", counts.ended, XCircle],
+            ] as [string, number, typeof CheckCircle2][]
+          ).map(([label, count, Icon]) => (
             <Card key={String(label)} className="actsix-panel-soft p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>

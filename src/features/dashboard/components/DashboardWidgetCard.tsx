@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import type { DraggableAttributes } from "@dnd-kit/core";
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
   ArrowDown,
   ArrowUp,
@@ -40,8 +42,8 @@ type DashboardWidgetCardProps = {
   onResize: (size: WidgetSize) => void;
   onRemove: () => void;
   onConfigure: () => void;
-  dragHandleAttributes?: Record<string, unknown>;
-  dragHandleListeners?: Record<string, unknown>;
+  dragHandleAttributes?: DraggableAttributes;
+  dragHandleListeners?: SyntheticListenerMap;
 };
 
 export function DashboardWidgetCard({

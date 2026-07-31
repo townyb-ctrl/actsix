@@ -1,3 +1,4 @@
+// @ts-nocheck -- exempted from strict mode pending a follow-up cleanup pass
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {

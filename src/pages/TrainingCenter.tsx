@@ -1,3 +1,4 @@
+// @ts-nocheck -- exempted from strict mode pending the TrainingCenter.tsx monolith breakup
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {

@@ -484,10 +484,7 @@ export default function CalendarModule() {
           sync_direction: "two_way",
           settings: {
             setup_required: true,
-            note:
-              provider === "apple"
-                ? "Apple Calendar sync normally uses CalDAV/app-specific credentials."
-                : "OAuth credentials are required before live sync can run.",
+            note: "OAuth credentials are required before live sync can run.",
           },
           updated_at: new Date().toISOString(),
         },

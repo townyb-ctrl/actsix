@@ -344,8 +344,8 @@ const ProjectsPage = () => {
       return;
     }
 
-    const peopleById = new Map(
-      (peopleData ?? []).map((person: PersonOption) => [person.id, person])
+    const peopleById = new Map<string, PersonOption>(
+      (peopleData ?? []).map((person: PersonOption): [string, PersonOption] => [person.id, person])
     );
 
     const enrichedTasks = (taskData ?? []).map((task: Task) => ({
