@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
+import { statusClass } from "@/features/projects/lib/projectPresentation";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { logActivity } from "@/lib/activityLog";
 import { toast } from "sonner";
@@ -97,16 +98,6 @@ type ActivityLog = {
     display_name: string;
     avatar_url: string | null;
   } | null;
-};
-
-const statusClass = (status?: string | null) => {
-  const clean = (status || "Active").toLowerCase();
-
-  if (clean.includes("hold")) return "bg-brand-amber/15 text-brand-amber";
-  if (clean.includes("planning")) return "bg-brand-teal-soft text-brand-teal";
-  if (clean.includes("complete")) return "bg-brand-sage/10 text-brand-sage";
-
-  return "bg-brand-teal/15 text-brand-teal";
 };
 
 const isMissingProjectSectionsSchema = (error?: { message?: string; code?: string } | null) => {

@@ -26,6 +26,8 @@ import {
 import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
+import ProjectSummaryCard from "@/features/projects/components/ProjectSummaryCard";
+import { projectIconClass, statusClass } from "@/features/projects/lib/projectPresentation";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import {
@@ -94,29 +96,6 @@ type PersonOption = {
   email?: string | null;
   phone_number?: string | null;
   avatar_url?: string | null;
-};
-
-const statusClass = (status?: string | null) => {
-  const clean = (status || "Active").toLowerCase();
-
-  if (clean.includes("hold")) return "bg-brand-amber/15 text-brand-amber";
-  if (clean.includes("planning")) return "bg-brand-teal-soft text-brand-teal";
-  if (clean.includes("complete")) return "bg-brand-sage/10 text-brand-sage";
-
-  return "bg-brand-teal/15 text-brand-teal";
-};
-
-const projectIconClass = (index: number) => {
-  const classes = [
-    "bg-brand-teal/10 text-brand-teal",
-    "bg-brand-sage-soft text-brand-sage",
-    "bg-brand-teal-soft text-brand-teal",
-    "bg-brand-amber/10 text-brand-amber",
-    "bg-brand-sage/10 text-brand-sage",
-    "bg-brand-bronze/10 text-brand-bronze",
-  ];
-
-  return classes[index % classes.length];
 };
 
 const getInitials = (name?: string | null) => {
@@ -833,76 +812,18 @@ const ProjectsPage = () => {
               </Card>
             )}
 
-            {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => {
-              const stats = projectStats[project.id];
-              const owner = projectOwnerByProjectId[project.id];
-
-              return (
-                <button
-                  key={project.id}
-                  type="button"
-                  onClick={() => navigate(`/tasks/projects/${project.id}`)}
-                  className="actsix-interactive-tile w-full p-3.5"
-                >
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${projectIconClass(
-                        index
-                      )}`}
-                    >
-                      <FolderKanban className="h-5 w-5" />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h2 className="truncate text-base font-extrabold tracking-tight">
-                            {project.name}
-                          </h2>
-                          <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
-                            {project.area || "General"} · {owner?.display_name || "Creator"}
-                          </p>
-                        </div>
-
-                        <span className={`chip shrink-0 ${statusClass(project.status)}`}>
-                          {project.status || "In Progress"}
-                        </span>
-                      </div>
-
-                      <div className="actsix-interactive-row mt-2.5 border-border/60 bg-background/60 p-2.5">
-                        <p className="label-eyebrow">Next Action</p>
-                        <p className="mt-1 line-clamp-2 text-sm font-bold text-foreground">
-                          {stats?.nextAction || "No next action set"}
-                        </p>
-                        {stats?.openTasks[0]?.due && (
-                          <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            {formatDate(stats.openTasks[0].due)}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="mt-2.5 flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="h-2 overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full rounded-full bg-brand-teal"
-                              style={{ width: `${stats?.progress ?? 0}%` }}
-                            />
-                          </div>
-                        </div>
-                        <span className="shrink-0 text-xs font-extrabold text-muted-foreground">
-                          {stats?.progress ?? 0}%
-                        </span>
-                        <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground">
-                          {stats?.openTasks.length ?? 0} open
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => (
+              <ProjectSummaryCard
+                key={project.id}
+                project={project}
+                stats={projectStats[project.id]}
+                ownerName={projectOwnerByProjectId[project.id]?.display_name}
+                index={index}
+                onOpen={() => navigate(`/tasks/projects/${project.id}`)}
+                statusFallback="In Progress"
+                formatDate={formatDate}
+              />
+            ))}
 
             {visibleCompletedProjects.length > 0 && projectView !== "completed" && (
               <Card className="actsix-panel overflow-hidden">
@@ -924,46 +845,19 @@ const ProjectsPage = () => {
 
                 {isCompletedProjectsOpen && (
                   <div className="space-y-3 border-t border-border/70 p-3">
-                    {visibleCompletedProjects.map((project, index) => {
-                      const stats = projectStats[project.id];
-                      const owner = projectOwnerByProjectId[project.id];
-
-                      return (
-                        <button
-                          key={project.id}
-                          type="button"
-                          onClick={() => navigate(`/tasks/projects/${project.id}`)}
-                          className="actsix-interactive-tile w-full p-3.5"
-                        >
-                          <div className="flex min-w-0 items-start gap-3">
-                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${projectIconClass(index)}`}>
-                              <FolderKanban className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0 flex-1 text-left">
-                              <div className="flex min-w-0 items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <h2 className="truncate text-base font-extrabold tracking-tight">{project.name}</h2>
-                                  <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
-                                    {project.area || "General"} · {owner?.display_name || "Creator"}
-                                  </p>
-                                </div>
-                                <span className={`chip shrink-0 ${statusClass(project.status)}`}>
-                                  {project.status || "Completed"}
-                                </span>
-                              </div>
-                              <div className="mt-2.5 flex items-center justify-between gap-3">
-                                <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
-                                  <div className="h-full rounded-full bg-brand-teal" style={{ width: `${stats?.progress ?? 0}%` }} />
-                                </div>
-                                <span className="shrink-0 text-xs font-extrabold text-muted-foreground">
-                                  {stats?.progress ?? 0}%
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {visibleCompletedProjects.map((project, index) => (
+                      <ProjectSummaryCard
+                        key={project.id}
+                        project={project}
+                        stats={projectStats[project.id]}
+                        ownerName={projectOwnerByProjectId[project.id]?.display_name}
+                        index={index}
+                        onOpen={() => navigate(`/tasks/projects/${project.id}`)}
+                        statusFallback="Completed"
+                        formatDate={formatDate}
+                        showNextAction={false}
+                      />
+                    ))}
                   </div>
                 )}
               </Card>
