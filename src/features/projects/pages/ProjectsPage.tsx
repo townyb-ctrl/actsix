@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   Activity,
   BarChart3,
-  CalendarDays,
   ChevronDown,
   CheckCircle2,
   Clock3,
@@ -27,7 +26,7 @@ import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
 import ProjectSummaryCard from "@/features/projects/components/ProjectSummaryCard";
-import { projectIconClass, statusClass } from "@/features/projects/lib/projectPresentation";
+import ProjectTableRow from "@/features/projects/components/ProjectTableRow";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import {
@@ -96,27 +95,6 @@ type PersonOption = {
   email?: string | null;
   phone_number?: string | null;
   avatar_url?: string | null;
-};
-
-const getInitials = (name?: string | null) => {
-  if (!name) return "AS";
-
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase())
-    .join("");
-};
-
-const formatDate = (date?: string | null) => {
-  if (!date) return "No date";
-
-  return new Date(date).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 };
 
 const getProjectStats = (project: Project, tasks: Task[]) => {
@@ -821,7 +799,6 @@ const ProjectsPage = () => {
                 index={index}
                 onOpen={() => navigate(`/tasks/projects/${project.id}`)}
                 statusFallback="In Progress"
-                formatDate={formatDate}
               />
             ))}
 
@@ -854,7 +831,6 @@ const ProjectsPage = () => {
                         index={index}
                         onOpen={() => navigate(`/tasks/projects/${project.id}`)}
                         statusFallback="Completed"
-                        formatDate={formatDate}
                         showNextAction={false}
                       />
                     ))}
@@ -898,117 +874,18 @@ const ProjectsPage = () => {
                     </tr>
                   )}
 
-                  {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => {
-                    const stats = projectStats[project.id];
-                    const isSelected = selectedProject?.id === project.id;
-                    const owner = projectOwnerByProjectId[project.id];
-                    const ownerInitials = getInitials(owner?.display_name || project.name);
-
-                    return (
-                      <tr
-                        key={project.id}
-                        className={`border-b border-border/60 cursor-pointer transition-colors ${
-                          isSelected
-                            ? "bg-brand-teal/5 shadow-[inset_3px_0_0_hsl(var(--brand-teal))]"
-                            : "hover:bg-muted/30"
-                        }`}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Open project ${project.name}`}
-                        onClick={() => navigate(`/tasks/projects/${project.id}`)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            navigate(`/tasks/projects/${project.id}`);
-                          }
-                        }}
-                      >
-                        <td className="px-4 py-3 min-w-[260px]">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`h-10 w-10 rounded-xl flex items-center justify-center ${projectIconClass(
-                                index
-                              )}`}
-                            >
-                              <FolderKanban className="h-5 w-5" />
-                            </div>
-
-                            <div>
-                              <div className="font-extrabold tracking-tight">{project.name}</div>
-                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                                {project.notes || "No description yet"}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {project.area || "General"}
-                        </td>
-
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`chip ${statusClass(project.status)}`}>
-                            {project.status || "In Progress"}
-                          </span>
-                        </td>
-
-                        <td className="px-4 py-3 min-w-[220px]">
-                          {stats?.nextAction ? (
-                            <div>
-                              <div className="font-semibold line-clamp-1">{stats.nextAction}</div>
-                              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                <CalendarDays className="h-3.5 w-3.5" />
-                                {formatDate(stats.openTasks[0]?.due)}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">No next action</span>
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3 min-w-[150px]">
-                          <div className="flex items-center gap-3">
-                            <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-brand-teal rounded-full"
-                                style={{ width: `${stats?.progress ?? 0}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-mono text-muted-foreground">
-                              {stats?.progress ?? 0}%
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-muted-foreground">
-                          {project.is_event && project.event_start_at ? (
-                            <span className="inline-flex items-center gap-1.5">
-                              <CalendarDays className="h-3.5 w-3.5" />
-                              {formatDate(project.event_start_at)}
-                            </span>
-                          ) : project.due_date ? (
-                            <span className="inline-flex items-center gap-1.5">
-                              <Clock3 className="h-3.5 w-3.5" />
-                              Due {formatDate(project.due_date)}
-                            </span>
-                          ) : (
-                            "No date"
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                              {ownerInitials}
-                            </div>
-                            <span className="max-w-[9rem] truncate text-xs font-semibold text-muted-foreground">
-                              {owner?.display_name || "Creator"}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => (
+                    <ProjectTableRow
+                      key={project.id}
+                      project={project}
+                      stats={projectStats[project.id]}
+                      ownerName={projectOwnerByProjectId[project.id]?.display_name}
+                      index={index}
+                      onOpen={() => navigate(`/tasks/projects/${project.id}`)}
+                      statusFallback="In Progress"
+                      isSelected={selectedProject?.id === project.id}
+                    />
+                  ))}
 
                   {visibleCompletedProjects.length > 0 && projectView !== "completed" && (
                     <>
@@ -1033,72 +910,18 @@ const ProjectsPage = () => {
                       </tr>
 
                       {isCompletedProjectsOpen &&
-                        visibleCompletedProjects.map((project, index) => {
-                          const stats = projectStats[project.id];
-                          const owner = projectOwnerByProjectId[project.id];
-                          const ownerInitials = getInitials(owner?.display_name || project.name);
-
-                          return (
-                            <tr
-                              key={project.id}
-                              className="cursor-pointer border-b border-border/60 bg-background/60 transition-colors hover:bg-muted/30"
-                              role="button"
-                              tabIndex={0}
-                              aria-label={`Open project ${project.name}`}
-                              onClick={() => navigate(`/tasks/projects/${project.id}`)}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter" || event.key === " ") {
-                                  event.preventDefault();
-                                  navigate(`/tasks/projects/${project.id}`);
-                                }
-                              }}
-                            >
-                              <td className="min-w-[260px] px-4 py-3">
-                                <div className="flex items-center gap-3">
-                                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${projectIconClass(index)}`}>
-                                    <FolderKanban className="h-5 w-5" />
-                                  </div>
-                                  <div>
-                                    <div className="font-extrabold tracking-tight">{project.name}</div>
-                                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                                      {project.notes || "No description yet"}
-                                    </p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{project.area || "General"}</td>
-                              <td className="whitespace-nowrap px-4 py-3">
-                                <span className={`chip ${statusClass(project.status)}`}>{project.status || "Completed"}</span>
-                              </td>
-                              <td className="min-w-[220px] px-4 py-3 text-muted-foreground">Complete</td>
-                              <td className="min-w-[150px] px-4 py-3">
-                                <div className="flex items-center gap-3">
-                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
-                                    <div className="h-full rounded-full bg-brand-teal" style={{ width: `${stats?.progress ?? 0}%` }} />
-                                  </div>
-                                  <span className="font-mono text-xs text-muted-foreground">{stats?.progress ?? 0}%</span>
-                                </div>
-                              </td>
-                              <td className="whitespace-nowrap px-4 py-3 text-xs font-semibold text-muted-foreground">
-                                {project.is_event && project.event_start_at
-                                  ? formatDate(project.event_start_at)
-                                  : project.due_date
-                                    ? `Due ${formatDate(project.due_date)}`
-                                    : "No date"}
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                                    {ownerInitials}
-                                  </div>
-                                  <span className="max-w-[9rem] truncate text-xs font-semibold text-muted-foreground">
-                                    {owner?.display_name || "Creator"}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        visibleCompletedProjects.map((project, index) => (
+                          <ProjectTableRow
+                            key={project.id}
+                            project={project}
+                            stats={projectStats[project.id]}
+                            ownerName={projectOwnerByProjectId[project.id]?.display_name}
+                            index={index}
+                            onOpen={() => navigate(`/tasks/projects/${project.id}`)}
+                            statusFallback="Completed"
+                            completed
+                          />
+                        ))}
                     </>
                   )}
                 </tbody>

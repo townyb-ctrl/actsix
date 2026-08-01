@@ -1,6 +1,6 @@
 import { CalendarDays, FolderKanban } from "lucide-react";
 
-import { projectIconClass, statusClass } from "@/features/projects/lib/projectPresentation";
+import { formatDate, projectIconClass, statusClass } from "@/features/projects/lib/projectPresentation";
 
 type SummaryProject = {
   id: string;
@@ -23,7 +23,6 @@ type ProjectSummaryCardProps = {
   index: number;
   onOpen: () => void;
   statusFallback: string;
-  formatDate: (date?: string | null) => string;
   /** Completed projects omit the next action and open-task count. */
   showNextAction?: boolean;
 };
@@ -35,7 +34,6 @@ const ProjectSummaryCard = ({
   index,
   onOpen,
   statusFallback,
-  formatDate,
   showNextAction = true,
 }: ProjectSummaryCardProps) => (
   <button
