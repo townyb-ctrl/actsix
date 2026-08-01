@@ -33,7 +33,8 @@ import SermonLessonHub from "./pages/SermonLessonHub";
 import CalendarModule from "./pages/CalendarModule";
 import Reminders from "./pages/Reminders";
 import PublicEventRegistration from "./pages/PublicEventRegistration";
-import { Review, Calendar, Meetups } from "./pages/Placeholder";
+import { Meetups } from "./pages/Placeholder";
+import WeeklyReview from "./features/tasks/pages/WeeklyReviewPage";
 import Auth from "./pages/Auth";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound.tsx";
@@ -67,8 +68,8 @@ const App = () => (
               <Route path="/tasks/waiting" element={<Waiting />} />
               <Route path="/tasks/someday" element={<Someday />} />
               <Route path="/tasks/recurring" element={<RecurringTasks />} />
-              <Route path="/tasks/review" element={<Review />} />
-              <Route path="/tasks/calendar" element={<Calendar />} />
+              <Route path="/tasks/review" element={<WeeklyReview />} />
+              <Route path="/tasks/calendar" element={<Navigate to="/calendar" replace />} />
               <Route path="/tasks/meetups" element={<Meetups />} />
 
               <Route path="/projects" element={<Projects />} />
@@ -76,7 +77,7 @@ const App = () => (
               <Route path="/waiting" element={<Waiting />} />
               <Route path="/someday" element={<Someday />} />
               <Route path="/recurring" element={<RecurringTasks />} />
-              <Route path="/review" element={<Review />} />
+              <Route path="/review" element={<WeeklyReview />} />
               <Route path="/meetups" element={<Meetups />} />
               <Route path="/meetings" element={<Meetings />} />
               <Route path="/service-planner" element={<ServicePlanner />} />

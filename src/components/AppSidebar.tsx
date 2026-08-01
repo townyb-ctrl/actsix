@@ -3,6 +3,7 @@ import {
   Bell,
   CalendarClock,
   CalendarDays,
+  CheckCircle2,
   ChevronDown,
   Clock,
   FolderKanban,
@@ -111,6 +112,7 @@ const navSections: NavSection[] = [
       { title: "Waiting For", url: "/tasks/waiting", icon: Clock, badgeKey: "waiting_items" },
       { title: "Someday / Maybe", url: "/tasks/someday", icon: Sparkles, badgeKey: "someday_items" },
       { title: "Recurring", url: "/tasks/recurring", icon: CalendarClock },
+      { title: "Weekly Review", url: "/tasks/review", icon: CheckCircle2 },
     ],
   },
   {
