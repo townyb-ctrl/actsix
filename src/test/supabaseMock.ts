@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 export type MockResult<T = unknown> = { data: T; error: unknown };
 
@@ -16,13 +16,24 @@ const CHAIN_METHODS = [
   "match",
 ] as const;
 
+type ChainMethod = (typeof CHAIN_METHODS)[number];
+
+export type QueryBuilder = Record<ChainMethod, Mock> & {
+  single: Mock;
+  maybeSingle: Mock;
+  then: (
+    resolve: (value: MockResult) => unknown,
+    reject?: (reason: unknown) => unknown
+  ) => Promise<unknown>;
+};
+
 /**
  * Builds a fake Supabase query-builder chain: every chain method returns
  * itself, and the builder is also thenable (so `await` works whether or
  * not the real call site adds `.single()`/`.maybeSingle()`).
  */
-export const createQueryBuilder = (result: MockResult) => {
-  const builder: Record<string, unknown> = {};
+export const createQueryBuilder = (result: MockResult): QueryBuilder => {
+  const builder = {} as QueryBuilder;
 
   for (const method of CHAIN_METHODS) {
     builder[method] = vi.fn(() => builder);

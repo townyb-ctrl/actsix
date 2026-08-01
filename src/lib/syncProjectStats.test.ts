@@ -12,7 +12,7 @@ import { syncProjectStatsById, syncProjectStatsForIds, syncProjectStatsForNames 
 
 describe("syncProjectStatsById", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("does nothing when no projectId is given", async () => {
@@ -75,7 +75,7 @@ describe("syncProjectStatsById", () => {
 
 describe("syncProjectStatsForIds", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("dedupes ids before syncing", async () => {
@@ -94,7 +94,7 @@ describe("syncProjectStatsForIds", () => {
 
 describe("syncProjectStatsForNames", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("dedupes names before syncing", async () => {

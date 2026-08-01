@@ -12,7 +12,7 @@ import { createNotification, createNotificationForPerson, notifyProjectParticipa
 
 describe("createNotification", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("calls the user RPC with mapped params and returns no error on success", async () => {
@@ -45,7 +45,7 @@ describe("createNotification", () => {
 
 describe("createNotificationForPerson", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("skips the RPC when personId or currentUserId is missing", async () => {
@@ -78,7 +78,7 @@ describe("createNotificationForPerson", () => {
 
 describe("notifyProjectParticipants", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("notifies non-excluded collaborators and the owner when not already included", async () => {

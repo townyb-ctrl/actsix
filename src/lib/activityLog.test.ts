@@ -12,7 +12,7 @@ import { logActivity } from "./activityLog";
 
 describe("logActivity", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("inserts an activity log row and returns the created record", async () => {
