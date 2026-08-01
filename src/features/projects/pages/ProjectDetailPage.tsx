@@ -1,4 +1,3 @@
-// @ts-nocheck -- exempted from strict mode pending a follow-up cleanup pass
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -253,8 +252,8 @@ const ProjectDetailPage = () => {
       return;
     }
 
-    const peopleById = new Map(
-      (peopleData ?? []).map((person: Person) => [person.id, person])
+    const peopleById = new Map<string, Person>(
+      (peopleData ?? []).map((person: Person): [string, Person] => [person.id, person])
     );
 
     const enrichedTasks = (taskData ?? []).map((task: any) => ({
@@ -264,11 +263,11 @@ const ProjectDetailPage = () => {
         : "",
     }));
 
-    const actorPersonIds = Array.from(
+    const actorPersonIds: string[] = Array.from(
       new Set(
         (activityData ?? [])
           .map((activity: ActivityLog) => activity.actor_person_id)
-          .filter(Boolean)
+          .filter((id: string | null): id is string => Boolean(id))
       )
     );
 
@@ -403,16 +402,13 @@ const ProjectDetailPage = () => {
     sectionId: string,
     patch: Partial<{ title: string; due: string; assigned_person_id: string }>
   ) => {
-    setSectionTaskDrafts((current) => ({
-      ...current,
-      [sectionId]: {
-        title: "",
-        due: "",
-        assigned_person_id: "",
-        ...(current[sectionId] || {}),
-        ...patch,
-      },
-    }));
+    setSectionTaskDrafts((current) => {
+      const base = current[sectionId] || { title: "", due: "", assigned_person_id: "" };
+      return {
+        ...current,
+        [sectionId]: { ...base, ...patch },
+      };
+    });
   };
 
   const logProjectActivity = async (
@@ -913,7 +909,7 @@ const ProjectDetailPage = () => {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={load}>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => load()}>
                 Retry
               </Button>
               <Button asChild type="button" className="actsix-btn-soft rounded-xl">
