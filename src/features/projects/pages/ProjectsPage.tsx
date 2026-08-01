@@ -180,6 +180,7 @@ const ProjectsPage = () => {
   const navigate = useNavigate();
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<PersonOption[]>([]);
   const [newActionTitle, setNewActionTitle] = useState("");
@@ -316,7 +317,10 @@ const ProjectsPage = () => {
   }, [projectView]);
 
   const load = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const [
       { data: projectData, error: projectError },
@@ -331,16 +335,19 @@ const ProjectsPage = () => {
 
     if (projectError) {
       toast.error(projectError.message);
+      setLoading(false);
       return;
     }
 
     if (taskError) {
       toast.error(taskError.message);
+      setLoading(false);
       return;
     }
 
     if (peopleError) {
       toast.error(peopleError.message);
+      setLoading(false);
       return;
     }
 
@@ -362,6 +369,8 @@ const ProjectsPage = () => {
     if (!selectedProjectId && projectData && projectData.length > 0) {
       setSelectedProjectId(projectData[0].id);
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -438,6 +447,12 @@ const ProjectsPage = () => {
   };
 
   const removeProject = async (project: Project) => {
+    const confirmed = window.confirm(
+      `Delete "${project.name}"? Its sections, activity history, and links to tasks will be removed. This can't be undone.`
+    );
+
+    if (!confirmed) return;
+
     const { error } = await deleteProject(project.id);
 
     if (error) {
@@ -798,7 +813,15 @@ const ProjectsPage = () => {
 
         <div className="md:hidden">
           <div className="space-y-3">
-            {filteredProjects.length === 0 && (
+            {loading && (
+              <Card className="p-4">
+                <div className="actsix-loading-state" role="status">
+                  Loading projects...
+                </div>
+              </Card>
+            )}
+
+            {!loading && filteredProjects.length === 0 && (
               <Card className="actsix-empty-state p-4 text-center">
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                   <FolderKanban className="h-5 w-5" />
@@ -965,7 +988,15 @@ const ProjectsPage = () => {
                 </thead>
 
                 <tbody>
-                  {filteredProjects.length === 0 && (
+                  {loading && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground" role="status">
+                        Loading projects...
+                      </td>
+                    </tr>
+                  )}
+
+                  {!loading && filteredProjects.length === 0 && (
                     <tr>
                       <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                         No projects match this view.

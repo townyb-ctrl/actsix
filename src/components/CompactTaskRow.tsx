@@ -183,6 +183,9 @@ const CompactTaskRow = ({
           <Checkbox
             checked={isComplete}
             onCheckedChange={() => onToggle?.(task)}
+            aria-label={
+              isComplete ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`
+            }
           />
         </span>
       )}

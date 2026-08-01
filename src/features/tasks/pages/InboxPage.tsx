@@ -88,6 +88,7 @@ const destinationOptions: Array<{
   label: string;
   description: string;
   icon: ComponentType<{ className?: string }>;
+  comingSoon?: boolean;
 }> = [
   {
     value: "task",
@@ -106,6 +107,7 @@ const destinationOptions: Array<{
     label: "Meeting",
     description: "Something to discuss or schedule",
     icon: UsersRound,
+    comingSoon: true,
   },
   {
     value: "waiting",
@@ -422,6 +424,7 @@ const InboxPage = () => {
             <Button
               type="submit"
               className="actsix-btn-primary rounded-lg px-5"
+              aria-label="Add to inbox"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -597,18 +600,24 @@ const InboxPage = () => {
                         <button
                           key={option.value}
                           type="button"
+                          disabled={option.comingSoon}
                           onClick={() => {
+                            if (option.comingSoon) return;
                             setProcessTarget(option.value);
                             setMoreOptionsOpen(false);
                             setChoosingDestination(false);
                           }}
                           className={[
-                            "group rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:border-brand-teal/40 hover:bg-brand-teal/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/35",
+                            "group rounded-xl border p-4 text-left transition",
+                            option.comingSoon
+                              ? "cursor-not-allowed border-border/70 bg-muted/20 opacity-60"
+                              : "hover:-translate-y-0.5 hover:border-brand-teal/40 hover:bg-brand-teal/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/35",
                             selected
                               ? "border-brand-teal bg-brand-teal/10 shadow-sm"
                               : "border-border/70 bg-card",
                           ].join(" ")}
                           aria-pressed={selected}
+                          aria-disabled={option.comingSoon}
                         >
                           <div className="flex items-start gap-3">
                             <span
@@ -623,7 +632,14 @@ const InboxPage = () => {
                             </span>
 
                             <span className="min-w-0">
-                              <span className="block text-sm font-extrabold">{option.label}</span>
+                              <span className="flex items-center gap-1.5">
+                                <span className="block text-sm font-extrabold">{option.label}</span>
+                                {option.comingSoon && (
+                                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                                    Coming soon
+                                  </span>
+                                )}
+                              </span>
                               <span className="mt-1 block text-xs leading-5 text-muted-foreground">
                                 {option.description}
                               </span>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  AlertTriangle,
   ArrowUpRight,
   CheckCircle2,
   Clock,
@@ -43,6 +44,7 @@ const WeeklyReviewPage = () => {
   const { person: currentPerson } = useCurrentPerson();
   const [review, setReview] = useState<ReviewData>(emptyReview);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) {
@@ -51,6 +53,7 @@ const WeeklyReviewPage = () => {
     }
 
     setLoading(true);
+    setLoadError(null);
     const today = toDateKey(new Date());
 
     const [inbox, overdue, projects, waiting, someday] = await Promise.all([
@@ -71,6 +74,7 @@ const WeeklyReviewPage = () => {
 
     if (anyError) {
       toast.error(anyError.message);
+      setLoadError(anyError.message);
       setLoading(false);
       return;
     }
@@ -125,6 +129,19 @@ const WeeklyReviewPage = () => {
             <div className="actsix-loading-state" role="status">
               Reviewing your lists...
             </div>
+          </Card>
+        ) : loadError ? (
+          <Card className="actsix-panel-soft flex flex-col items-center gap-3 p-8 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="text-lg font-extrabold tracking-tight">Couldn't load your review</div>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{loadError}</p>
+            </div>
+            <Button type="button" variant="outline" className="actsix-btn-outline" onClick={load}>
+              Try again
+            </Button>
           </Card>
         ) : allClear ? (
           <Card className="actsix-panel-soft flex flex-col items-center gap-3 p-8 text-center">

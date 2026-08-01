@@ -211,6 +211,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
             <Button
               type="submit"
               className="actsix-btn-primary rounded-lg px-5"
+              aria-label={`Add to ${cfg.title}`}
             >
               <Plus className="h-4 w-4" />
             </Button>

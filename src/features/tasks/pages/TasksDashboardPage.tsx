@@ -70,6 +70,20 @@ const TasksDashboardPage = () => {
           .order("created_at", { ascending: false }),
       ]);
 
+    const loadError =
+      inbox.error ||
+      next.error ||
+      projects.error ||
+      waiting.error ||
+      someday.error ||
+      taskResult.error;
+
+    if (loadError) {
+      toast.error(loadError.message);
+      setLoading(false);
+      return;
+    }
+
     setCounts({
       inbox: inbox.count ?? 0,
       next: next.count ?? 0,

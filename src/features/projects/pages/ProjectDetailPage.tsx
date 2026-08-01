@@ -699,6 +699,12 @@ const ProjectDetailPage = () => {
   };
 
   const removeProject = async (targetProject: any) => {
+    const confirmed = window.confirm(
+      `Delete "${targetProject.name}"? Its sections, activity history, and links to tasks will be removed. This can't be undone.`
+    );
+
+    if (!confirmed) return;
+
     const { error } = await deleteProject(targetProject.id);
 
     if (error) {
