@@ -19,6 +19,4 @@ export const Placeholder = ({ title, subtitle, eyebrow }: { title: string; subti
   </div>
 );
 
-export const Recurring = () => <Placeholder eyebrow="Workflow" title="Recurring" subtitle="Weekly rhythms and repeating responsibilities." />;
-export const Review = () => <Placeholder eyebrow="Workflow" title="Review" subtitle="Your weekly sweep - clear, reflect, plan." />;
 export const Meetups = () => <Placeholder eyebrow="Workflow" title="Meetups" subtitle="People, conversations, and shared agendas." />;
