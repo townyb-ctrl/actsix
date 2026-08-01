@@ -1,4 +1,7 @@
-const CACHE_VERSION = "actsix-v1";
+// Bump this whenever cached assets should be purged. Changing this file's
+// contents is what makes the browser reinstall the worker and re-run
+// activate(), which is where old caches get deleted.
+const CACHE_VERSION = "actsix-v2";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-app-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -54,15 +57,51 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Build output under /assets/ is content-hashed, so a given URL's contents
+  // never change - a new build produces a new filename. Serving these from
+  // cache without revalidating is safe and avoids a redundant network round
+  // trip on every load.
+  if (requestUrl.pathname.startsWith("/assets/")) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
   event.respondWith(staleWhileRevalidate(request));
 });
+
+async function cacheFirst(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cachedResponse = await cache.match(request);
+
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+
+    if (networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    return serviceUnavailableResponse();
+  }
+}
 
 async function networkFirst(request) {
   const cache = await caches.open(APP_SHELL_CACHE);
 
   try {
     const freshResponse = await fetch(request);
-    cache.put(request, freshResponse.clone());
+
+    // Only cache successful responses. Caching a 500/404 error page here
+    // would make it the offline app shell for every later failed request.
+    if (freshResponse.ok) {
+      cache.put(request, freshResponse.clone());
+    }
+
     return freshResponse;
   } catch (error) {
     const cachedResponse = await cache.match(request);
