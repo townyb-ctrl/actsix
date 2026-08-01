@@ -595,7 +595,6 @@ const TasksPage = () => {
               <CompactTaskRow
                 key={task.id}
                 task={task}
-                showSourceCue
                 showNotes={false}
                 onToggle={toggle}
                 onEdit={(task) => setEditingTask({ ...task })}
@@ -644,7 +643,6 @@ const TasksPage = () => {
                   <CompactTaskRow
                     key={task.id}
                     task={task}
-                    showSourceCue
                     showNotes={false}
                     onToggle={toggle}
                     onEdit={(task) => setEditingTask({ ...task })}

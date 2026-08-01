@@ -8,7 +8,6 @@ type CompactTaskRowProps = {
   task: any;
   showCheckbox?: boolean;
   showAssignee?: boolean;
-  showSourceCue?: boolean;
   showNotes?: boolean;
   onToggle?: (task: any) => void;
   onEdit?: (task: any) => void;
@@ -25,6 +24,33 @@ const formatShortDate = (date?: string | null) => {
     month: "short",
     day: "numeric",
   });
+};
+
+// A due date only deserves an alarm colour when it's actually urgent.
+// Colouring every date the same coral makes none of them stand out.
+const getDueTone = (date?: string | null) => {
+  if (!date) return "none";
+
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "none";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(parsed);
+  due.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round((due.getTime() - today.getTime()) / 86400000);
+
+  if (diffDays < 0) return "overdue";
+  if (diffDays === 0) return "today";
+  return "upcoming";
+};
+
+const dueToneClass: Record<string, string> = {
+  overdue: "border-brand-coral/25 bg-brand-coral/10 text-brand-coral",
+  today: "border-brand-amber/30 bg-brand-amber/10 text-brand-amber",
+  upcoming: "border-border/70 bg-background/70 text-muted-foreground",
+  none: "",
 };
 
 const priorityClass = (priority?: string | null) => {
@@ -90,7 +116,6 @@ const CompactTaskRow = ({
   task,
   showCheckbox = true,
   showAssignee = false,
-  showSourceCue = false,
   showNotes = true,
   onToggle,
   onEdit,
@@ -101,6 +126,7 @@ const CompactTaskRow = ({
   if (!task) return null;
 
   const dueLabel = formatShortDate(task.due);
+  const dueTone = getDueTone(task.due);
   const isComplete = Boolean(task.complete);
   const title = task.title || task.item || "Untitled item";
   const displayNotes = isSystemCaptureNote(task.notes) ? "" : task.notes;
@@ -112,8 +138,6 @@ const CompactTaskRow = ({
   const sectionName = getProjectSectionName(task);
   const projectLabel =
     task.project && sectionName ? `${task.project}:${sectionName}` : task.project;
-  const isProjectTask = Boolean(task.project_id || task.project || sectionName);
-  const hasLeadingCue = isProjectTask || isRecurringTask;
   const clickable = Boolean(onEdit);
   const assignedTo =
     task.assignedPersonName ||
@@ -125,6 +149,22 @@ const CompactTaskRow = ({
   const isAssignedToMe =
     Boolean(task.assigned_person_id) && task.assigned_person_id === currentPerson?.id;
   const assignedLabel = isAssignedToMe ? "ME" : assignedTo;
+
+  // Only surface metadata that carries signal. Defaults ("General" context,
+  // "Medium" priority/energy) are the same on most tasks, so rendering them
+  // just competes with the task name for attention.
+  const contextLabel = context !== "General" ? context : "";
+  const priorityLabel = priority !== "Medium" ? priority : "";
+  const energyLabel = task.energy && task.energy !== "Medium" ? task.energy : "";
+  const hasMeta = Boolean(
+    projectLabel ||
+      isRecurringTask ||
+      contextLabel ||
+      priorityLabel ||
+      energyLabel ||
+      minutes ||
+      (showAssignee && assignedLabel)
+  );
 
   const openEditor = () => {
     onEdit?.(task);
@@ -152,32 +192,6 @@ const CompactTaskRow = ({
           : undefined
       }
     >
-      {showSourceCue && (
-        <div
-          className={`flex h-8 w-8 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border ${
-            !hasLeadingCue
-              ? "pointer-events-none border-transparent bg-transparent text-transparent"
-              : isProjectTask
-              ? "border-brand-teal/25 bg-brand-teal/10 text-brand-teal"
-              : "border-brand-amber/25 bg-brand-amber/10 text-brand-amber"
-          }`}
-          title={
-            isProjectTask && isRecurringTask
-              ? "Project recurring task"
-              : isProjectTask
-                ? "Project task"
-                : "Recurring task"
-          }
-        >
-          {isProjectTask && (
-            <FolderKanban className="h-3.5 w-3.5" />
-          )}
-          {isRecurringTask && (
-            <RotateCcw className={isProjectTask ? "h-3 w-3" : "h-3.5 w-3.5"} />
-          )}
-        </div>
-      )}
-
       {showCheckbox && (
         <span onClick={(event) => event.stopPropagation()} className="mt-0.5 shrink-0">
           <Checkbox
@@ -193,7 +207,7 @@ const CompactTaskRow = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div
-            className={`min-w-0 text-sm font-semibold leading-snug ${
+            className={`min-w-0 text-[15px] font-bold leading-snug tracking-tight ${
               isComplete ? "line-through text-muted-foreground" : "text-foreground"
             }`}
           >
@@ -201,63 +215,54 @@ const CompactTaskRow = ({
           </div>
 
           {dueLabel && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-brand-coral/20 bg-brand-coral/10 px-2 py-0.5 text-[11px] font-bold text-brand-coral">
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${dueToneClass[dueTone]}`}
+              title={dueTone === "overdue" ? "Overdue" : dueTone === "today" ? "Due today" : "Due date"}
+            >
               <CalendarDays className="h-3 w-3" />
               {dueLabel}
             </span>
           )}
         </div>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-none">
-          {projectLabel && (
-            <span className="inline-flex max-w-[280px] items-center gap-1.5 truncate rounded-md border border-brand-teal/30 bg-brand-teal/10 px-2.5 py-1.5 text-[11px] font-extrabold text-brand-teal">
-              <FolderKanban className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{projectLabel}</span>
-            </span>
-          )}
+        {hasMeta && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] leading-none text-muted-foreground">
+            {projectLabel && (
+              <span className="inline-flex max-w-[280px] items-center gap-1 truncate rounded-md border border-brand-teal/20 bg-brand-teal/5 px-1.5 py-0.5 font-semibold text-brand-teal">
+                <FolderKanban className="h-3 w-3 shrink-0" />
+                <span className="truncate">{projectLabel}</span>
+              </span>
+            )}
 
-          {isRecurringTask && (
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-amber/35 bg-brand-amber/15 px-2.5 py-1.5 text-[11px] font-extrabold text-brand-amber">
-              <RotateCcw className="h-3.5 w-3.5 shrink-0" />
-              {recurringLabel}
-            </span>
-          )}
+            {isRecurringTask && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-brand-amber/20 bg-brand-amber/5 px-1.5 py-0.5 font-semibold text-brand-amber">
+                <RotateCcw className="h-3 w-3 shrink-0" />
+                {recurringLabel}
+              </span>
+            )}
 
-          <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-2 py-1 font-semibold text-muted-foreground">
-            @{context}
-          </span>
+            {contextLabel && <span>@{contextLabel}</span>}
 
-          <span className="text-muted-foreground">|</span>
+            {priorityLabel && <span className={priorityClass(priority)}>{priorityLabel}</span>}
 
-          <span className={priorityClass(priority)}>{priority}</span>
+            <span className="font-mono">{minutes}m</span>
 
-          <span className="text-muted-foreground">|</span>
-
-          <span className="font-mono text-muted-foreground">{minutes}m</span>
-
-          {showAssignee && assignedLabel && (
-            <>
-              <span className="text-muted-foreground">|</span>
+            {showAssignee && assignedLabel && (
               <span
-                className={`inline-flex max-w-[180px] items-center gap-1 truncate rounded-full border px-2 py-1 font-semibold ${
+                className={`inline-flex max-w-[180px] items-center gap-1 truncate rounded-full px-1.5 py-0.5 font-semibold ${
                   isAssignedToMe
-                    ? "border-brand-teal/40 bg-brand-teal text-white shadow-sm"
-                    : "border-brand-sage/20 bg-brand-sage/10 text-brand-sage"
+                    ? "bg-brand-teal/10 text-brand-teal"
+                    : "bg-brand-sage/10 text-brand-sage"
                 }`}
               >
                 <UserRound className="h-3 w-3 shrink-0" />
                 <span className="truncate">{assignedLabel}</span>
               </span>
-            </>
-          )}
+            )}
 
-          {task.energy && (
-            <>
-              <span className="text-muted-foreground">|</span>
-              <span className="text-muted-foreground">{task.energy} energy</span>
-            </>
-          )}
-        </div>
+            {energyLabel && <span>{energyLabel} energy</span>}
+          </div>
+        )}
 
         {showNotes && displayNotes && (
           <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
