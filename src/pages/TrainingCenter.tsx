@@ -1911,8 +1911,8 @@ const TrainingCenter = () => {
                       className={cn(
                         "actsix-filter-pill",
                         adminView === view.id
-                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                          : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                          ? "actsix-filter-pill-active"
+                          : "actsix-filter-pill-idle"
                       )}
                       data-state={adminView === view.id ? "active" : "inactive"}
                     >
@@ -1920,7 +1920,9 @@ const TrainingCenter = () => {
                       <span
                         className={cn(
                           "actsix-filter-pill-count",
-                          adminView === view.id ? "bg-brand-teal/15 text-brand-teal" : "bg-muted text-muted-foreground"
+                          adminView === view.id
+                            ? "actsix-filter-pill-count-active"
+                            : "actsix-filter-pill-count-idle"
                         )}
                       >
                         {loading ? "..." : view.count}
@@ -2098,8 +2100,8 @@ const TrainingCenter = () => {
                       className={cn(
                         "actsix-filter-pill",
                         categoryFilter === category
-                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                          : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                          ? "actsix-filter-pill-active"
+                          : "actsix-filter-pill-idle"
                       )}
                     >
                       {category}
@@ -2113,8 +2115,8 @@ const TrainingCenter = () => {
                       className={cn(
                         "actsix-filter-pill",
                         statusFilter === status
-                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                          : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                          ? "actsix-filter-pill-active"
+                          : "actsix-filter-pill-idle"
                       )}
                     >
                       {status}

@@ -410,25 +410,14 @@ const TasksPage = () => {
           </Card>
         )}
 
-        <div data-tour="tasks-filters" className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span className="truncate">Showing {filteredOpen.length} of {open.length} open actions
-              {hasActiveFilters ? " with filters applied" : ""}
-            </span>
-          </div>
-
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 self-start px-2.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground sm:self-auto"
-              onClick={clearFilters}
-            >
-              <X className="mr-1.5 h-3.5 w-3.5" />
-              Clear
-            </Button>
-          )}
+        <div
+          data-tour="tasks-filters"
+          className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground"
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span className="truncate">Showing {filteredOpen.length} of {open.length} open actions
+            {hasActiveFilters ? " with filters applied" : ""}
+          </span>
         </div>
 
         {showFilters && (
@@ -439,7 +428,7 @@ const TasksPage = () => {
                 <select
                   value={projectFilter}
                   onChange={(event) => setProjectFilter(event.target.value)}
-                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
+                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
                 >
                   <option>All</option>
                   {uniqueProjects.map((project) => (
@@ -453,7 +442,7 @@ const TasksPage = () => {
                 <select
                   value={contextFilter}
                   onChange={(event) => setContextFilter(event.target.value)}
-                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
+                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
                 >
                   <option>All</option>
                   {uniqueContexts.map((context) => (
@@ -467,7 +456,7 @@ const TasksPage = () => {
                 <select
                   value={priorityFilter}
                   onChange={(event) => setPriorityFilter(event.target.value)}
-                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
+                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
                 >
                   <option>All</option>
                   {uniquePriorities.map((priority) => (
@@ -481,7 +470,7 @@ const TasksPage = () => {
                 <select
                   value={energyFilter}
                   onChange={(event) => setEnergyFilter(event.target.value)}
-                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
+                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
                 >
                   <option>All</option>
                   {uniqueEnergies.map((energy) => (
@@ -498,7 +487,7 @@ const TasksPage = () => {
                 <select
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value)}
-                  className="mt-1 h-7 w-full rounded-full border border-border/65 bg-background/70 px-2.5 text-xs font-semibold"
+                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
                 >
                   <option value="due">Due date</option>
                   <option value="priority">Priority</option>
@@ -512,68 +501,79 @@ const TasksPage = () => {
         )}
 
         <section>
-          <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h2 className="shrink-0 text-lg font-extrabold tracking-tight">
-                Open
-                <span className="ml-2 rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs font-extrabold text-muted-foreground">
-                  {filteredOpen.length}
-                </span>
-              </h2>
-              <div className="actsix-filter-pills min-w-0 flex-1">
-                {dateViews.map((view) => {
-                  const active = dateView === view.value;
+          {/* The count lives in the "Showing X of Y" line above and in the
+              "All" pill, so a visible heading here would say it a third time.
+              Kept for screen readers to keep the section labelled. */}
+          <h2 className="sr-only">Open next actions</h2>
 
-                  return (
-                    <button
-                      key={view.value}
-                      type="button"
-                      onClick={() => setDateView(view.value)}
-                      className={`actsix-filter-pill ${
+          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {/* pl-2 lines the pills up with the task card's inner padding below */}
+            <div className="actsix-filter-pills min-w-0 flex-1 pl-2">
+              {dateViews.map((view) => {
+                const active = dateView === view.value;
+
+                return (
+                  <button
+                    key={view.value}
+                    type="button"
+                    onClick={() => setDateView(view.value)}
+                    className={`actsix-filter-pill ${
+                      active
+                        ? "actsix-filter-pill-active"
+                        : "actsix-filter-pill-idle"
+                    }`}
+                  >
+                    {view.label}
+                    <span
+                      className={`actsix-filter-pill-count ${
                         active
-                          ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                          : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          ? "actsix-filter-pill-count-active"
+                          : "actsix-filter-pill-count-idle"
                       }`}
                     >
-                      {view.label}
-                      <span
-                        className={`actsix-filter-pill-count ${
-                          active
-                            ? "bg-brand-teal/15 text-brand-teal"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {view.count}
-                      </span>
-                    </button>
-                  );
-                })}
+                      {view.count}
+                    </span>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setShowFilters((value) => !value)}
+                className={`actsix-filter-pill ${
+                  showFilters || hasActiveFilters
+                    ? "actsix-filter-pill-active"
+                    : "actsix-filter-pill-idle"
+                }`}
+              >
+                <SlidersHorizontal className="h-3 w-3" />
+                Filters
+                {hasActiveFilters && (
+                  <span className="actsix-filter-pill-count actsix-filter-pill-count-active">
+                    On
+                  </span>
+                )}
+              </button>
+
+              {hasActiveFilters && (
                 <button
                   type="button"
-                  onClick={() => setShowFilters((value) => !value)}
-                  className={`actsix-filter-pill ${
-                    showFilters || hasActiveFilters
-                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  }`}
+                  onClick={clearFilters}
+                  className="actsix-filter-pill border-transparent bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 >
-                  <SlidersHorizontal className="h-3 w-3" />
-                  Filters
-                  {hasActiveFilters && (
-                    <span className="actsix-filter-pill-count bg-brand-teal/15 text-brand-teal">
-                      On
-                    </span>
-                  )}
+                  <X className="h-3 w-3" />
+                  Clear
                 </button>
-              </div>
+              )}
             </div>
-            <div className="actsix-search-field sm:w-56 lg:w-64">
+
+            <div className="actsix-search-field shrink-0 sm:w-52 lg:w-64">
               <Search className="actsix-search-icon" />
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search next actions..."
                 className="actsix-search-input"
+                aria-label="Search next actions"
               />
             </div>
           </div>
@@ -587,7 +587,11 @@ const TasksPage = () => {
 
             {!loadingTasks && filteredOpen.length === 0 && (
               <div className="actsix-empty-state">
-                No open actions match this view.
+                {hasActiveFilters
+                  ? `No open actions match these filters${
+                      open.length > 0 ? ` — ${open.length} are hidden` : ""
+                    }. Clear them above to see everything.`
+                  : "No open actions match this view."}
               </div>
             )}
 

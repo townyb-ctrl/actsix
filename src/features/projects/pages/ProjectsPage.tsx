@@ -792,16 +792,16 @@ const ProjectsPage = () => {
                   onClick={() => setProjectView(view.value)}
                   className={`actsix-filter-pill ${
                     active
-                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      ? "actsix-filter-pill-active"
+                      : "actsix-filter-pill-idle"
                   }`}
                 >
                   {view.label}
                   <span
                     className={`actsix-filter-pill-count ${
                       active
-                        ? "bg-brand-teal/15 text-brand-teal"
-                        : "bg-muted text-muted-foreground"
+                        ? "actsix-filter-pill-count-active"
+                        : "actsix-filter-pill-count-idle"
                     }`}
                   >
                     {view.count}

@@ -436,11 +436,14 @@
   }
 
   .actsix-search-icon {
-    @apply pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/70;
+    @apply pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60;
   }
 
+  /* Matches the filter pills: same height, softened border, no fill. Text
+     stays at 11px rather than the pills' 10px - pills are read-only labels,
+     but this is typed into. */
   .actsix-search-input {
-    @apply h-7 rounded-full border-border/50 bg-background/45 pl-7 pr-2 text-xs shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-brand-teal/20;
+    @apply h-6 rounded-full border-border/40 bg-transparent pl-6 pr-2 text-[11px] shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-brand-teal/20;
   }
 
   .actsix-filter-pills {
@@ -451,8 +454,27 @@
     @apply inline-flex min-h-6 shrink-0 snap-start items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold transition-colors;
   }
 
+  /* Pill states live here rather than inline so filter rows stay consistent
+     across Tasks, Projects, People, Calendar, Sermon Hub and Training Center.
+     They previously drifted into two different inline variants. */
+  .actsix-filter-pill-idle {
+    @apply border-border/40 bg-transparent text-muted-foreground/80 hover:bg-muted/40 hover:text-foreground;
+  }
+
+  .actsix-filter-pill-active {
+    @apply border-brand-teal/25 bg-brand-teal/5 text-brand-teal;
+  }
+
   .actsix-filter-pill-count {
     @apply rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none;
+  }
+
+  .actsix-filter-pill-count-idle {
+    @apply bg-muted/50 text-muted-foreground/70;
+  }
+
+  .actsix-filter-pill-count-active {
+    @apply bg-brand-teal/10 text-brand-teal;
   }
 
   .actsix-mobile-dock-item {

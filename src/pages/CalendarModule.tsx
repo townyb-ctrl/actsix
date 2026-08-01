@@ -593,12 +593,12 @@ export default function CalendarModule() {
                 className={cn(
                   "actsix-filter-pill",
                   active
-                    ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                    : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                    ? "actsix-filter-pill-active"
+                    : "actsix-filter-pill-idle"
                 )}
               >
                 {option.label}
-                <span className={cn("actsix-filter-pill-count", active ? "bg-brand-teal/15" : "bg-muted")}>{count}</span>
+                <span className={cn("actsix-filter-pill-count", active ? "actsix-filter-pill-count-active" : "actsix-filter-pill-count-idle")}>{count}</span>
               </button>
             );
           })}

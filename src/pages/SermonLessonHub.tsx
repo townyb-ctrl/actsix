@@ -960,8 +960,8 @@ const HubViewTabs = ({
             className={cn(
               "actsix-filter-pill",
               active
-                ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                ? "actsix-filter-pill-active"
+                : "actsix-filter-pill-idle"
             )}
             data-state={active ? "active" : "inactive"}
             onClick={() => onChange(view.key)}
@@ -1256,8 +1256,8 @@ const LibrarySection = ({
               className={cn(
                 "actsix-filter-pill",
                 typeFilter === option.value
-                  ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                  : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                  ? "actsix-filter-pill-active"
+                  : "actsix-filter-pill-idle"
               )}
             >
               {option.label}
@@ -1271,8 +1271,8 @@ const LibrarySection = ({
               className={cn(
                 "actsix-filter-pill",
                 statusFilter === option.value
-                  ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                  : "border-border/70 bg-card/70 text-muted-foreground hover:border-brand-teal/25 hover:bg-brand-teal/5 hover:text-brand-teal"
+                  ? "actsix-filter-pill-active"
+                  : "actsix-filter-pill-idle"
               )}
             >
               {option.label}

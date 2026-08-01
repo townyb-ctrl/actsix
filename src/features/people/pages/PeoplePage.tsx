@@ -806,8 +806,8 @@ ${row.notes}`
                   type="button"
                   className={`actsix-filter-pill ${
                     peopleFilter === value
-                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      ? "actsix-filter-pill-active"
+                      : "actsix-filter-pill-idle"
                   }`}
                   onClick={() => {
                     setPeopleFilter(value);
@@ -823,8 +823,8 @@ ${row.notes}`
                   type="button"
                   className={`actsix-filter-pill ${
                     peopleFilter === "custom"
-                      ? "border-brand-teal/35 bg-brand-teal/10 text-brand-teal"
-                      : "border-border/70 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      ? "actsix-filter-pill-active"
+                      : "actsix-filter-pill-idle"
                   }`}
                   onClick={() => {
                     setCustomFilterOpen((open) => !open);
