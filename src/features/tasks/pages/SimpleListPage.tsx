@@ -1,11 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Edit3, Plus, Save, Trash2, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Edit3, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Cfg = {
@@ -27,6 +34,14 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const fieldId = useId();
+  const titleFieldId = `${fieldId}-title`;
+  const personFieldId = `${fieldId}-person`;
+  const followUpFieldId = `${fieldId}-follow-up`;
+  const projectFieldId = `${fieldId}-project`;
+  const categoryFieldId = `${fieldId}-category`;
+  const notesFieldId = `${fieldId}-notes`;
 
   const load = async ({ showLoading = false } = {}) => {
     if (!user) {
@@ -328,29 +343,31 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
         </Card>
       </div>
 
-      {editingItem && (
-        <div className="fixed inset-0 z-50 bg-brand-ink/45 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="actsix-panel w-full max-w-xl overflow-hidden">
-            <div className="flex items-start justify-between gap-4 p-4 sm:p-5 border-b border-border/70">
-              <div>
-                <p className="label-eyebrow">Edit Item</p>
-                <h2 className="text-xl font-extrabold tracking-tight mt-1">
-                  {cfg.title}
-                </h2>
-              </div>
+      <Dialog
+        open={Boolean(editingItem)}
+        onOpenChange={(open) => {
+          if (!open) setEditingItem(null);
+        }}
+      >
+        {editingItem && (
+          <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
+            <DialogHeader className="border-b border-border/70 p-4 pr-12 text-left sm:p-5 sm:pr-14">
+              <p className="label-eyebrow">Edit Item</p>
+              <DialogTitle className="mt-1 text-xl font-extrabold tracking-tight">
+                {cfg.title}
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                Edit this {cfg.title} item.
+              </DialogDescription>
+            </DialogHeader>
 
-              <Button variant="outline" className="rounded-xl" onClick={() => setEditingItem(null)}>
-                <X className="h-4 w-4 mr-2" />
-                Close
-              </Button>
-            </div>
-
-            <div className="p-4 sm:p-5 space-y-4">
+            <div className="max-h-[70vh] space-y-4 overflow-y-auto p-4 sm:p-5">
               <div className="actsix-panel-soft p-4">
-                <label className="label-eyebrow">
+                <label htmlFor={titleFieldId} className="label-eyebrow">
                   {cfg.table === "waiting_items" ? "Waiting for" : "Title"}
                 </label>
                 <Input
+                  id={titleFieldId}
                   value={editingItem[cfg.titleCol] || ""}
                   onChange={(event) =>
                     setEditingItem({
@@ -365,8 +382,11 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               {cfg.table === "waiting_items" && (
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="actsix-panel-soft p-4">
-                    <label className="label-eyebrow">Who are you waiting for?</label>
+                    <label htmlFor={personFieldId} className="label-eyebrow">
+                      Who are you waiting for?
+                    </label>
                     <Input
+                      id={personFieldId}
                       value={editingItem.person || ""}
                       onChange={(event) =>
                         setEditingItem({
@@ -380,8 +400,11 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                   </div>
 
                   <div className="actsix-panel-soft p-4">
-                    <label className="label-eyebrow">Follow-up date</label>
+                    <label htmlFor={followUpFieldId} className="label-eyebrow">
+                      Follow-up date
+                    </label>
                     <Input
+                      id={followUpFieldId}
                       type="date"
                       value={editingItem.follow_up_date || ""}
                       onChange={(event) =>
@@ -395,8 +418,11 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                   </div>
 
                   <div className="actsix-panel-soft p-4 md:col-span-2">
-                    <label className="label-eyebrow">Related project</label>
+                    <label htmlFor={projectFieldId} className="label-eyebrow">
+                      Related project
+                    </label>
                     <select
+                      id={projectFieldId}
                       value={editingItem.project || ""}
                       onChange={(event) =>
                         setEditingItem({
@@ -420,8 +446,11 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               {cfg.table === "someday_items" && (
                 <>
                   <div className="actsix-panel-soft p-4">
-                    <label className="label-eyebrow">Category</label>
+                    <label htmlFor={categoryFieldId} className="label-eyebrow">
+                      Category
+                    </label>
                     <Input
+                      id={categoryFieldId}
                       value={editingItem.category || ""}
                       onChange={(event) =>
                         setEditingItem({
@@ -435,8 +464,11 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                   </div>
 
                   <div className="actsix-panel-soft p-4">
-                    <label className="label-eyebrow">Notes</label>
+                    <label htmlFor={notesFieldId} className="label-eyebrow">
+                      Notes
+                    </label>
                     <textarea
+                      id={notesFieldId}
                       value={editingItem.notes || ""}
                       onChange={(event) =>
                         setEditingItem({
@@ -481,9 +513,9 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                 </Button>
               </div>
             </div>
-          </Card>
-        </div>
-      )}
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 };
