@@ -35,3 +35,6 @@ transcriber/.env
 supabase/.temp/
 .aider*
 .env
+
+# Subagent-driven-development scratch workspace (per-plan, not part of the repo)
+.superpowers/
