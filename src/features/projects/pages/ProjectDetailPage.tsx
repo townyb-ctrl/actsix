@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
+import ProjectSectionEditorModal, {
+  type ProjectSection,
+} from "@/features/projects/components/ProjectSectionEditorModal";
 import ProjectDetailHero from "@/features/projects/components/ProjectDetailHero";
 import ProjectDetailSidebar from "@/features/projects/components/ProjectDetailSidebar";
 import ProjectSectionRail from "@/features/projects/components/ProjectSectionRail";
@@ -60,19 +63,6 @@ type ProjectCollaborator = {
   role: string | null;
   created_at: string;
   people?: Person | null;
-};
-
-type ProjectSection = {
-  id: string;
-  user_id: string;
-  project_id: string;
-  name: string;
-  description: string;
-  leader_person_id: string | null;
-  status: string;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
 };
 
 type ActivityLog = {
@@ -1250,131 +1240,14 @@ const ProjectDetailPage = () => {
         </div>
       )}
 
-      {editingSection && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-ink/45 p-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <Card className="actsix-panel max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-b-none sm:rounded-xl">
-            <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
-              <div className="min-w-0">
-                <p className="label-eyebrow">Project Sections</p>
-                <h2 className="text-xl font-extrabold leading-tight">
-                  {editingSection.id ? "Edit Section" : "Add Section"}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Sections group related tasks and can have one leader from the project collaborators.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setEditingSection(null)}
-              >
-                Close
-              </Button>
-            </div>
-
-            <div className="space-y-4 p-4 sm:p-5">
-              <div>
-                <label className="label-eyebrow">Section name</label>
-                <Input
-                  value={editingSection.name || ""}
-                  onChange={(event) =>
-                    setEditingSection({ ...editingSection, name: event.target.value })
-                  }
-                  placeholder="Worship, Media, Logistics..."
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label-eyebrow">Leader</label>
-                  <select
-                    value={editingSection.leader_person_id || ""}
-                    onChange={(event) =>
-                      setEditingSection({
-                        ...editingSection,
-                        leader_person_id: event.target.value || null,
-                      })
-                    }
-                    className="mt-2 h-11 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option value="">No leader</option>
-                    {assignableProjectPeople.map((person) => (
-                      <option key={person.id} value={person.id}>
-                        {person.display_name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Add someone as a collaborator before making them a section leader.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Status</label>
-                  <select
-                    value={editingSection.status || "Active"}
-                    onChange={(event) =>
-                      setEditingSection({ ...editingSection, status: event.target.value })
-                    }
-                    className="mt-2 h-11 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
-                  >
-                    <option>Not started</option>
-                    <option>Active</option>
-                    <option>Blocked</option>
-                    <option>Complete</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="label-eyebrow">Description</label>
-                <Input
-                  value={editingSection.description || ""}
-                  onChange={(event) =>
-                    setEditingSection({
-                      ...editingSection,
-                      description: event.target.value,
-                    })
-                  }
-                  placeholder="What this workstream covers..."
-                  className="mt-2 border-border/70 bg-background"
-                />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Shows next to the leader's name, so keep it short.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 border-t border-border/70 bg-background/95 p-4 sm:flex sm:justify-end sm:p-5">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setEditingSection(null)}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                className="actsix-btn-primary min-h-10 rounded-xl"
-                onClick={saveSection}
-                disabled={savingSection}
-              >
-                <Plus className="h-4 w-4" />
-                {savingSection
-                  ? "Saving..."
-                  : editingSection.id
-                    ? "Save Section"
-                    : "Add Section"}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <ProjectSectionEditorModal
+        section={editingSection}
+        saving={savingSection}
+        assignablePeople={assignableProjectPeople}
+        onChange={setEditingSection}
+        onClose={() => setEditingSection(null)}
+        onSave={saveSection}
+      />
 
       <ProjectEditorModal
         project={editingProject}

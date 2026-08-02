@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { fieldControlClass } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import { PeopleSearchSelect, type PeopleSearchPerson } from "@/components/people/PeopleSearchSelect";
 
 export type NewTaskDraft = {
@@ -76,15 +78,28 @@ const ProjectAddTaskRow = ({ targetName, people, onAdd }: ProjectAddTaskRowProps
       onKeyDown={(event) => {
         if (event.key === "Escape") close();
       }}
-      className="rounded-xl border border-border/70 bg-background p-2.5"
+      className="rounded-xl border border-border/70 bg-card p-2.5"
     >
-      <Input
-        ref={titleRef}
-        value={draft.title}
-        onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-        placeholder={`Add task to ${targetName}...`}
-        className="h-10 border-border/70 bg-background"
-      />
+      <div className="flex items-start gap-2">
+        <Input
+          ref={titleRef}
+          value={draft.title}
+          onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+          placeholder={`Add task to ${targetName}...`}
+          className={cn(fieldControlClass, "flex-1")}
+        />
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 shrink-0 text-muted-foreground"
+          onClick={close}
+          aria-label="Close add task form"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
 
       <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto]">
         <PeopleSearchSelect
@@ -100,27 +115,16 @@ const ProjectAddTaskRow = ({ targetName, people, onAdd }: ProjectAddTaskRowProps
           type="date"
           value={draft.due}
           onChange={(event) => setDraft({ ...draft, due: event.target.value })}
-          className="h-10 border-border/70 bg-background"
+          className={cn(fieldControlClass, "h-10")}
         />
 
-        <div className="flex gap-2">
-          <Button
-            type="submit"
-            className="actsix-btn-primary h-10 min-h-10 flex-1 rounded-lg px-4"
-            disabled={!draft.title.trim() || saving}
-          >
-            {saving ? "Adding..." : "Add"}
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-10 rounded-lg px-3 text-muted-foreground"
-            onClick={close}
-          >
-            Cancel
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          className="actsix-btn-primary h-10 min-h-10 rounded-lg px-4"
+          disabled={!draft.title.trim() || saving}
+        >
+          {saving ? "Adding..." : "Add"}
+        </Button>
       </div>
     </form>
   );
