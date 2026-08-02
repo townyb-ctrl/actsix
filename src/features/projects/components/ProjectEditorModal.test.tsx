@@ -68,6 +68,25 @@ describe("ProjectEditorModal", () => {
     expect(screen.getByRole("checkbox", { name: /this project is an event/i })).toBeInTheDocument();
   });
 
+  it("reveals the Event starts/ends fields only when is_event is true", () => {
+    const { rerender } = render(
+      <ProjectEditorModal project={baseProject} onChange={() => {}} onClose={() => {}} onSave={() => {}} />,
+    );
+    expect(screen.queryByLabelText("Event starts")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Event ends")).not.toBeInTheDocument();
+
+    rerender(
+      <ProjectEditorModal
+        project={{ ...baseProject, is_event: true }}
+        onChange={() => {}}
+        onClose={() => {}}
+        onSave={() => {}}
+      />,
+    );
+    expect(screen.getByLabelText("Event starts")).toBeInTheDocument();
+    expect(screen.getByLabelText("Event ends")).toBeInTheDocument();
+  });
+
   it("shows the delete action only when onDelete is provided", () => {
     const { rerender } = render(
       <ProjectEditorModal project={baseProject} onChange={() => {}} onClose={() => {}} onSave={() => {}} />,

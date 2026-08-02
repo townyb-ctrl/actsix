@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export const fieldControlClass =
-  "h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15";
+  "h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-base md:text-sm shadow-none outline-none transition focus-visible:border-brand-teal focus-visible:ring-2 focus-visible:ring-brand-teal/15 focus-visible:ring-offset-0";
 
 type FieldProps = {
   label: string;
@@ -14,13 +14,35 @@ type FieldProps = {
 };
 
 export function Field({ label, htmlFor, hint, children, className }: FieldProps) {
+  // Only meaningful when both an id to point at and a hint to describe exist.
+  const hintId = htmlFor && hint ? `${htmlFor}-hint` : undefined;
+
+  // Auto-wire aria-describedby onto the single control child rather than
+  // requiring every call site to pass it manually. Falls back to rendering
+  // the hint unassociated if a call site's child isn't a single element or
+  // already declares its own aria-describedby.
+  const control =
+    hintId && React.isValidElement(children) && !(children.props as { "aria-describedby"?: string })["aria-describedby"]
+      ? React.cloneElement(children as React.ReactElement<{ "aria-describedby"?: string }>, {
+          "aria-describedby": hintId,
+        })
+      : children;
+
   return (
     <div className={cn("space-y-2", className)}>
-      <label htmlFor={htmlFor} className="text-sm font-semibold">
-        {label}
-      </label>
-      {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="text-sm font-semibold">
+          {label}
+        </label>
+      ) : (
+        <span className="block text-sm font-semibold">{label}</span>
+      )}
+      {control}
+      {hint && (
+        <p id={hintId} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

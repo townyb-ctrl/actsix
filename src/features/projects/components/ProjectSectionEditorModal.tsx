@@ -51,13 +51,13 @@ const ProjectSectionEditorModal = ({
       description="Sections group related tasks and can have one leader from the project collaborators."
       size="md"
       footer={
-        <div className="ml-auto flex gap-2">
-          <Button type="button" variant="outline" className="rounded-xl" onClick={onClose}>
+        <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:flex sm:items-center">
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button
             type="button"
-            className="actsix-btn-primary rounded-xl"
+            className="actsix-btn-primary"
             onClick={onSave}
             disabled={saving}
           >

@@ -16,6 +16,19 @@ describe("Field", () => {
     expect(screen.getByText("Renaming also updates linked tasks.")).toBeInTheDocument();
   });
 
+  it("associates the hint with the control via aria-describedby", () => {
+    render(
+      <Field label="Project name" htmlFor="project-name" hint="Renaming also updates linked tasks.">
+        <input id="project-name" />
+      </Field>,
+    );
+
+    const input = screen.getByLabelText("Project name");
+    const hint = screen.getByText("Renaming also updates linked tasks.");
+    expect(hint).toHaveAttribute("id", "project-name-hint");
+    expect(input).toHaveAttribute("aria-describedby", "project-name-hint");
+  });
+
   it("omits the hint element when no hint is passed", () => {
     render(
       <Field label="Area" htmlFor="area">

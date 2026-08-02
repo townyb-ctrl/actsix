@@ -115,12 +115,12 @@ const ProjectAddTaskRow = ({ targetName, people, onAdd }: ProjectAddTaskRowProps
           type="date"
           value={draft.due}
           onChange={(event) => setDraft({ ...draft, due: event.target.value })}
-          className={cn(fieldControlClass)}
+          className={cn(fieldControlClass, "h-10")}
         />
 
         <Button
           type="submit"
-          className="actsix-btn-primary h-11 min-h-11 rounded-lg px-4"
+          className="actsix-btn-primary h-10 min-h-10 rounded-lg px-4"
           disabled={!draft.title.trim() || saving}
         >
           {saving ? "Adding..." : "Add"}

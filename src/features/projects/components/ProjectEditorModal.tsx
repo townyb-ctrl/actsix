@@ -81,13 +81,13 @@ const ProjectEditorModal = ({
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button type="button" variant="outline" className="rounded-lg" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button
               type="button"
               disabled={saving}
-              className="actsix-btn-primary rounded-lg font-bold"
+              className="actsix-btn-primary font-bold"
               onClick={onSave}
             >
               <Save className="h-4 w-4" />
