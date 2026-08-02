@@ -253,6 +253,19 @@
   }
 }
 
+/* Style native date-picker indicator */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  opacity: 0.65;
+  filter: invert(38%) sepia(24%) saturate(1114%) hue-rotate(129deg) brightness(94%) contrast(90%);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
