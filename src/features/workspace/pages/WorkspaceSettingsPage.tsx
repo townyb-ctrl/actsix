@@ -276,7 +276,7 @@ const WorkspaceSettingsPage = () => {
 
               <Button
                 type="submit"
-                className="actsix-btn-primary rounded-xl"
+                className="actsix-btn-primary min-h-10 rounded-xl"
                 disabled={!isAdmin || busy}
               >
                 Update Secret Phrase

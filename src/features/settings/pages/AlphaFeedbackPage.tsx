@@ -128,7 +128,7 @@ export default function AlphaFeedback() {
           <Button
             type="button"
             variant="outline"
-            className="actsix-btn-outline gap-2"
+            className="actsix-btn-outline min-h-10 gap-2"
             onClick={loadFeedback}
             disabled={loading || workspaceLoading}
           >

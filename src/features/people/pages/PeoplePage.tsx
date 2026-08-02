@@ -894,7 +894,7 @@ ${row.notes}`
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="actsix-btn-outline"
+                    className="actsix-btn-outline min-h-10"
                     onClick={() => {
                       setCustomFilters({
                         canMessage: false,
@@ -914,7 +914,7 @@ ${row.notes}`
                   <Button
                     type="button"
                     size="sm"
-                    className="actsix-btn-primary"
+                    className="actsix-btn-primary min-h-10"
                     onClick={() => {
                       setPeopleFilter("custom");
                       setCustomFilterOpen(false);
@@ -1207,7 +1207,7 @@ ${row.notes}`
               <Button
                 type="button"
                 variant="outline"
-                className="actsix-btn-outline"
+                className="actsix-btn-outline min-h-10"
                 onClick={() => {
                   setCsvRows([]);
                   setCsvError("");
@@ -1219,7 +1219,7 @@ ${row.notes}`
 
               <Button
                 type="button"
-                className="actsix-btn-primary"
+                className="actsix-btn-primary min-h-10"
                 onClick={importCsvPeople}
                 disabled={csvRows.length === 0 || importingCsv}
               >
@@ -1263,7 +1263,7 @@ ${row.notes}`
                     <Button
                       type="button"
                       variant="outline"
-                      className="actsix-btn-outline"
+                      className="actsix-btn-outline min-h-10"
                       onClick={() => copyWelcomeMessage(recipient)}
                     >
                       <Copy className="h-4 w-4" />
@@ -1272,7 +1272,7 @@ ${row.notes}`
 
                     <Button
                       type="button"
-                      className="actsix-btn-primary"
+                      className="actsix-btn-primary min-h-10"
                       onClick={() => openWelcomeEmailDraft(recipient)}
                     >
                       <Send className="h-4 w-4" />
@@ -1388,7 +1388,7 @@ ${row.notes}`
                 <Button
                   type="button"
                   variant="outline"
-                  className="actsix-btn-outline"
+                  className="actsix-btn-outline min-h-10"
                   onClick={() => {
                     resetForm();
                     setAddPersonOpen(false);
@@ -1397,7 +1397,7 @@ ${row.notes}`
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary">
+                <Button type="submit" className="actsix-btn-primary min-h-10">
                   <Plus className="h-4 w-4" />
                   Add Person
                 </Button>

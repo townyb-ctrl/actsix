@@ -252,7 +252,7 @@ const RecurringMeetingsPage = () => {
             <Button
               type="button"
               size="sm"
-              className="actsix-btn-primary h-9"
+              className="actsix-btn-primary min-h-10 h-9"
               onClick={() => setAddOpen(true)}
             >
               <Plus className="h-4 w-4" />
@@ -475,7 +475,7 @@ const RecurringMeetingsPage = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl">
                   <Plus className="h-4 w-4" />
                   Create Recurring Meeting
                 </Button>

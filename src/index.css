@@ -273,12 +273,15 @@
     box-shadow: var(--shadow-soft);
   }
 
+  /* Height is deliberately NOT set here. A min-height in this class cannot be
+     overridden by any Tailwind h-* utility (different property), which silently
+     defeated every attempt to size a button. Call sites pass min-h-10 for the
+     standard height instead. */
   .actsix-btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 40px;
     border-radius: var(--radius-control);
     background-color: hsl(var(--brand-teal));
     color: #ffffff;
@@ -291,6 +294,17 @@
     background-color: hsl(var(--brand-teal-dark));
     color: #ffffff;
     transform: translateY(-1px);
+  }
+
+  /* Tightens the gap and shadow for buttons sized down to sit inline with the
+     h-6 filter pills. Height itself comes from a normal h-* utility. */
+  .actsix-btn-primary-compact {
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(45, 140, 140, 0.18);
+  }
+
+  .actsix-btn-primary-compact:hover {
+    transform: none;
   }
 
   .actsix-btn-soft {
@@ -311,12 +325,12 @@
     transform: translateY(-1px);
   }
 
+  /* Height comes from the call site - see the note on .actsix-btn-primary. */
   .actsix-btn-outline {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 40px;
     border-radius: var(--radius-control);
     border: 1px solid hsl(var(--brand-teal) / 0.24);
     background-color: hsl(var(--brand-teal) / 0.1);

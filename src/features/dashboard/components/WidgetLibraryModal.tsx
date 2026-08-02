@@ -76,7 +76,7 @@ export function WidgetLibraryModal({
                           </p>
                         </div>
                         <Button
-                          className="actsix-btn-primary mt-3 h-8 w-full px-3 text-xs"
+                          className="actsix-btn-primary min-h-10 mt-3 h-8 w-full px-3 text-xs"
                           onClick={() => {
                             onAddWidget(definition.id);
                             onOpenChange(false);

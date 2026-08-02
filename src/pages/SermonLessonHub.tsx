@@ -567,7 +567,7 @@ export default function SermonLessonHub() {
         subtitle="A quiet place to write, gather sources, and reuse previous teaching."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button type="button" className="actsix-btn-primary rounded-xl" onClick={resetForm}>
+            <Button type="button" className="actsix-btn-primary min-h-10 rounded-xl" onClick={resetForm}>
               <Plus className="h-4 w-4" />
               New item
             </Button>
@@ -601,13 +601,13 @@ export default function SermonLessonHub() {
                   <Button
                     type="button"
                     data-testid="sermon-hub-save"
-                    className="actsix-btn-primary h-10 rounded-xl"
+                    className="actsix-btn-primary min-h-10 h-10 rounded-xl"
                     onClick={submitItem}
                   >
                     {editingId ? "Save changes" : "Save item"}
                   </Button>
                   {editingId && (
-                    <Button type="button" variant="outline" className="actsix-btn-outline h-10 rounded-xl" onClick={resetForm}>
+                    <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 h-10 rounded-xl" onClick={resetForm}>
                       Clear
                     </Button>
                   )}
@@ -724,7 +724,7 @@ export default function SermonLessonHub() {
                 <p className="label-eyebrow">References</p>
                 <h2 className="mt-1 text-xl font-extrabold">Sources, commentaries, sermons, and notes</h2>
               </div>
-              <Button type="button" variant="outline" className="actsix-btn-outline rounded-xl" onClick={addReference}>
+              <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 rounded-xl" onClick={addReference}>
                 <Plus className="h-4 w-4" />
                 Add reference
               </Button>
@@ -767,11 +767,11 @@ export default function SermonLessonHub() {
                 <h2 className="mt-1 text-xl font-extrabold">Images and sermon links</h2>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" className="actsix-btn-outline rounded-xl" onClick={() => addMedia("youtube")}>
+                <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 rounded-xl" onClick={() => addMedia("youtube")}>
                   <Youtube className="h-4 w-4" />
                   YouTube
                 </Button>
-                <Button type="button" variant="outline" className="actsix-btn-outline rounded-xl" onClick={() => addMedia("image")}>
+                <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 rounded-xl" onClick={() => addMedia("image")}>
                   <ImageIcon className="h-4 w-4" />
                   Image URL
                 </Button>
@@ -886,7 +886,7 @@ export default function SermonLessonHub() {
               type="button"
               data-testid="sermon-hub-export-pdf"
               variant="outline"
-              className="actsix-btn-outline rounded-xl"
+              className="actsix-btn-outline min-h-10 rounded-xl"
               onClick={() => exportPdf()}
             >
                 <Printer className="h-4 w-4" />
@@ -896,7 +896,7 @@ export default function SermonLessonHub() {
               type="button"
               data-testid="sermon-hub-export-word"
               variant="outline"
-              className="actsix-btn-outline rounded-xl"
+              className="actsix-btn-outline min-h-10 rounded-xl"
               onClick={() => exportWord()}
             >
                 <Download className="h-4 w-4" />
@@ -1313,19 +1313,19 @@ const LibrarySection = ({
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2 border-t border-border/70 bg-background/60 p-3 lg:border-l lg:border-t-0">
-                <Button type="button" variant="outline" className="actsix-btn-outline h-9 rounded-xl text-xs" onClick={() => onEdit(item)}>
+                <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 h-9 rounded-xl text-xs" onClick={() => onEdit(item)}>
                   <Pencil className="h-4 w-4" />
                   Edit
                 </Button>
-                <Button type="button" variant="outline" className="actsix-btn-outline h-9 rounded-xl text-xs" onClick={() => onExportPdf(item)}>
+                <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 h-9 rounded-xl text-xs" onClick={() => onExportPdf(item)}>
                   <Printer className="h-4 w-4" />
                   PDF
                 </Button>
-                <Button type="button" variant="outline" className="actsix-btn-outline h-9 rounded-xl text-xs" onClick={() => onExportWord(item)}>
+                <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 h-9 rounded-xl text-xs" onClick={() => onExportWord(item)}>
                   <Download className="h-4 w-4" />
                   Word
                 </Button>
-                <Button type="button" variant="outline" className="actsix-btn-outline h-9 rounded-xl text-xs" onClick={() => onArchive(item)}>
+                <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 h-9 rounded-xl text-xs" onClick={() => onArchive(item)}>
                   <Archive className="h-4 w-4" />
                   {archive ? "Restore" : "Archive"}
                 </Button>

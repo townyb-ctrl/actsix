@@ -109,7 +109,7 @@ const Auth = () => {
             />
           </div>
 
-          <Button type="submit" className="actsix-btn-primary w-full" disabled={busy}>
+          <Button type="submit" className="actsix-btn-primary min-h-10 w-full" disabled={busy}>
             {busy ? "..." : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
 
@@ -124,7 +124,7 @@ const Auth = () => {
           <Button
             type="button"
             variant="outline"
-            className="actsix-btn-outline w-full font-bold"
+            className="actsix-btn-outline min-h-10 w-full font-bold"
             disabled={googleBusy || busy}
             onClick={signInWithGoogle}
           >

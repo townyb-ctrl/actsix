@@ -40,7 +40,7 @@ const SettingsPage = () => {
             <Button
               asChild
               variant="outline"
-              className="actsix-btn-outline mt-4 gap-2 border-brand-teal/30 text-brand-teal hover:text-brand-teal"
+              className="actsix-btn-outline min-h-10 mt-4 gap-2 border-brand-teal/30 text-brand-teal hover:text-brand-teal"
             >
               <a href="/settings/alpha-feedback">
                 <MessageSquare className="h-4 w-4" />
@@ -117,7 +117,7 @@ const SettingsPage = () => {
           <p className="mt-2 text-sm text-muted-foreground">
             Manage your church workspace, join code, secret phrase, and member roles.
           </p>
-          <Button asChild variant="outline" className="actsix-btn-outline mt-4">
+          <Button asChild variant="outline" className="actsix-btn-outline min-h-10 mt-4">
             <a href="/settings/workspace">Open Workspace Settings</a>
           </Button>
         </Card>
@@ -131,11 +131,11 @@ const SettingsPage = () => {
             Manage ACTSIX data movement from one place instead of showing these tools across every module.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button variant="outline" className="actsix-btn-outline gap-2">
+            <Button variant="outline" className="actsix-btn-outline min-h-10 gap-2">
               <Download className="h-4 w-4" />
               Export
             </Button>
-            <Button variant="outline" className="actsix-btn-outline gap-2">
+            <Button variant="outline" className="actsix-btn-outline min-h-10 gap-2">
               <Upload className="h-4 w-4" />
               Import
             </Button>
@@ -145,7 +145,7 @@ const SettingsPage = () => {
         <Card className="actsix-panel-soft border-border/60 p-4 sm:p-5">
           <div className="label-eyebrow">Account</div>
           <div className="mt-1.5 text-xl font-extrabold tracking-tight">{user?.email}</div>
-          <Button variant="outline" className="actsix-btn-outline mt-4" onClick={signOut}>Sign out</Button>
+          <Button variant="outline" className="actsix-btn-outline min-h-10 mt-4" onClick={signOut}>Sign out</Button>
         </Card>
       </div>
     </div>

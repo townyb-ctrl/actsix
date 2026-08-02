@@ -613,7 +613,7 @@ const Dashboard = () => {
             </p>
 
             <div className="mt-5">
-              <Button asChild className="actsix-btn-primary rounded-xl">
+              <Button asChild className="actsix-btn-primary min-h-10 rounded-xl">
                 <Link to="/workspace-setup">Join Alpha Workspace</Link>
               </Button>
             </div>
@@ -680,7 +680,7 @@ const Dashboard = () => {
             eyebrow="Calendar"
             title="Upcoming Agenda"
             action={
-              <Button asChild variant="outline" size="sm" className="actsix-btn-outline h-9 px-3 text-xs">
+              <Button asChild variant="outline" size="sm" className="actsix-btn-outline min-h-10 h-9 px-3 text-xs">
                 <Link to="/meetings">
                   Meetings
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -718,7 +718,7 @@ const Dashboard = () => {
                   </button>
                 ))}
               </div>
-              <Button asChild variant="outline" size="sm" className="actsix-btn-outline h-9 px-3">
+              <Button asChild variant="outline" size="sm" className="actsix-btn-outline min-h-10 h-9 px-3">
                 <Link to="/meetings">
                   Meetings
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -870,9 +870,9 @@ const Dashboard = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="actsix-btn-outline">Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="actsix-btn-outline min-h-10">Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className="actsix-btn-primary"
+                className="actsix-btn-primary min-h-10"
                 onClick={() => {
                   resetLayout();
                   setResetConfirmOpen(false);

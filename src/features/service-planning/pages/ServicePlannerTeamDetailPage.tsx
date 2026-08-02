@@ -920,7 +920,7 @@ const ServicePlannerTeamDetailPage = () => {
 
                 <Button
                   type="button"
-                  className="actsix-btn-primary h-10 w-10 rounded-lg p-0"
+                  className="actsix-btn-primary min-h-10 h-10 w-10 rounded-lg p-0"
                   onClick={() => setAddRoleOpen(true)}
                   title="Add role"
                 >
@@ -1202,7 +1202,7 @@ const ServicePlannerTeamDetailPage = () => {
                     Cancel
                   </Button>
 
-                  <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl">
                     <Save className="h-4 w-4" />
                     Save Team
                   </Button>
@@ -1257,7 +1257,7 @@ const ServicePlannerTeamDetailPage = () => {
                     Cancel
                   </Button>
 
-                  <Button type="submit" className="actsix-btn-primary rounded-xl">
+                  <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl">
                     <Plus className="h-4 w-4" />
                     Add Role
                   </Button>
@@ -1356,7 +1356,7 @@ const ServicePlannerTeamDetailPage = () => {
 
                   <Button
                     type="submit"
-                    className="actsix-btn-primary rounded-xl"
+                    className="actsix-btn-primary min-h-10 rounded-xl"
                     disabled={!selectedPersonId}
                   >
                     <Plus className="h-4 w-4" />

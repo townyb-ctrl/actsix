@@ -235,7 +235,7 @@ const RecurringTasksPage = () => {
         title="Recurring Tasks"
         subtitle="Simple ministry rhythms without cluttering your Next Actions list."
         actions={
-          <Button className="actsix-btn-primary rounded-lg" onClick={openNew}>
+          <Button className="actsix-btn-primary min-h-10 rounded-lg" onClick={openNew}>
             <Plus className="h-4 w-4" />
             New Recurring Task
           </Button>
@@ -318,30 +318,30 @@ const RecurringTasksPage = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
-                    <Button variant="outline" size="sm" className="actsix-btn-outline" onClick={() => openTemplate(template, "view")}>
+                    <Button variant="outline" size="sm" className="actsix-btn-outline min-h-10" onClick={() => openTemplate(template, "view")}>
                       <Eye className="h-3.5 w-3.5" />
                       View
                     </Button>
-                    <Button variant="outline" size="sm" className="actsix-btn-outline" onClick={() => openTemplate(template, "edit")}>
+                    <Button variant="outline" size="sm" className="actsix-btn-outline min-h-10" onClick={() => openTemplate(template, "edit")}>
                       <SquarePen className="h-3.5 w-3.5" />
                       Edit
                     </Button>
                     {template.status === "paused" ? (
-                      <Button variant="outline" size="sm" className="actsix-btn-outline" onClick={() => updateStatus(template, "active")}>
+                      <Button variant="outline" size="sm" className="actsix-btn-outline min-h-10" onClick={() => updateStatus(template, "active")}>
                         <Play className="h-3.5 w-3.5" />
                         Resume
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" className="actsix-btn-outline" onClick={() => updateStatus(template, "paused")} disabled={template.status === "ended"}>
+                      <Button variant="outline" size="sm" className="actsix-btn-outline min-h-10" onClick={() => updateStatus(template, "paused")} disabled={template.status === "ended"}>
                         <Pause className="h-3.5 w-3.5" />
                         Pause
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" className="actsix-btn-outline" onClick={() => skipNext(template)} disabled={template.status === "ended"}>
+                    <Button variant="outline" size="sm" className="actsix-btn-outline min-h-10" onClick={() => skipNext(template)} disabled={template.status === "ended"}>
                       <SkipForward className="h-3.5 w-3.5" />
                       Skip next
                     </Button>
-                    <Button variant="outline" size="sm" className="actsix-btn-outline text-destructive hover:text-destructive" onClick={() => deleteTemplate(template)}>
+                    <Button variant="outline" size="sm" className="actsix-btn-outline min-h-10 text-destructive hover:text-destructive" onClick={() => deleteTemplate(template)}>
                       <Trash2 className="h-3.5 w-3.5" />
                       Delete
                     </Button>

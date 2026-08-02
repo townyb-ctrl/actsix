@@ -791,7 +791,7 @@ const ServicePlannerPage = () => {
               <Button
                 type="button"
                 size="sm"
-                className="actsix-btn-primary h-9 shrink-0"
+                className="actsix-btn-primary min-h-10 h-9 shrink-0"
                 onClick={() => setAddTypeOpen(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -1259,7 +1259,7 @@ const ServicePlannerPage = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-lg">
+                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-lg">
                   <Plus className="h-4 w-4" />
                   Create Service Type
                 </Button>
@@ -1346,7 +1346,7 @@ const ServicePlannerPage = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-lg">
+                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-lg">
                   <Plus className="h-4 w-4" />
                   Create Service
                 </Button>
@@ -1461,7 +1461,7 @@ const ServicePlannerPage = () => {
 
               <Button
                 type="button"
-                className="actsix-btn-primary rounded-lg"
+                className="actsix-btn-primary min-h-10 rounded-lg"
                 onClick={saveTemplateItems}
                 disabled={templateLoading}
               >

@@ -323,7 +323,7 @@ const PeopleGroupDetailPage = () => {
           <Button
             type="button"
             variant="outline"
-            className="actsix-btn-outline mt-4"
+            className="actsix-btn-outline min-h-10 mt-4"
             onClick={() => navigate("/groups")}
           >
             Back to Groups
@@ -344,7 +344,7 @@ const PeopleGroupDetailPage = () => {
             <Button
               type="button"
               variant="outline"
-              className="actsix-btn-outline h-10"
+              className="actsix-btn-outline min-h-10 h-10"
               onClick={() => {
                 setEditGroupName(group.name || "");
                 setEditGroupDescription(group.description || "");
@@ -358,7 +358,7 @@ const PeopleGroupDetailPage = () => {
 
             <Button
               type="button"
-              className="actsix-btn-primary h-10"
+              className="actsix-btn-primary min-h-10 h-10"
               onClick={() => {
                 setSelectedPersonIds([]);
                 setMemberRole("");
@@ -431,7 +431,7 @@ const PeopleGroupDetailPage = () => {
         <div className="mt-4 flex justify-end">
           <Button
             type="button"
-            className="actsix-btn-primary"
+            className="actsix-btn-primary min-h-10"
             onClick={messageGroupMembers}
             disabled={messageableMembers.length === 0}
           >
@@ -599,13 +599,13 @@ const PeopleGroupDetailPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="actsix-btn-outline"
+                  className="actsix-btn-outline min-h-10"
                   onClick={() => setEditGroupOpen(false)}
                 >
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary" disabled={!editGroupName.trim()}>
+                <Button type="submit" className="actsix-btn-primary min-h-10" disabled={!editGroupName.trim()}>
                   <Save className="h-4 w-4" />
                   Save Group
                 </Button>
@@ -656,7 +656,7 @@ const PeopleGroupDetailPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="actsix-btn-outline"
+                  className="actsix-btn-outline min-h-10"
                   onClick={() => setAddPeopleOpen(false)}
                 >
                   Cancel
@@ -664,7 +664,7 @@ const PeopleGroupDetailPage = () => {
 
                 <Button
                   type="submit"
-                  className="actsix-btn-primary"
+                  className="actsix-btn-primary min-h-10"
                   disabled={selectedPersonIds.length === 0}
                 >
                   <UserPlus className="h-4 w-4" />

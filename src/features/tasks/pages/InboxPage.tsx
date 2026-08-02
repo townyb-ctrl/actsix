@@ -423,7 +423,7 @@ const InboxPage = () => {
 
             <Button
               type="submit"
-              className="actsix-btn-primary rounded-lg px-5"
+              className="actsix-btn-primary min-h-10 rounded-lg px-5"
               aria-label="Add to inbox"
             >
               <Plus className="h-4 w-4" />
@@ -936,7 +936,7 @@ const InboxPage = () => {
 
                 <Button
                   disabled={!canProcess}
-                  className="col-span-2 rounded-xl actsix-btn-primary font-bold sm:col-span-1"
+                  className="col-span-2 rounded-xl actsix-btn-primary min-h-10 font-bold sm:col-span-1"
                   onClick={processItem}
                 >
                   {processTarget ? primaryActionLabels[processTarget] : "Choose type to continue"}

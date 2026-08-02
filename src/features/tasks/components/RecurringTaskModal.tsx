@@ -199,11 +199,11 @@ const RecurringTaskModal = ({
             The generated items will appear as normal Next Actions.
           </p>
           <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Button variant="outline" className="actsix-btn-outline" onClick={onClose}>
+            <Button variant="outline" className="actsix-btn-outline min-h-10" onClick={onClose}>
               {readOnly ? "Close" : "Cancel"}
             </Button>
             {!readOnly && (
-              <Button disabled={saving} className="actsix-btn-primary" onClick={onSave}>
+              <Button disabled={saving} className="actsix-btn-primary min-h-10" onClick={onSave}>
                 <Save className="h-4 w-4" />
                 {saving ? "Saving..." : "Save rhythm"}
               </Button>

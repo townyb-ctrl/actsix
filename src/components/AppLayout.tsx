@@ -79,7 +79,7 @@ const ModuleActivationPrompt = ({
       </p>
       <Button
         type="button"
-        className="actsix-btn-primary mt-5 px-4"
+        className="actsix-btn-primary min-h-10 mt-5 px-4"
         onClick={onActivate}
         disabled={activating}
       >

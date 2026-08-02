@@ -615,7 +615,7 @@ const RecurringMeetingDetailPage = () => {
                     </Button>
                   ) : (
                     <Button
-                      className="actsix-btn-primary rounded-xl"
+                      className="actsix-btn-primary min-h-10 rounded-xl"
                       onClick={() => createMeetingFromOccurrence(occurrence)}
                     >
                       <Plus className="h-4 w-4" />
@@ -659,7 +659,7 @@ const RecurringMeetingDetailPage = () => {
                 className="border-border/70 bg-background"
               />
 
-              <Button type="button" className="actsix-btn-primary rounded-xl" onClick={addRegularAttendee}>
+              <Button type="button" className="actsix-btn-primary min-h-10 rounded-xl" onClick={addRegularAttendee}>
                 Add
               </Button>
             </div>
@@ -687,7 +687,7 @@ const RecurringMeetingDetailPage = () => {
             <div className="mt-4 flex justify-end">
               <Button
                 type="button"
-                className="actsix-btn-primary rounded-xl"
+                className="actsix-btn-primary min-h-10 rounded-xl"
                 onClick={() => setAttendeesOpen(false)}
               >
                 Done
@@ -788,7 +788,7 @@ const RecurringMeetingDetailPage = () => {
                 Add Section
               </Button>
 
-              <Button type="button" className="actsix-btn-primary rounded-xl" onClick={saveRegularAgenda}>
+              <Button type="button" className="actsix-btn-primary min-h-10 rounded-xl" onClick={saveRegularAgenda}>
                 Save Regular Agenda
               </Button>
             </div>

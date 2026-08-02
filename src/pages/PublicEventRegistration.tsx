@@ -140,7 +140,7 @@ export default function PublicEventRegistration() {
           <input name="consent" type="checkbox" value="yes" className="mt-1 h-4 w-4 accent-brand-teal" />
           <span>I confirm consent for this registration and understand the event team may contact me for follow-up information.</span>
         </label>
-        <Button type="submit" className="actsix-btn-primary mt-4 h-11 w-full rounded-full" disabled={submitting}>
+        <Button type="submit" className="actsix-btn-primary min-h-10 mt-4 h-11 w-full rounded-full" disabled={submitting}>
           {submitting ? "Submitting..." : "Submit registration"}
         </Button>
         <p className="mt-3 text-xs font-semibold leading-5 text-muted-foreground">

@@ -153,7 +153,7 @@ export function DashboardWidgetCard({
           <Button
             variant="outline"
             size="sm"
-            className="actsix-btn-outline h-7 px-2 text-[11px]"
+            className="actsix-btn-outline min-h-10 h-7 px-2 text-[11px]"
             disabled={index === 0}
             onClick={() => onMove("up")}
           >
@@ -163,7 +163,7 @@ export function DashboardWidgetCard({
           <Button
             variant="outline"
             size="sm"
-            className="actsix-btn-outline h-7 px-2 text-[11px]"
+            className="actsix-btn-outline min-h-10 h-7 px-2 text-[11px]"
             disabled={index === totalWidgets - 1}
             onClick={() => onMove("down")}
           >

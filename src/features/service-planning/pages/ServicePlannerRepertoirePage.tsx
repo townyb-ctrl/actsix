@@ -31,7 +31,7 @@ const ServicePlannerRepertoirePage = () => {
             </div>
           </div>
 
-          <Button disabled className="actsix-btn-primary mt-4">
+          <Button disabled className="actsix-btn-primary min-h-10 mt-4">
             <Plus className="h-4 w-4" />
             Add Song
           </Button>

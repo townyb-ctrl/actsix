@@ -113,7 +113,7 @@ const WeeklyReviewPage = () => {
           <Button
             type="button"
             variant="outline"
-            className="actsix-btn-outline gap-2"
+            className="actsix-btn-outline min-h-10 gap-2"
             onClick={load}
             disabled={loading}
           >
@@ -139,7 +139,7 @@ const WeeklyReviewPage = () => {
               <div className="text-lg font-extrabold tracking-tight">Couldn't load your review</div>
               <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{loadError}</p>
             </div>
-            <Button type="button" variant="outline" className="actsix-btn-outline" onClick={load}>
+            <Button type="button" variant="outline" className="actsix-btn-outline min-h-10" onClick={load}>
               Try again
             </Button>
           </Card>

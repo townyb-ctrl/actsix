@@ -237,7 +237,7 @@ const TasksDashboardPage = () => {
             <Button
               type="button"
               size="sm"
-              className="actsix-btn-primary rounded-lg"
+              className="actsix-btn-primary min-h-10 rounded-lg"
               onClick={() => setQuickCaptureOpen(true)}
             >
               Quick Capture

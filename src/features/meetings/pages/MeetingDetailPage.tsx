@@ -1810,7 +1810,7 @@ ${transcriptText.trim()}`;
                         className="h-10 rounded-xl border-border/70 bg-background shadow-none"
                       />
 
-                      <Button type="submit" className="actsix-btn-primary rounded-xl px-3">
+                      <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl px-3">
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -1896,7 +1896,7 @@ ${transcriptText.trim()}`;
 
                   <Button
                     type="button"
-                    className="actsix-btn-primary rounded-xl mt-4 w-full"
+                    className="actsix-btn-primary min-h-10 rounded-xl mt-4 w-full"
                     onClick={transcribeAudio}
                     disabled={!transcriptFile || transcribing}
                   >
@@ -2225,7 +2225,7 @@ ${transcriptText.trim()}`;
             <Button variant="outline" className="rounded-xl" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button className="actsix-btn-primary rounded-xl" onClick={saveMeetingDetails}>
+            <Button className="actsix-btn-primary min-h-10 rounded-xl" onClick={saveMeetingDetails}>
               Save Changes
             </Button>
           </DialogFooter>
@@ -2288,7 +2288,7 @@ ${transcriptText.trim()}`;
                             type="button"
                             variant={active ? "default" : "outline"}
                             size="sm"
-                            className={active ? "actsix-btn-primary rounded-xl px-3" : "rounded-xl px-3"}
+                            className={active ? "actsix-btn-primary min-h-10 rounded-xl px-3" : "rounded-xl px-3"}
                             onClick={() =>
                               updateMeetingPersonStatus(meetingPerson.person_id, option.value)
                             }
@@ -2456,7 +2456,7 @@ ${transcriptText.trim()}`;
               <Plus className="h-4 w-4 mr-2" />
               Add Section
             </Button>
-            <Button className="actsix-btn-primary rounded-xl" onClick={saveAgenda}>
+            <Button className="actsix-btn-primary min-h-10 rounded-xl" onClick={saveAgenda}>
               Save Agenda and Fill Minutes
             </Button>
           </DialogFooter>

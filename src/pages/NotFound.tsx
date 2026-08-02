@@ -21,7 +21,7 @@ const NotFound = () => {
         <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
           This route does not exist or has moved.
         </p>
-        <Button asChild className="actsix-btn-primary mt-5">
+        <Button asChild className="actsix-btn-primary min-h-10 mt-5">
           <a href="/">Return Home</a>
         </Button>
       </div>

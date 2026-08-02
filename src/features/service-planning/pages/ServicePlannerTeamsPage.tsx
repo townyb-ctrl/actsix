@@ -200,7 +200,7 @@ const ServicePlannerTeamsPage = () => {
             </div>
             <Button
               type="button"
-              className="actsix-btn-primary h-9 shrink-0"
+              className="actsix-btn-primary min-h-10 h-9 shrink-0"
               onClick={() => setAddTeamOpen(true)}
             >
               <Plus className="h-4 w-4" />
@@ -393,7 +393,7 @@ const ServicePlannerTeamsPage = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl">
                   <Plus className="h-4 w-4" />
                   Create Team
                 </Button>

@@ -552,7 +552,7 @@ export default function CalendarModule() {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" className="actsix-btn-primary h-8 rounded-full px-3 text-xs">
+                <Button type="button" className="actsix-btn-primary min-h-10 h-8 rounded-full px-3 text-xs">
                   <Plus className="h-3.5 w-3.5" />
                   Add
                   <ChevronDown className="h-3.5 w-3.5" />
@@ -831,10 +831,10 @@ export default function CalendarModule() {
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border/70 pt-3">
-          <Button type="button" variant="outline" className="actsix-btn-outline h-9 rounded-xl" onClick={() => setFormOpen(false)}>
+          <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 h-9 rounded-xl" onClick={() => setFormOpen(false)}>
             Cancel
           </Button>
-          <Button type="button" className="actsix-btn-primary h-9 rounded-xl" onClick={saveEvent} disabled={saving}>
+          <Button type="button" className="actsix-btn-primary min-h-10 h-9 rounded-xl" onClick={saveEvent} disabled={saving}>
             {saving ? "Saving..." : editingId ? "Save changes" : "Add event"}
           </Button>
         </div>
@@ -896,10 +896,10 @@ export default function CalendarModule() {
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border/70 pt-3">
-          <Button type="button" variant="outline" className="actsix-btn-outline h-9 rounded-xl" onClick={() => setAppleSyncOpen(false)}>
+          <Button type="button" variant="outline" className="actsix-btn-outline min-h-10 h-9 rounded-xl" onClick={() => setAppleSyncOpen(false)}>
             Cancel
           </Button>
-          <Button type="button" className="actsix-btn-primary h-9 rounded-xl" onClick={syncAppleCalendar} disabled={syncingApple}>
+          <Button type="button" className="actsix-btn-primary min-h-10 h-9 rounded-xl" onClick={syncAppleCalendar} disabled={syncingApple}>
             {syncingApple ? "Syncing..." : "Sync Apple Calendar"}
           </Button>
         </div>

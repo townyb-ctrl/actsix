@@ -259,7 +259,7 @@ const PeopleGroupsPage = () => {
           <Button
             type="button"
             size="sm"
-            className="actsix-btn-primary shrink-0"
+            className="actsix-btn-primary min-h-10 shrink-0"
             onClick={() => setCreateGroupOpen(true)}
           >
             <Plus className="h-4 w-4" />
@@ -560,7 +560,7 @@ const PeopleGroupsPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="actsix-btn-outline"
+                  className="actsix-btn-outline min-h-10"
                   onClick={() => setCreateGroupOpen(false)}
                 >
                   Cancel
@@ -568,7 +568,7 @@ const PeopleGroupsPage = () => {
 
                 <Button
                   type="submit"
-                  className="actsix-btn-primary"
+                  className="actsix-btn-primary min-h-10"
                   disabled={!newGroupName.trim()}
                 >
                   <Plus className="h-4 w-4" />

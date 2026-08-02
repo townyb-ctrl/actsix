@@ -1140,7 +1140,7 @@ const ServiceDetailPage = () => {
           <Button
             type="button"
             size="sm"
-            className="actsix-btn-primary rounded-lg"
+            className="actsix-btn-primary min-h-10 rounded-lg"
             onClick={() => setReminderCenterOpen(true)}
           >
             <MessageCircle className="h-4 w-4" />
@@ -1223,7 +1223,7 @@ const ServiceDetailPage = () => {
 
                 <Button
                   type="button"
-                  className="actsix-btn-primary rounded-lg"
+                  className="actsix-btn-primary min-h-10 rounded-lg"
                   onClick={copyTeamWhatsAppMessage}
                   disabled={teamAssignments.length === 0}
                 >
@@ -1248,7 +1248,7 @@ const ServiceDetailPage = () => {
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
-                  className="actsix-btn-primary h-9 w-9 rounded-lg p-0"
+                  className="actsix-btn-primary min-h-10 h-9 w-9 rounded-lg p-0"
                   onClick={() => setAddOrderOpen(true)}
                   title="Add service element"
                 >
@@ -1319,7 +1319,7 @@ const ServiceDetailPage = () => {
 
               <Button
                 type="button"
-                className="actsix-btn-primary h-9 w-9 rounded-lg p-0"
+                className="actsix-btn-primary min-h-10 h-9 w-9 rounded-lg p-0"
                 onClick={() => {
                   setSelectedTeamId(selectedAssignmentTeamId);
                   setSelectedTeamMemberId("");
@@ -1643,7 +1643,7 @@ const ServiceDetailPage = () => {
 
               <Button
                 type="button"
-                className="actsix-btn-primary rounded-xl"
+                className="actsix-btn-primary min-h-10 rounded-xl"
                 onClick={openWhatsAppLink}
                 disabled={!whatsAppMessage.trim()}
               >
@@ -1789,7 +1789,7 @@ const ServiceDetailPage = () => {
 
                 <Button
                   type="submit"
-                  className="actsix-btn-primary rounded-xl"
+                  className="actsix-btn-primary min-h-10 rounded-xl"
                   disabled={!selectedTeamMemberId}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -1973,7 +1973,7 @@ const ServiceDetailPage = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl">
                   <Plus className="h-3.5 w-3.5" />
                   Add Element
                 </Button>

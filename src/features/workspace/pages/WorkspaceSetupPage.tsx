@@ -130,7 +130,7 @@ const WorkspaceSetupPage = () => {
 
               <Button
                 type="submit"
-                className="actsix-btn-primary w-full rounded-xl"
+                className="actsix-btn-primary min-h-10 w-full rounded-xl"
                 disabled={busy}
               >
                 <LogIn className="h-4 w-4" />

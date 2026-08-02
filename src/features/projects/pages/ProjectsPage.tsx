@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -7,11 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Activity,
-  BarChart3,
   ChevronDown,
   CheckCircle2,
-  Clock3,
   Edit3,
   FolderKanban,
   ListChecks,
@@ -26,7 +23,10 @@ import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
 import ProjectSummaryCard from "@/features/projects/components/ProjectSummaryCard";
-import ProjectTableRow from "@/features/projects/components/ProjectTableRow";
+import CompletedProjectRow from "@/features/projects/components/CompletedProjectRow";
+import { type TeamMember } from "@/features/projects/components/CollaboratorAvatars";
+import { isProjectComplete, needsAction } from "@/features/projects/lib/projectStatus";
+import { uploadProjectCover } from "@/features/projects/lib/uploadProjectCover";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import {
@@ -35,6 +35,7 @@ import {
   createProjectActionTask,
   deleteProject,
   deleteProjectActionTask,
+  getCollaboratorsForProjects,
   getProjects,
   getProjectTasks,
   getWorkspacePersonOptions,
@@ -61,6 +62,7 @@ type Project = {
   calendar_event_id?: string | null;
   add_to_calendar?: boolean;
   next_action?: string | null;
+  cover_image_url?: string | null;
   progress?: number | null;
   open_tasks?: number | null;
   created_at?: string | null;
@@ -120,11 +122,6 @@ const getProjectStats = (project: Project, tasks: Task[]) => {
   };
 };
 
-const isProjectComplete = (
-  project: Project,
-  stats?: ReturnType<typeof getProjectStats>
-) => stats?.progress === 100 || project.status?.toLowerCase().includes("complete");
-
 const toIsoDateTime = (value?: string | null) => {
   if (!value) return null;
   const date = new Date(value);
@@ -152,6 +149,57 @@ const ProjectsPage = () => {
   const [savingProject, setSavingProject] = useState(false);
   const [newProjectCollaboratorIds, setNewProjectCollaboratorIds] = useState<string[]>([]);
   const [isCompletedProjectsOpen, setIsCompletedProjectsOpen] = useState(false);
+  const [collaboratorsByProjectId, setCollaboratorsByProjectId] = useState<
+    Record<string, TeamMember[]>
+  >({});
+  const [coverTargetProject, setCoverTargetProject] = useState<Project | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+
+  const openCoverPicker = (project: Project) => {
+    setCoverTargetProject(project);
+    coverInputRef.current?.click();
+  };
+
+  const handleCoverSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // Reset first, so re-picking the same file still fires a change event.
+    event.target.value = "";
+
+    if (!file || !coverTargetProject) return;
+
+    const target = coverTargetProject;
+    setCoverTargetProject(null);
+    toast.info("Uploading cover...");
+
+    const result = await uploadProjectCover({
+      file,
+      workspaceId: currentPerson?.workspace_id,
+      userId: user?.id,
+    });
+
+    if ("error" in result) {
+      toast.error(result.error);
+      return;
+    }
+
+    const { error } = await updateProject(target.id, {
+      cover_image_url: result.url,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === target.id ? { ...project, cover_image_url: result.url } : project
+      )
+    );
+    toast.success("Cover updated");
+  };
+
 
   const projectStats = useMemo(() => {
     return projects.reduce<Record<string, ReturnType<typeof getProjectStats>>>(
@@ -170,22 +218,11 @@ const ProjectsPage = () => {
     return isProjectComplete(project, stats);
   }).length;
 
-  const needsActionProjects = projects.filter((project) => {
-    const stats = projectStats[project.id];
-    return stats && stats.openTasks.length === 0 && stats.progress < 100;
-  }).length;
+  const needsActionProjects = projects.filter((project) =>
+    needsAction(project, projectStats[project.id])
+  ).length;
 
   const activeProjects = Math.max(totalProjects - completedProjects, 0);
-
-  const averageProgress =
-    totalProjects === 0
-      ? 0
-      : Math.round(
-          projects.reduce(
-            (sum, project) => sum + (projectStats[project.id]?.progress ?? 0),
-            0
-          ) / totalProjects
-        );
 
   const filteredProjects = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -203,9 +240,8 @@ const ProjectsPage = () => {
 
       const matchesView =
         projectView === "all" ||
-        (projectView === "active" && (stats?.progress ?? 0) < 100) ||
-        (projectView === "needs-action" &&
-          Boolean(stats && stats.openTasks.length === 0 && stats.progress < 100)) ||
+        (projectView === "active" && !isProjectComplete(project, stats)) ||
+        (projectView === "needs-action" && needsAction(project, stats)) ||
         (projectView === "completed" && isProjectComplete(project, stats));
 
       return matchesSearch && matchesView;
@@ -221,12 +257,22 @@ const ProjectsPage = () => {
 
   const hasActiveFilters = Boolean(search.trim()) || projectView !== "all";
 
-  const projectOwnerByProjectId = useMemo(() => {
-    return projects.reduce<Record<string, PersonOption | null>>((acc, project) => {
-      acc[project.id] =
-        people.find((person) => person.id === project.owner_person_id) ||
-        people.find((person) => person.auth_user_id === project.user_id) ||
+
+  const ownerByProjectId = useMemo(() => {
+    return projects.reduce<Record<string, TeamMember | null>>((acc, project) => {
+      const person =
+        people.find((candidate) => candidate.id === project.owner_person_id) ||
+        people.find((candidate) => candidate.auth_user_id === project.user_id) ||
         null;
+
+      acc[project.id] = person
+        ? {
+            id: person.id,
+            display_name: person.display_name,
+            avatar_url: person.avatar_url,
+          }
+        : null;
+
       return acc;
     }, {});
   }, [people, projects]);
@@ -272,6 +318,48 @@ const ProjectsPage = () => {
       setIsCompletedProjectsOpen(true);
     }
   }, [projectView]);
+
+  // Collaborators are a secondary detail: a failure here dims the avatar stacks
+  // but must not take the page down with it.
+  const loadCollaborators = async (projectIds: string[]) => {
+    if (projectIds.length === 0) {
+      setCollaboratorsByProjectId({});
+      return;
+    }
+
+    const { data, error } = await getCollaboratorsForProjects(projectIds);
+
+    if (error) {
+      setCollaboratorsByProjectId({});
+      return;
+    }
+
+    const rows = (data ?? []) as Array<{
+      project_id: string;
+      people?: { id: string; display_name: string; avatar_url?: string | null } | null;
+    }>;
+
+    const grouped = rows.reduce<Record<string, TeamMember[]>>((acc, row) => {
+      const person = row.people;
+      if (!person?.id) return acc;
+
+      const existing = acc[row.project_id] || [];
+      if (existing.some((member) => member.id === person.id)) return acc;
+
+      acc[row.project_id] = [
+        ...existing,
+        {
+          id: person.id,
+          display_name: person.display_name,
+          avatar_url: person.avatar_url,
+        },
+      ];
+
+      return acc;
+    }, {});
+
+    setCollaboratorsByProjectId(grouped);
+  };
 
   const load = async () => {
     if (!user) {
@@ -322,6 +410,7 @@ const ProjectsPage = () => {
     setProjects(projectData ?? []);
     setTasks(enrichedTasks);
     setPeople(peopleData ?? []);
+    void loadCollaborators((projectData ?? []).map((project: Project) => project.id));
 
     if (!selectedProjectId && projectData && projectData.length > 0) {
       setSelectedProjectId(projectData[0].id);
@@ -640,83 +729,10 @@ const ProjectsPage = () => {
         eyebrow="Tasks"
         title="Projects"
         subtitle="Track progress and keep every outcome moving."
-        actions={
-          <>
-            <div className="actsix-search-field sm:w-48 lg:w-56">
-              <Search className="actsix-search-icon" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search projects..."
-                className="actsix-search-input"
-              />
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              className="actsix-btn-primary h-9"
-              onClick={openNewProjectModal}
-            >
-              <Plus className="h-4 w-4" />
-              Add Project
-            </Button>
-          </>
-        }
       />
 
       <div className="w-full min-w-0 space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-
-        <div className="actsix-panel-soft grid gap-px overflow-hidden md:grid-cols-2 xl:grid-cols-4">
-          <div className="bg-background/55 px-4 py-3">
-            <div className="flex items-center gap-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-                <FolderKanban className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="label-eyebrow">Total Projects</p>
-                <div className="mt-1 text-xl font-extrabold">{totalProjects}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-background/55 px-4 py-3">
-            <div className="flex items-center gap-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-sage/10 text-brand-sage">
-                <BarChart3 className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="label-eyebrow">Active Projects</p>
-                <div className="mt-1 text-xl font-extrabold">{activeProjects}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-background/55 px-4 py-3">
-            <div className="flex items-center gap-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-amber/10 text-brand-amber">
-                <Clock3 className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="label-eyebrow">Needs Action</p>
-                <div className="mt-1 text-xl font-extrabold">{needsActionProjects}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-background/55 px-4 py-3">
-            <div className="flex items-center gap-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-                <Activity className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="label-eyebrow">Completion Rate</p>
-                <div className="mt-1 text-xl font-extrabold">{averageProgress}%</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="-mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
             <SlidersHorizontal className="h-3.5 w-3.5" />
             <span className="truncate">
@@ -738,7 +754,11 @@ const ProjectsPage = () => {
           )}
         </div>
 
-        <div className="actsix-filter-pills">
+        {/* Pills, search and Add Project share one control row and one height
+            (h-6), so the page reads as a single band of controls rather than
+            three stacked ones. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="actsix-filter-pills">
             {projectViews.map((view) => {
               const active = projectView === view.value;
 
@@ -766,170 +786,130 @@ const ProjectsPage = () => {
                 </button>
               );
             })}
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <div className="actsix-search-field w-40 lg:w-52">
+              <Search className="actsix-search-icon" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search projects..."
+                className="actsix-search-input"
+              />
+            </div>
+
+            <Button
+              type="button"
+              className="actsix-btn-primary actsix-btn-primary-compact h-6 shrink-0 rounded-full px-2.5 text-[11px] font-semibold"
+              onClick={openNewProjectModal}
+            >
+              <Plus className="h-3 w-3" />
+              Add Project
+            </Button>
+          </div>
         </div>
 
-        <div className="md:hidden">
-          <div className="space-y-3">
-            {loading && (
-              <Card className="p-4">
-                <div className="actsix-loading-state" role="status">
-                  Loading projects...
-                </div>
-              </Card>
-            )}
+        {loading && (
+          <Card className="p-4">
+            <div className="actsix-loading-state" role="status">
+              Loading projects...
+            </div>
+          </Card>
+        )}
 
-            {!loading && filteredProjects.length === 0 && (
-              <Card className="actsix-empty-state p-4 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-                  <FolderKanban className="h-5 w-5" />
-                </div>
-                <p className="mt-3 text-sm font-extrabold">No projects match this view.</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Clear filters or add a project to keep ministry work moving.
-                </p>
-              </Card>
-            )}
+        {!loading && filteredProjects.length === 0 && (
+          <Card className="actsix-empty-state p-8 text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+              <FolderKanban className="h-5 w-5" />
+            </div>
+            <p className="mt-3 text-sm font-extrabold">No projects match this view.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Clear filters or add a project to keep ministry work moving.
+            </p>
+          </Card>
+        )}
 
-            {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => (
+        {/* One grid at every breakpoint. The desktop table this replaced needed
+            ~1240px of column minimums, so it clipped its own last column on a
+            laptop; cards reflow instead of overflowing. */}
+        {!loading && visibleActiveProjects.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleActiveProjects.map((project, index) => (
               <ProjectSummaryCard
                 key={project.id}
                 project={project}
                 stats={projectStats[project.id]}
-                ownerName={projectOwnerByProjectId[project.id]?.display_name}
+                owner={ownerByProjectId[project.id]}
+                collaborators={collaboratorsByProjectId[project.id]}
                 index={index}
                 onOpen={() => navigate(`/tasks/projects/${project.id}`)}
-                statusFallback="In Progress"
+                onChangeCover={() => openCoverPicker(project)}
               />
             ))}
+          </div>
+        )}
 
-            {visibleCompletedProjects.length > 0 && projectView !== "completed" && (
-              <Card className="actsix-panel overflow-hidden">
-                <button
-                  type="button"
-                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                  aria-expanded={isCompletedProjectsOpen}
-                  onClick={() => setIsCompletedProjectsOpen((open) => !open)}
-                >
-                  <span className="inline-flex items-center gap-2 text-sm font-extrabold">
-                    <CheckCircle2 className="h-4 w-4 text-brand-sage" />
-                    Complete
-                  </span>
-                  <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                    {visibleCompletedProjects.length}
-                    <ChevronDown className={`h-4 w-4 transition-transform ${isCompletedProjectsOpen ? "rotate-180" : ""}`} />
-                  </span>
-                </button>
+        {visibleCompletedProjects.length > 0 && projectView !== "completed" && (
+          <div>
+            <button
+              type="button"
+              className="flex min-h-10 w-full items-center gap-2 rounded-lg px-1 py-2 text-left transition-colors hover:text-foreground"
+              aria-expanded={isCompletedProjectsOpen}
+              onClick={() => setIsCompletedProjectsOpen((open) => !open)}
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-sage" />
+              <span className="text-sm font-extrabold">Complete</span>
+              <span className="actsix-filter-pill-count actsix-filter-pill-count-idle">
+                {visibleCompletedProjects.length}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                  isCompletedProjectsOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-                {isCompletedProjectsOpen && (
-                  <div className="space-y-3 border-t border-border/70 p-3">
-                    {visibleCompletedProjects.map((project, index) => (
-                      <ProjectSummaryCard
-                        key={project.id}
-                        project={project}
-                        stats={projectStats[project.id]}
-                        ownerName={projectOwnerByProjectId[project.id]?.display_name}
-                        index={index}
-                        onOpen={() => navigate(`/tasks/projects/${project.id}`)}
-                        statusFallback="Completed"
-                        showNextAction={false}
-                      />
-                    ))}
-                  </div>
-                )}
-              </Card>
+            {isCompletedProjectsOpen && (
+              <div className="mt-1 space-y-0.5">
+                {visibleCompletedProjects.map((project, index) => (
+                  <CompletedProjectRow
+                    key={project.id}
+                    project={project}
+                    owner={ownerByProjectId[project.id]}
+                    collaborators={collaboratorsByProjectId[project.id]}
+                    index={index}
+                    onOpen={() => navigate(`/tasks/projects/${project.id}`)}
+                  />
+                ))}
+              </div>
             )}
           </div>
-        </div>
+        )}
 
-        <div className="hidden md:block">
-          <Card className="actsix-panel overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/70 bg-muted/20 text-left">
-                    <th className="px-4 py-3 label-eyebrow">Project</th>
-                    <th className="px-4 py-3 label-eyebrow">Area</th>
-                    <th className="px-4 py-3 label-eyebrow">Status</th>
-                    <th className="px-4 py-3 label-eyebrow">Next Action</th>
-                    <th className="px-4 py-3 label-eyebrow">Progress</th>
-                    <th className="px-4 py-3 label-eyebrow">Schedule</th>
-                    <th className="px-4 py-3 label-eyebrow">Owner</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {loading && (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground" role="status">
-                        Loading projects...
-                      </td>
-                    </tr>
-                  )}
-
-                  {!loading && filteredProjects.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                        No projects match this view.
-                      </td>
-                    </tr>
-                  )}
-
-                  {(projectView === "completed" ? visibleCompletedProjects : visibleActiveProjects).map((project, index) => (
-                    <ProjectTableRow
-                      key={project.id}
-                      project={project}
-                      stats={projectStats[project.id]}
-                      ownerName={projectOwnerByProjectId[project.id]?.display_name}
-                      index={index}
-                      onOpen={() => navigate(`/tasks/projects/${project.id}`)}
-                      statusFallback="In Progress"
-                      isSelected={selectedProject?.id === project.id}
-                    />
-                  ))}
-
-                  {visibleCompletedProjects.length > 0 && projectView !== "completed" && (
-                    <>
-                      <tr className="border-b border-border/70 bg-muted/20">
-                        <td colSpan={7} className="p-0">
-                          <button
-                            type="button"
-                            className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                            aria-expanded={isCompletedProjectsOpen}
-                            onClick={() => setIsCompletedProjectsOpen((open) => !open)}
-                          >
-                            <span className="inline-flex items-center gap-2 text-sm font-extrabold">
-                              <CheckCircle2 className="h-4 w-4 text-brand-sage" />
-                              Complete
-                            </span>
-                            <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                              {visibleCompletedProjects.length}
-                              <ChevronDown className={`h-4 w-4 transition-transform ${isCompletedProjectsOpen ? "rotate-180" : ""}`} />
-                            </span>
-                          </button>
-                        </td>
-                      </tr>
-
-                      {isCompletedProjectsOpen &&
-                        visibleCompletedProjects.map((project, index) => (
-                          <ProjectTableRow
-                            key={project.id}
-                            project={project}
-                            stats={projectStats[project.id]}
-                            ownerName={projectOwnerByProjectId[project.id]?.display_name}
-                            index={index}
-                            onOpen={() => navigate(`/tasks/projects/${project.id}`)}
-                            statusFallback="Completed"
-                            completed
-                          />
-                        ))}
-                    </>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+        {projectView === "completed" && !loading && (
+          <div className="space-y-0.5">
+            {visibleCompletedProjects.map((project, index) => (
+              <CompletedProjectRow
+                key={project.id}
+                project={project}
+                owner={ownerByProjectId[project.id]}
+                collaborators={collaboratorsByProjectId[project.id]}
+                index={index}
+                onOpen={() => navigate(`/tasks/projects/${project.id}`)}
+              />
+            ))}
+          </div>
+        )}
       </div>
+
+      <input
+        ref={coverInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleCoverSelected}
+      />
 
       <ProjectEditorModal
         project={editingProject}

@@ -20,23 +20,3 @@ const projectIconClasses = [
 export const projectIconClass = (index: number) =>
   projectIconClasses[index % projectIconClasses.length];
 
-export const formatDate = (date?: string | null) => {
-  if (!date) return "No date";
-
-  return new Date(date).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-export const getInitials = (name?: string | null) => {
-  if (!name) return "AS";
-
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase())
-    .join("");
-};

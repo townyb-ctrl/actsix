@@ -51,7 +51,7 @@ export function UpcomingServicesWidget({ data }: DashboardWidgetRenderProps) {
         ))}
       </div>
 
-      <Button asChild className="actsix-btn-primary h-9 w-full text-xs sm:w-auto">
+      <Button asChild className="actsix-btn-primary min-h-10 h-9 w-full text-xs sm:w-auto">
         <Link to={`/service-planner/services/${service.id}`}>Open Service</Link>
       </Button>
     </div>

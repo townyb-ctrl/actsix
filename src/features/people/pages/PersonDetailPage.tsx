@@ -778,7 +778,7 @@ const PersonDetailPage = () => {
                 href={getWhatsappHref(person.phone_number)}
                 target="_blank"
                 rel="noreferrer"
-                className="actsix-btn-outline inline-flex h-9 gap-2 border-brand-teal px-3 text-sm font-bold text-brand-teal"
+                className="actsix-btn-outline min-h-10 inline-flex h-9 gap-2 border-brand-teal px-3 text-sm font-bold text-brand-teal"
               >
                 <Send className="h-4 w-4" />
                 Message
@@ -816,7 +816,7 @@ const PersonDetailPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="actsix-btn-outline text-muted-foreground"
+                className="actsix-btn-outline min-h-10 text-muted-foreground"
                 onClick={removeAvatar}
               >
                 <Trash2 className="h-4 w-4" />
@@ -832,7 +832,7 @@ const PersonDetailPage = () => {
 
             <Button
               type="button"
-              className="actsix-btn-primary"
+              className="actsix-btn-primary min-h-10"
               onClick={() => setEditing(true)}
               disabled={!canEditProfile}
             >
@@ -895,7 +895,7 @@ const PersonDetailPage = () => {
 
                 <Link
                   to="/groups"
-                  className="actsix-btn-outline inline-flex h-9 px-3 text-sm font-bold text-foreground"
+                  className="actsix-btn-outline min-h-10 inline-flex h-9 px-3 text-sm font-bold text-foreground"
                 >
                   View Groups
                 </Link>
@@ -1023,7 +1023,7 @@ const PersonDetailPage = () => {
                   {canManageTraining && (
                     <Button
                       type="button"
-                      className="actsix-btn-primary h-9 px-3 text-sm"
+                      className="actsix-btn-primary min-h-10 h-9 px-3 text-sm"
                       onClick={openAssignTraining}
                       disabled={availableTrainingCourses.length === 0}
                     >
@@ -1034,7 +1034,7 @@ const PersonDetailPage = () => {
 
                   <Link
                     to="/training"
-                    className="actsix-btn-outline inline-flex h-9 px-3 text-sm font-bold text-foreground"
+                    className="actsix-btn-outline min-h-10 inline-flex h-9 px-3 text-sm font-bold text-foreground"
                   >
                     Training Center
                   </Link>
@@ -1522,7 +1522,7 @@ const PersonDetailPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="actsix-btn-outline"
+                className="actsix-btn-outline min-h-10"
                 onClick={() => setAssignTrainingOpen(false)}
               >
                 <X className="h-4 w-4" />
@@ -1531,7 +1531,7 @@ const PersonDetailPage = () => {
 
               <Button
                 type="submit"
-                className="actsix-btn-primary"
+                className="actsix-btn-primary min-h-10"
                 disabled={assigningTraining || availableTrainingCourses.length === 0}
               >
                 <Plus className="h-4 w-4" />
@@ -1635,14 +1635,14 @@ const PersonDetailPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="actsix-btn-outline"
+                  className="actsix-btn-outline min-h-10"
                   onClick={cancelEdit}
                 >
                   <X className="h-4 w-4" />
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary">
+                <Button type="submit" className="actsix-btn-primary min-h-10">
                   <Save className="h-4 w-4" />
                   Save Profile
                 </Button>

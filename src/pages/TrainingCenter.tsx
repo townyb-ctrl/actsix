@@ -1238,7 +1238,7 @@ const TrainingCenter = () => {
             title="View course"
             aria-label={`View ${course.title}`}
             size="sm"
-            className="actsix-btn-outline h-8 min-w-0 px-0"
+            className="actsix-btn-outline min-h-10 h-8 min-w-0 px-0"
             onClick={() => openPanel("course", course)}
           >
             <Eye className="h-3.5 w-3.5" />
@@ -1248,7 +1248,7 @@ const TrainingCenter = () => {
             title="Edit course"
             aria-label={`Edit ${course.title}`}
             size="sm"
-            className="actsix-btn-outline h-8 min-w-0 px-0"
+            className="actsix-btn-outline min-h-10 h-8 min-w-0 px-0"
             onClick={() => editCourse(course)}
             disabled={!canManageTraining}
           >
@@ -1256,7 +1256,7 @@ const TrainingCenter = () => {
           </Button>
           <Button
             size="sm"
-            className="actsix-btn-primary h-8 min-w-0 px-2 text-xs"
+            className="actsix-btn-primary min-h-10 h-8 min-w-0 px-2 text-xs"
             onClick={() => openPanel("assign", course)}
             disabled={!canManageTraining}
           >
@@ -1483,7 +1483,7 @@ const TrainingCenter = () => {
 
                   {nextTrainingAssignment && (
                     <Button
-                      className="actsix-btn-primary w-full sm:w-auto"
+                      className="actsix-btn-primary min-h-10 w-full sm:w-auto"
                       onClick={() => {
                         const course = coursesById[nextTrainingAssignment.course_id] || null;
                         setSelectedCourse(course);
@@ -1633,7 +1633,7 @@ const TrainingCenter = () => {
                                 <Button
                                   type="button"
                                   size="sm"
-                                  className="actsix-btn-primary h-9"
+                                  className="actsix-btn-primary min-h-10 h-9"
                                   onClick={() =>
                                     updateMyAssignment(assignment, {
                                       status: "In Progress",
@@ -1651,7 +1651,7 @@ const TrainingCenter = () => {
                                   type="button"
                                   size="sm"
                                   variant="outline"
-                                  className="actsix-btn-outline h-9 px-3"
+                                  className="actsix-btn-outline min-h-10 h-9 px-3"
                                   onClick={() =>
                                     updateMyAssignment(assignment, {
                                       progress: value,
@@ -1691,7 +1691,7 @@ const TrainingCenter = () => {
                         <div className="space-y-2">
                           <Button
                             variant="outline"
-                            className="actsix-btn-outline w-full"
+                            className="actsix-btn-outline min-h-10 w-full"
                           onClick={() => {
                             setSelectedCourse(course);
                             setSelectedAssignment(assignment);
@@ -1707,7 +1707,7 @@ const TrainingCenter = () => {
                           {assignment.status !== "Complete" && courseLessonCount > 0 ? (
                             <Button
                               type="button"
-                              className="actsix-btn-primary w-full"
+                              className="actsix-btn-primary min-h-10 w-full"
                               onClick={() => {
                                 setSelectedCourse(course);
                                 setSelectedAssignment(assignment);
@@ -1722,7 +1722,7 @@ const TrainingCenter = () => {
                           ) : assignment.status !== "Complete" ? (
                             <Button
                               type="button"
-                              className="actsix-btn-primary w-full"
+                              className="actsix-btn-primary min-h-10 w-full"
                               onClick={() =>
                                 updateMyAssignment(assignment, {
                                   status: "Complete",
@@ -1812,7 +1812,7 @@ const TrainingCenter = () => {
                                     type="button"
                                     size="sm"
                                     variant={isComplete ? "outline" : "default"}
-                                    className={isComplete ? "actsix-btn-outline h-8" : "actsix-btn-primary h-8"}
+                                    className={isComplete ? "actsix-btn-outline min-h-10 h-8" : "actsix-btn-primary min-h-10 h-8"}
                                     onClick={() =>
                                       toggleMyLessonCompletion(selectedAssignment, lesson, !isComplete)
                                     }
@@ -1862,7 +1862,7 @@ const TrainingCenter = () => {
           <>
             <Button
               variant="outline"
-              className="actsix-btn-outline gap-2"
+              className="actsix-btn-outline min-h-10 gap-2"
               onClick={() => openPanel("section")}
               disabled={!canManageTraining}
             >
@@ -1870,7 +1870,7 @@ const TrainingCenter = () => {
               New Folder
             </Button>
             <Button
-              className="actsix-btn-primary gap-2"
+              className="actsix-btn-primary min-h-10 gap-2"
               onClick={() => openPanel("new")}
               disabled={!canManageTraining}
             >
@@ -1879,7 +1879,7 @@ const TrainingCenter = () => {
             </Button>
             <Button
               variant="outline"
-              className="actsix-btn-outline gap-2"
+              className="actsix-btn-outline min-h-10 gap-2"
               onClick={() => openPanel("assign")}
               disabled={!canManageTraining || courses.length === 0}
             >
@@ -2380,7 +2380,7 @@ const TrainingCenter = () => {
               </Card>
 
               <Button
-                className="actsix-btn-primary w-full"
+                className="actsix-btn-primary min-h-10 w-full"
                 onClick={createTrainingSection}
                 disabled={creatingSection || !canManageTraining}
               >
@@ -2425,7 +2425,7 @@ const TrainingCenter = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="actsix-btn-outline"
+                      className="actsix-btn-outline min-h-10"
                       onClick={() => editCourse(selectedCourse)}
                     >
                       <Pencil className="h-4 w-4" />
@@ -2672,7 +2672,7 @@ const TrainingCenter = () => {
               </div>
 
               <Button
-                className="actsix-btn-primary w-full"
+                className="actsix-btn-primary min-h-10 w-full"
                 onClick={assignTraining}
                 disabled={saving || !canManageTraining || !selectedCourseId}
               >
@@ -2827,7 +2827,7 @@ const TrainingCenter = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    className="actsix-btn-outline h-9 px-3 text-sm"
+                    className="actsix-btn-outline min-h-10 h-9 px-3 text-sm"
                     onClick={addCourseLesson}
                   >
                     <Plus className="h-4 w-4" />
@@ -2939,7 +2939,7 @@ const TrainingCenter = () => {
                             <Button
                               type="button"
                               variant="outline"
-                              className="actsix-btn-outline h-8 px-3 text-xs"
+                              className="actsix-btn-outline min-h-10 h-8 px-3 text-xs"
                               onClick={() => addLessonMedia(lesson.tempId, "video")}
                             >
                               <Video className="h-3.5 w-3.5" />
@@ -2948,7 +2948,7 @@ const TrainingCenter = () => {
                             <Button
                               type="button"
                               variant="outline"
-                              className="actsix-btn-outline h-8 px-3 text-xs"
+                              className="actsix-btn-outline min-h-10 h-8 px-3 text-xs"
                               onClick={() => addLessonMedia(lesson.tempId, "image")}
                             >
                               <ImageIcon className="h-3.5 w-3.5" />
@@ -3054,7 +3054,7 @@ const TrainingCenter = () => {
               </Card>
 
               <Button
-                className="actsix-btn-primary w-full"
+                className="actsix-btn-primary min-h-10 w-full"
                 onClick={saveCourse}
                 disabled={saving || !canManageTraining}
               >

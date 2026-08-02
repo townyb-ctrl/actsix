@@ -24,15 +24,15 @@ export function DashboardCustomizeBar({
           </span>
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <Button className="actsix-btn-primary h-9 px-3 text-xs" onClick={onAddWidget}>
+          <Button className="actsix-btn-primary min-h-10 h-9 px-3 text-xs" onClick={onAddWidget}>
             <Plus className="h-3.5 w-3.5" />
             Add Widget
           </Button>
-          <Button variant="outline" className="actsix-btn-outline h-9 px-3 text-xs" onClick={onResetLayout}>
+          <Button variant="outline" className="actsix-btn-outline min-h-10 h-9 px-3 text-xs" onClick={onResetLayout}>
             <RotateCcw className="h-3.5 w-3.5" />
             Reset Layout
           </Button>
-          <Button variant="outline" className="actsix-btn-outline h-9 px-3 text-xs" onClick={onDone}>
+          <Button variant="outline" className="actsix-btn-outline min-h-10 h-9 px-3 text-xs" onClick={onDone}>
             <Check className="h-3.5 w-3.5" />
             Finish
           </Button>

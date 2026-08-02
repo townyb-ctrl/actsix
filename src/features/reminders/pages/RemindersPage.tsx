@@ -485,7 +485,7 @@ export default function RemindersPage() {
           <Button
             type="button"
             size="sm"
-            className="actsix-btn-primary h-9"
+            className="actsix-btn-primary min-h-10 h-9"
             onClick={openNewReminder}
           >
             <Plus className="h-4 w-4" />
@@ -704,7 +704,7 @@ export default function RemindersPage() {
             </Button>
             <Button
               type="button"
-              className="actsix-btn-primary rounded-xl"
+              className="actsix-btn-primary min-h-10 rounded-xl"
               disabled={saving}
               onClick={saveReminder}
             >

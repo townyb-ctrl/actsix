@@ -203,14 +203,14 @@ const TaskEditorModal = ({
           </p>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button variant="outline" className="actsix-btn-outline" onClick={onClose}>
+            <Button variant="outline" className="actsix-btn-outline min-h-10" onClick={onClose}>
               Cancel
             </Button>
 
             <Button
               disabled={saving}
               variant="outline"
-              className="actsix-btn-outline border-brand-teal/50 font-bold text-brand-teal hover:text-brand-teal"
+              className="actsix-btn-outline min-h-10 border-brand-teal/50 font-bold text-brand-teal hover:text-brand-teal"
               onClick={onSave}
             >
               <Save className="h-4 w-4 mr-2" />

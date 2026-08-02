@@ -35,6 +35,14 @@ export const getProjectCollaborators = (projectId: string) =>
     .eq("project_id", projectId)
     .order("created_at", { ascending: true });
 
+/** Bulk variant for the projects grid - one query for the whole page. */
+export const getCollaboratorsForProjects = (projectIds: string[]) =>
+  (supabase as any)
+    .from("project_collaborators")
+    .select("project_id, person_id, role, created_at, people(id, display_name, avatar_url)")
+    .in("project_id", projectIds)
+    .order("created_at", { ascending: true });
+
 export const getProjectSections = (projectId: string) =>
   (supabase as any)
     .from("project_sections")

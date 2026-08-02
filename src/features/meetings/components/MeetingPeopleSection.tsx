@@ -304,7 +304,7 @@ export function MeetingPeopleSection({
               Cancel
             </Button>
             <Button
-              className="actsix-btn-primary rounded-xl"
+              className="actsix-btn-primary min-h-10 rounded-xl"
               onClick={onSendInvites}
               disabled={inviteRecipients.length === 0}
             >

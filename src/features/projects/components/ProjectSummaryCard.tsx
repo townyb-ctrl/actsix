@@ -1,101 +1,119 @@
-import { CalendarDays, FolderKanban } from "lucide-react";
+import { FolderKanban, ImagePlus } from "lucide-react";
 
-import { formatDate, projectIconClass, statusClass } from "@/features/projects/lib/projectPresentation";
+import { projectIconClass } from "@/features/projects/lib/projectPresentation";
+import CollaboratorAvatars, { type TeamMember } from "@/features/projects/components/CollaboratorAvatars";
 
 type SummaryProject = {
   id: string;
   name: string;
   area?: string | null;
   status?: string | null;
+  cover_image_url?: string | null;
 };
 
 type SummaryStats = {
   progress: number;
-  openTasks: Array<{ due?: string | null }>;
-  nextAction: string;
+  openTasks: unknown[];
 };
 
 type ProjectSummaryCardProps = {
   project: SummaryProject;
   stats?: SummaryStats;
-  ownerName?: string | null;
-  /** Drives the rotating icon tint so a list reads as varied. */
+  owner?: TeamMember | null;
+  collaborators?: TeamMember[];
+  /** Drives the rotating icon tint so a wall of coverless projects reads as varied. */
   index: number;
   onOpen: () => void;
-  statusFallback: string;
-  /** Completed projects omit the next action and open-task count. */
-  showNextAction?: boolean;
+  /** Opens the cover picker. Omitted when the viewer can't edit the project. */
+  onChangeCover?: () => void;
 };
 
 const ProjectSummaryCard = ({
   project,
   stats,
-  ownerName,
+  owner,
+  collaborators,
   index,
   onOpen,
-  statusFallback,
-  showNextAction = true,
-}: ProjectSummaryCardProps) => (
-  <button
-    type="button"
-    onClick={onOpen}
-    className="actsix-interactive-tile w-full p-3.5"
-  >
-    <div className="flex min-w-0 items-start gap-3">
-      <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${projectIconClass(index)}`}
+  onChangeCover,
+}: ProjectSummaryCardProps) => {
+  const progress = stats?.progress ?? 0;
+  const openCount = stats?.openTasks.length ?? 0;
+
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Open project ${project.name}`}
+        className="actsix-interactive-tile flex h-full w-full flex-col overflow-hidden p-0 text-left"
       >
-        <FolderKanban className="h-5 w-5" />
-      </div>
-
-      <div className="min-w-0 flex-1 text-left">
-        <div className="flex min-w-0 items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="truncate text-base font-extrabold tracking-tight">{project.name}</h2>
-            <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
-              {project.area || "General"} · {ownerName || "Creator"}
-            </p>
-          </div>
-
-          <span className={`chip shrink-0 ${statusClass(project.status)}`}>
-            {project.status || statusFallback}
-          </span>
-        </div>
-
-        {showNextAction && (
-          <div className="actsix-interactive-row mt-2.5 border-border/60 bg-background/60 p-2.5">
-            <p className="label-eyebrow">Next Action</p>
-            <p className="mt-1 line-clamp-2 text-sm font-bold text-foreground">
-              {stats?.nextAction || "No next action set"}
-            </p>
-            {stats?.openTasks[0]?.due && (
-              <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {formatDate(stats.openTasks[0].due)}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="mt-2.5 flex items-center justify-between gap-3">
-          <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+        {/* Fixed aspect ratio so a grid of covers stays on a rhythm no matter
+            what people upload. */}
+        <div className="relative aspect-[16/6] w-full overflow-hidden bg-muted">
+          {project.cover_image_url ? (
+            <img
+              src={project.cover_image_url}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            />
+          ) : (
             <div
-              className="h-full rounded-full bg-brand-teal"
-              style={{ width: `${stats?.progress ?? 0}%` }}
+              className={`flex h-full w-full items-center justify-center ${projectIconClass(index)}`}
+            >
+              <FolderKanban className="h-8 w-8 opacity-70" />
+            </div>
+          )}
+
+          {/* Progress reads as a hairline on the image edge rather than a
+              labelled bar - it's ambient here, not the reason you're looking. */}
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-black/10">
+            <div
+              className="h-full bg-brand-teal transition-[width] duration-300"
+              style={{ width: `${progress}%` }}
             />
           </div>
-          <span className="shrink-0 text-xs font-extrabold text-muted-foreground">
-            {stats?.progress ?? 0}%
-          </span>
-          {showNextAction && (
-            <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground">
-              {stats?.openTasks.length ?? 0} open
-            </span>
-          )}
         </div>
-      </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-5">
+          <h2
+            className="line-clamp-2 text-2xl font-extrabold leading-[1.15] tracking-tight"
+            title={project.name}
+          >
+            {project.name}
+          </h2>
+
+          <p className="truncate text-[13px] font-semibold text-muted-foreground">
+            {project.area || "General"} · {openCount} open
+          </p>
+
+          <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/50 pt-3.5">
+            <span className="min-w-0 truncate text-sm">
+              <span className="font-semibold text-muted-foreground">Owner: </span>
+              <span className="font-bold text-foreground">
+                {owner?.display_name || "Unassigned"}
+              </span>
+            </span>
+
+            <CollaboratorAvatars collaborators={collaborators} excludeId={owner?.id} />
+          </div>
+        </div>
+      </button>
+
+      {onChangeCover && (
+        <button
+          type="button"
+          onClick={onChangeCover}
+          aria-label={`Change cover image for ${project.name}`}
+          title="Change cover image"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/85 text-muted-foreground opacity-0 shadow-sm backdrop-blur transition hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40 group-hover:opacity-100"
+        >
+          <ImagePlus className="h-4 w-4" />
+        </button>
+      )}
     </div>
-  </button>
-);
+  );
+};
 
 export default ProjectSummaryCard;

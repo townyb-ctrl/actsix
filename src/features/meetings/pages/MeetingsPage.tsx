@@ -177,7 +177,7 @@ const MeetingsPage = () => {
 
             <Button
               type="button"
-              className="actsix-btn-primary h-9 shrink-0 px-3"
+              className="actsix-btn-primary min-h-10 h-9 shrink-0 px-3"
               onClick={() => setAddOpen(true)}
             >
               <Plus className="h-4 w-4" />
@@ -240,7 +240,7 @@ const MeetingsPage = () => {
                     <div className="mt-4">
                       <Button
                         type="button"
-                        className="actsix-btn-primary rounded-xl"
+                        className="actsix-btn-primary min-h-10 rounded-xl"
                         onClick={() => setAddOpen(true)}
                       >
                         <Plus className="h-4 w-4" />
@@ -417,7 +417,7 @@ const MeetingsPage = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary rounded-xl">
+                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl">
                   <Plus className="h-4 w-4" />
                   Create Meeting
                 </Button>

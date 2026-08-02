@@ -399,7 +399,7 @@ const TasksPage = () => {
                 <Button
                   type="button"
                   data-tour="tasks-first-capture"
-                  className="actsix-btn-primary mt-4"
+                  className="actsix-btn-primary min-h-10 mt-4"
                   onClick={() => setQuickCaptureOpen(true)}
                 >
                   <Plus className="h-4 w-4" />

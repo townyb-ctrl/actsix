@@ -116,10 +116,10 @@ export function WidgetSettingsModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" className="actsix-btn-outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" className="actsix-btn-outline min-h-10" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button className="actsix-btn-primary" onClick={saveSettings}>
+          <Button className="actsix-btn-primary min-h-10" onClick={saveSettings}>
             Save Settings
           </Button>
         </DialogFooter>
