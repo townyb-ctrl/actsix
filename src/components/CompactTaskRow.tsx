@@ -2,6 +2,7 @@ import { CalendarDays, Edit3, FolderKanban, RotateCcw, Trash2, UserRound } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { dueToneClass, getDueTone } from "@/lib/dueDate";
 import type { RecurringFrequency } from "@/features/tasks/types/recurringTasks";
 
 type CompactTaskRowProps = {
@@ -9,6 +10,8 @@ type CompactTaskRowProps = {
   showCheckbox?: boolean;
   showAssignee?: boolean;
   showNotes?: boolean;
+  /** Off on a project's own page, where naming the project on every row is noise. */
+  showProject?: boolean;
   onToggle?: (task: any) => void;
   onEdit?: (task: any) => void;
   onDelete?: (task: any) => void;
@@ -24,33 +27,6 @@ const formatShortDate = (date?: string | null) => {
     month: "short",
     day: "numeric",
   });
-};
-
-// A due date only deserves an alarm colour when it's actually urgent.
-// Colouring every date the same coral makes none of them stand out.
-const getDueTone = (date?: string | null) => {
-  if (!date) return "none";
-
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return "none";
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(parsed);
-  due.setHours(0, 0, 0, 0);
-
-  const diffDays = Math.round((due.getTime() - today.getTime()) / 86400000);
-
-  if (diffDays < 0) return "overdue";
-  if (diffDays === 0) return "today";
-  return "upcoming";
-};
-
-const dueToneClass: Record<string, string> = {
-  overdue: "border-brand-coral/25 bg-brand-coral/10 text-brand-coral",
-  today: "border-brand-amber/30 bg-brand-amber/10 text-brand-amber",
-  upcoming: "border-border/70 bg-background/70 text-muted-foreground",
-  none: "",
 };
 
 const priorityClass = (priority?: string | null) => {
@@ -117,6 +93,7 @@ const CompactTaskRow = ({
   showCheckbox = true,
   showAssignee = false,
   showNotes = true,
+  showProject = true,
   onToggle,
   onEdit,
   onDelete,
@@ -136,8 +113,11 @@ const CompactTaskRow = ({
   const isRecurringTask = Boolean(task.recurring_template_id);
   const recurringLabel = getRecurringLabel(task);
   const sectionName = getProjectSectionName(task);
-  const projectLabel =
-    task.project && sectionName ? `${task.project}:${sectionName}` : task.project;
+  const projectLabel = showProject
+    ? task.project && sectionName
+      ? `${task.project}:${sectionName}`
+      : task.project
+    : sectionName;
   const clickable = Boolean(onEdit);
   const assignedTo =
     task.assignedPersonName ||

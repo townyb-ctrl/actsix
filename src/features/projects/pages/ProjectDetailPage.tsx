@@ -1,30 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  CalendarDays,
-  ChevronDown,
-  CheckCircle2,
-  Clock3,
-  History,
-  Edit3,
-  Plus,
-  ListChecks,
-  Trash2,
-  UserRound,
-} from "lucide-react";
+import { Edit3, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
-import { PeopleSearchSelect, type PeopleSearchPerson } from "@/components/people/PeopleSearchSelect";
-import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { type PeopleSearchPerson } from "@/components/people/PeopleSearchSelect";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import CompactTaskRow from "@/components/CompactTaskRow";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
-import { statusClass } from "@/features/projects/lib/projectPresentation";
+import ProjectDetailHero from "@/features/projects/components/ProjectDetailHero";
+import ProjectDetailSidebar from "@/features/projects/components/ProjectDetailSidebar";
+import ProjectSectionRail from "@/features/projects/components/ProjectSectionRail";
+import ProjectTaskPane, { type TaskFilter } from "@/features/projects/components/ProjectTaskPane";
+import { type NewTaskDraft } from "@/features/projects/components/ProjectAddTaskRow";
+import { uploadProjectCover } from "@/features/projects/lib/uploadProjectCover";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { logActivity } from "@/lib/activityLog";
 import { toast } from "sonner";
@@ -45,7 +37,6 @@ import {
   updateProject,
   updateProjectActionTask,
   updateProjectNameOnTasks,
-  updateProjectNotes,
   updateProjectTaskCompletion,
   upsertProjectCalendarEvent,
   upsertProjectSection,
@@ -111,7 +102,9 @@ const isMissingProjectSectionsSchema = (error?: { message?: string; code?: strin
   );
 };
 
+const ALL_TASKS_ID = "__all";
 const GENERAL_SECTION_ID = "__general";
+const DUE_SOON_DAYS = 7;
 
 const toLocalDateTimeInput = (value?: string | null) => {
   if (!value) return "";
@@ -127,14 +120,49 @@ const toIsoDateTime = (value?: string | null) => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-const formatProjectDate = (value?: string | null) => {
-  if (!value) return "";
+const daysUntilDue = (due?: string | null) => {
+  if (!due) return null;
 
-  return new Date(value).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+  const parsed = new Date(due);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  parsed.setHours(0, 0, 0, 0);
+
+  return Math.round((parsed.getTime() - today.getTime()) / 86400000);
+};
+
+const isDueSoon = (task: any) => {
+  if (task.complete) return false;
+
+  const days = daysUntilDue(task.due);
+  return days !== null && days <= DUE_SOON_DAYS;
+};
+
+/** Open work first, soonest due first, then oldest. Completed sinks to the bottom. */
+const sortProjectTasks = (tasks: any[]) => {
+  return [...tasks].sort((a, b) => {
+    if (Boolean(a.complete) !== Boolean(b.complete)) return a.complete ? 1 : -1;
+
+    if (a.complete && b.complete) {
+      return (
+        new Date(b.completed_at || b.updated_at || 0).getTime() -
+        new Date(a.completed_at || a.updated_at || 0).getTime()
+      );
+    }
+
+    const aDue = a.due ? new Date(a.due).getTime() : Number.POSITIVE_INFINITY;
+    const bDue = b.due ? new Date(b.due).getTime() : Number.POSITIVE_INFINITY;
+    if (aDue !== bDue) return aDue - bDue;
+
+    return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
   });
+};
+
+const toProgress = (tasks: any[]) => {
+  if (tasks.length === 0) return 0;
+  return Math.round((tasks.filter((task) => task.complete).length / tasks.length) * 100);
 };
 
 const ProjectDetailPage = () => {
@@ -152,13 +180,9 @@ const ProjectDetailPage = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-  const [isActivityOpen, setIsActivityOpen] = useState(false);
-  const [openSectionIds, setOpenSectionIds] = useState<Record<string, boolean>>({});
-  const [openCompletedSectionIds, setOpenCompletedSectionIds] = useState<Record<string, boolean>>({});
-  const [isUnsectionedOpen, setIsUnsectionedOpen] = useState(true);
-  const [isGeneralCompletedOpen, setIsGeneralCompletedOpen] = useState(false);
-  const [sectionTaskDrafts, setSectionTaskDrafts] = useState<Record<string, { title: string; due: string; assigned_person_id: string }>>({});
-  const [notesDraft, setNotesDraft] = useState("");
+  const [activeSectionId, setActiveSectionId] = useState<string>(ALL_TASKS_ID);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("open");
+  const [taskSearch, setTaskSearch] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [savingTask, setSavingTask] = useState(false);
   const [editingProject, setEditingProject] = useState<any | null>(null);
@@ -168,6 +192,7 @@ const ProjectDetailPage = () => {
   const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
 
   const load = async ({ showLoading = false } = {}) => {
     if (!user || !projectId || !currentPerson?.workspace_id) return;
@@ -225,7 +250,6 @@ const ProjectDetailPage = () => {
       if (isMissingProjectSectionsSchema(sectionError)) {
         setProjectSectionsAvailable(false);
         setSections([]);
-        setIsUnsectionedOpen(true);
       } else {
         setLoadError(sectionError.message || "Could not load project sections.");
         setLoading(false);
@@ -284,27 +308,12 @@ const ProjectDetailPage = () => {
     }));
 
     setProject(projectData);
-    setNotesDraft(projectData.notes || "");
     setTasks(enrichedTasks);
     setSections(sectionError ? [] : sectionData ?? []);
     setPeople(peopleData ?? []);
     setCollaborators(collaboratorData ?? []);
     setActivityLogs(enrichedActivityLogs);
     setLoading(false);
-  };
-
-  const toggleCompletedSection = (sectionId: string) => {
-    setOpenCompletedSectionIds((current) => ({
-      ...current,
-      [sectionId]: !current[sectionId],
-    }));
-  };
-
-  const toggleSection = (sectionId: string) => {
-    setOpenSectionIds((current) => ({
-      ...current,
-      [sectionId]: !current[sectionId],
-    }));
   };
 
   useEffect(() => {
@@ -324,14 +333,25 @@ const ProjectDetailPage = () => {
     }
   }, [user, projectId, currentPerson?.workspace_id, currentPersonLoading]);
 
+  const unsectionedTasks = useMemo(
+    () => tasks.filter((task) => !task.section_id),
+    [tasks]
+  );
+
+  // A deleted section must not leave the pane pointing at nothing.
+  useEffect(() => {
+    if (activeSectionId === ALL_TASKS_ID || activeSectionId === GENERAL_SECTION_ID) return;
+    if (sections.some((section) => section.id === activeSectionId)) return;
+
+    setActiveSectionId(ALL_TASKS_ID);
+  }, [sections, activeSectionId]);
+
   const stats = useMemo(() => {
     const openTasks = tasks.filter((task) => !task.complete);
     const completedTasks = tasks.filter((task) => task.complete);
-    const dueSoon = openTasks.filter((task) => Boolean(task.due)).length;
-    const progress =
-      tasks.length === 0 ? project?.progress ?? 0 : Math.round((completedTasks.length / tasks.length) * 100);
+    const progress = tasks.length === 0 ? project?.progress ?? 0 : toProgress(tasks);
 
-    return { openTasks, completedTasks, dueSoon, progress };
+    return { openTasks, completedTasks, progress };
   }, [tasks, project]);
 
   const projectOwner = useMemo(() => {
@@ -358,49 +378,158 @@ const ProjectDetailPage = () => {
   }, [collaborators, projectOwner]);
 
   const collaboratorPeopleById = useMemo(() => {
-    return new Map(
-      assignableProjectPeople.map((person) => [person.id, person])
-    );
+    return new Map(assignableProjectPeople.map((person) => [person.id, person]));
   }, [assignableProjectPeople]);
 
-  const sectionGroups = useMemo(() => {
-    return sections.map((section) => {
-      const sectionTasks = tasks.filter((task) => task.section_id === section.id);
-      const openTasks = sectionTasks.filter((task) => !task.complete);
-      const completedTasks = sectionTasks.filter((task) => task.complete);
+  const sectionNameById = useMemo(() => {
+    return new Map(sections.map((section) => [section.id, section.name]));
+  }, [sections]);
 
-      return {
-        section,
-        leader: section.leader_person_id
-          ? collaboratorPeopleById.get(section.leader_person_id) || null
-          : null,
-        tasks: sectionTasks,
-        openTasks,
-        completedTasks,
-        progress:
-          sectionTasks.length === 0
-            ? 0
-            : Math.round((completedTasks.length / sectionTasks.length) * 100),
-      };
-    });
-  }, [sections, tasks, collaboratorPeopleById]);
+  const railSections = useMemo(() => {
+    const entries = sections.map((section) => ({
+      id: section.id,
+      name: section.name,
+      openCount: tasks.filter((task) => task.section_id === section.id && !task.complete)
+        .length,
+    }));
 
-  const unsectionedTasks = useMemo(() => {
-    return tasks.filter((task) => !task.section_id);
-  }, [tasks]);
+    // General only earns a row once something is actually sitting outside a
+    // section, or when the project has no sections to sit in yet. It sits
+    // right under All tasks, ahead of the named sections, since it's the
+    // catch-all rather than a workstream someone chose to create.
+    if (unsectionedTasks.length > 0 || sections.length === 0) {
+      entries.unshift({
+        id: GENERAL_SECTION_ID,
+        name: "General",
+        openCount: unsectionedTasks.filter((task) => !task.complete).length,
+      });
+    }
 
-  const updateSectionTaskDraft = (
-    sectionId: string,
-    patch: Partial<{ title: string; due: string; assigned_person_id: string }>
-  ) => {
-    setSectionTaskDrafts((current) => {
-      const base = current[sectionId] || { title: "", due: "", assigned_person_id: "" };
-      return {
-        ...current,
-        [sectionId]: { ...base, ...patch },
-      };
-    });
-  };
+    return entries;
+  }, [sections, tasks, unsectionedTasks]);
+
+  const activeSection = useMemo(
+    () => sections.find((section) => section.id === activeSectionId) || null,
+    [sections, activeSectionId]
+  );
+
+  const paneTasks = useMemo(() => {
+    if (activeSectionId === ALL_TASKS_ID) return tasks;
+    if (activeSectionId === GENERAL_SECTION_ID) return unsectionedTasks;
+
+    return tasks.filter((task) => task.section_id === activeSectionId);
+  }, [tasks, unsectionedTasks, activeSectionId]);
+
+  const paneCounts = useMemo(() => {
+    return {
+      all: paneTasks.length,
+      open: paneTasks.filter((task) => !task.complete).length,
+      mine: paneTasks.filter(
+        (task) =>
+          !task.complete &&
+          Boolean(currentPerson?.id) &&
+          task.assigned_person_id === currentPerson?.id
+      ).length,
+      due: paneTasks.filter(isDueSoon).length,
+      done: paneTasks.filter((task) => task.complete).length,
+    } satisfies Record<TaskFilter, number>;
+  }, [paneTasks, currentPerson?.id]);
+
+  const visibleTasks = useMemo(() => {
+    const query = taskSearch.trim().toLowerCase();
+
+    const matchesFilter = (task: any) => {
+      if (taskFilter === "all") return true;
+      if (taskFilter === "open") return !task.complete;
+      if (taskFilter === "done") return Boolean(task.complete);
+      if (taskFilter === "due") return isDueSoon(task);
+
+      return (
+        !task.complete &&
+        Boolean(currentPerson?.id) &&
+        task.assigned_person_id === currentPerson?.id
+      );
+    };
+
+    const matchesSearch = (task: any) => {
+      if (!query) return true;
+
+      return (
+        (task.title || "").toLowerCase().includes(query) ||
+        (task.notes || "").toLowerCase().includes(query) ||
+        (task.assignedPersonName || "").toLowerCase().includes(query)
+      );
+    };
+
+    const filtered = paneTasks.filter(
+      (task) => matchesFilter(task) && matchesSearch(task)
+    );
+
+    const sorted = sortProjectTasks(filtered);
+
+    // Only the cross-section view needs to say which section a task belongs to.
+    if (activeSectionId !== ALL_TASKS_ID) return sorted;
+
+    return sorted.map((task) => ({
+      ...task,
+      section_name: sectionNameById.get(task.section_id) || "",
+    }));
+  }, [paneTasks, taskFilter, taskSearch, currentPerson?.id, activeSectionId, sectionNameById]);
+
+  const paneHeading =
+    activeSectionId === ALL_TASKS_ID
+      ? "All tasks"
+      : activeSectionId === GENERAL_SECTION_ID
+        ? "General"
+        : activeSection?.name || "Section";
+
+  const paneDescription =
+    activeSectionId === GENERAL_SECTION_ID ? null : activeSection?.description || null;
+
+  const paneEmptyMessage = taskSearch.trim()
+    ? "No tasks match this search."
+    : taskFilter === "done"
+      ? "Nothing completed here yet."
+      : taskFilter === "mine"
+        ? "Nothing here is assigned to you."
+        : taskFilter === "due"
+          ? "Nothing is due in the next week."
+          : "No tasks here yet. Add the first one below.";
+
+  const addTargetSectionId =
+    activeSectionId === ALL_TASKS_ID || activeSectionId === GENERAL_SECTION_ID
+      ? null
+      : activeSectionId;
+
+  const sidebarCollaborators = useMemo(() => {
+    return collaborators.map((collaborator) => ({
+      id: collaborator.id,
+      role: collaborator.role,
+      person: collaborator.people
+        ? {
+            id: collaborator.people.id,
+            display_name: collaborator.people.display_name,
+            avatar_url: collaborator.people.avatar_url,
+          }
+        : null,
+    }));
+  }, [collaborators]);
+
+  const sidebarActivity = useMemo(() => {
+    return activityLogs.map((activity) => ({
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      created_at: activity.created_at,
+      person: activity.people
+        ? {
+            id: activity.actor_person_id || activity.id,
+            display_name: activity.people.display_name,
+            avatar_url: activity.people.avatar_url,
+          }
+        : null,
+    }));
+  }, [activityLogs]);
 
   const logProjectActivity = async (
     actionType: string,
@@ -420,6 +549,42 @@ const ProjectDetailPage = () => {
       description,
       metadata,
     });
+  };
+
+  const handleBannerSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // Reset first, so re-picking the same file still fires a change event.
+    event.target.value = "";
+
+    if (!file || !project) return;
+
+    toast.info("Uploading banner...");
+
+    const result = await uploadProjectCover({
+      file,
+      workspaceId: currentPerson?.workspace_id,
+      userId: user?.id,
+    });
+
+    if ("error" in result) {
+      toast.error(result.error);
+      return;
+    }
+
+    const { error } = await updateProject(project.id, {
+      banner_image_url: result.url,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setProject((current: any) =>
+      current ? { ...current, banner_image_url: result.url } : current
+    );
+    toast.success("Banner updated");
   };
 
   const openNewSection = () => {
@@ -489,7 +654,7 @@ const ProjectDetailPage = () => {
     load();
   };
 
-  const deleteSection = async (section: ProjectSection) => {
+  const removeSection = async (section: ProjectSection) => {
     const confirmed = window.confirm(
       `Delete "${section.name}"? Its tasks will stay on the project without a section.`
     );
@@ -503,32 +668,21 @@ const ProjectDetailPage = () => {
       return;
     }
 
-    await logProjectActivity(
-      "section_deleted",
-      "Section deleted",
-      section.name,
-      { section_id: section.id }
-    );
+    await logProjectActivity("section_deleted", "Section deleted", section.name, {
+      section_id: section.id,
+    });
 
+    setActiveSectionId(ALL_TASKS_ID);
     toast.success("Section deleted");
     load();
   };
 
-  const addProjectAction = async (sectionId: string | null, event?: React.FormEvent) => {
-    event?.preventDefault();
-
-    const draftKey = sectionId || GENERAL_SECTION_ID;
-    const draft = sectionTaskDrafts[draftKey] || {
-      title: "",
-      due: "",
-      assigned_person_id: "",
-    };
-
-    if (!draft.title.trim() || !user || !project) return;
+  const addProjectAction = async (sectionId: string | null, draft: NewTaskDraft) => {
+    if (!draft.title || !user || !project) return;
 
     const { error } = await createProjectActionTask({
       id: crypto.randomUUID(),
-      title: draft.title.trim(),
+      title: draft.title,
       user_id: user.id,
       project: project.name,
       project_id: project.id,
@@ -552,17 +706,11 @@ const ProjectDetailPage = () => {
     }
 
     await syncProjectStatsById(project.id);
-    await logProjectActivity(
-      "task_added",
-      "Task added",
-      draft.title.trim(),
-      { due: draft.due || null, section_id: sectionId }
-    );
-    setSectionTaskDrafts((current) => ({
-      ...current,
-      [draftKey]: { title: "", due: "", assigned_person_id: "" },
-    }));
-    toast.success("Next action added");
+    await logProjectActivity("task_added", "Task added", draft.title, {
+      due: draft.due || null,
+      section_id: sectionId,
+    });
+    toast.success("Task added");
     load();
   };
 
@@ -607,7 +755,7 @@ const ProjectDetailPage = () => {
       targetTask?.title || "Project task deleted",
       { task_id: id }
     );
-    toast.success("Action deleted");
+    toast.success("Task deleted");
     load();
   };
 
@@ -655,37 +803,14 @@ const ProjectDetailPage = () => {
     }
 
     await syncProjectStatsForIds([previousProjectId, editingTask.project_id || project?.id]);
-    await logProjectActivity(
-      "task_updated",
-      "Task updated",
-      editingTask.title || "Project task updated",
-      { task_id: editingTask.id, previous_project: previousTask?.project || "", next_project: editingTask.project }
-    );
+    await logProjectActivity("task_updated", "Task updated", editingTask.title || "Project task updated", {
+      task_id: editingTask.id,
+      previous_project: previousTask?.project || "",
+      next_project: editingTask.project,
+    });
 
     toast.success("Task updated");
     setEditingTask(null);
-    load();
-  };
-
-  const saveNotes = async () => {
-    if (!project) return;
-
-    const { error } = await updateProjectNotes({
-      projectId: project.id,
-      notes: notesDraft,
-    });
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    await logProjectActivity(
-      "notes_updated",
-      "Project notes updated",
-      "Project notes were changed"
-    );
-    toast.success("Project notes saved");
     load();
   };
 
@@ -806,18 +931,19 @@ const ProjectDetailPage = () => {
       }
 
       const { error } = await updateProject(editingProject.id, {
-          name: nextName,
-          area: editingProject.area || "General",
-          status: editingProject.status || "In Progress",
-          notes: editingProject.notes || "",
-          owner_person_id: editingProject.owner_person_id || projectOwner?.id || currentPerson?.id || null,
-          due_date: editingProject.due_date || null,
-          is_event: Boolean(editingProject.is_event),
-          event_start_at: toIsoDateTime(editingProject.event_start_at),
-          event_end_at: toIsoDateTime(editingProject.event_end_at),
-          calendar_event_id: editingProject.calendar_event_id || null,
-          updated_at: new Date().toISOString(),
-        });
+        name: nextName,
+        area: editingProject.area || "General",
+        status: editingProject.status || "In Progress",
+        notes: editingProject.notes || "",
+        owner_person_id:
+          editingProject.owner_person_id || projectOwner?.id || currentPerson?.id || null,
+        due_date: editingProject.due_date || null,
+        is_event: Boolean(editingProject.is_event),
+        event_start_at: toIsoDateTime(editingProject.event_start_at),
+        event_end_at: toIsoDateTime(editingProject.event_end_at),
+        calendar_event_id: editingProject.calendar_event_id || null,
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) throw error;
 
@@ -920,624 +1046,118 @@ const ProjectDetailPage = () => {
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         eyebrow="Tasks"
         title={project.name}
         subtitle={project.area || "General"}
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-lg px-2.5"
+              onClick={() =>
+                setEditingProject({
+                  ...project,
+                  event_start_at: toLocalDateTimeInput(project.event_start_at),
+                  event_end_at: toLocalDateTimeInput(project.event_end_at),
+                  add_to_calendar: Boolean(project.calendar_event_id),
+                })
+              }
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+              Edit
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title="Delete project"
+              aria-label="Delete project"
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive"
+              onClick={() => removeProject(project)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </>
+        }
       />
 
-      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        <Card className="actsix-panel overflow-hidden">
-          <div className="border-b border-border/70 p-3 sm:p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-                  <UserRound className="h-3.5 w-3.5" />
-                  Project Summary
-                </div>
+      <div className="actsix-page-body space-y-3">
+        <ProjectDetailHero
+          project={project}
+          owner={projectOwner}
+          progress={stats.progress}
+          openCount={stats.openTasks.length}
+          doneCount={stats.completedTasks.length}
+          onChangeBanner={() => bannerInputRef.current?.click()}
+        />
 
-                <span className={`chip px-2 py-0.5 text-[10px] ${statusClass(project.status)}`}>
-                  {project.status || "In Progress"}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-end gap-1.5">
-                <div className="flex h-7 items-center gap-1.5">
-                  <div className="flex -space-x-2">
-                    {collaborators.slice(0, 5).map((collaborator) => (
-                      <div
-                        key={collaborator.id}
-                        className="group relative rounded-full"
-                        title={`${collaborator.people?.display_name || "Person"} - ${collaborator.role || "Collaborator"}`}
-                      >
-                        <PersonAvatar
-                          name={collaborator.people?.display_name}
-                          avatarUrl={collaborator.people?.avatar_url}
-                          size="xs"
-                          className="border border-background shadow-sm ring-1 ring-border"
-                        />
-
-                        <button
-                          type="button"
-                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-border bg-background text-muted-foreground opacity-0 shadow-sm transition hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/25"
-                          onClick={() => removeCollaborator(collaborator.id)}
-                          aria-label="Remove collaborator"
-                        >
-                          <Trash2 className="h-2.5 w-2.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <span className="text-[11px] font-bold text-muted-foreground">
-                    {collaborators.length === 0
-                      ? "No collaborators"
-                      : `${collaborators.length} collaborator${collaborators.length === 1 ? "" : "s"}`}
-                  </span>
-
-                  {collaborators.length > 5 && (
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-extrabold text-muted-foreground">
-                      +{collaborators.length - 5}
-                    </span>
-                  )}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 rounded-full px-2 text-xs"
-                  onClick={() => setAddCollaboratorOpen(true)}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add Collaborator
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Edit project"
-                  aria-label="Edit project"
-                  className="h-7 w-7 rounded-full"
-                  onClick={() =>
-                    setEditingProject({
-                      ...project,
-                      event_start_at: toLocalDateTimeInput(project.event_start_at),
-                      event_end_at: toLocalDateTimeInput(project.event_end_at),
-                      add_to_calendar: Boolean(project.calendar_event_id),
-                    })
-                  }
-                >
-                  <Edit3 className="h-3.5 w-3.5" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Delete project"
-                  aria-label="Delete project"
-                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
-                  onClick={() => removeProject(project)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-
-            <p className="mt-2 line-clamp-1 text-xs leading-5 text-muted-foreground">
-              {project.notes || "Add notes to describe this project, its goal, and what success looks like."}
-            </p>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
-              <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-background/55 px-2.5">
-                <UserRound className="h-3.5 w-3.5 text-brand-teal" />
-                {projectOwner?.display_name || "Creator"}
-              </span>
-              {project.is_event && project.event_start_at ? (
-                <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-background/55 px-2.5">
-                  <CalendarDays className="h-3.5 w-3.5 text-brand-amber" />
-                  Event {formatProjectDate(project.event_start_at)}
-                </span>
-              ) : project.due_date ? (
-                <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-background/55 px-2.5">
-                  <Clock3 className="h-3.5 w-3.5 text-brand-amber" />
-                  Complete by {formatProjectDate(project.due_date)}
-                </span>
-              ) : null}
-            </div>
-
-            <div className="mt-3 flex flex-col gap-2 lg:flex-row lg:items-center">
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                  <span>Progress</span>
-                  <span>{stats.progress}%</span>
-                </div>
-                <div className="h-1 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-brand-teal"
-                    style={{ width: `${stats.progress}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-2 text-[11px] font-bold text-muted-foreground">
-                  <CheckCircle2 className="h-3 w-3 text-brand-teal" />
-                  <strong className="text-foreground">{stats.openTasks.length}</strong>
-                  Open
-                </span>
-                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-2 text-[11px] font-bold text-muted-foreground">
-                  <CheckCircle2 className="h-3 w-3 text-brand-sage" />
-                  <strong className="text-foreground">{stats.completedTasks.length}</strong>
-                  Done
-                </span>
-                <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-2 text-[11px] font-bold text-muted-foreground">
-                  <Clock3 className="h-3 w-3 text-brand-amber" />
-                  <strong className="text-foreground">{stats.dueSoon}</strong>
-                  Due
-                </span>
-              </div>
-            </div>
+        {!projectSectionsAvailable && (
+          <div className="rounded-lg border border-brand-amber/30 bg-brand-amber/10 p-3 text-sm text-brand-amber">
+            Project Sections are ready in the app, but the Supabase migration has not been
+            applied to this database yet. Existing project tasks are shown below.
           </div>
+        )}
 
-          <div className="border-b border-border/70 p-4 sm:p-5">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <h3 className="font-extrabold">Sections & Tasks</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Group project actions by workstream and assign a leader from collaborators.
-                </p>
-              </div>
+        <div className="grid min-w-0 gap-3 lg:grid-cols-[12rem_minmax(0,1fr)_18rem]">
+          <ProjectSectionRail
+            sections={railSections}
+            activeId={activeSectionId}
+            allId={ALL_TASKS_ID}
+            allOpenCount={stats.openTasks.length}
+            onSelect={setActiveSectionId}
+            onAddSection={projectSectionsAvailable ? openNewSection : undefined}
+          />
 
-              <div className="grid w-full grid-cols-[1fr_auto] items-center gap-2 sm:w-auto sm:flex">
-                <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
-                  {sections.length} section{sections.length === 1 ? "" : "s"}
-                </span>
-                <Button
-                  type="button"
-                  className="actsix-btn-primary rounded-lg sm:w-auto"
-                  onClick={openNewSection}
-                  disabled={!projectSectionsAvailable}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Section
-                </Button>
-              </div>
-            </div>
+          <ProjectTaskPane
+            heading={paneHeading}
+            description={paneDescription}
+            status={activeSection?.status}
+            leader={
+              activeSection?.leader_person_id
+                ? collaboratorPeopleById.get(activeSection.leader_person_id) || null
+                : null
+            }
+            filter={taskFilter}
+            onFilterChange={setTaskFilter}
+            counts={paneCounts}
+            search={taskSearch}
+            onSearchChange={setTaskSearch}
+            tasks={visibleTasks}
+            emptyMessage={paneEmptyMessage}
+            addTargetName={activeSectionId === ALL_TASKS_ID ? "this project" : paneHeading}
+            addPeople={assignableProjectPeople}
+            onAddTask={(draft) => addProjectAction(addTargetSectionId, draft)}
+            onToggleTask={toggleTask}
+            onEditTask={(task) => setEditingTask({ ...task })}
+            onDeleteTask={(task) => removeTask(task.id)}
+            onEditSection={activeSection ? () => setEditingSection({ ...activeSection }) : undefined}
+            onDeleteSection={activeSection ? () => removeSection(activeSection) : undefined}
+          />
 
-            {!projectSectionsAvailable && (
-              <div className="mb-4 rounded-lg border border-brand-amber/30 bg-brand-amber/10 p-4 text-sm text-brand-amber">
-                Project Sections are ready in the app, but the Supabase migration has not been applied to this database yet.
-                Existing project tasks are shown below.
-              </div>
-            )}
-
-            {sections.length === 0 && (
-              <div className="actsix-empty-state min-h-[8rem] text-left">
-                <div className="flex items-center gap-2 font-semibold text-foreground">
-                  <ListChecks className="h-4 w-4 text-brand-teal" />
-                  No project sections yet.
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Add sections like Worship, Media, Logistics, or Follow-up, then add tasks inside each section.
-                </p>
-              </div>
-            )}
-
-            {sectionGroups.length > 0 && (
-              <div className="grid gap-3 lg:grid-cols-2">
-                {sectionGroups.map(({ section, leader, openTasks, completedTasks, progress }) => {
-                  const draft = sectionTaskDrafts[section.id] || {
-                    title: "",
-                    due: "",
-                    assigned_person_id: "",
-                  };
-                  const isSectionOpen = Boolean(openSectionIds[section.id]);
-                  const taskCount = openTasks.length + completedTasks.length;
-
-                  return (
-                    <div
-                      key={section.id}
-                      className="overflow-hidden rounded-xl border border-border/70 bg-background/65 transition hover:border-brand-teal/25 hover:bg-background"
-                    >
-                      <div className="flex items-center gap-2 p-3">
-                        <button
-                          type="button"
-                          className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left"
-                          aria-expanded={isSectionOpen}
-                          onClick={() => toggleSection(section.id)}
-                        >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-teal/15 bg-brand-teal/10 text-brand-teal">
-                            <ListChecks className="h-4 w-4" />
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex min-w-0 items-center gap-2">
-                              <h4 className="truncate font-extrabold">{section.name}</h4>
-                              <span className={`chip shrink-0 ${statusClass(section.status)}`}>
-                                {section.status || "Active"}
-                              </span>
-                            </div>
-
-                            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-muted-foreground">
-                              <span>{openTasks.length} open</span>
-                              <span>{completedTasks.length} done</span>
-                              <span>{progress}%</span>
-                              {leader && (
-                                <span className="inline-flex min-w-0 items-center gap-1">
-                                  <PersonAvatar
-                                    name={leader.display_name}
-                                    avatarUrl={leader.avatar_url}
-                                    size="xs"
-                                  />
-                                  <span className="max-w-[120px] truncate">{leader.display_name}</span>
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <ChevronDown
-                            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
-                              isSectionOpen ? "rotate-180" : ""
-                            }`}
-                          />
-                        </button>
-
-                        <div className="flex shrink-0 items-center gap-1">
-                          <span className="hidden rounded-full bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground sm:inline-flex">
-                            {taskCount}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-xl"
-                            title="Edit section"
-                            aria-label="Edit section"
-                            onClick={() => setEditingSection({ ...section })}
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive"
-                            title="Delete section"
-                            aria-label="Delete section"
-                            onClick={() => deleteSection(section)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {isSectionOpen && (
-                        <div className="border-t border-border/70 bg-background/45 p-3">
-                          {section.description && (
-                            <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                              {section.description}
-                            </p>
-                          )}
-
-                          <form
-                            onSubmit={(event) => addProjectAction(section.id, event)}
-                            className="rounded-xl border border-border/70 bg-background p-3"
-                          >
-                            <Input
-                              value={draft.title}
-                              onChange={(event) =>
-                                updateSectionTaskDraft(section.id, { title: event.target.value })
-                              }
-                              placeholder={`Add task to ${section.name}...`}
-                              className="h-11 border-border/70 bg-background"
-                            />
-
-                            <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem_auto]">
-                              <PeopleSearchSelect
-                                people={assignableProjectPeople}
-                                selectedPersonId={draft.assigned_person_id}
-                                onSelect={(personId) =>
-                                  updateSectionTaskDraft(section.id, {
-                                    assigned_person_id: personId,
-                                  })
-                                }
-                                placeholder="Assign..."
-                                emptyText="No project collaborators found."
-                                showAllOnFocus
-                              />
-
-                              <Input
-                                type="date"
-                                value={draft.due}
-                                onChange={(event) =>
-                                  updateSectionTaskDraft(section.id, { due: event.target.value })
-                                }
-                                className="h-11 border-border/70 bg-background"
-                              />
-
-                              <Button type="submit" className="actsix-btn-primary h-11 rounded-lg px-4">
-                                Add
-                              </Button>
-                            </div>
-                          </form>
-
-                          <div className="mt-3 space-y-1.5 rounded-xl border border-border/70 bg-background p-2">
-                            {openTasks.length === 0 && completedTasks.length === 0 && (
-                              <div className="actsix-empty-state min-h-[6.5rem] gap-2 p-3 text-left text-sm">
-                                <ListChecks className="h-4 w-4 text-brand-teal" />
-                                No tasks in this section yet.
-                              </div>
-                            )}
-
-                            {openTasks.map((task) => (
-                              <CompactTaskRow
-                                key={task.id}
-                                task={task}
-                                showAssignee
-                                onToggle={toggleTask}
-                                onEdit={(task) => setEditingTask({ ...task })}
-                                onDelete={(task) => removeTask(task.id)}
-                              />
-                            ))}
-
-                            {completedTasks.length > 0 && (
-                              <div className="pt-1">
-                                <button
-                                  type="button"
-                                  className="flex min-h-9 w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-xs font-extrabold text-muted-foreground transition hover:bg-brand-teal/5"
-                                  aria-expanded={Boolean(openCompletedSectionIds[section.id])}
-                                  onClick={() => toggleCompletedSection(section.id)}
-                                >
-                                  <span className="inline-flex items-center gap-2">
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-brand-sage" />
-                                    Completed
-                                  </span>
-                                  <span className="inline-flex items-center gap-1">
-                                    {completedTasks.length}
-                                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openCompletedSectionIds[section.id] ? "rotate-180" : ""}`} />
-                                  </span>
-                                </button>
-
-                                {openCompletedSectionIds[section.id] && (
-                                  <div className="mt-1 space-y-1.5">
-                                    {completedTasks.map((task) => (
-                                      <CompactTaskRow
-                                        key={task.id}
-                                        task={task}
-                                        showAssignee
-                                        onToggle={toggleTask}
-                                        onEdit={(task) => setEditingTask({ ...task })}
-                                        onDelete={(task) => removeTask(task.id)}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {(() => {
-              const generalDraft = sectionTaskDrafts[GENERAL_SECTION_ID] || {
-                title: "",
-                due: "",
-                assigned_person_id: "",
-              };
-              const generalOpenTasks = unsectionedTasks.filter((task) => !task.complete);
-              const generalCompletedTasks = unsectionedTasks.filter((task) => task.complete);
-
-              return (
-              <div className="mt-4 rounded-xl border border-dashed border-border bg-background/65 p-3">
-                <button
-                  type="button"
-                  className="flex min-h-10 w-full items-center justify-between gap-3 text-left"
-                  aria-expanded={isUnsectionedOpen}
-                  onClick={() => setIsUnsectionedOpen((open) => !open)}
-                >
-                  <span className="min-w-0">
-                    <span className="inline-flex items-center gap-2 text-sm font-extrabold">
-                      <ListChecks className="h-4 w-4 text-brand-teal" />
-                      General
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      Tasks not assigned to a section yet.
-                    </span>
-                  </span>
-                  <span className="shrink-0 rounded-full border border-border/70 bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
-                    {unsectionedTasks.length}
-                  </span>
-                </button>
-
-                {isUnsectionedOpen && (
-                  <div className="mt-2 space-y-1.5">
-                    <form
-                      onSubmit={(event) => addProjectAction(null, event)}
-                      className="rounded-xl border border-border/70 bg-background p-3"
-                    >
-                      <Input
-                        value={generalDraft.title}
-                        onChange={(event) =>
-                          updateSectionTaskDraft(GENERAL_SECTION_ID, { title: event.target.value })
-                        }
-                        placeholder="Add task to General..."
-                        className="h-11 border-border/70 bg-background"
-                      />
-
-                      <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem_auto]">
-                        <PeopleSearchSelect
-                          people={assignableProjectPeople}
-                          selectedPersonId={generalDraft.assigned_person_id}
-                          onSelect={(personId) =>
-                            updateSectionTaskDraft(GENERAL_SECTION_ID, {
-                              assigned_person_id: personId,
-                            })
-                          }
-                          placeholder="Assign..."
-                          emptyText="No project people found."
-                          showAllOnFocus
-                        />
-
-                        <Input
-                          type="date"
-                          value={generalDraft.due}
-                          onChange={(event) =>
-                            updateSectionTaskDraft(GENERAL_SECTION_ID, { due: event.target.value })
-                          }
-                          className="h-11 border-border/70 bg-background"
-                        />
-
-                        <Button type="submit" className="actsix-btn-primary h-11 rounded-lg px-4">
-                          Add
-                        </Button>
-                      </div>
-                    </form>
-
-                    {unsectionedTasks.length === 0 && (
-                      <div className="actsix-empty-state min-h-[6.5rem] gap-2 p-3 text-left text-sm">
-                        <ListChecks className="h-4 w-4 text-brand-teal" />
-                        No General tasks yet.
-                      </div>
-                    )}
-
-                    {generalOpenTasks.map((task) => (
-                      <CompactTaskRow
-                        key={task.id}
-                        task={task}
-                        showAssignee
-                        onToggle={toggleTask}
-                        onEdit={(task) => setEditingTask({ ...task })}
-                        onDelete={(task) => removeTask(task.id)}
-                      />
-                    ))}
-
-                    {generalCompletedTasks.length > 0 && (
-                      <div className="rounded-lg border border-border/70 bg-background p-2">
-                        <button
-                          type="button"
-                          className="flex min-h-9 w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-xs font-extrabold text-muted-foreground transition hover:bg-brand-teal/5"
-                          aria-expanded={isGeneralCompletedOpen}
-                          onClick={() => setIsGeneralCompletedOpen((open) => !open)}
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-brand-sage" />
-                            Complete
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            {generalCompletedTasks.length}
-                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isGeneralCompletedOpen ? "rotate-180" : ""}`} />
-                          </span>
-                        </button>
-
-                        {isGeneralCompletedOpen && (
-                          <div className="mt-1 space-y-1.5">
-                            {generalCompletedTasks.map((task) => (
-                              <CompactTaskRow
-                                key={task.id}
-                                task={task}
-                                showAssignee
-                                onToggle={toggleTask}
-                                onEdit={(task) => setEditingTask({ ...task })}
-                                onDelete={(task) => removeTask(task.id)}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              );
-            })()}
-          </div>
-
-          <div className="border-b border-border/70 p-5">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="font-extrabold">Activity Log</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {activityLogs.length} recent change{activityLogs.length === 1 ? "" : "s"} recorded.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 rounded-lg px-2.5"
-                aria-expanded={isActivityOpen}
-                onClick={() => setIsActivityOpen((open) => !open)}
-              >
-                <History className="h-3.5 w-3.5" />
-                {isActivityOpen ? "Hide" : "Show"}
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isActivityOpen ? "rotate-180" : ""}`} />
-              </Button>
-            </div>
-
-            {isActivityOpen && activityLogs.length === 0 && (
-              <div className="actsix-empty-state min-h-[7rem] text-left">
-                Project updates, task changes, and collaborator activity will appear here.
-              </div>
-            )}
-
-            {isActivityOpen && activityLogs.length > 0 && (
-              <div className="overflow-hidden rounded-lg border border-border/70 bg-background">
-                {activityLogs.map((activity) => (
-                  <div key={activity.id} className="flex gap-3 px-4 py-3">
-                    <PersonAvatar
-                      name={activity.people?.display_name || "ACTSIX"}
-                      avatarUrl={activity.people?.avatar_url}
-                      size="sm"
-                    />
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <p className="truncate text-sm font-extrabold">
-                          {activity.title}
-                        </p>
-
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(activity.created_at).toLocaleString()}
-                        </span>
-                      </div>
-
-                      {activity.description && (
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                          {activity.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-extrabold">Notes</h3>
-              <Button variant="ghost" size="sm" className="text-brand-teal" onClick={saveNotes}>
-                Save
-              </Button>
-            </div>
-
-            <textarea
-              value={notesDraft}
-              onChange={(event) => setNotesDraft(event.target.value)}
-              className="min-h-28 w-full rounded-lg border border-border/70 bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Add project notes..."
+          <div className="min-w-0">
+            <ProjectDetailSidebar
+              owner={projectOwner}
+              collaborators={sidebarCollaborators}
+              onAddCollaborator={() => setAddCollaboratorOpen(true)}
+              onRemoveCollaborator={removeCollaborator}
+              activity={sidebarActivity}
             />
           </div>
-        </Card>
+        </div>
       </div>
+
+      <input
+        ref={bannerInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleBannerSelected}
+      />
 
       {addCollaboratorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
@@ -1569,36 +1189,35 @@ const ProjectDetailPage = () => {
               </div>
 
               <div className="relative z-20 min-h-0 flex-1 space-y-4 overflow-visible p-4 sm:p-5">
+                <div>
+                  <label className="label-eyebrow">People</label>
+                  <div className="mt-2">
+                    <PeopleMultiSearchSelect
+                      people={availablePeople}
+                      selectedPersonIds={selectedPersonIds}
+                      onChange={setSelectedPersonIds}
+                      placeholder="Search by name, email, or phone..."
+                      emptyText="No available collaborators found."
+                      showAllOnFocus
+                    />
+                  </div>
+                </div>
 
-              <div>
-                <label className="label-eyebrow">People</label>
-                <div className="mt-2">
-                  <PeopleMultiSearchSelect
-                    people={availablePeople}
-                    selectedPersonIds={selectedPersonIds}
-                    onChange={setSelectedPersonIds}
-                    placeholder="Search by name, email, or phone..."
-                    emptyText="No available collaborators found."
-                    showAllOnFocus
+                <div>
+                  <label className="label-eyebrow">Role</label>
+                  <Input
+                    value={collaboratorRole}
+                    onChange={(event) => setCollaboratorRole(event.target.value)}
+                    placeholder="Collaborator"
+                    className="mt-2 border-border/70 bg-background"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="label-eyebrow">Role</label>
-                <Input
-                  value={collaboratorRole}
-                  onChange={(event) => setCollaboratorRole(event.target.value)}
-                  placeholder="Collaborator"
-                  className="mt-2 border-border/70 bg-background"
-                />
-              </div>
-
-              {availablePeople.length === 0 && (
-                <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-                  Everyone in People is already linked to this project.
-                </div>
-              )}
+                {availablePeople.length === 0 && (
+                  <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                    Everyone in People is already linked to this project.
+                  </div>
+                )}
               </div>
 
               <div className="relative z-10 flex shrink-0 justify-end gap-2 border-t border-border/70 bg-background/95 p-4 sm:p-5">
@@ -1617,11 +1236,13 @@ const ProjectDetailPage = () => {
 
                 <Button
                   type="submit"
-                  className="actsix-btn-primary rounded-xl"
+                  className="actsix-btn-primary min-h-10 rounded-xl"
                   disabled={selectedPersonIds.length === 0}
                 >
                   <Plus className="h-4 w-4" />
-                  {selectedPersonIds.length > 1 ? `Add ${selectedPersonIds.length} Collaborators` : "Add Collaborator"}
+                  {selectedPersonIds.length > 1
+                    ? `Add ${selectedPersonIds.length} Collaborators`
+                    : "Add Collaborator"}
                 </Button>
               </div>
             </form>
@@ -1710,7 +1331,7 @@ const ProjectDetailPage = () => {
 
               <div>
                 <label className="label-eyebrow">Description</label>
-                <textarea
+                <Input
                   value={editingSection.description || ""}
                   onChange={(event) =>
                     setEditingSection({
@@ -1718,10 +1339,12 @@ const ProjectDetailPage = () => {
                       description: event.target.value,
                     })
                   }
-                  rows={4}
-                  placeholder="Optional notes for this workstream..."
-                  className="mt-2 w-full rounded-lg border border-border/70 bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="What this workstream covers..."
+                  className="mt-2 border-border/70 bg-background"
                 />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Shows next to the leader's name, so keep it short.
+                </p>
               </div>
             </div>
 
@@ -1737,7 +1360,7 @@ const ProjectDetailPage = () => {
 
               <Button
                 type="button"
-                className="actsix-btn-primary rounded-xl"
+                className="actsix-btn-primary min-h-10 rounded-xl"
                 onClick={saveSection}
                 disabled={savingSection}
               >
