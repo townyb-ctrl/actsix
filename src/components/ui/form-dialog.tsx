@@ -47,7 +47,7 @@ export function FormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "flex max-h-[92svh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-h-[88vh]",
+          "flex max-h-[92svh] w-full max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[88vh]",
           "bottom-0 top-auto translate-y-0 rounded-b-none data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
           "sm:bottom-auto sm:top-[50%] sm:translate-y-[-50%] sm:rounded-[var(--radius-overlay)] sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
           sizeClass[size],
