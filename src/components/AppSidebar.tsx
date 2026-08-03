@@ -354,8 +354,8 @@ export function AppSidebar() {
             type="button"
             className={
               collapsed
-                ? "flex h-7 w-7 items-center justify-center rounded-lg border border-sidebar-border/80 bg-sidebar-accent/35 text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                : "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sidebar-border/80 bg-sidebar-accent/35 text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                ? "flex h-7 w-7 items-center justify-center rounded-lg border border-sidebar-border/80 bg-sidebar-foreground/10 text-sidebar-foreground/65 transition hover:bg-sidebar-foreground/20 hover:text-sidebar-foreground"
+                : "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sidebar-border/80 bg-sidebar-foreground/10 text-sidebar-foreground/65 transition hover:bg-sidebar-foreground/20 hover:text-sidebar-foreground"
             }
             onClick={toggleSidebar}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -394,8 +394,8 @@ export function AppSidebar() {
                         className={cn(
                           "mx-auto h-10 w-10 justify-center rounded-xl p-0 transition-colors",
                           sectionActive
-                            ? "bg-sidebar-accent text-sidebar-foreground"
-                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                            ? "bg-sidebar-foreground text-sidebar hover:bg-sidebar-foreground hover:text-sidebar"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                         )}
                       >
                         <NavLink to={section.url} className="flex h-full w-full items-center justify-center">
@@ -409,7 +409,7 @@ export function AppSidebar() {
                             "flex h-10 w-full items-center overflow-hidden rounded-xl transition-colors",
                             sectionActive
                               ? "bg-sidebar-foreground text-sidebar shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_14px_28px_rgba(0,0,0,0.2)]"
-                              : "text-sidebar-foreground/74 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                              : "text-sidebar-foreground/74 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                           )}
                         >
                           <NavLink
@@ -428,7 +428,7 @@ export function AppSidebar() {
                               "flex h-full w-10 shrink-0 items-center justify-center transition-colors",
                               sectionActive
                                 ? "text-sidebar/80 hover:bg-sidebar/5"
-                                : "text-sidebar-foreground/45 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground"
+                                : "text-sidebar-foreground/45 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                             )}
                             onClick={() => toggleSection(section.id)}
                             aria-label={`${sectionOpen ? "Collapse" : "Expand"} ${section.title} menu`}
@@ -456,11 +456,16 @@ export function AppSidebar() {
                                   className={cn(
                                     "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition",
                                     itemActive
-                                      ? "bg-sidebar-accent/85 text-sidebar-foreground"
-                                      : "text-sidebar-foreground/62 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                      ? "bg-sidebar-foreground text-sidebar"
+                                      : "text-sidebar-foreground/62 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                                   )}
                                 >
-                                  <ItemIcon className="h-3 w-3 shrink-0 text-sidebar-foreground/45" />
+                                  <ItemIcon
+                                    className={cn(
+                                      "h-3 w-3 shrink-0",
+                                      itemActive ? "text-sidebar/60" : "text-sidebar-foreground/45"
+                                    )}
+                                  />
                                   <span className="min-w-0 flex-1 truncate">{item.title}</span>
                                   {renderBadge(item)}
                                 </NavLink>
@@ -485,8 +490,8 @@ export function AppSidebar() {
                                         className={cn(
                                           "block truncate rounded-lg px-2 py-1.5 text-xs font-semibold transition",
                                           seriesActive
-                                            ? "bg-sidebar-accent/80 text-sidebar-foreground"
-                                            : "text-sidebar-foreground/55 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground"
+                                            ? "bg-sidebar-foreground text-sidebar"
+                                            : "text-sidebar-foreground/55 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                                         )}
                                       >
                                         {series.title}
@@ -507,7 +512,7 @@ export function AppSidebar() {
                           "flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-left transition-colors",
                           sectionActive
                             ? "bg-sidebar-foreground text-sidebar shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_14px_28px_rgba(0,0,0,0.2)]"
-                            : "text-sidebar-foreground/74 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                            : "text-sidebar-foreground/74 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                         )}
                       >
                         <SectionIcon className="h-4 w-4 shrink-0" />
@@ -534,7 +539,7 @@ export function AppSidebar() {
                       <NavLink
                         key={section.id}
                         to={section.url}
-                        className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-sidebar-foreground/55 transition hover:bg-sidebar-accent/45 hover:text-sidebar-foreground"
+                        className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-sidebar-foreground/55 transition hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                       >
                         <SectionIcon className="h-3.5 w-3.5 shrink-0" />
                         <span className="min-w-0 flex-1 truncate">{section.title}</span>
