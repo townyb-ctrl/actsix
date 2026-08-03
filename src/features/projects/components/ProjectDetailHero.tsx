@@ -78,12 +78,6 @@ const ProjectDetailHero = ({
           </div>
         )}
 
-        <span
-          className={`chip absolute left-3 top-3 px-2 py-0.5 text-[10px] shadow-sm ${statusClass(project.status)}`}
-        >
-          {project.status || "In Progress"}
-        </span>
-
         {onChangeBanner && (
           <button
             type="button"
@@ -107,12 +101,18 @@ const ProjectDetailHero = ({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-        <span className="min-w-0 truncate text-sm">
-          <span className="font-semibold text-muted-foreground">Owner: </span>
-          <span className="font-bold text-foreground">
-            {owner?.display_name || "Unassigned"}
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`chip shrink-0 px-2 py-0.5 text-[10px] ${statusClass(project.status)}`}>
+            {project.status || "In Progress"}
           </span>
-        </span>
+
+          <span className="min-w-0 truncate text-sm">
+            <span className="font-semibold text-muted-foreground">Owner: </span>
+            <span className="font-bold text-foreground">
+              {owner?.display_name || "Unassigned"}
+            </span>
+          </span>
+        </div>
 
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-semibold text-muted-foreground">
           {(eventDate || dueDate) && (
