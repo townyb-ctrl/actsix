@@ -1,6 +1,6 @@
 # 005 — GuidedTour spotlight: position via transform, not top/left
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76b92946
 - **Severity**: LOW
 - **Category**: Performance (Animate `transform`/`opacity` only)

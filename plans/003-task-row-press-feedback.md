@@ -1,6 +1,6 @@
 # 003 — Add press feedback to task rows, buttons, and dock icons
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76b92946
 - **Severity**: MEDIUM
 - **Category**: Physicality & origin (press feedback)

@@ -1,6 +1,6 @@
 # 002 — Scope `.action-row`'s `transition-all` to actual properties
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76b92946
 - **Severity**: MEDIUM
 - **Category**: Performance (`transition: all` is always a finding)

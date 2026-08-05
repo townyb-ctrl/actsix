@@ -6,11 +6,29 @@ utility transitions + shadcn/Radix `data-state` animations only).
 
 | # | Title | Severity | Status | Depends on |
 |---|---|---|---|---|
-| [001](001-mobile-switcher-transform-not-size.md) | Mobile switcher panel: animate transform, not width/height | HIGH | TODO | — |
-| [002](002-action-row-scope-transition.md) | Scope `.action-row`'s `transition-all` to actual properties | MEDIUM | TODO | — |
-| [003](003-task-row-press-feedback.md) | Add press feedback to task rows, buttons, and dock icons | MEDIUM | TODO | Soft dependency on 002 (see plan for detail) |
-| [004](004-mobile-nav-transition-token.md) | Consolidate MobileBottomNav's duplicated transition string | LOW | TODO | Must run after 001 |
-| [005](005-guided-tour-spotlight-transform.md) | GuidedTour spotlight: position via transform, not top/left | LOW | TODO | — |
+| [001](001-mobile-switcher-transform-not-size.md) | Mobile switcher panel: animate transform, not width/height | HIGH | DONE | — |
+| [002](002-action-row-scope-transition.md) | Scope `.action-row`'s `transition-all` to actual properties | MEDIUM | DONE | — |
+| [003](003-task-row-press-feedback.md) | Add press feedback to task rows, buttons, and dock icons | MEDIUM | DONE | Soft dependency on 002 (see plan for detail) |
+| [004](004-mobile-nav-transition-token.md) | Consolidate MobileBottomNav's duplicated transition string | LOW | DONE | Must run after 001 |
+| [005](005-guided-tour-spotlight-transform.md) | GuidedTour spotlight: position via transform, not top/left | LOW | DONE | — |
+
+## Execution notes (2026-08-05)
+
+All 5 executed manually in this session (the scheduled cloud routine fired
+but produced no commits — cause unconfirmed, session transcript only
+visible in the claude.ai routines UI, not fetchable via the tools
+available here).
+
+Plan 005 hit real drift: the spotlight box also animates `width`/`height`
+(matches the highlighted element's size, not just position) — the plan had
+already anticipated this exact branch and specified keeping width/height
+as explicit non-`all` properties rather than forcing them into transform.
+Followed that branch; no abort needed.
+
+Commits landed on 3 files instead of 5 separate ones — `MobileBottomNav.tsx`
+is touched by plans 001, 003, and 004, and this environment has no
+`git add -p`, so those three were committed together (clearly labeled in
+the commit message) rather than force-split.
 
 ## Recommended execution order
 

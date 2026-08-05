@@ -1,6 +1,6 @@
 # 001 — Mobile switcher panel: animate transform, not width/height
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76b92946
 - **Severity**: HIGH
 - **Category**: Performance (Animate `transform`/`opacity` only)

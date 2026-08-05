@@ -1,6 +1,6 @@
 # 004 — Consolidate MobileBottomNav's duplicated transition string
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76b92946
 - **Severity**: LOW
 - **Category**: Cohesion & tokens
