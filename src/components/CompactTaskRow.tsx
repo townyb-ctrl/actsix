@@ -256,7 +256,7 @@ const CompactTaskRow = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-7 w-7 max-sm:min-w-11"
             title={`Edit ${title}`}
             aria-label={`Edit ${title}`}
             onClick={(event) => {
@@ -272,12 +272,13 @@ const CompactTaskRow = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            className="h-7 w-7 max-sm:min-w-11 text-muted-foreground hover:text-destructive"
             title={`Delete ${title}`}
             aria-label={`Delete ${title}`}
             onClick={(event) => {
               event.stopPropagation();
-              onDelete(task);
+              const confirmed = window.confirm(`Delete "${title}"? This can't be undone.`);
+              if (confirmed) onDelete(task);
             }}
           >
             <Trash2 className="h-3.5 w-3.5" />

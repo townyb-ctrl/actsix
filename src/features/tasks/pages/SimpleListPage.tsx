@@ -138,6 +138,10 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   const remove = async (id: string) => {
     if (!user) return;
 
+    const itemLabel = items.find((entry) => entry.id === id)?.[cfg.titleCol] || "this item";
+    const confirmed = window.confirm(`Delete "${itemLabel}"? This can't be undone.`);
+    if (!confirmed) return;
+
     const { error } = await supabase
       .from(cfg.table)
       .delete()
@@ -320,7 +324,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-70 hover:opacity-100"
+                className="opacity-70 hover:opacity-100 max-sm:min-w-11"
                 title="Edit"
                 aria-label="Edit"
                 onClick={() => setEditingItem({ ...it })}
@@ -331,7 +335,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-70 hover:opacity-100 text-muted-foreground hover:text-destructive"
+                className="opacity-70 hover:opacity-100 max-sm:min-w-11 text-muted-foreground hover:text-destructive"
                 title="Delete"
                 aria-label="Delete"
                 onClick={() => remove(it.id)}

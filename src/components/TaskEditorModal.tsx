@@ -187,7 +187,12 @@ const TaskEditorModal = ({
                 <Button
                   variant="ghost"
                   className="text-destructive hover:text-destructive"
-                  onClick={onDelete}
+                  onClick={() => {
+                    const confirmed = window.confirm(
+                      `Delete "${task.title || "this task"}"? This can't be undone.`
+                    );
+                    if (confirmed) onDelete();
+                  }}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete task

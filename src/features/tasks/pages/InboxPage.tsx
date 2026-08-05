@@ -1,4 +1,4 @@
-import { type ComponentType, useCallback, useEffect, useMemo, useState } from "react";
+import { type ComponentType, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
@@ -160,6 +160,19 @@ const InboxPage = () => {
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [choosingDestination, setChoosingDestination] = useState(true);
 
+  const fieldId = useId();
+  const processTitleFieldId = `${fieldId}-process-title`;
+  const waitingPersonFieldId = `${fieldId}-waiting-person`;
+  const waitingFollowUpFieldId = `${fieldId}-waiting-follow-up`;
+  const waitingProjectFieldId = `${fieldId}-waiting-project`;
+  const somedayCategoryFieldId = `${fieldId}-someday-category`;
+  const meetingWithFieldId = `${fieldId}-meeting-with`;
+  const meetingDateFieldId = `${fieldId}-meeting-date`;
+  const meetingTimeFieldId = `${fieldId}-meeting-time`;
+  const meetingLocationFieldId = `${fieldId}-meeting-location`;
+  const notesFieldId = `${fieldId}-notes`;
+  const tagsFieldId = `${fieldId}-tags`;
+
   const contextNames = useMemo(() => {
     const fromDb = contexts.map((context) => context.name).filter(Boolean);
     return Array.from(new Set([...fallbackContexts, ...fromDb]));
@@ -295,6 +308,9 @@ const InboxPage = () => {
   };
 
   const quickDelete = async (item: InboxItem) => {
+    const confirmed = window.confirm(`Delete "${item.title}"? This can't be undone.`);
+    if (!confirmed) return;
+
     const deleted = await removeInboxItem(item.id);
 
     if (deleted) {
@@ -473,7 +489,7 @@ const InboxPage = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-xl"
+                  className="h-9 w-9 max-sm:min-w-11 rounded-xl"
                   title="Clarify"
                   aria-label="Clarify"
                   onClick={() => openEditor(item)}
@@ -484,7 +500,7 @@ const InboxPage = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive"
+                  className="h-9 w-9 max-sm:min-w-11 rounded-xl text-muted-foreground hover:text-destructive"
                   title="Delete"
                   aria-label="Delete"
                   onClick={() => quickDelete(item)}
@@ -519,7 +535,7 @@ const InboxPage = () => {
 
             <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
               <section className="rounded-xl border border-border/70 bg-card px-3 py-2 shadow-sm">
-                <label className="label-eyebrow text-[0.65rem]">
+                <label htmlFor={processTitleFieldId} className="label-eyebrow text-[0.65rem]">
                   {selectedDestination
                     ? processTarget === "project"
                       ? "Project name"
@@ -529,6 +545,7 @@ const InboxPage = () => {
 
                 {selectedDestination ? (
                   <Input
+                    id={processTitleFieldId}
                     value={editingItem.title ?? ""}
                     onChange={(event) =>
                       setEditingItem({ ...editingItem, title: event.target.value })
@@ -673,8 +690,9 @@ const InboxPage = () => {
 
                       <div className="grid gap-3 md:grid-cols-3">
                         <div className="actsix-panel-soft p-4">
-                          <label className="label-eyebrow">Person or team</label>
+                          <label htmlFor={waitingPersonFieldId} className="label-eyebrow">Person or team</label>
                           <Input
+                            id={waitingPersonFieldId}
                             value={editingItem.waiting_person ?? ""}
                             onChange={(event) =>
                               setEditingItem({
@@ -688,8 +706,9 @@ const InboxPage = () => {
                         </div>
 
                         <div className="actsix-panel-soft p-4">
-                          <label className="label-eyebrow">Follow-up date</label>
+                          <label htmlFor={waitingFollowUpFieldId} className="label-eyebrow">Follow-up date</label>
                           <Input
+                            id={waitingFollowUpFieldId}
                             type="date"
                             value={editingItem.waiting_follow_up ?? ""}
                             onChange={(event) =>
@@ -703,8 +722,9 @@ const InboxPage = () => {
                         </div>
 
                         <div className="actsix-panel-soft p-4">
-                          <label className="label-eyebrow">Project</label>
+                          <label htmlFor={waitingProjectFieldId} className="label-eyebrow">Project</label>
                           <ProjectSelect
+                            id={waitingProjectFieldId}
                             value={editingItem.project ?? ""}
                             onChange={(project) =>
                               setEditingItem({ ...editingItem, project })
@@ -731,8 +751,9 @@ const InboxPage = () => {
                       </div>
 
                       <div className="actsix-panel-soft p-4">
-                        <label className="label-eyebrow">Category</label>
+                        <label htmlFor={somedayCategoryFieldId} className="label-eyebrow">Category</label>
                         <Input
+                          id={somedayCategoryFieldId}
                           value={editingItem.someday_category ?? "General"}
                           onChange={(event) =>
                             setEditingItem({
@@ -756,8 +777,9 @@ const InboxPage = () => {
 
                       <div className="grid gap-3 md:grid-cols-2">
                         <div className="actsix-panel-soft p-4">
-                          <label className="label-eyebrow">Meeting with</label>
+                          <label htmlFor={meetingWithFieldId} className="label-eyebrow">Meeting with</label>
                           <Input
+                            id={meetingWithFieldId}
                             value={editingItem.waiting_person ?? ""}
                             onChange={(event) =>
                               setEditingItem({
@@ -771,8 +793,9 @@ const InboxPage = () => {
                         </div>
 
                         <div className="actsix-panel-soft p-4">
-                          <label className="label-eyebrow">Meeting date</label>
+                          <label htmlFor={meetingDateFieldId} className="label-eyebrow">Meeting date</label>
                           <Input
+                            id={meetingDateFieldId}
                             type="date"
                             value={editingItem.due ?? ""}
                             onChange={(event) =>
@@ -783,8 +806,9 @@ const InboxPage = () => {
                         </div>
 
                         <div className="actsix-panel-soft p-4">
-                          <label className="label-eyebrow">Meeting time</label>
+                          <label htmlFor={meetingTimeFieldId} className="label-eyebrow">Meeting time</label>
                           <Input
+                            id={meetingTimeFieldId}
                             type="time"
                             value={editingItem.meeting_time ?? ""}
                             onChange={(event) =>
@@ -798,8 +822,9 @@ const InboxPage = () => {
                         </div>
 
                         <div className="actsix-panel-soft p-4">
-                          <label className="label-eyebrow">Location</label>
+                          <label htmlFor={meetingLocationFieldId} className="label-eyebrow">Location</label>
                           <Input
+                            id={meetingLocationFieldId}
                             value={editingItem.meeting_location ?? ""}
                             onChange={(event) =>
                               setEditingItem({
@@ -858,11 +883,12 @@ const InboxPage = () => {
                     {moreOptionsOpen && (
                       <div className="grid gap-3 border-t border-border/70 p-4 md:grid-cols-2">
                         <div className="md:col-span-2">
-                          <label className="label-eyebrow flex items-center gap-2">
+                          <label htmlFor={notesFieldId} className="label-eyebrow flex items-center gap-2">
                             <FileText className="h-3.5 w-3.5" />
                             Notes
                           </label>
                           <textarea
+                            id={notesFieldId}
                             value={editingItem.notes ?? ""}
                             onChange={(event) =>
                               setEditingItem({ ...editingItem, notes: event.target.value })
@@ -873,12 +899,13 @@ const InboxPage = () => {
                         </div>
 
                         {processTarget === "task" && (
-                          <div className="rounded-xl border border-brand-teal/20 bg-white p-4 shadow-sm md:col-span-2">
-                            <label className="label-eyebrow flex items-center gap-2">
+                          <div className="rounded-xl border border-brand-teal/20 bg-card p-4 shadow-sm md:col-span-2">
+                            <label htmlFor={tagsFieldId} className="label-eyebrow flex items-center gap-2">
                               <Tags className="h-3.5 w-3.5" />
                               Tags
                             </label>
                             <Input
+                              id={tagsFieldId}
                               value={Array.isArray(editingItem.tags) ? editingItem.tags.join(", ") : ""}
                               onChange={(event) =>
                                 setEditingItem({
@@ -889,7 +916,7 @@ const InboxPage = () => {
                                     .filter(Boolean),
                                 })
                               }
-                              className="mt-2 h-10 rounded-xl border-brand-teal/20 bg-white shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                              className="mt-2 h-10 rounded-xl border-brand-teal/20 bg-card shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
                               placeholder="Worship, Admin, Follow-up"
                             />
                             <p className="mt-2 text-xs text-muted-foreground">

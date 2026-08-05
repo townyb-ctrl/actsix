@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
+  AlertTriangle,
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
@@ -79,6 +80,7 @@ const TasksPage = () => {
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -102,6 +104,7 @@ const TasksPage = () => {
     if (showLoading) {
       setLoadingTasks(true);
     }
+    setLoadError(null);
 
     const { data, error } = await supabase
       .from("tasks")
@@ -111,6 +114,7 @@ const TasksPage = () => {
 
     if (error) {
       toast.error(error.message);
+      setLoadError(error.message);
       setLoadingTasks(false);
       return;
     }
@@ -356,7 +360,27 @@ const TasksPage = () => {
       />
 
       <div className="-mt-1 w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
-        {!loadingTasks && tasks.length === 0 && (
+        {!loadingTasks && loadError && (
+          <Card className="actsix-panel-soft flex flex-col items-center gap-3 p-8 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="text-lg font-extrabold tracking-tight">Couldn't load your next actions</div>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{loadError}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="actsix-btn-outline min-h-10"
+              onClick={() => load({ showLoading: true })}
+            >
+              Try again
+            </Button>
+          </Card>
+        )}
+
+        {!loadingTasks && !loadError && tasks.length === 0 && (
           <Card
             data-tour="tasks-gtd-primer"
             className="actsix-panel-soft overflow-hidden border-brand-teal/20"
@@ -410,17 +434,19 @@ const TasksPage = () => {
           </Card>
         )}
 
-        <div
-          data-tour="tasks-filters"
-          className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground"
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span className="truncate">Showing {filteredOpen.length} of {open.length} open actions
-            {hasActiveFilters ? " with filters applied" : ""}
-          </span>
-        </div>
+        {!loadError && (
+          <div
+            data-tour="tasks-filters"
+            className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="truncate">Showing {filteredOpen.length} of {open.length} open actions
+              {hasActiveFilters ? " with filters applied" : ""}
+            </span>
+          </div>
+        )}
 
-        {showFilters && (
+        {!loadError && showFilters && (
           <Card className="rounded-2xl border border-border/65 bg-card/80 px-3 py-2 shadow-none">
             <div className="grid gap-2 md:grid-cols-5">
               <div>
@@ -500,150 +526,104 @@ const TasksPage = () => {
           </Card>
         )}
 
-        <section>
-          {/* The count lives in the "Showing X of Y" line above and in the
-              "All" pill, so a visible heading here would say it a third time.
-              Kept for screen readers to keep the section labelled. */}
-          <h2 className="sr-only">Open next actions</h2>
+        {!loadError && (
+          <>
+            <section>
+              {/* The count lives in the "Showing X of Y" line above and in the
+                  "All" pill, so a visible heading here would say it a third time.
+                  Kept for screen readers to keep the section labelled. */}
+              <h2 className="sr-only">Open next actions</h2>
 
-          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            {/* pl-2 lines the pills up with the task card's inner padding below */}
-            <div className="actsix-filter-pills min-w-0 flex-1 pl-2">
-              {dateViews.map((view) => {
-                const active = dateView === view.value;
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                {/* pl-2 lines the pills up with the task card's inner padding below */}
+                <div className="actsix-filter-pills min-w-0 flex-1 pl-2">
+                  {dateViews.map((view) => {
+                    const active = dateView === view.value;
 
-                return (
+                    return (
+                      <button
+                        key={view.value}
+                        type="button"
+                        onClick={() => setDateView(view.value)}
+                        className={`actsix-filter-pill ${
+                          active
+                            ? "actsix-filter-pill-active"
+                            : "actsix-filter-pill-idle"
+                        }`}
+                      >
+                        {view.label}
+                        <span
+                          className={`actsix-filter-pill-count ${
+                            active
+                              ? "actsix-filter-pill-count-active"
+                              : "actsix-filter-pill-count-idle"
+                          }`}
+                        >
+                          {view.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                   <button
-                    key={view.value}
                     type="button"
-                    onClick={() => setDateView(view.value)}
+                    onClick={() => setShowFilters((value) => !value)}
                     className={`actsix-filter-pill ${
-                      active
+                      showFilters || hasActiveFilters
                         ? "actsix-filter-pill-active"
                         : "actsix-filter-pill-idle"
                     }`}
                   >
-                    {view.label}
-                    <span
-                      className={`actsix-filter-pill-count ${
-                        active
-                          ? "actsix-filter-pill-count-active"
-                          : "actsix-filter-pill-count-idle"
-                      }`}
-                    >
-                      {view.count}
-                    </span>
+                    <SlidersHorizontal className="h-3 w-3" />
+                    Filters
+                    {hasActiveFilters && (
+                      <span className="actsix-filter-pill-count actsix-filter-pill-count-active">
+                        On
+                      </span>
+                    )}
                   </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => setShowFilters((value) => !value)}
-                className={`actsix-filter-pill ${
-                  showFilters || hasActiveFilters
-                    ? "actsix-filter-pill-active"
-                    : "actsix-filter-pill-idle"
-                }`}
-              >
-                <SlidersHorizontal className="h-3 w-3" />
-                Filters
-                {hasActiveFilters && (
-                  <span className="actsix-filter-pill-count actsix-filter-pill-count-active">
-                    On
-                  </span>
-                )}
-              </button>
 
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="actsix-filter-pill border-transparent bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                  Clear
-                </button>
-              )}
-            </div>
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="actsix-filter-pill border-transparent bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                      Clear
+                    </button>
+                  )}
+                </div>
 
-            <div className="actsix-search-field shrink-0 sm:w-52 lg:w-64">
-              <Search className="actsix-search-icon" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search next actions..."
-                className="actsix-search-input"
-                aria-label="Search next actions"
-              />
-            </div>
-          </div>
-
-          <Card data-tour="tasks-list" className="actsix-panel space-y-1.5 p-2">
-            {loadingTasks && (
-              <div className="actsix-loading-state">
-                Loading next actions...
-              </div>
-            )}
-
-            {!loadingTasks && filteredOpen.length === 0 && (
-              <div className="actsix-empty-state">
-                {hasActiveFilters
-                  ? `No open actions match these filters${
-                      open.length > 0 ? ` — ${open.length} are hidden` : ""
-                    }. Clear them above to see everything.`
-                  : "No open actions match this view."}
-              </div>
-            )}
-
-            {filteredOpen.map((task) => (
-              <CompactTaskRow
-                key={task.id}
-                task={task}
-                showNotes={false}
-                onToggle={toggle}
-                onEdit={(task) => setEditingTask({ ...task })}
-                onDelete={remove}
-              />
-            ))}
-          </Card>
-        </section>
-
-        {done.length > 0 && (
-          <section>
-            <button
-              type="button"
-              onClick={() => setShowCompleted((value) => !value)}
-              className="mb-2 flex min-h-10 w-full items-center justify-between gap-2.5 rounded-lg border border-border/70 bg-background/70 px-3 py-2 text-left transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
-            >
-              <div className="flex items-center gap-2">
-                {showCompleted ? (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                )}
-
-                <h2 className="text-lg font-extrabold tracking-tight text-muted-foreground">
-                  Completed
-                  <span className="ml-2 rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs font-extrabold text-muted-foreground">
-                    {filteredDone.length}
-                  </span>
-                </h2>
+                <div className="actsix-search-field shrink-0 sm:w-52 lg:w-64">
+                  <Search className="actsix-search-icon" />
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search next actions..."
+                    className="actsix-search-input"
+                    aria-label="Search next actions"
+                  />
+                </div>
               </div>
 
-              <span className="text-xs font-bold text-muted-foreground">
-                {showCompleted ? "Collapse" : "Expand"}
-              </span>
-            </button>
-
-            {showCompleted && (
-              <Card className="actsix-panel-soft space-y-1.5 p-2 opacity-90">
-                {filteredDone.length === 0 && (
-                  <div className="actsix-empty-state">
-                    No completed actions match this view.
+              <Card data-tour="tasks-list" className="actsix-panel space-y-1.5 p-2">
+                {loadingTasks && (
+                  <div className="actsix-loading-state">
+                    Loading next actions...
                   </div>
                 )}
 
-                {filteredDone.map((task) => (
+                {!loadingTasks && filteredOpen.length === 0 && (
+                  <div className="actsix-empty-state">
+                    {hasActiveFilters
+                      ? `No open actions match these filters${
+                          open.length > 0 ? ` — ${open.length} are hidden` : ""
+                        }. Clear them above to see everything.`
+                      : "No open actions match this view."}
+                  </div>
+                )}
+
+                {filteredOpen.map((task) => (
                   <CompactTaskRow
                     key={task.id}
                     task={task}
@@ -654,8 +634,58 @@ const TasksPage = () => {
                   />
                 ))}
               </Card>
+            </section>
+
+            {done.length > 0 && (
+              <section>
+                <button
+                  type="button"
+                  onClick={() => setShowCompleted((value) => !value)}
+                  className="mb-2 flex min-h-10 w-full items-center justify-between gap-2.5 rounded-lg border border-border/70 bg-background/70 px-3 py-2 text-left transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
+                >
+                  <div className="flex items-center gap-2">
+                    {showCompleted ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+
+                    <h2 className="text-lg font-extrabold tracking-tight text-muted-foreground">
+                      Completed
+                      <span className="ml-2 rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs font-extrabold text-muted-foreground">
+                        {filteredDone.length}
+                      </span>
+                    </h2>
+                  </div>
+
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {showCompleted ? "Collapse" : "Expand"}
+                  </span>
+                </button>
+
+                {showCompleted && (
+                  <Card className="actsix-panel-soft space-y-1.5 p-2 opacity-90">
+                    {filteredDone.length === 0 && (
+                      <div className="actsix-empty-state">
+                        No completed actions match this view.
+                      </div>
+                    )}
+
+                    {filteredDone.map((task) => (
+                      <CompactTaskRow
+                        key={task.id}
+                        task={task}
+                        showNotes={false}
+                        onToggle={toggle}
+                        onEdit={(task) => setEditingTask({ ...task })}
+                        onDelete={remove}
+                      />
+                    ))}
+                  </Card>
+                )}
+              </section>
             )}
-          </section>
+          </>
         )}
       </div>
 
