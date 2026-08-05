@@ -37,6 +37,8 @@ import {
 } from "@/components/ui/drawer";
 import { Textarea } from "@/components/ui/textarea";
 
+const DOCK_TRANSITION = "transition-all duration-200 ease-out";
+
 type MobileModuleKey =
   | "home"
   | "tasks"
@@ -443,7 +445,7 @@ const DockLink = ({ item, active }: { item: MobileDockLink; active: boolean }) =
       to={item.path}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "actsix-mobile-dock-item group flex min-h-[58px] flex-col items-center justify-center gap-1",
+        "actsix-mobile-dock-item group flex min-h-[58px] flex-col items-center justify-center gap-1 transition-transform duration-150 ease-out active:scale-[0.96]",
         active && "text-brand-teal"
       )}
     >
@@ -566,7 +568,8 @@ export function MobileBottomNav() {
       <div className="relative mx-auto max-w-md">
         <div
           className={cn(
-            "pointer-events-none absolute left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-brand-teal shadow-[0_10px_24px_rgba(45,140,140,0.24)] transition-all duration-200 ease-out",
+            "pointer-events-none absolute left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-brand-teal shadow-[0_10px_24px_rgba(45,140,140,0.24)]",
+            DOCK_TRANSITION,
             switcherOpen
               ? "bottom-[5.1rem] scale-x-[2.6] scale-y-75 opacity-80"
               : "bottom-[3.55rem] scale-75 opacity-0"
@@ -575,10 +578,10 @@ export function MobileBottomNav() {
 
         <div
           className={cn(
-            "absolute left-1/2 bottom-[5.5rem] z-20 flex h-12 origin-bottom -translate-x-1/2 items-center justify-between gap-1 overflow-hidden rounded-full border border-white/10 bg-brand-teal shadow-[0_16px_34px_rgba(45,140,140,0.26)] transition-all duration-200 ease-out",
+            "absolute left-1/2 bottom-[5.5rem] z-20 flex h-12 w-[min(90%,21rem)] origin-bottom -translate-x-1/2 items-center justify-between gap-1 overflow-hidden rounded-full border border-white/10 bg-brand-teal px-3 shadow-[0_16px_34px_rgba(45,140,140,0.26)] transition-[transform,opacity] duration-200 ease-out",
             switcherOpen
-              ? "pointer-events-auto w-[min(90%,21rem)] translate-y-0 scale-x-100 px-3 opacity-100"
-              : "pointer-events-none w-12 translate-y-7 scale-x-[0.18] px-0 opacity-0"
+              ? "pointer-events-auto translate-y-0 scale-x-100 opacity-100"
+              : "pointer-events-none translate-y-7 scale-x-[0.18] opacity-0"
           )}
         >
           {moduleSwitcherItems.map((module) => {
@@ -594,7 +597,8 @@ export function MobileBottomNav() {
                   navigate(module.path);
                 }}
                 className={cn(
-                  "flex h-10 min-w-0 flex-1 items-center justify-center rounded-full text-white/85 transition-all duration-200 ease-out active:scale-95",
+                  "flex h-10 min-w-0 flex-1 items-center justify-center rounded-full text-white/85 active:scale-95",
+                  DOCK_TRANSITION,
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
                   switcherOpen
                     ? "translate-y-0 opacity-100 delay-75"
@@ -624,15 +628,16 @@ export function MobileBottomNav() {
             <div className="relative flex h-[54px] items-end justify-center">
               <span
                 className={cn(
-                  "pointer-events-none absolute left-1/2 top-[-0.5rem] h-6 w-8 -translate-x-1/2 rounded-b-full bg-white/95 shadow-[0_8px_14px_rgba(30,30,27,0.05)] transition-all duration-200 ease-out",
-                  switcherOpen && "h-7 w-9"
+                  "pointer-events-none absolute left-1/2 top-[-0.5rem] h-6 w-8 origin-center -translate-x-1/2 rounded-b-full bg-white/95 shadow-[0_8px_14px_rgba(30,30,27,0.05)] transition-transform duration-200 ease-out",
+                  switcherOpen && "scale-x-[1.125] scale-y-[1.167]"
                 )}
               />
               <button
                 type="button"
                 onClick={() => setSwitcherOpen((open) => !open)}
                 className={cn(
-                  "absolute left-1/2 top-[-3.15rem] flex h-[64px] w-[64px] -translate-x-1/2 items-center justify-center rounded-full border-[6px] border-white bg-white shadow-[0_10px_24px_rgba(30,30,27,0.13)] transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-teal/25",
+                  "absolute left-1/2 top-[-3.15rem] flex h-[64px] w-[64px] -translate-x-1/2 items-center justify-center rounded-full border-[6px] border-white bg-white shadow-[0_10px_24px_rgba(30,30,27,0.13)] active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-teal/25",
+                  DOCK_TRANSITION,
                   switcherOpen && "shadow-[0_15px_30px_rgba(45,140,140,0.24)]"
                 )}
                 aria-label="Switch ACTSIX module"
@@ -640,7 +645,8 @@ export function MobileBottomNav() {
               >
                 <span
                   className={cn(
-                    "relative flex h-[44px] w-[44px] items-center justify-center overflow-hidden rounded-[var(--radius-control)] ring-1 transition-all duration-200 ease-out",
+                    "relative flex h-[44px] w-[44px] items-center justify-center overflow-hidden rounded-[var(--radius-control)] ring-1",
+                    DOCK_TRANSITION,
                     switcherOpen
                       ? "bg-brand-teal text-white ring-brand-teal"
                       : "bg-brand-teal/[0.07] ring-brand-teal/10"
@@ -650,7 +656,8 @@ export function MobileBottomNav() {
                     src={actsixIcon}
                     alt="ACTSIX"
                     className={cn(
-                      "absolute h-9 w-9 object-contain transition-all duration-200 ease-out",
+                      "absolute h-9 w-9 object-contain",
+                      DOCK_TRANSITION,
                       switcherOpen
                         ? "scale-75 rotate-45 opacity-0"
                         : "scale-100 rotate-0 opacity-100 delay-75"
@@ -658,7 +665,8 @@ export function MobileBottomNav() {
                   />
                   <X
                     className={cn(
-                      "absolute h-6 w-6 text-white transition-all duration-200 ease-out",
+                      "absolute h-6 w-6 text-white",
+                      DOCK_TRANSITION,
                       switcherOpen
                         ? "scale-100 rotate-0 opacity-100 delay-75"
                         : "scale-75 -rotate-45 opacity-0"
