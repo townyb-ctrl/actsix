@@ -371,13 +371,18 @@ export function GuidedTour({ onStepChange, onComplete }: GuidedTourProps) {
         style={{ top: overlayHole.top + overlayHole.height }}
       />
       <div
-        className="absolute border-2 border-brand-teal-bright bg-transparent shadow-[0_0_22px_rgba(45,140,140,0.35)] transition-all duration-300"
-        style={{ ...highlightStyle, borderRadius: highlightRadius }}
+        className="absolute left-0 top-0 border-2 border-brand-teal-bright bg-transparent shadow-[0_0_22px_rgba(45,140,140,0.35)] transition-[transform,width,height] duration-300"
+        style={{
+          transform: `translate(${highlightStyle.left}px, ${highlightStyle.top}px)`,
+          width: highlightStyle.width,
+          height: highlightStyle.height,
+          borderRadius: highlightRadius,
+        }}
       />
 
       <section
-        className="pointer-events-auto fixed w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/70 bg-card text-foreground shadow-lg transition-all duration-300"
-        style={cardPosition}
+        className="pointer-events-auto fixed left-0 top-0 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/70 bg-card text-foreground shadow-lg transition-transform duration-300"
+        style={{ transform: `translate(${cardPosition.left}px, ${cardPosition.top}px)` }}
         role="dialog"
         aria-modal="true"
         aria-label="ACTSIX tutorial"
