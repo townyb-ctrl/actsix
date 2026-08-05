@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { createProject as insertProject, defaultProjectPayload } from "@/features/projects/api/projectsApi";
 
 type Project = {
   id: string;
@@ -60,24 +61,9 @@ const ProjectSelect = ({
     setSaving(true);
 
     const projectName = newProjectName.trim();
+    const payload = defaultProjectPayload({ name: projectName, user_id: user.id });
 
-    const newProjectId = crypto.randomUUID();
-
-    const { data, error } = await supabase
-      .from("projects")
-      .insert({
-        id: newProjectId,
-        name: projectName,
-        user_id: user.id,
-        area: "General",
-        status: "In Progress",
-        progress: 0,
-        open_tasks: 0,
-        next_action: "",
-        notes: "",
-      })
-      .select("id, name")
-      .single();
+    const { data, error } = await insertProject(payload).select("id, name").single();
 
     setSaving(false);
 
@@ -88,7 +74,7 @@ const ProjectSelect = ({
 
     toast.success("Project created");
     onChange(projectName);
-    onProjectChange?.(data ?? { id: newProjectId, name: projectName });
+    onProjectChange?.(data ?? { id: payload.id as string, name: projectName });
     setNewProjectName("");
     setCreating(false);
     await loadProjects();

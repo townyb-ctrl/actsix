@@ -83,6 +83,19 @@ export const getPeopleByIds = ({
 export const createProject = (payload: Record<string, unknown>) =>
   supabase.from("projects").insert(payload as any);
 
+/** Canonical defaults for a new project row. Callers spread their own
+ * name/user_id/notes over this instead of hand-rolling the field list. */
+export const defaultProjectPayload = (overrides: Record<string, unknown> = {}) => ({
+  id: crypto.randomUUID(),
+  area: "General",
+  status: "In Progress",
+  progress: 0,
+  open_tasks: 0,
+  next_action: "",
+  notes: "",
+  ...overrides,
+});
+
 export const updateProject = (projectId: string, payload: Record<string, unknown>) =>
   supabase.from("projects").update(payload as any).eq("id", projectId);
 
