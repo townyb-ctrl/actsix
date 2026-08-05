@@ -68,7 +68,7 @@ const ModuleActivationPrompt = ({
   activating: boolean;
   onActivate: () => void;
 }) => (
-  <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 xl:px-8 2xl:px-10">
+  <main id="main-content" className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 xl:px-8 2xl:px-10">
     <Card className="actsix-panel-soft w-full max-w-xl p-5 text-center">
       <p className="label-eyebrow">Optional Module</p>
       <h1 className="mt-2 text-xl font-extrabold tracking-tight">
@@ -211,8 +211,14 @@ export default function AppLayout() {
 
   return (
     <SidebarProvider>
+      <a
+        href="#main-content"
+        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-[1000] focus-visible:rounded-lg focus-visible:bg-brand-teal focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-bold focus-visible:text-white focus-visible:shadow-lg"
+      >
+        Skip to content
+      </a>
       <div className="min-h-screen w-full overflow-x-hidden overscroll-none bg-gradient-sidebar md:flex">
-        
+
         <div className="relative z-10 hidden md:flex">
           <AppSidebar />
         </div>
@@ -336,7 +342,7 @@ export default function AppLayout() {
               onActivate={activateRouteModule}
             />
           ) : (
-            <main className={`flex-1 overflow-y-auto overscroll-contain ${isHomeRoute ? "" : "md:px-4 xl:px-6 2xl:px-8"}`}>
+            <main id="main-content" className={`flex-1 overflow-y-auto overscroll-contain ${isHomeRoute ? "" : "md:px-4 xl:px-6 2xl:px-8"}`}>
               <Outlet />
             </main>
           )}
