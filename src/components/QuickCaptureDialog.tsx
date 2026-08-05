@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Inbox, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ export function QuickCaptureDialog({
   const { user } = useAuth();
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const contentFieldId = useId();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +28,8 @@ export function QuickCaptureDialog({
 
     setIsSubmitting(true);
     try {
-      // Added id: crypto.randomUUID() to satisfy the strict type requirements
       const { error } = await supabase.from("inbox_items").insert({
-        id: crypto.randomUUID(), 
+        id: crypto.randomUUID(),
         title: content.trim(),
         user_id: user.id,
       });
@@ -55,11 +55,15 @@ export function QuickCaptureDialog({
       description="Capture a quick thought or task."
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <label htmlFor={contentFieldId} className="sr-only">
+          What's on your mind?
+        </label>
         <Textarea
+          id={contentFieldId}
           placeholder="What's on your mind?..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="min-h-[120px] resize-none text-base" 
+          className="min-h-[120px] resize-none text-base"
           autoFocus
         />
         <div className="flex justify-between items-center pt-2">
