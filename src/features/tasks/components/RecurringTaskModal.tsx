@@ -37,7 +37,6 @@ const RecurringTaskModal = ({
   const endConditionFieldId = `${fieldId}-end-condition`;
   const endDateFieldId = `${fieldId}-end-date`;
   const occurrencesFieldId = `${fieldId}-occurrences`;
-  const creationModeFieldId = `${fieldId}-creation-mode`;
 
   if (!template) return null;
 
@@ -197,20 +196,6 @@ const RecurringTaskModal = ({
                   />
                 </div>
               )}
-
-              <div className={fieldClassName}>
-                <label htmlFor={creationModeFieldId} className="label-eyebrow">Creation mode</label>
-                <select
-                  id={creationModeFieldId}
-                  disabled={readOnly}
-                  value={template.creation_mode}
-                  onChange={(event) => update({ creation_mode: event.target.value as RecurringTemplateDraft["creation_mode"] })}
-                  className={selectClassName}
-                >
-                  <option value="on_completion">Create next task on completion</option>
-                  <option value="ahead_of_time">Create ahead of time</option>
-                </select>
-              </div>
             </div>
           </section>
         </div>

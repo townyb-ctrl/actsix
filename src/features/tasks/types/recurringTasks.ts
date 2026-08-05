@@ -1,7 +1,10 @@
 export type RecurringFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
 export type RecurringStatus = "active" | "paused" | "ended";
 export type RecurringEndCondition = "never" | "on_date" | "after_occurrences";
-export type RecurringCreationMode = "on_completion" | "ahead_of_time";
+// "ahead_of_time" existed in the type/DB but nothing ever generated tasks for
+// it - only on_completion is wired up in recurringTasksApi.ts. Narrowed to
+// the one mode that actually works; the column stays for existing rows.
+export type RecurringCreationMode = "on_completion";
 
 export type RecurringTaskTemplate = {
   id: string;

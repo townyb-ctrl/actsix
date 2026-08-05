@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
-  ArrowUpDown,
   ChevronDown,
   ChevronRight,
   Inbox,
@@ -84,16 +83,11 @@ const TasksPage = () => {
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
 
   const [search, setSearch] = useState("");
   const [dateView, setDateView] = useState("all");
-  const [projectFilter, setProjectFilter] = useState("All");
-  const [contextFilter, setContextFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
-  const [energyFilter, setEnergyFilter] = useState("All");
-  const [sortBy, setSortBy] = useState("due");
 
   const load = async ({ showLoading = false } = {}) => {
     if (!user) {
@@ -127,47 +121,19 @@ const TasksPage = () => {
     if (user) load({ showLoading: true });
   }, [user, currentPerson?.id]);
 
-  const uniqueProjects = useMemo(() => {
-    return Array.from(
-      new Set(tasks.map((task) => task.project).filter(Boolean))
-    ).sort();
-  }, [tasks]);
-
-  const uniqueContexts = useMemo(() => {
-    return Array.from(
-      new Set(tasks.map((task) => task.context || "General").filter(Boolean))
-    ).sort();
-  }, [tasks]);
-
   const uniquePriorities = useMemo(() => {
     return Array.from(
       new Set(tasks.map((task) => task.priority || "Medium").filter(Boolean))
     ).sort((a, b) => (priorityWeight[b] || 0) - (priorityWeight[a] || 0));
   }, [tasks]);
 
-  const uniqueEnergies = useMemo(() => {
-    return Array.from(
-      new Set(tasks.map((task) => task.energy || "Medium").filter(Boolean))
-    ).sort();
-  }, [tasks]);
-
   const hasActiveFilters =
-    Boolean(search.trim()) ||
-    dateView !== "all" ||
-    projectFilter !== "All" ||
-    contextFilter !== "All" ||
-    priorityFilter !== "All" ||
-    energyFilter !== "All" ||
-    sortBy !== "due";
+    Boolean(search.trim()) || dateView !== "all" || priorityFilter !== "All";
 
   const clearFilters = () => {
     setSearch("");
     setDateView("all");
-    setProjectFilter("All");
-    setContextFilter("All");
     setPriorityFilter("All");
-    setEnergyFilter("All");
-    setSortBy("due");
   };
 
   const matchesDateView = (task: any) => {
@@ -189,54 +155,13 @@ const TasksPage = () => {
         (task.project || "").toLowerCase().includes(q) ||
         (task.context || "").toLowerCase().includes(q);
 
-      const matchesProject =
-        projectFilter === "All" || (task.project || "") === projectFilter;
-
-      const matchesContext =
-        contextFilter === "All" || (task.context || "General") === contextFilter;
-
       const matchesPriority =
         priorityFilter === "All" || (task.priority || "Medium") === priorityFilter;
 
-      const matchesEnergy =
-        energyFilter === "All" || (task.energy || "Medium") === energyFilter;
-
-      return (
-        matchesSearch &&
-        matchesDateView(task) &&
-        matchesProject &&
-        matchesContext &&
-        matchesPriority &&
-        matchesEnergy
-      );
+      return matchesSearch && matchesDateView(task) && matchesPriority;
     });
 
     return [...filtered].sort((a, b) => {
-      if (sortBy === "priority") {
-        return (
-          (priorityWeight[b.priority || "Medium"] || 0) -
-          (priorityWeight[a.priority || "Medium"] || 0)
-        );
-      }
-
-      if (sortBy === "newest") {
-        return (
-          new Date(b.created_at || 0).getTime() -
-          new Date(a.created_at || 0).getTime()
-        );
-      }
-
-      if (sortBy === "oldest") {
-        return (
-          new Date(a.created_at || 0).getTime() -
-          new Date(b.created_at || 0).getTime()
-        );
-      }
-
-      if (sortBy === "duration") {
-        return (a.minutes || 15) - (b.minutes || 15);
-      }
-
       const aDue = a.due
         ? parseLocalDate(a.due)?.getTime() ?? Number.POSITIVE_INFINITY
         : Number.POSITIVE_INFINITY;
@@ -446,86 +371,6 @@ const TasksPage = () => {
           </div>
         )}
 
-        {!loadError && showFilters && (
-          <Card className="rounded-2xl border border-border/65 bg-card/80 px-3 py-2 shadow-none">
-            <div className="grid gap-2 md:grid-cols-5">
-              <div>
-                <label className="label-eyebrow flex h-3 items-center text-[9px]">Project</label>
-                <select
-                  value={projectFilter}
-                  onChange={(event) => setProjectFilter(event.target.value)}
-                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
-                >
-                  <option>All</option>
-                  {uniqueProjects.map((project) => (
-                    <option key={project}>{project}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="label-eyebrow flex h-3 items-center text-[9px]">Context</label>
-                <select
-                  value={contextFilter}
-                  onChange={(event) => setContextFilter(event.target.value)}
-                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
-                >
-                  <option>All</option>
-                  {uniqueContexts.map((context) => (
-                    <option key={context}>{context}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="label-eyebrow flex h-3 items-center text-[9px]">Priority</label>
-                <select
-                  value={priorityFilter}
-                  onChange={(event) => setPriorityFilter(event.target.value)}
-                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
-                >
-                  <option>All</option>
-                  {uniquePriorities.map((priority) => (
-                    <option key={priority}>{priority}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="label-eyebrow flex h-3 items-center text-[9px]">Energy</label>
-                <select
-                  value={energyFilter}
-                  onChange={(event) => setEnergyFilter(event.target.value)}
-                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
-                >
-                  <option>All</option>
-                  {uniqueEnergies.map((energy) => (
-                    <option key={energy}>{energy}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="label-eyebrow flex h-3 items-center gap-1 text-[9px]">
-                  <ArrowUpDown className="h-2.5 w-2.5" />
-                  Sort
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value)}
-                  className="mt-1 h-6 w-full rounded-full border border-border/65 bg-background/70 px-2 text-[10px] font-semibold"
-                >
-                  <option value="due">Due date</option>
-                  <option value="priority">Priority</option>
-                  <option value="newest">Newest</option>
-                  <option value="oldest">Oldest</option>
-                  <option value="duration">Shortest duration</option>
-                </select>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {!loadError && (
           <>
             <section>
@@ -564,23 +409,23 @@ const TasksPage = () => {
                       </button>
                     );
                   })}
-                  <button
-                    type="button"
-                    onClick={() => setShowFilters((value) => !value)}
+                  <select
+                    value={priorityFilter}
+                    onChange={(event) => setPriorityFilter(event.target.value)}
+                    aria-label="Filter by priority"
                     className={`actsix-filter-pill ${
-                      showFilters || hasActiveFilters
+                      priorityFilter !== "All"
                         ? "actsix-filter-pill-active"
                         : "actsix-filter-pill-idle"
                     }`}
                   >
-                    <SlidersHorizontal className="h-3 w-3" />
-                    Filters
-                    {hasActiveFilters && (
-                      <span className="actsix-filter-pill-count actsix-filter-pill-count-active">
-                        On
-                      </span>
-                    )}
-                  </button>
+                    <option value="All">Any priority</option>
+                    {uniquePriorities.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {priority}
+                      </option>
+                    ))}
+                  </select>
 
                   {hasActiveFilters && (
                     <button

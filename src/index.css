@@ -303,7 +303,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     background-color: hsl(var(--brand-teal));
     color: #ffffff;
     border: 1px solid hsl(var(--brand-teal));
-    box-shadow: 0 4px 12px rgba(45, 140, 140, 0.24);
+    box-shadow: 0 4px 12px rgba(45, 140, 140, 0.08);
     transition: var(--transition-normal);
   }
 
@@ -321,7 +321,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
      h-6 filter pills. Height itself comes from a normal h-* utility. */
   .actsix-btn-primary-compact {
     gap: 4px;
-    box-shadow: 0 2px 6px rgba(45, 140, 140, 0.18);
+    box-shadow: 0 2px 6px rgba(45, 140, 140, 0.06);
   }
 
   .actsix-btn-primary-compact:hover {
@@ -510,6 +510,21 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
   .actsix-filter-pill-count {
     @apply rounded-full px-1 py-0.5 text-[9px] font-semibold leading-none;
+  }
+
+  /* Below sm, pills are touch targets, not read-only labels - grow them to
+     DESIGN.md's 44px mobile floor. Desktop keeps the compact 24px row. */
+  @media (max-width: 639px) {
+    .actsix-filter-pill {
+      min-height: 2.75rem;
+      padding: 0 0.875rem;
+      font-size: 0.8125rem;
+    }
+
+    .actsix-filter-pill .actsix-filter-pill-count {
+      font-size: 0.6875rem;
+      padding: 0.125rem 0.5rem;
+    }
   }
 
   .actsix-filter-pill-count-idle {

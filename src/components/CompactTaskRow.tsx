@@ -29,14 +29,20 @@ const formatShortDate = (date?: string | null) => {
   });
 };
 
+// Pale/washed pill, matching the low-saturation tag treatment used for
+// project and recurring badges rather than full-strength brand color.
 const priorityClass = (priority?: string | null) => {
   const clean = priority || "Medium";
+  const base = "inline-flex items-center rounded-md border px-1.5 py-0.5 font-semibold";
 
-  if (clean === "Urgent") return "text-brand-coral font-bold";
-  if (clean === "High") return "text-brand-coral font-semibold";
-  if (clean === "Low") return "text-muted-foreground";
+  if (clean === "Urgent" || clean === "High") {
+    return `${base} border-brand-coral/20 bg-brand-coral/5 text-brand-coral`;
+  }
+  if (clean === "Low") {
+    return `${base} border-border/60 bg-transparent text-muted-foreground`;
+  }
 
-  return "text-brand-amber font-semibold";
+  return `${base} border-brand-amber/20 bg-brand-amber/5 text-brand-amber`;
 };
 
 const getProjectSectionName = (task: any) => {
