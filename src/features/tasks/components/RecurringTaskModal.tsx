@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { CalendarClock, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +28,17 @@ const RecurringTaskModal = ({
   onClose,
   onSave,
 }: Props) => {
+  const fieldId = useId();
+  const titleFieldId = `${fieldId}-title`;
+  const descriptionFieldId = `${fieldId}-description`;
+  const firstDueFieldId = `${fieldId}-first-due`;
+  const frequencyFieldId = `${fieldId}-frequency`;
+  const intervalFieldId = `${fieldId}-interval`;
+  const endConditionFieldId = `${fieldId}-end-condition`;
+  const endDateFieldId = `${fieldId}-end-date`;
+  const occurrencesFieldId = `${fieldId}-occurrences`;
+  const creationModeFieldId = `${fieldId}-creation-mode`;
+
   if (!template) return null;
 
   const readOnly = mode === "view";
@@ -60,8 +72,9 @@ const RecurringTaskModal = ({
         <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
           <section className="grid gap-3">
             <div className={fieldClassName}>
-              <label className="label-eyebrow">Title</label>
+              <label htmlFor={titleFieldId} className="label-eyebrow">Title</label>
               <Input
+                id={titleFieldId}
                 disabled={readOnly}
                 value={template.title}
                 onChange={(event) => update({ title: event.target.value })}
@@ -71,8 +84,9 @@ const RecurringTaskModal = ({
             </div>
 
             <div className={fieldClassName}>
-              <label className="label-eyebrow">Description</label>
+              <label htmlFor={descriptionFieldId} className="label-eyebrow">Description</label>
               <textarea
+                id={descriptionFieldId}
                 disabled={readOnly}
                 value={template.description}
                 onChange={(event) => update({ description: event.target.value })}
@@ -94,8 +108,9 @@ const RecurringTaskModal = ({
 
             <div className="grid gap-3 md:grid-cols-3">
               <div className={fieldClassName}>
-                <label className="label-eyebrow">First due date</label>
+                <label htmlFor={firstDueFieldId} className="label-eyebrow">First due date</label>
                 <Input
+                  id={firstDueFieldId}
                   disabled={readOnly}
                   type="date"
                   value={template.first_due_date}
@@ -110,8 +125,9 @@ const RecurringTaskModal = ({
               </div>
 
               <div className={fieldClassName}>
-                <label className="label-eyebrow">Repeat frequency</label>
+                <label htmlFor={frequencyFieldId} className="label-eyebrow">Repeat frequency</label>
                 <select
+                  id={frequencyFieldId}
                   disabled={readOnly}
                   value={template.frequency}
                   onChange={(event) => update({ frequency: event.target.value as RecurringTemplateDraft["frequency"] })}
@@ -126,8 +142,9 @@ const RecurringTaskModal = ({
               </div>
 
               <div className={fieldClassName}>
-                <label className="label-eyebrow">Interval</label>
+                <label htmlFor={intervalFieldId} className="label-eyebrow">Interval</label>
                 <Input
+                  id={intervalFieldId}
                   disabled={readOnly}
                   type="number"
                   min={1}
@@ -138,8 +155,9 @@ const RecurringTaskModal = ({
               </div>
 
               <div className={fieldClassName}>
-                <label className="label-eyebrow">End condition</label>
+                <label htmlFor={endConditionFieldId} className="label-eyebrow">End condition</label>
                 <select
+                  id={endConditionFieldId}
                   disabled={readOnly}
                   value={template.end_condition}
                   onChange={(event) => update({ end_condition: event.target.value as RecurringTemplateDraft["end_condition"] })}
@@ -153,8 +171,9 @@ const RecurringTaskModal = ({
 
               {template.end_condition === "on_date" && (
                 <div className={fieldClassName}>
-                  <label className="label-eyebrow">End date</label>
+                  <label htmlFor={endDateFieldId} className="label-eyebrow">End date</label>
                   <Input
+                    id={endDateFieldId}
                     disabled={readOnly}
                     type="date"
                     value={template.end_date || ""}
@@ -166,8 +185,9 @@ const RecurringTaskModal = ({
 
               {template.end_condition === "after_occurrences" && (
                 <div className={fieldClassName}>
-                  <label className="label-eyebrow">Occurrences</label>
+                  <label htmlFor={occurrencesFieldId} className="label-eyebrow">Occurrences</label>
                   <Input
+                    id={occurrencesFieldId}
                     disabled={readOnly}
                     type="number"
                     min={1}
@@ -179,8 +199,9 @@ const RecurringTaskModal = ({
               )}
 
               <div className={fieldClassName}>
-                <label className="label-eyebrow">Creation mode</label>
+                <label htmlFor={creationModeFieldId} className="label-eyebrow">Creation mode</label>
                 <select
+                  id={creationModeFieldId}
                   disabled={readOnly}
                   value={template.creation_mode}
                   onChange={(event) => update({ creation_mode: event.target.value as RecurringTemplateDraft["creation_mode"] })}

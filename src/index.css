@@ -563,4 +563,14 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
       transform: translateX(-50%) translateY(-2.55rem) scale(22);
     }
   }
+
+  /* The 22x scale morph above is the app's most aggressive motion. Reduced-motion
+     users get an instant opacity swap instead - same state change, no morph. */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-switcher-seed[data-open="true"] {
+      animation: none;
+      opacity: 0;
+      transition: opacity 120ms ease-out;
+    }
+  }
 }

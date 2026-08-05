@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { CheckCircle2, Clock, Tags, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -36,6 +36,15 @@ const NextActionFields = ({
 }: NextActionFieldsProps) => {
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
+
+  const fieldId = useId();
+  const projectFieldId = `${fieldId}-project`;
+  const dueFieldId = `${fieldId}-due`;
+  const durationFieldId = `${fieldId}-duration`;
+  const energyFieldId = `${fieldId}-energy`;
+  const priorityFieldId = `${fieldId}-priority`;
+  const contextFieldId = `${fieldId}-context`;
+  const tagsFieldId = `${fieldId}-tags`;
 
   const [currentProject, setCurrentProject] = useState<ProjectRecord | null>(null);
   const [projectCollaborators, setProjectCollaborators] = useState<ProjectCollaborator[]>([]);
@@ -124,19 +133,19 @@ const NextActionFields = ({
   const durationOptions = [2, 5, 10, 15, 20, 25, 30, 45, 60, 90, 120];
   const fieldClassName =
     variant === "inbox"
-      ? "rounded-xl border border-brand-teal/20 bg-white p-4 shadow-sm"
+      ? "rounded-xl border border-brand-teal/20 bg-card p-4 shadow-sm"
       : "rounded-xl border border-border/70 bg-background/70 p-4";
   const mainFieldClassName =
     variant === "inbox"
-      ? "rounded-xl border border-brand-teal/20 bg-white p-4 shadow-sm"
+      ? "rounded-xl border border-brand-teal/20 bg-card p-4 shadow-sm"
       : "rounded-xl border border-border/70 bg-background/70 p-4";
   const inputClassName =
     variant === "inbox"
-      ? "mt-2 h-10 rounded-xl border-brand-teal/20 bg-white shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+      ? "mt-2 h-10 rounded-xl border-brand-teal/20 bg-card shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
       : "mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none";
   const selectClassName =
     variant === "inbox"
-      ? "mt-2 h-10 w-full rounded-xl border border-brand-teal/20 bg-white px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+      ? "mt-2 h-10 w-full rounded-xl border border-brand-teal/20 bg-card px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
       : "mt-2 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15";
   const labelClassName = "label-eyebrow flex h-5 items-center gap-2";
 
@@ -150,8 +159,9 @@ const NextActionFields = ({
 
         <div className="grid md:grid-cols-3 gap-3">
           <div className={mainFieldClassName}>
-            <label className={labelClassName}>Project</label>
+            <label htmlFor={projectFieldId} className={labelClassName}>Project</label>
             <ProjectSelect
+              id={projectFieldId}
               value={item.project ?? ""}
               onChange={(project) =>
                 onChange({
@@ -180,8 +190,9 @@ const NextActionFields = ({
           </div>
 
           <div className={mainFieldClassName}>
-            <label className={labelClassName}>Due date</label>
+            <label htmlFor={dueFieldId} className={labelClassName}>Due date</label>
             <Input
+              id={dueFieldId}
               type="date"
               value={item.due ?? ""}
               onChange={(event) =>
@@ -192,11 +203,12 @@ const NextActionFields = ({
           </div>
 
           <div className={mainFieldClassName}>
-            <label className={labelClassName}>
+            <label htmlFor={durationFieldId} className={labelClassName}>
               <Clock className="h-3.5 w-3.5" />
               Est. Duration
             </label>
             <select
+              id={durationFieldId}
               value={item.minutes ?? 15}
               onChange={(event) =>
                 onChange({
@@ -215,8 +227,9 @@ const NextActionFields = ({
           </div>
 
           <div className={mainFieldClassName}>
-            <label className={labelClassName}>Energy</label>
+            <label htmlFor={energyFieldId} className={labelClassName}>Energy</label>
             <select
+              id={energyFieldId}
               value={item.energy ?? "Medium"}
               onChange={(event) =>
                 onChange({ ...item, energy: event.target.value })
@@ -230,8 +243,9 @@ const NextActionFields = ({
           </div>
 
           <div className={mainFieldClassName}>
-            <label className={labelClassName}>Priority</label>
+            <label htmlFor={priorityFieldId} className={labelClassName}>Priority</label>
             <select
+              id={priorityFieldId}
               value={item.priority ?? "Medium"}
               onChange={(event) =>
                 onChange({ ...item, priority: event.target.value })
@@ -246,8 +260,9 @@ const NextActionFields = ({
           </div>
 
           <div className={mainFieldClassName}>
-            <label className={labelClassName}>Context</label>
+            <label htmlFor={contextFieldId} className={labelClassName}>Context</label>
             <ContextSelect
+              id={contextFieldId}
               value={item.context ?? "General"}
               onChange={(context) => onChange({ ...item, context })}
               onCreated={onRefreshOptions}
@@ -302,8 +317,9 @@ const NextActionFields = ({
           </div>
 
           <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label className="label-eyebrow">Tags</label>
+            <label htmlFor={tagsFieldId} className="label-eyebrow">Tags</label>
             <Input
+              id={tagsFieldId}
               value={Array.isArray(item.tags) ? item.tags.join(", ") : ""}
               onChange={(event) =>
                 onChange({

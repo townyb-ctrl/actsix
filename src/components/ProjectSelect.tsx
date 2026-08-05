@@ -12,6 +12,7 @@ type Project = {
 };
 
 type ProjectSelectProps = {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   onProjectChange?: (project: Project | null) => void;
@@ -20,6 +21,7 @@ type ProjectSelectProps = {
 };
 
 const ProjectSelect = ({
+  id,
   value,
   onChange,
   onProjectChange,
@@ -96,6 +98,7 @@ const ProjectSelect = ({
   return (
     <div className="space-y-2">
       <select
+        id={id}
         value={creating ? "__create_new__" : value || ""}
         onChange={(event) => {
           if (event.target.value === "__create_new__") {

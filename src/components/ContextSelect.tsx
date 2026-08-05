@@ -12,6 +12,7 @@ type Context = {
 };
 
 type ContextSelectProps = {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   onCreated?: () => void | Promise<void>;
@@ -28,7 +29,7 @@ const fallbackContexts = [
   "Waiting",
 ];
 
-const ContextSelect = ({ value, onChange, onCreated, selectClassName }: ContextSelectProps) => {
+const ContextSelect = ({ id, value, onChange, onCreated, selectClassName }: ContextSelectProps) => {
   const { user } = useAuth();
   const [contexts, setContexts] = useState<Context[]>([]);
   const [creating, setCreating] = useState(false);
@@ -91,6 +92,7 @@ const ContextSelect = ({ value, onChange, onCreated, selectClassName }: ContextS
   return (
     <div className="space-y-2">
       <select
+        id={id}
         value={creating ? "__create_new__" : value || "General"}
         onChange={(event) => {
           if (event.target.value === "__create_new__") {
