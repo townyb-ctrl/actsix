@@ -276,7 +276,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   }
 
   .action-row {
-    @apply border border-transparent bg-background/45 transition-all;
+    @apply border border-transparent bg-background/45 transition-[background-color,border-color,box-shadow,opacity,transform];
     border-radius: var(--radius-control);
   }
 
@@ -284,6 +284,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     border-color: hsl(var(--brand-teal) / 0.3);
     background-color: hsl(var(--brand-teal) / 0.05);
     box-shadow: var(--shadow-soft);
+  }
+
+  .action-row[role="button"]:active {
+    transform: scale(0.98);
   }
 
   /* Height is deliberately NOT set here. A min-height in this class cannot be
@@ -307,6 +311,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     background-color: hsl(var(--brand-teal-dark));
     color: #ffffff;
     transform: translateY(-1px);
+  }
+
+  .actsix-btn-primary:active {
+    transform: scale(0.98);
   }
 
   /* Tightens the gap and shadow for buttons sized down to sit inline with the
@@ -338,6 +346,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     transform: translateY(-1px);
   }
 
+  .actsix-btn-soft:active {
+    transform: scale(0.98);
+  }
+
   /* Height comes from the call site - see the note on .actsix-btn-primary. */
   .actsix-btn-outline {
     display: inline-flex;
@@ -355,6 +367,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     background-color: hsl(var(--brand-teal) / 0.16);
     color: hsl(var(--brand-teal-dark));
     transform: translateY(-1px);
+  }
+
+  .actsix-btn-outline:active {
+    transform: scale(0.98);
   }
 
   .actsix-overlay-surface {
