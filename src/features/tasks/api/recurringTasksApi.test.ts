@@ -31,7 +31,7 @@ const baseTemplate: RecurringTaskTemplate = {
   end_condition: "never",
   end_date: null,
   end_after_occurrences: null,
-  creation_mode: "ahead_of_time",
+  creation_mode: "on_completion",
   status: "active",
   generated_count: 2,
   last_generated_task_id: "old-task-id",

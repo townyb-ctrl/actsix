@@ -6,22 +6,25 @@ import { WidgetEmptyState, WidgetLinkRow } from "./widgetPrimitives";
 export function RecentActivityWidget({ widget, data }: DashboardWidgetRenderProps) {
   const limit = widget.settings?.itemLimit || 5;
   const items = [
-    ...data.tasks.slice(0, 3).map((task) => ({
+    ...data.tasks.map((task) => ({
       id: `task-${task.id}`,
+      sortKey: task.created_at || "",
       title: task.title,
       meta: task.due ? `Due ${formatShortDate(task.due)}` : "Open task",
       to: "/tasks/next",
       icon: ListChecks,
     })),
-    ...data.projects.slice(0, 2).map((project) => ({
+    ...data.projects.map((project) => ({
       id: `project-${project.id}`,
+      sortKey: project.updated_at || "",
       title: project.name,
       meta: project.status || "Active project",
       to: `/tasks/projects/${project.id}`,
       icon: FolderKanban,
     })),
-    ...data.meetings.slice(0, 2).map((meeting) => ({
+    ...data.meetings.map((meeting) => ({
       id: `meeting-${meeting.id}`,
+      sortKey: meeting.meeting_date || "",
       title: meeting.title,
       meta: meeting.meeting_date ? formatShortDate(meeting.meeting_date) : "Meeting",
       to: `/meetings/${meeting.id}`,
@@ -31,6 +34,7 @@ export function RecentActivityWidget({ widget, data }: DashboardWidgetRenderProp
       ? [
           {
             id: `service-${data.nextService.id}`,
+            sortKey: data.nextService.service_date || "",
             title: data.nextService.title || data.nextService.service_types?.name || "Upcoming service",
             meta: formatShortDate(data.nextService.service_date),
             to: `/service-planner/services/${data.nextService.id}`,
@@ -38,7 +42,12 @@ export function RecentActivityWidget({ widget, data }: DashboardWidgetRenderProp
           },
         ]
       : []),
-  ].slice(0, limit);
+  ]
+    // Newest first across all four sources, instead of concatenating fixed
+    // per-type slices (which let tasks+projects crowd out meetings/services
+    // before the limit was ever applied).
+    .sort((a, b) => b.sortKey.localeCompare(a.sortKey))
+    .slice(0, limit);
 
   if (items.length === 0) return <WidgetEmptyState>No recent activity yet.</WidgetEmptyState>;
 
