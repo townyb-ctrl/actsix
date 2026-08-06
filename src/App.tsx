@@ -31,6 +31,8 @@ const People = lazy(() => import("./pages/People"));
 const PersonDetail = lazy(() => import("./pages/PersonDetail"));
 const PeopleGroups = lazy(() => import("./pages/PeopleGroups"));
 const PeopleGroupDetail = lazy(() => import("./pages/PeopleGroupDetail"));
+const ServiceContacts = lazy(() => import("./pages/ServiceContacts"));
+const ServiceContactDetail = lazy(() => import("./pages/ServiceContactDetail"));
 const MeetingDetail = lazy(() => import("./pages/MeetingDetail"));
 const RecurringMeetings = lazy(() => import("./pages/RecurringMeetings"));
 const RecurringMeetingDetail = lazy(() => import("./pages/RecurringMeetingDetail"));
@@ -105,6 +107,8 @@ const App = () => (
                 <Route path="/groups/:groupId" element={<PeopleGroupDetail />} />
                 <Route path="/people/groups" element={<Navigate to="/groups" replace />} />
                 <Route path="/people/groups/:groupId" element={<LegacyGroupRedirect />} />
+                <Route path="/people/contacts" element={<ServiceContacts />} />
+                <Route path="/people/contacts/:contactId" element={<ServiceContactDetail />} />
                 <Route path="/people/:personId" element={<PersonDetail />} />
                 <Route path="/meetings/recurring" element={<RecurringMeetings />} />
                 <Route path="/meetings/recurring/:seriesId" element={<RecurringMeetingDetail />} />

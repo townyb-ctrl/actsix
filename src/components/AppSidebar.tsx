@@ -15,6 +15,7 @@ import {
   Music,
   PanelLeftClose,
   PanelLeftOpen,
+  Phone,
   Presentation,
   RotateCcw,
   Settings as SettingsIcon,
@@ -129,7 +130,10 @@ const navSections: NavSection[] = [
     moduleKey: "people",
     matchPrefixes: ["/people"],
     group: "Ministry Work",
-    items: [],
+    items: [
+      { title: "Directory", url: "/people", icon: Users },
+      { title: "Service Contacts", url: "/people/contacts", icon: Phone },
+    ],
   },
   {
     id: "groups",
