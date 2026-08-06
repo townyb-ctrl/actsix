@@ -12,37 +12,20 @@ import {
   Users,
   ListChecks,
 } from "lucide-react";
+import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCurrentPerson } from "@/hooks/useCurrentPerson";
-
-type AgendaPoint = {
-  text: string;
-};
-
-type AgendaSection = {
-  heading: string;
-  points: AgendaPoint[];
-};
-
-type RecurringMeeting = {
-  id: string;
-  title: string;
-  frequency: "Weekly" | "Monthly";
-  startDate: string;
-  meetingTime: string;
-  location: string;
-  occurrences: number;
-  regularAttendees?: string[];
-  regularAgenda?: AgendaSection[];
-  peopleGroupId?: string;
-  peopleGroupName?: string;
-  peopleGroupMemberIds?: string[];
-};
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
+import {
+  fromRecurringMeetingRow,
+  toRecurringMeetingInsert,
+  type RecurringMeeting,
+} from "@/features/meetings/lib/recurringMeetings";
 
 type PeopleGroupOption = {
   id: string;
@@ -53,22 +36,7 @@ type PeopleGroupOption = {
   }[];
 };
 
-const STORAGE_KEY = "actsix_recurring_meetings";
-
-const loadRecurringMeetings = (): RecurringMeeting[] => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const saveRecurringMeetings = (items: RecurringMeeting[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  window.dispatchEvent(new Event("actsix-recurring-meetings-updated"));
-};
-
-const formatDate = (date?: string) => {
+const formatDate = (date?: string | null) => {
   if (!date) return "No start date";
 
   return new Date(date + "T00:00:00").toLocaleDateString(undefined, {
@@ -80,9 +48,10 @@ const formatDate = (date?: string) => {
 
 const RecurringMeetingsPage = () => {
   const { user } = useAuth();
-  const { person: currentPerson } = useCurrentPerson();
+  const { workspace } = useCurrentWorkspace();
 
   const [items, setItems] = useState<RecurringMeeting[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   const [addOpen, setAddOpen] = useState(false);
@@ -95,11 +64,33 @@ const RecurringMeetingsPage = () => {
   const [occurrences, setOccurrences] = useState("12");
   const [peopleGroupOptions, setPeopleGroupOptions] = useState<PeopleGroupOption[]>([]);
   const [selectedPeopleGroupId, setSelectedPeopleGroupId] = useState("");
+  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RecurringMeeting | null>(null);
 
+  const loadSeries = async () => {
+    if (!workspace) return;
+
+    setLoading(true);
+
+    const { data, error } = await (supabase as any)
+      .from("recurring_meeting_series")
+      .select("*")
+      .eq("workspace_id", workspace.id)
+      .order("title", { ascending: true });
+
+    if (error) {
+      toast.error(friendlyErrorMessage(error));
+      setLoading(false);
+      return;
+    }
+
+    setItems((data || []).map(fromRecurringMeetingRow));
+    setLoading(false);
+  };
+
   useEffect(() => {
-    setItems(loadRecurringMeetings());
-  }, []);
+    loadSeries();
+  }, [workspace?.id]);
 
   useEffect(() => {
     const loadPeopleGroupOptions = async () => {
@@ -168,18 +159,21 @@ const RecurringMeetingsPage = () => {
     });
   }, [items, search]);
 
-  const createRecurringMeeting = (event: React.FormEvent) => {
+  const createRecurringMeeting = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!title.trim()) return;
+    if (!title.trim() || !workspace || !user) return;
 
     const selectedPeopleGroup = peopleGroupOptions.find(
       (group) => group.id === selectedPeopleGroupId
     );
 
-    const nextItems: RecurringMeeting[] = [
-      {
-        id: crypto.randomUUID(),
+    setSaving(true);
+
+    const { error } = await (supabase as any).from("recurring_meeting_series").insert(
+      toRecurringMeetingInsert({
+        workspaceId: workspace.id,
+        userId: user.id,
         title: title.trim(),
         frequency,
         startDate,
@@ -193,13 +187,17 @@ const RecurringMeetingsPage = () => {
         peopleGroupId: selectedPeopleGroup?.id,
         peopleGroupName: selectedPeopleGroup?.name,
         peopleGroupMemberIds: selectedPeopleGroup?.members.map((member) => member.person_id) || [],
-      },
-      ...items,
-    ];
+      })
+    );
 
-    setItems(nextItems);
-    saveRecurringMeetings(nextItems);
+    setSaving(false);
 
+    if (error) {
+      toast.error(friendlyErrorMessage(error));
+      return;
+    }
+
+    toast.success("Recurring meeting created");
     setTitle("");
     setFrequency("Weekly");
     setStartDate("");
@@ -208,28 +206,28 @@ const RecurringMeetingsPage = () => {
     setOccurrences("12");
     setSelectedPeopleGroupId("");
     setAddOpen(false);
+    loadSeries();
   };
 
-  const confirmDeleteRecurringMeeting = () => {
+  const confirmDeleteRecurringMeeting = async () => {
     if (!deleteTarget) return;
 
-    const nextItems = items.filter((item) => item.id !== deleteTarget.id);
-    setItems(nextItems);
-    saveRecurringMeetings(nextItems);
+    // Occurrence rows cascade-delete with the series; the meetings they
+    // point at are left alone (matches the old "already created meetings
+    // stay" behavior).
+    const { error } = await (supabase as any)
+      .from("recurring_meeting_series")
+      .delete()
+      .eq("id", deleteTarget.id);
 
-    try {
-      const createdMap = JSON.parse(localStorage.getItem("actsix_recurring_meeting_created_map") || "{}");
-      Object.keys(createdMap).forEach((key) => {
-        if (key.startsWith(`${deleteTarget.id}-`)) {
-          delete createdMap[key];
-        }
-      });
-      localStorage.setItem("actsix_recurring_meeting_created_map", JSON.stringify(createdMap));
-    } catch {
-      // Ignore invalid localStorage data.
+    if (error) {
+      toast.error(friendlyErrorMessage(error));
+      return;
     }
 
+    toast.success("Recurring meeting deleted");
     setDeleteTarget(null);
+    loadSeries();
   };
 
   return (
@@ -264,94 +262,100 @@ const RecurringMeetingsPage = () => {
 
       <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
         <Card className="actsix-panel overflow-hidden">
-          <div className="divide-y divide-border/70">
-            {filteredItems.length === 0 && (
-              <div className="actsix-empty-state m-3 min-h-[9rem] text-left">
-                <div className="flex items-center gap-2 font-semibold text-foreground">
-                  <Repeat className="h-4 w-4 text-brand-teal" />
-                  No recurring meetings set up yet.
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Add a recurring rhythm, then generate the individual meetings as needed.
-                </p>
-              </div>
-            )}
-
-            {filteredItems.map((item) => (
-              <Link
-                key={item.id}
-                to={`/meetings/recurring/${item.id}`}
-                className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-                  <Repeat className="h-5 w-5" />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-extrabold tracking-tight">
-                    {item.title}
+          {loading ? (
+            <div className="actsix-loading-state m-3" role="status">
+              Loading recurring meetings...
+            </div>
+          ) : (
+            <div className="divide-y divide-border/70">
+              {filteredItems.length === 0 && (
+                <div className="actsix-empty-state m-3 min-h-[9rem] text-left">
+                  <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <Repeat className="h-4 w-4 text-brand-teal" />
+                    No recurring meetings set up yet.
                   </div>
-
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <Repeat className="h-3.5 w-3.5" />
-                      {item.frequency}
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      Starts {formatDate(item.startDate)}
-                    </span>
-
-                    {item.meetingTime && (
-                      <span className="inline-flex items-center gap-1">
-                        <Clock3 className="h-3.5 w-3.5" />
-                        {item.meetingTime}
-                      </span>
-                    )}
-
-                    {item.location && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {item.location}
-                      </span>
-                    )}
-
-                    <span className="inline-flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {item.peopleGroupName
-                        ? `${item.peopleGroupName} group`
-                        : `${item.regularAttendees?.length || 0} regular attendees`}
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <ListChecks className="h-3.5 w-3.5" />
-                      {item.regularAgenda?.length || 0} agenda sections
-                    </span>
-                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Add a recurring rhythm, then generate the individual meetings as needed.
+                  </p>
                 </div>
+              )}
 
-                <span className="text-xs font-bold text-muted-foreground">
-                  {item.occurrences} meetings
-                </span>
-
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    setDeleteTarget(item);
-                  }}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-                  aria-label={`Delete ${item.title}`}
+              {filteredItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/meetings/recurring/${item.id}`}
+                  className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+                    <Repeat className="h-5 w-5" />
+                  </div>
 
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand-teal" />
-              </Link>
-            ))}
-          </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-extrabold tracking-tight">
+                      {item.title}
+                    </div>
+
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Repeat className="h-3.5 w-3.5" />
+                        {item.frequency}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        Starts {formatDate(item.startDate)}
+                      </span>
+
+                      {item.meetingTime && (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock3 className="h-3.5 w-3.5" />
+                          {item.meetingTime}
+                        </span>
+                      )}
+
+                      {item.location && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {item.location}
+                        </span>
+                      )}
+
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        {item.peopleGroupName
+                          ? `${item.peopleGroupName} group`
+                          : `${item.regularAttendees?.length || 0} regular attendees`}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1">
+                        <ListChecks className="h-3.5 w-3.5" />
+                        {item.regularAgenda?.length || 0} agenda sections
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {item.occurrences} meetings
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setDeleteTarget(item);
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={`Delete ${item.title}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand-teal" />
+                </Link>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
 
@@ -475,9 +479,9 @@ const RecurringMeetingsPage = () => {
                   Cancel
                 </Button>
 
-                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl">
+                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl" disabled={saving}>
                   <Plus className="h-4 w-4" />
-                  Create Recurring Meeting
+                  {saving ? "Creating..." : "Create Recurring Meeting"}
                 </Button>
               </div>
             </form>

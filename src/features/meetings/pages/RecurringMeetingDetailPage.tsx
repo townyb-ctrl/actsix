@@ -17,61 +17,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { toast } from "sonner";
 import { friendlyErrorMessage } from "@/lib/friendlyError";
+import {
+  fromRecurringMeetingRow,
+  generateMinutesFromAgenda,
+  type AgendaSection,
+  type RecurringMeeting,
+} from "@/features/meetings/lib/recurringMeetings";
 
-type AgendaPoint = {
-  text: string;
-};
-
-type AgendaSection = {
-  heading: string;
-  points: AgendaPoint[];
-};
-
-type RecurringMeeting = {
-  id: string;
-  title: string;
-  frequency: "Weekly" | "Monthly";
-  startDate: string;
-  meetingTime: string;
-  location: string;
-  occurrences: number;
-  regularAttendees?: string[];
-  regularAgenda?: AgendaSection[];
-  peopleGroupId?: string;
-  peopleGroupName?: string;
-  peopleGroupMemberIds?: string[];
-};
-
-type CreatedMeetingMap = Record<string, string>;
-
-const STORAGE_KEY = "actsix_recurring_meetings";
-const CREATED_KEY = "actsix_recurring_meeting_created_map";
-
-const loadRecurringMeetings = (): RecurringMeeting[] => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const saveRecurringMeetings = (items: RecurringMeeting[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-};
-
-const loadCreatedMap = (): CreatedMeetingMap => {
-  try {
-    return JSON.parse(localStorage.getItem(CREATED_KEY) || "{}");
-  } catch {
-    return {};
-  }
-};
-
-const saveCreatedMap = (map: CreatedMeetingMap) => {
-  localStorage.setItem(CREATED_KEY, JSON.stringify(map));
-};
+type CreatedMeetingMap = Record<number, string>;
 
 const formatDate = (date?: string) => {
   if (!date) return "No date";
@@ -96,99 +52,83 @@ const toDateInputValue = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const generateMinutesFromAgenda = (agenda: AgendaSection[] = []) => {
-  return agenda
-    .filter((section) => section.heading.trim() || section.points.length)
-    .map((section, sectionIndex) => {
-      const sectionNumber = sectionIndex + 1;
-      const title = (section.heading || "Untitled Section").toUpperCase();
-
-      const points = section.points
-        .filter((point) => point.text.trim())
-        .map((point, pointIndex) => {
-          return `${sectionNumber}.${pointIndex + 1} ${point.text}\n\nNotes:\nDecisions:\n`;
-        })
-        .join("\n");
-
-      return `${sectionNumber}. ${title}\n\n${points}`;
-    })
-    .join("\n\n");
-};
-
 const RecurringMeetingDetailPage = () => {
   const { seriesId } = useParams();
   const { user } = useAuth();
+  const { workspace } = useCurrentWorkspace();
 
   const [series, setSeries] = useState<RecurringMeeting | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [createdMap, setCreatedMap] = useState<CreatedMeetingMap>({});
+  const [creatingOccurrence, setCreatingOccurrence] = useState<string | null>(null);
 
   const [attendeeInput, setAttendeeInput] = useState("");
   const [attendeesOpen, setAttendeesOpen] = useState(false);
   const [agendaDraft, setAgendaDraft] = useState<AgendaSection[]>([]);
   const [agendaOpen, setAgendaOpen] = useState(false);
 
+  const load = async () => {
+    if (!seriesId) return;
+
+    setLoading(true);
+
+    const [{ data: seriesRow, error: seriesError }, { data: occurrenceRows, error: occurrenceError }] =
+      await Promise.all([
+        (supabase as any).from("recurring_meeting_series").select("*").eq("id", seriesId).maybeSingle(),
+        (supabase as any)
+          .from("recurring_meeting_occurrences")
+          .select("occurrence_index, meeting_id")
+          .eq("series_id", seriesId),
+      ]);
+
+    if (seriesError) toast.error(friendlyErrorMessage(seriesError));
+    if (occurrenceError) toast.error(friendlyErrorMessage(occurrenceError));
+
+    if (!seriesRow) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+
+    const foundSeries = fromRecurringMeetingRow(seriesRow);
+
+    setSeries(foundSeries);
+    setAgendaDraft(
+      foundSeries.regularAgenda.length ? foundSeries.regularAgenda : [{ heading: "", points: [{ text: "" }] }]
+    );
+
+    const map: CreatedMeetingMap = {};
+    (occurrenceRows || []).forEach((row: any) => {
+      map[row.occurrence_index] = row.meeting_id;
+    });
+    setCreatedMap(map);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const syncRecurringMeetingState = async () => {
-      const items = loadRecurringMeetings();
-      const foundSeries = items.find((item) => item.id === seriesId) ?? null;
-
-      setSeries(foundSeries);
-      setAgendaDraft(
-        foundSeries?.regularAgenda?.length
-          ? foundSeries.regularAgenda
-          : [{ heading: "", points: [{ text: "" }] }]
-      );
-
-      const storedMap = loadCreatedMap();
-
-      if (!foundSeries) {
-        setCreatedMap(storedMap);
-        return;
-      }
-
-      const seriesEntries = Object.entries(storedMap).filter(([key]) =>
-        key.startsWith(`${foundSeries.id}-`)
-      );
-
-      const meetingIds = seriesEntries.map(([, meetingId]) => meetingId).filter(Boolean);
-
-      if (!meetingIds.length) {
-        setCreatedMap(storedMap);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("meetings")
-        .select("id")
-        .in("id", meetingIds);
-
-      if (error) {
-        setCreatedMap(storedMap);
-        return;
-      }
-
-      const existingIds = new Set((data || []).map((meeting) => meeting.id));
-      const cleanedMap = { ...storedMap };
-
-      seriesEntries.forEach(([key, meetingId]) => {
-        if (!existingIds.has(meetingId)) {
-          delete cleanedMap[key];
-        }
-      });
-
-      saveCreatedMap(cleanedMap);
-      setCreatedMap(cleanedMap);
-    };
-
-    syncRecurringMeetingState();
+    load();
   }, [seriesId]);
 
-  const saveSeries = (updatedSeries: RecurringMeeting) => {
-    const items = loadRecurringMeetings();
-    const nextItems = items.map((item) => (item.id === updatedSeries.id ? updatedSeries : item));
+  const saveSeries = async (patch: Partial<Pick<RecurringMeeting, "regularAttendees" | "regularAgenda">>) => {
+    if (!series) return;
 
-    saveRecurringMeetings(nextItems);
-    setSeries(updatedSeries);
+    const nextSeries = { ...series, ...patch };
+    setSeries(nextSeries);
+
+    const dbPatch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (patch.regularAttendees) dbPatch.regular_attendees = patch.regularAttendees;
+    if (patch.regularAgenda) dbPatch.regular_agenda = patch.regularAgenda;
+
+    const { error } = await (supabase as any)
+      .from("recurring_meeting_series")
+      .update(dbPatch)
+      .eq("id", series.id);
+
+    if (error) {
+      toast.error(friendlyErrorMessage(error));
+      setSeries(series);
+    }
   };
 
   const occurrences = useMemo(() => {
@@ -203,7 +143,7 @@ const RecurringMeetingDetailPage = () => {
           : addMonths(start, index);
 
       return {
-        key: `${series.id}-${index}`,
+        index,
         number: index + 1,
         date: toDateInputValue(date),
       };
@@ -223,11 +163,7 @@ const RecurringMeetingDetailPage = () => {
       return;
     }
 
-    saveSeries({
-      ...series,
-      regularAttendees: [...attendees, value],
-    });
-
+    saveSeries({ regularAttendees: [...attendees, value] });
     setAttendeeInput("");
   };
 
@@ -235,7 +171,6 @@ const RecurringMeetingDetailPage = () => {
     if (!series) return;
 
     saveSeries({
-      ...series,
       regularAttendees: (series.regularAttendees || []).filter((attendee) => attendee !== name),
     });
   };
@@ -244,9 +179,7 @@ const RecurringMeetingDetailPage = () => {
     if (!series) return;
 
     setAgendaDraft(
-      series.regularAgenda?.length
-        ? series.regularAgenda
-        : [{ heading: "", points: [{ text: "" }] }]
+      series.regularAgenda.length ? series.regularAgenda : [{ heading: "", points: [{ text: "" }] }]
     );
     setAgendaOpen(true);
   };
@@ -314,17 +247,13 @@ const RecurringMeetingDetailPage = () => {
       }))
       .filter((section) => section.heading || section.points.length);
 
-    saveSeries({
-      ...series,
-      regularAgenda: cleanedAgenda,
-    });
-
+    saveSeries({ regularAgenda: cleanedAgenda });
     setAgendaOpen(false);
     toast.success("Regular agenda saved");
   };
 
-  const createMeetingFromOccurrence = async (occurrence: { key: string; number: number; date: string }) => {
-    if (!series) {
+  const createMeetingFromOccurrence = async (occurrence: { index: number; number: number; date: string }) => {
+    if (!series || !workspace) {
       toast.error("Recurring meeting not loaded yet.");
       return;
     }
@@ -333,6 +262,8 @@ const RecurringMeetingDetailPage = () => {
       toast.error("You need to be signed in to create a meeting.");
       return;
     }
+
+    setCreatingOccurrence(`${occurrence.index}`);
 
     const regularAgenda = series.regularAgenda || [];
     const notes = generateMinutesFromAgenda(regularAgenda);
@@ -365,6 +296,7 @@ const RecurringMeetingDetailPage = () => {
     if (error) {
       console.error("Create recurring meeting occurrence failed:", error);
       toast.error(friendlyErrorMessage(error, "Could not create meeting."));
+      setCreatingOccurrence(null);
       return;
     }
 
@@ -372,6 +304,7 @@ const RecurringMeetingDetailPage = () => {
 
     if (!meetingId) {
       toast.error("Meeting was created, but no meeting ID was returned.");
+      setCreatingOccurrence(null);
       return;
     }
 
@@ -390,18 +323,40 @@ const RecurringMeetingDetailPage = () => {
       }
     }
 
-    const nextMap = {
-      ...createdMap,
-      [occurrence.key]: meetingId,
-    };
+    const { error: occurrenceError } = await (supabase as any).from("recurring_meeting_occurrences").insert({
+      series_id: series.id,
+      workspace_id: workspace.id,
+      user_id: user.id,
+      occurrence_index: occurrence.index,
+      meeting_id: meetingId,
+    });
 
-    setCreatedMap(nextMap);
-    saveCreatedMap(nextMap);
+    setCreatingOccurrence(null);
+
+    if (occurrenceError) {
+      console.error("Record recurring occurrence failed:", occurrenceError);
+      toast.error("Meeting created, but couldn't be marked as generated. It may offer to create again.");
+      return;
+    }
+
+    setCreatedMap((previous) => ({ ...previous, [occurrence.index]: meetingId }));
     toast.success("Meeting created with regular attendees and agenda");
   };
 
+  if (loading) {
+    return (
+      <div>
+        <PageHeader eyebrow="Meetings" title="Recurring Meeting" />
+        <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+          <div className="actsix-loading-state" role="status">
+            Loading recurring meeting...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  if (!series) {
+  if (notFound || !series) {
     return (
       <div>
         <PageHeader
@@ -564,11 +519,11 @@ const RecurringMeetingDetailPage = () => {
 
           <div className="divide-y divide-border/70">
             {occurrences.map((occurrence) => {
-              const createdMeetingId = createdMap[occurrence.key];
+              const createdMeetingId = createdMap[occurrence.index];
 
               return (
                 <div
-                  key={occurrence.key}
+                  key={occurrence.index}
                   className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/30"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
@@ -618,9 +573,10 @@ const RecurringMeetingDetailPage = () => {
                     <Button
                       className="actsix-btn-primary min-h-10 rounded-xl"
                       onClick={() => createMeetingFromOccurrence(occurrence)}
+                      disabled={creatingOccurrence === `${occurrence.index}`}
                     >
                       <Plus className="h-4 w-4" />
-                      Create Meeting
+                      {creatingOccurrence === `${occurrence.index}` ? "Creating..." : "Create Meeting"}
                     </Button>
                   )}
                 </div>
