@@ -31,9 +31,9 @@ type ProjectDetailHeroProps = {
   onDeleteProject?: () => void;
 };
 
-// Same dimensions as the Projects grid card upload, so one image works for
-// both - the banner strip just crops it tighter top-to-bottom.
-const RECOMMENDED_BANNER_SIZE = "1600 × 600px";
+// Short strip, not the grid card's aspect ratio - the banner needs its own,
+// narrower image rather than reusing the cover upload.
+const RECOMMENDED_BANNER_SIZE = "1600 × 130px";
 
 const formatProjectDate = (value?: string | null) => {
   if (!value) return "";
@@ -50,8 +50,8 @@ const formatProjectDate = (value?: string | null) => {
 
 /**
  * This banner is its own upload, separate from the cover shown on the
- * Projects grid card, but recommended at the same dimensions so one image
- * can be reused for both - the short banner strip just crops it tighter.
+ * Projects grid card - the hero strip is much shorter, so it needs its own
+ * recommended size rather than reusing the cover's.
  * The name lives in the PageHeader above this, so the hero deliberately
  * doesn't repeat it.
  */

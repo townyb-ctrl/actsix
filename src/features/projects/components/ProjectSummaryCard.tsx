@@ -16,6 +16,9 @@ type SummaryStats = {
   openTasks: unknown[];
 };
 
+// Matches the aspect-[16/6] box below, so an uploaded cover fills it without cropping surprises.
+const RECOMMENDED_COVER_SIZE = "1600 × 600px";
+
 type ProjectSummaryCardProps = {
   project: SummaryProject;
   stats?: SummaryStats;
@@ -60,9 +63,14 @@ const ProjectSummaryCard = ({
             />
           ) : (
             <div
-              className={`flex h-full w-full items-center justify-center ${projectIconClass(index)}`}
+              className={`flex h-full w-full flex-col items-center justify-center gap-0.5 ${projectIconClass(index)}`}
             >
               <FolderKanban className="h-8 w-8 opacity-70" />
+              {onChangeCover && (
+                <span className="text-[10px] font-semibold uppercase tracking-wide opacity-60">
+                  Recommended {RECOMMENDED_COVER_SIZE}
+                </span>
+              )}
             </div>
           )}
 

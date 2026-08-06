@@ -362,18 +362,18 @@ const ProjectDetailPage = () => {
     );
   }, [people, project]);
 
-  const assignableProjectPeople = useMemo(() => {
-    const collaboratorPeople = collaborators
-      .map((collaborator) => collaborator.people)
-      .filter(Boolean) as PeopleSearchPerson[];
+  const collaboratorPeople = useMemo(() => {
+    return collaborators.map((collaborator) => collaborator.people).filter(Boolean) as PeopleSearchPerson[];
+  }, [collaborators]);
 
+  const assignableProjectPeople = useMemo(() => {
     if (!projectOwner) return collaboratorPeople;
 
     return [
       projectOwner,
       ...collaboratorPeople.filter((person) => person.id !== projectOwner.id),
     ];
-  }, [collaborators, projectOwner]);
+  }, [collaboratorPeople, projectOwner]);
 
   const collaboratorPeopleById = useMemo(() => {
     return new Map(assignableProjectPeople.map((person) => [person.id, person]));
@@ -1194,7 +1194,7 @@ const ProjectDetailPage = () => {
       <ProjectSectionEditorModal
         section={editingSection}
         saving={savingSection}
-        assignablePeople={assignableProjectPeople}
+        assignablePeople={collaboratorPeople}
         onChange={setEditingSection}
         onClose={() => setEditingSection(null)}
         onSave={saveSection}
