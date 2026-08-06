@@ -213,7 +213,7 @@ export default function AppLayout() {
     <SidebarProvider>
       <a
         href="#main-content"
-        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-[1000] focus-visible:rounded-lg focus-visible:bg-brand-teal focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-bold focus-visible:text-white focus-visible:shadow-lg"
+        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-[var(--z-skip-link)] focus-visible:rounded-lg focus-visible:bg-brand-teal focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-bold focus-visible:text-white focus-visible:shadow-lg"
       >
         Skip to content
       </a>
@@ -281,7 +281,7 @@ export default function AppLayout() {
                 </button>
 
                 {profileMenuOpen && (
-                  <div className="absolute right-0 top-12 z-[1000] w-56 overflow-hidden rounded-xl border border-border/70 bg-background text-foreground shadow-md">
+                  <div className="absolute right-0 top-12 z-[var(--z-popover)] w-56 overflow-hidden rounded-xl border border-border/70 bg-background text-foreground shadow-md">
                     <button
                       type="button"
                       className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-brand-teal/5 hover:text-brand-teal"

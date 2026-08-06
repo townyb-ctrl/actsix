@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Edit3, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { useConfirm } from "@/hooks/useConfirm";
 import { syncProjectStatsById } from "@/lib/syncProjectStats";
 import { createProject, defaultProjectPayload } from "@/features/projects/api/projectsApi";
 import InboxProcessDialog, {
@@ -43,6 +45,7 @@ const InboxPage = () => {
   const [loadingItems, setLoadingItems] = useState(true);
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const { confirmAction, confirmDialog } = useConfirm();
 
   const load = useCallback(async () => {
     if (!user) {
@@ -84,7 +87,7 @@ const InboxPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -129,7 +132,7 @@ const InboxPage = () => {
     setSaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return false;
     }
 
@@ -142,7 +145,7 @@ const InboxPage = () => {
     const { error } = await supabase.from("inbox_items").delete().eq("id", id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return false;
     }
 
@@ -150,7 +153,7 @@ const InboxPage = () => {
   };
 
   const quickDelete = async (item: InboxItem) => {
-    const confirmed = window.confirm(`Delete "${item.title}"? This can't be undone.`);
+    const confirmed = await confirmAction(`Delete "${item.title}"? This can't be undone.`);
     if (!confirmed) return;
 
     const deleted = await removeInboxItem(item.id);
@@ -360,6 +363,8 @@ const InboxPage = () => {
           />
         )}
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 };

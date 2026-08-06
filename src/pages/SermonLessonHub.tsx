@@ -620,14 +620,14 @@ export default function SermonLessonHub() {
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                   placeholder="Title"
-                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background lg:col-span-2"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
                 <select
                   value={form.status}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, status: event.target.value as HubItemStatus }))
                   }
-                  className="h-10 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-brand-teal/25"
+                  className="font-bold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 >
                   <option value="idea">Idea</option>
                   <option value="drafting">Drafting</option>
@@ -642,25 +642,25 @@ export default function SermonLessonHub() {
                   value={form.series}
                   onChange={(event) => setForm((current) => ({ ...current, series: event.target.value }))}
                   placeholder="Series"
-                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
                 <Input
                   value={form.scripture}
                   onChange={(event) => setForm((current) => ({ ...current, scripture: event.target.value }))}
                   placeholder="Scripture"
-                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
                 <Input
                   value={form.speaker}
                   onChange={(event) => setForm((current) => ({ ...current, speaker: event.target.value }))}
                   placeholder="Speaker"
-                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
                 <Input
                   type="date"
                   value={form.scheduledDate}
                   onChange={(event) => setForm((current) => ({ ...current, scheduledDate: event.target.value }))}
-                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -669,13 +669,13 @@ export default function SermonLessonHub() {
                   value={form.audience}
                   onChange={(event) => setForm((current) => ({ ...current, audience: event.target.value }))}
                   placeholder="Audience"
-                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
                 <Input
                   value={form.keyTakeaway}
                   onChange={(event) => setForm((current) => ({ ...current, keyTakeaway: event.target.value }))}
                   placeholder="Key takeaway"
-                  className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -1116,7 +1116,7 @@ const ReferenceEditor = ({
       <select
         value={reference.type}
         onChange={(event) => onChange({ type: event.target.value as ReferenceType })}
-        className="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm font-bold outline-none"
+        className="font-bold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
       >
         <option value="commentary">Commentary</option>
         <option value="sermon">Sermon</option>
@@ -1124,15 +1124,15 @@ const ReferenceEditor = ({
         <option value="article">Article</option>
         <option value="other">Other</option>
       </select>
-      <Input value={reference.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="Title" className="h-10 rounded-xl bg-background" />
-      <Input value={reference.author} onChange={(event) => onChange({ author: event.target.value })} placeholder="Author / source" className="h-10 rounded-xl bg-background" />
+      <Input value={reference.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="Title" className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
+      <Input value={reference.author} onChange={(event) => onChange({ author: event.target.value })} placeholder="Author / source" className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
       <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-destructive hover:bg-destructive/10" onClick={onRemove}>
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>
     <div className="mt-2 grid gap-2 md:grid-cols-2">
-      <Input value={reference.url} onChange={(event) => onChange({ url: event.target.value })} placeholder="URL" className="h-10 rounded-xl bg-background" />
-      <Input value={reference.notes} onChange={(event) => onChange({ notes: event.target.value })} placeholder="Notes" className="h-10 rounded-xl bg-background" />
+      <Input value={reference.url} onChange={(event) => onChange({ url: event.target.value })} placeholder="URL" className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
+      <Input value={reference.notes} onChange={(event) => onChange({ notes: event.target.value })} placeholder="Notes" className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
     </div>
   </Card>
 );
@@ -1155,18 +1155,18 @@ const MediaEditor = ({
           <select
             value={media.type}
             onChange={(event) => onChange({ type: event.target.value as MediaType })}
-            className="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm font-bold outline-none"
+            className="font-bold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
           >
             <option value="image">Image</option>
             <option value="youtube">YouTube</option>
             <option value="link">Link</option>
           </select>
-          <Input value={media.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="Title" className="h-10 rounded-xl bg-background" />
+          <Input value={media.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="Title" className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
           <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-destructive hover:bg-destructive/10" onClick={onRemove}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-        <Input value={media.url} onChange={(event) => onChange({ url: event.target.value })} placeholder="URL" className="h-10 rounded-xl bg-background" />
+        <Input value={media.url} onChange={(event) => onChange({ url: event.target.value })} placeholder="URL" className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
       </div>
       {media.type === "image" && media.url && (
         <img src={media.url} alt={media.title || "Teaching media"} className="max-h-52 w-full border-t border-border/60 object-cover" />

@@ -26,6 +26,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -322,19 +323,19 @@ const ServicePlannerTeamDetailPage = () => {
       ]);
 
     if (teamError) {
-      toast.error(teamError.message);
+      toast.error(friendlyErrorMessage(teamError));
       setLoading(false);
       return;
     }
 
     if (memberError) {
-      toast.error(memberError.message);
+      toast.error(friendlyErrorMessage(memberError));
       setLoading(false);
       return;
     }
 
     if (peopleError) {
-      toast.error(peopleError.message);
+      toast.error(friendlyErrorMessage(peopleError));
       setLoading(false);
       return;
     }
@@ -365,7 +366,7 @@ const ServicePlannerTeamDetailPage = () => {
       .order("sort_order", { ascending: true });
 
     if (rolesError) {
-      toast.error(rolesError.message);
+      toast.error(friendlyErrorMessage(rolesError));
       setLoading(false);
       return;
     }
@@ -389,7 +390,7 @@ const ServicePlannerTeamDetailPage = () => {
         );
 
       if (insertRolesError) {
-        toast.error(insertRolesError.message);
+        toast.error(friendlyErrorMessage(insertRolesError));
         setLoading(false);
         return;
       }
@@ -403,7 +404,7 @@ const ServicePlannerTeamDetailPage = () => {
       .order("sort_order", { ascending: true });
 
     if (refreshedRolesError) {
-      toast.error(refreshedRolesError.message);
+      toast.error(friendlyErrorMessage(refreshedRolesError));
       setLoading(false);
       return;
     }
@@ -454,7 +455,7 @@ const ServicePlannerTeamDetailPage = () => {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -505,7 +506,7 @@ const ServicePlannerTeamDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -540,7 +541,7 @@ const ServicePlannerTeamDetailPage = () => {
       .eq("user_id", team.user_id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -594,7 +595,7 @@ const ServicePlannerTeamDetailPage = () => {
       .single();
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -643,7 +644,7 @@ const ServicePlannerTeamDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -664,7 +665,7 @@ const ServicePlannerTeamDetailPage = () => {
       .eq("id", member.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -700,7 +701,7 @@ const ServicePlannerTeamDetailPage = () => {
     const error = results.find((result) => result.error)?.error;
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -746,7 +747,7 @@ const ServicePlannerTeamDetailPage = () => {
     const error = results.find((result) => result.error)?.error;
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return false;
     }
 
@@ -837,7 +838,7 @@ const ServicePlannerTeamDetailPage = () => {
       .single();
 
     if (createPersonError) {
-      toast.error(createPersonError.message);
+      toast.error(friendlyErrorMessage(createPersonError));
       return;
     }
 
@@ -848,7 +849,7 @@ const ServicePlannerTeamDetailPage = () => {
       .eq("user_id", member.user_id);
 
     if (linkMemberError) {
-      toast.error(linkMemberError.message);
+      toast.error(friendlyErrorMessage(linkMemberError));
       return;
     }
 
@@ -860,7 +861,7 @@ const ServicePlannerTeamDetailPage = () => {
       .is("person_id", null);
 
     if (linkAssignmentsError) {
-      toast.error(linkAssignmentsError.message);
+      toast.error(friendlyErrorMessage(linkAssignmentsError));
       return;
     }
 
@@ -1164,7 +1165,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={editTeamName}
                     onChange={(event) => setEditTeamName(event.target.value)}
                     placeholder="Worship Team"
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -1174,7 +1175,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={editTeamDescription}
                     onChange={(event) => setEditTeamDescription(event.target.value)}
                     placeholder="People who serve in worship services"
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -1184,7 +1185,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={editTeamWhatsAppGroupUrl}
                     onChange={(event) => setEditTeamWhatsAppGroupUrl(event.target.value)}
                     placeholder="https://chat.whatsapp.com/..."
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                   <p className="mt-2 text-xs text-muted-foreground">
                     Paste the invite link for this team's existing WhatsApp group.
@@ -1243,7 +1244,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={newRoleName}
                     onChange={(event) => setNewRoleName(event.target.value)}
                     placeholder="Vocals"
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -1328,7 +1329,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={roleName}
                     onChange={(event) => setRoleName(event.target.value)}
                     placeholder="Worship Leader"
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -1339,7 +1340,7 @@ const ServicePlannerTeamDetailPage = () => {
                     value={memberNotes}
                     onChange={(event) => setMemberNotes(event.target.value)}
                     placeholder="Availability, instrument, serving notes..."
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 

@@ -22,6 +22,7 @@ import { personalNextActionFilter } from "@/lib/taskVisibility";
 import { toDateKey } from "@/features/dashboard/utils/dashboardLayoutUtils";
 import { isOverdueFollowUp, isStalledProject, type ReviewProject, type ReviewWaitingItem } from "@/features/tasks/lib/weeklyReview";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 
 type ReviewData = {
   inboxCount: number;
@@ -73,7 +74,7 @@ const WeeklyReviewPage = () => {
       inbox.error || overdue.error || projects.error || waiting.error || someday.error;
 
     if (anyError) {
-      toast.error(anyError.message);
+      toast.error(friendlyErrorMessage(anyError));
       setLoadError(anyError.message);
       setLoading(false);
       return;

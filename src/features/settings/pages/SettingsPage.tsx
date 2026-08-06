@@ -13,7 +13,7 @@ import {
   REQUIRED_MODULES,
   OPTIONAL_MODULES,
 } from "@/lib/modules";
-import { isModuleEnabled } from "@/lib/releaseMode";
+import { getReleaseLabel, isAlphaMode, isModuleEnabled } from "@/lib/releaseMode";
 
 const SettingsPage = () => {
   const { user, signOut } = useAuth();
@@ -26,7 +26,15 @@ const SettingsPage = () => {
 
   return (
     <div>
-      <PageHeader eyebrow="Settings" title="The studio" subtitle="Account and preferences." />
+      <PageHeader
+        eyebrow="Settings"
+        title="The studio"
+        subtitle={
+          isAlphaMode
+            ? `Account and preferences. Running in ${getReleaseLabel()} Mode.`
+            : "Account and preferences."
+        }
+      />
       <div className="actsix-page-body actsix-page-stack pt-5 pb-10 sm:pt-6">
         {developer && (
           <Card className="actsix-panel-soft border-brand-teal/25 bg-brand-teal/5 p-4 sm:p-5">

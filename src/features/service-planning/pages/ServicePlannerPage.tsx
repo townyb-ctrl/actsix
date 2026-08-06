@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,7 @@ const ServicePlannerPage = () => {
       .maybeSingle();
 
     if (templateError) {
-      toast.error(templateError.message);
+      toast.error(friendlyErrorMessage(templateError));
       setTemplateLoading(false);
       return;
     }
@@ -190,7 +191,7 @@ const ServicePlannerPage = () => {
         .single();
 
       if (createError) {
-        toast.error(createError.message);
+        toast.error(friendlyErrorMessage(createError));
         setTemplateLoading(false);
         return;
       }
@@ -208,7 +209,7 @@ const ServicePlannerPage = () => {
       .order("sort_order", { ascending: true });
 
     if (itemError) {
-      toast.error(itemError.message);
+      toast.error(friendlyErrorMessage(itemError));
       setTemplateLoading(false);
       return;
     }
@@ -276,7 +277,7 @@ const ServicePlannerPage = () => {
       .eq("user_id", user.id);
 
     if (deleteError) {
-      toast.error(deleteError.message);
+      toast.error(friendlyErrorMessage(deleteError));
       return;
     }
 
@@ -286,7 +287,7 @@ const ServicePlannerPage = () => {
         .insert(cleanedItems);
 
       if (insertError) {
-        toast.error(insertError.message);
+        toast.error(friendlyErrorMessage(insertError));
         return;
       }
     }
@@ -327,7 +328,7 @@ const ServicePlannerPage = () => {
         .eq("id", existingLink.id);
 
       if (error) {
-        toast.error(error.message);
+        toast.error(friendlyErrorMessage(error));
         return;
       }
 
@@ -343,7 +344,7 @@ const ServicePlannerPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -393,13 +394,13 @@ const ServicePlannerPage = () => {
       ]);
 
     if (typeError) {
-      toast.error(typeError.message);
+      toast.error(friendlyErrorMessage(typeError));
       setLoading(false);
       return;
     }
 
     if (serviceError) {
-      toast.error(serviceError.message);
+      toast.error(friendlyErrorMessage(serviceError));
       setLoading(false);
       return;
     }
@@ -419,13 +420,13 @@ const ServicePlannerPage = () => {
       ]);
 
     if (teamError) {
-      toast.error(teamError.message);
+      toast.error(friendlyErrorMessage(teamError));
       setLoading(false);
       return;
     }
 
     if (serviceTypeTeamError) {
-      toast.error(serviceTypeTeamError.message);
+      toast.error(friendlyErrorMessage(serviceTypeTeamError));
       setLoading(false);
       return;
     }
@@ -478,7 +479,7 @@ const ServicePlannerPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -521,7 +522,7 @@ const ServicePlannerPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -545,7 +546,7 @@ const ServicePlannerPage = () => {
       .eq("id", serviceType.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -566,7 +567,7 @@ const ServicePlannerPage = () => {
       .eq("id", service.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -589,7 +590,7 @@ const ServicePlannerPage = () => {
       .maybeSingle();
 
     if (templateError) {
-      toast.error(templateError.message);
+      toast.error(friendlyErrorMessage(templateError));
       setTemplateLoading(false);
       return;
     }
@@ -609,7 +610,7 @@ const ServicePlannerPage = () => {
         .single();
 
       if (createError) {
-        toast.error(createError.message);
+        toast.error(friendlyErrorMessage(createError));
         setTemplateLoading(false);
         return;
       }
@@ -627,7 +628,7 @@ const ServicePlannerPage = () => {
       .order("sort_order", { ascending: true });
 
     if (itemError) {
-      toast.error(itemError.message);
+      toast.error(friendlyErrorMessage(itemError));
       setTemplateLoading(false);
       return;
     }
@@ -695,7 +696,7 @@ const ServicePlannerPage = () => {
       .eq("user_id", user.id);
 
     if (deleteError) {
-      toast.error(deleteError.message);
+      toast.error(friendlyErrorMessage(deleteError));
       return;
     }
 
@@ -705,7 +706,7 @@ const ServicePlannerPage = () => {
         .insert(cleanedItems);
 
       if (insertError) {
-        toast.error(insertError.message);
+        toast.error(friendlyErrorMessage(insertError));
         return;
       }
     }
@@ -746,7 +747,7 @@ const ServicePlannerPage = () => {
         .eq("id", existingLink.id);
 
       if (error) {
-        toast.error(error.message);
+        toast.error(friendlyErrorMessage(error));
         return;
       }
 
@@ -762,7 +763,7 @@ const ServicePlannerPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -850,7 +851,7 @@ const ServicePlannerPage = () => {
       .maybeSingle();
 
     if (templateError) {
-      toast.error(templateError.message);
+      toast.error(friendlyErrorMessage(templateError));
       setTemplateLoading(false);
       return;
     }
@@ -870,7 +871,7 @@ const ServicePlannerPage = () => {
         .single();
 
       if (createError) {
-        toast.error(createError.message);
+        toast.error(friendlyErrorMessage(createError));
         setTemplateLoading(false);
         return;
       }
@@ -888,7 +889,7 @@ const ServicePlannerPage = () => {
       .order("sort_order", { ascending: true });
 
     if (itemError) {
-      toast.error(itemError.message);
+      toast.error(friendlyErrorMessage(itemError));
       setTemplateLoading(false);
       return;
     }
@@ -956,7 +957,7 @@ const ServicePlannerPage = () => {
       .eq("user_id", user.id);
 
     if (deleteError) {
-      toast.error(deleteError.message);
+      toast.error(friendlyErrorMessage(deleteError));
       return;
     }
 
@@ -966,7 +967,7 @@ const ServicePlannerPage = () => {
         .insert(cleanedItems);
 
       if (insertError) {
-        toast.error(insertError.message);
+        toast.error(friendlyErrorMessage(insertError));
         return;
       }
     }
@@ -1007,7 +1008,7 @@ const ServicePlannerPage = () => {
         .eq("id", existingLink.id);
 
       if (error) {
-        toast.error(error.message);
+        toast.error(friendlyErrorMessage(error));
         return;
       }
 
@@ -1023,7 +1024,7 @@ const ServicePlannerPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1399,7 +1400,7 @@ const ServicePlannerPage = () => {
                       <select
                         value={item.item_type}
                         onChange={(event) => updateTemplateItem(index, "item_type", event.target.value)}
-                        className="h-10 rounded-md border border-border/70 bg-background px-3 text-sm"
+                        className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                       >
                         <option>Song</option>
                         <option>Welcome</option>

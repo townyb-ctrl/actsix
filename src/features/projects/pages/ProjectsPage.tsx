@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import TaskEditorModal from "@/components/TaskEditorModal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
 import ProjectSummaryCard from "@/features/projects/components/ProjectSummaryCard";
 import CompletedProjectRow from "@/features/projects/components/CompletedProjectRow";
@@ -29,6 +30,7 @@ import { isProjectComplete, needsAction } from "@/features/projects/lib/projectS
 import { uploadProjectCover } from "@/features/projects/lib/uploadProjectCover";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import {
   addProjectCollaborators,
   createProject,
@@ -153,6 +155,7 @@ const ProjectsPage = () => {
     Record<string, TeamMember[]>
   >({});
   const [coverTargetProject, setCoverTargetProject] = useState<Project | null>(null);
+  const [pendingDeleteProject, setPendingDeleteProject] = useState<Project | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
 
   const openCoverPicker = (project: Project) => {
@@ -188,7 +191,7 @@ const ProjectsPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -379,19 +382,19 @@ const ProjectsPage = () => {
       ]);
 
     if (projectError) {
-      toast.error(projectError.message);
+      toast.error(friendlyErrorMessage(projectError));
       setLoading(false);
       return;
     }
 
     if (taskError) {
-      toast.error(taskError.message);
+      toast.error(friendlyErrorMessage(taskError));
       setLoading(false);
       return;
     }
 
     if (peopleError) {
-      toast.error(peopleError.message);
+      toast.error(friendlyErrorMessage(peopleError));
       setLoading(false);
       return;
     }
@@ -448,7 +451,7 @@ const ProjectsPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -468,7 +471,7 @@ const ProjectsPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -483,7 +486,7 @@ const ProjectsPage = () => {
     const { error } = await deleteProjectActionTask(id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -492,17 +495,17 @@ const ProjectsPage = () => {
     load();
   };
 
-  const removeProject = async (project: Project) => {
-    const confirmed = window.confirm(
-      `Delete "${project.name}"? Its sections, activity history, and links to tasks will be removed. This can't be undone.`
-    );
+  const requestDeleteProject = (project: Project) => setPendingDeleteProject(project);
 
-    if (!confirmed) return;
+  const confirmDeleteProject = async () => {
+    const project = pendingDeleteProject;
+    if (!project) return;
+    setPendingDeleteProject(null);
 
     const { error } = await deleteProject(project.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -524,7 +527,7 @@ const ProjectsPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -565,7 +568,7 @@ const ProjectsPage = () => {
     setSavingTask(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -680,9 +683,7 @@ const ProjectsPage = () => {
       setNewProjectCollaboratorIds([]);
       await load();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Could not update project";
-      toast.error(message);
+      toast.error(friendlyErrorMessage(error as { message?: string }, "Could not update project"));
     } finally {
       setSavingProject(false);
     }
@@ -790,12 +791,13 @@ const ProjectsPage = () => {
 
           <div className="ml-auto flex items-center gap-2">
             <div className="actsix-search-field w-40 lg:w-52">
-              <Search className="actsix-search-icon" />
+              <Search className="actsix-search-icon actsix-search-icon-sm" />
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search projects..."
-                className="actsix-search-input"
+                aria-label="Search projects"
+                className="actsix-search-input actsix-search-input-sm"
               />
             </div>
 
@@ -924,11 +926,22 @@ const ProjectsPage = () => {
         onDelete={
           editingProject
             ? () => {
-                removeProject(editingProject);
+                requestDeleteProject(editingProject);
                 setEditingProject(null);
               }
             : undefined
         }
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDeleteProject)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteProject(null);
+        }}
+        title={`Delete "${pendingDeleteProject?.name}"?`}
+        description="Its sections, activity history, and links to tasks will be removed. This can't be undone."
+        confirmLabel="Delete Project"
+        onConfirm={confirmDeleteProject}
       />
 
       <TaskEditorModal

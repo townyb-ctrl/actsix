@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { KeyRound, LogIn, UsersRound } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
@@ -46,7 +47,7 @@ const WorkspaceSetupPage = () => {
     setBusy(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -111,7 +112,7 @@ const WorkspaceSetupPage = () => {
                   id="joinCode"
                   value={ALPHA_JOIN_CODE}
                   readOnly
-                  className="h-11 rounded-xl border-border/70 bg-background font-bold tracking-wide text-muted-foreground shadow-none"
+                  className="font-bold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -124,7 +125,7 @@ const WorkspaceSetupPage = () => {
                   placeholder="Enter the phrase Brandon gave you"
                   required
                   autoFocus
-                  className="h-11 rounded-xl border-border/70 bg-background shadow-none"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 

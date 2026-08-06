@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Edit3, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type Cfg = {
   table: "inbox_items" | "waiting_items" | "someday_items";
@@ -33,6 +35,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { confirmAction, confirmDialog } = useConfirm();
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const fieldId = useId();
@@ -66,7 +69,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
       setItems([]);
       setLoading(false);
       setLoadError(error.message);
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -83,7 +86,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
         setProjects([]);
         setLoading(false);
         setLoadError(projectError.message);
-        toast.error(projectError.message);
+        toast.error(friendlyErrorMessage(projectError));
         return;
       }
 
@@ -125,7 +128,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
     const { error } = await supabase.from(cfg.table).insert(payload);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -139,7 +142,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
     if (!user) return;
 
     const itemLabel = items.find((entry) => entry.id === id)?.[cfg.titleCol] || "this item";
-    const confirmed = window.confirm(`Delete "${itemLabel}"? This can't be undone.`);
+    const confirmed = await confirmAction(`Delete "${itemLabel}"? This can't be undone.`);
     if (!confirmed) return;
 
     const { error } = await supabase
@@ -149,7 +152,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -186,7 +189,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
     setSaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -434,7 +437,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
                           project: event.target.value,
                         })
                       }
-                      className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                      className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                     >
                       <option value="">No project</option>
                       {projects.map((project) => (
@@ -520,6 +523,8 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
           </DialogContent>
         )}
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 };

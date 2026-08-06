@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Edit3, Folder, Plus, Save, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { useConfirm } from "@/hooks/useConfirm";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,7 @@ const PeopleGroupsPage = () => {
   const [groups, setGroups] = useState<PeopleGroup[]>([]);
   const [members, setMembers] = useState<PeopleGroupMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const { confirmAction, confirmDialog } = useConfirm();
 
   const [selectedFolderId, setSelectedFolderId] = useState("all");
   const [newFolderName, setNewFolderName] = useState("");
@@ -93,9 +96,9 @@ const PeopleGroupsPage = () => {
         .order("created_at", { ascending: true }),
     ]);
 
-    if (folderError) toast.error(folderError.message);
-    if (groupError) toast.error(groupError.message);
-    if (memberError) toast.error(memberError.message);
+    if (folderError) toast.error(friendlyErrorMessage(folderError));
+    if (groupError) toast.error(friendlyErrorMessage(groupError));
+    if (memberError) toast.error(friendlyErrorMessage(memberError));
 
     setFolders(folderData || []);
     setGroups(groupData || []);
@@ -149,7 +152,7 @@ const PeopleGroupsPage = () => {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -171,7 +174,7 @@ const PeopleGroupsPage = () => {
       });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -195,7 +198,7 @@ const PeopleGroupsPage = () => {
       });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -208,7 +211,7 @@ const PeopleGroupsPage = () => {
   };
 
   const deleteGroup = async (group: PeopleGroup) => {
-    const confirmed = window.confirm(`Delete "${group.name}"? This will remove the group list, not the People profiles.`);
+    const confirmed = await confirmAction(`Delete "${group.name}"? This will remove the group list, not the People profiles.`);
     if (!confirmed) return;
 
     const { error } = await (supabase as any)
@@ -218,7 +221,7 @@ const PeopleGroupsPage = () => {
       .eq("user_id", user?.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -227,7 +230,7 @@ const PeopleGroupsPage = () => {
   };
 
   const deleteFolder = async (folderItem: PeopleGroupFolder) => {
-    const confirmed = window.confirm(`Delete folder "${folderItem.name}"? Groups inside it will become uncategorized.`);
+    const confirmed = await confirmAction(`Delete folder "${folderItem.name}"? Groups inside it will become uncategorized.`);
     if (!confirmed) return;
 
     const { error } = await (supabase as any)
@@ -237,7 +240,7 @@ const PeopleGroupsPage = () => {
       .eq("user_id", user?.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -383,7 +386,7 @@ const PeopleGroupsPage = () => {
                   value={newFolderName}
                   onChange={(event) => setNewFolderName(event.target.value)}
                   placeholder="New folder..."
-                  className="h-9 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
                 <Button type="submit" size="icon" className="h-9 w-9 shrink-0 rounded-[var(--radius-control)] bg-brand-sage text-white hover:bg-brand-sage/90">
                   <Plus className="h-4 w-4" />
@@ -525,7 +528,7 @@ const PeopleGroupsPage = () => {
                   value={newGroupName}
                   onChange={(event) => setNewGroupName(event.target.value)}
                   placeholder="Brandon’s Bible Study"
-                  className="mt-1.5 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="mt-1.5 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   autoFocus
                 />
               </div>
@@ -535,7 +538,7 @@ const PeopleGroupsPage = () => {
                 <select
                   value={newGroupFolderId}
                   onChange={(event) => setNewGroupFolderId(event.target.value)}
-                  className="mt-1.5 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-1.5 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 >
                   <option value="">Uncategorized</option>
                   {folders.map((folderItem) => (
@@ -552,7 +555,7 @@ const PeopleGroupsPage = () => {
                   value={newGroupDescription}
                   onChange={(event) => setNewGroupDescription(event.target.value)}
                   placeholder="Optional notes..."
-                  className="mt-1.5 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="mt-1.5 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -578,6 +581,8 @@ const PeopleGroupsPage = () => {
             </form>
         </DialogContent>
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 };

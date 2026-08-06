@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -176,7 +177,7 @@ export default function RemindersPage() {
     }
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -321,7 +322,7 @@ export default function RemindersPage() {
       await loadReminders();
       toast.success(editingReminder ? "Reminder updated" : "Reminder added");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save reminder.");
+      toast.error(friendlyErrorMessage(error as { message?: string }, "Could not save reminder."));
     } finally {
       setSaving(false);
     }
@@ -340,7 +341,7 @@ export default function RemindersPage() {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -369,7 +370,7 @@ export default function RemindersPage() {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -594,7 +595,7 @@ export default function RemindersPage() {
                 setForm((current) => ({ ...current, title: event.target.value }))
               }
               placeholder="Funeral at church"
-              className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+              className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               autoFocus
             />
           </div>
@@ -608,7 +609,7 @@ export default function RemindersPage() {
                 onChange={(event) =>
                   setForm((current) => ({ ...current, remindAt: event.target.value }))
                 }
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
 
@@ -621,7 +622,7 @@ export default function RemindersPage() {
                   setForm((current) => ({ ...current, endAt: event.target.value }))
                 }
                 placeholder={oneHourLaterInput()}
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
           </div>
@@ -635,7 +636,7 @@ export default function RemindersPage() {
                   setForm((current) => ({ ...current, location: event.target.value }))
                 }
                 placeholder="Church"
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
 
@@ -647,7 +648,7 @@ export default function RemindersPage() {
                   setForm((current) => ({ ...current, category: event.target.value }))
                 }
                 placeholder="Pastoral Care"
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
           </div>

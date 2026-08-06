@@ -57,7 +57,7 @@ export const uploadProjectCover = async ({
       return { error: `Add the ${BUCKET} storage policies in Supabase, then upload again.` };
     }
 
-    return { error: uploadError.message };
+    return { error: "Couldn't upload that image. Try again." };
   }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);

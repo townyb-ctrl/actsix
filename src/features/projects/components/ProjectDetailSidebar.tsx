@@ -106,7 +106,7 @@ const ProjectDetailSidebar = ({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                  className="h-11 w-11 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                   title={`Remove ${collaborator.person?.display_name || "person"}`}
                   aria-label={`Remove ${collaborator.person?.display_name || "person"} from this project`}
                   onClick={() => onRemoveCollaborator(collaborator.id)}

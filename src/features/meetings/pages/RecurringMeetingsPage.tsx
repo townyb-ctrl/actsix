@@ -396,7 +396,7 @@ const RecurringMeetingsPage = () => {
                   <select
                     value={frequency}
                     onChange={(event) => setFrequency(event.target.value as "Weekly" | "Monthly")}
-                    className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option>Weekly</option>
                     <option>Monthly</option>
@@ -438,7 +438,7 @@ const RecurringMeetingsPage = () => {
                   <select
                     value={selectedPeopleGroupId}
                     onChange={(event) => setSelectedPeopleGroupId(event.target.value)}
-                    className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="">No linked group</option>
                     {peopleGroupOptions.map((group) => (

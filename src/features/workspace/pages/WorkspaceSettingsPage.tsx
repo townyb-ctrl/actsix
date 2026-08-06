@@ -1,6 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Copy, KeyRound, LogOut, ShieldCheck, UsersRound } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { useConfirm } from "@/hooks/useConfirm";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
@@ -39,6 +41,7 @@ const WorkspaceSettingsPage = () => {
   const [leaving, setLeaving] = useState(false);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
+  const { confirmAction, confirmDialog } = useConfirm();
 
   const joinCode = workspace?.join_code || "";
 
@@ -66,7 +69,7 @@ const WorkspaceSettingsPage = () => {
     if (error) {
       setMembersError("Could not load workspace members right now.");
       setMembersLoading(false);
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -105,7 +108,7 @@ const WorkspaceSettingsPage = () => {
     setBusy(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -120,7 +123,7 @@ const WorkspaceSettingsPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -131,7 +134,7 @@ const WorkspaceSettingsPage = () => {
   const handleLeaveWorkspace = async () => {
     if (!workspace) return;
 
-    const confirmed = window.confirm(
+    const confirmed = await confirmAction(
       `Leave ${workspace.name}? You will lose access to this workspace unless an admin invites you again.`
     );
 
@@ -144,7 +147,7 @@ const WorkspaceSettingsPage = () => {
     setLeaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -398,7 +401,7 @@ const WorkspaceSettingsPage = () => {
                   <select
                     value={member.role}
                     onChange={(event) => updateRole(member.id, event.target.value)}
-                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-bold capitalize outline-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="w-full font-bold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     {roleOptions.map((option) => (
                       <option key={option} value={option}>
@@ -412,6 +415,8 @@ const WorkspaceSettingsPage = () => {
           )}
         </Card>
       </div>
+
+      {confirmDialog}
     </div>
   );
 };

@@ -1,5 +1,11 @@
-import { CalendarDays, Clock3, FolderKanban, ImagePlus } from "lucide-react";
+import { CalendarDays, Clock3, Edit3, FolderKanban, ImagePlus, MoreHorizontal, Trash2 } from "lucide-react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { type TeamMember } from "@/features/projects/components/CollaboratorAvatars";
 import { projectIconClass, statusClass } from "@/features/projects/lib/projectPresentation";
 
@@ -21,6 +27,8 @@ type ProjectDetailHeroProps = {
   doneCount: number;
   /** Opens the banner picker. Omitted when the viewer can't edit the project. */
   onChangeBanner?: () => void;
+  onEditProject?: () => void;
+  onDeleteProject?: () => void;
 };
 
 // Same dimensions as the Projects grid card upload, so one image works for
@@ -54,9 +62,12 @@ const ProjectDetailHero = ({
   openCount,
   doneCount,
   onChangeBanner,
+  onEditProject,
+  onDeleteProject,
 }: ProjectDetailHeroProps) => {
   const eventDate = project.is_event ? formatProjectDate(project.event_start_at) : "";
   const dueDate = eventDate ? "" : formatProjectDate(project.due_date);
+  const hasMenu = Boolean(onChangeBanner || onEditProject || onDeleteProject);
 
   return (
     <div className="actsix-panel overflow-hidden">
@@ -78,16 +89,41 @@ const ProjectDetailHero = ({
           </div>
         )}
 
-        {onChangeBanner && (
-          <button
-            type="button"
-            onClick={onChangeBanner}
-            aria-label={`Change banner image for ${project.name}`}
-            title={`Change banner image (recommended ${RECOMMENDED_BANNER_SIZE})`}
-            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-background/85 text-muted-foreground shadow-sm backdrop-blur transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
-          >
-            <ImagePlus className="h-4 w-4" />
-          </button>
+        {hasMenu && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Project actions for ${project.name}`}
+                className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-background/85 text-muted-foreground shadow-sm backdrop-blur transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {onChangeBanner && (
+                <DropdownMenuItem onClick={onChangeBanner}>
+                  <ImagePlus className="mr-2 h-4 w-4" />
+                  Change banner image
+                </DropdownMenuItem>
+              )}
+              {onEditProject && (
+                <DropdownMenuItem onClick={onEditProject}>
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Edit project
+                </DropdownMenuItem>
+              )}
+              {onDeleteProject && (
+                <DropdownMenuItem
+                  onClick={onDeleteProject}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete project
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
 
         {/* Progress reads as a hairline on the image edge, matching the cards on
@@ -118,9 +154,9 @@ const ProjectDetailHero = ({
           {(eventDate || dueDate) && (
             <span className="inline-flex items-center gap-1.5">
               {eventDate ? (
-                <CalendarDays className="h-3.5 w-3.5 text-brand-amber" />
+                <CalendarDays className="h-3.5 w-3.5 text-brand-sage" />
               ) : (
-                <Clock3 className="h-3.5 w-3.5 text-brand-amber" />
+                <Clock3 className="h-3.5 w-3.5 text-brand-sage" />
               )}
               {eventDate ? `Event ${eventDate}` : `Due ${dueDate}`}
             </span>

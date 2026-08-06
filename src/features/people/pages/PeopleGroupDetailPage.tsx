@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Crown, Edit3, Folder, MessageCircle, Save, Trash2, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { useConfirm } from "@/hooks/useConfirm";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,6 +81,7 @@ const PeopleGroupDetailPage = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [members, setMembers] = useState<PeopleGroupMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const { confirmAction, confirmDialog } = useConfirm();
 
   const [editGroupOpen, setEditGroupOpen] = useState(false);
   const [editGroupName, setEditGroupName] = useState("");
@@ -130,10 +133,10 @@ const PeopleGroupDetailPage = () => {
         .order("created_at", { ascending: true }),
     ]);
 
-    if (groupError) toast.error(groupError.message);
-    if (folderError) toast.error(folderError.message);
-    if (peopleError) toast.error(peopleError.message);
-    if (memberError) toast.error(memberError.message);
+    if (groupError) toast.error(friendlyErrorMessage(groupError));
+    if (folderError) toast.error(friendlyErrorMessage(folderError));
+    if (peopleError) toast.error(friendlyErrorMessage(peopleError));
+    if (memberError) toast.error(friendlyErrorMessage(memberError));
 
     setGroup(groupData || null);
     setFolders(folderData || []);
@@ -209,7 +212,7 @@ const PeopleGroupDetailPage = () => {
       );
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -244,7 +247,7 @@ const PeopleGroupDetailPage = () => {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -254,7 +257,7 @@ const PeopleGroupDetailPage = () => {
   };
 
   const removeMember = async (member: PeopleGroupMember) => {
-    const confirmed = window.confirm(
+    const confirmed = await confirmAction(
       `Remove "${member.people?.display_name || "this person"}" from this group?`
     );
 
@@ -267,7 +270,7 @@ const PeopleGroupDetailPage = () => {
       .eq("user_id", user?.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -290,7 +293,7 @@ const PeopleGroupDetailPage = () => {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -573,7 +576,7 @@ const PeopleGroupDetailPage = () => {
                 <select
                   value={editGroupFolderId}
                   onChange={(event) => setEditGroupFolderId(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 >
                   <option value="">Uncategorized</option>
                   {folders.map((folder) => (
@@ -676,6 +679,8 @@ const PeopleGroupDetailPage = () => {
             </form>
         </DialogContent>
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 };

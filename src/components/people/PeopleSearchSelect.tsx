@@ -18,6 +18,9 @@ type PeopleSearchSelectProps = {
   zIndexClass?: string;
   dropdownZIndexClass?: string;
   showAllOnFocus?: boolean;
+  /** Shrinks the search input and selected-person chip to match a dense
+   * field grid (e.g. the task editor's compact form fields). */
+  compact?: boolean;
 };
 
 export function PeopleSearchSelect({
@@ -30,6 +33,7 @@ export function PeopleSearchSelect({
   zIndexClass = "z-20",
   dropdownZIndexClass = "z-30",
   showAllOnFocus = false,
+  compact = false,
 }: PeopleSearchSelectProps) {
   const inputId = useId();
   const listboxId = useId();
@@ -87,12 +91,16 @@ export function PeopleSearchSelect({
   return (
     <div ref={peopleSearchSelectRef} className={`relative ${zIndexClass} space-y-2`}>
       {selectedPerson ? (
-        <div className="flex items-center justify-between gap-2.5 rounded-[var(--radius-control)] border border-brand-teal/30 bg-brand-teal/10 px-3 py-2">
+        <div
+          className={`flex items-center justify-between gap-2.5 rounded-[var(--radius-control)] border border-brand-teal/30 bg-brand-teal/10 ${
+            compact ? "px-2.5 py-1.5" : "px-3 py-2"
+          }`}
+        >
           <div className="flex min-w-0 items-center gap-2.5">
             <PersonAvatar
               name={selectedPerson.display_name}
               avatarUrl={selectedPerson.avatar_url}
-              size="md"
+              size={compact ? "sm" : "md"}
             />
 
             <div className="min-w-0">
@@ -111,7 +119,9 @@ export function PeopleSearchSelect({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-destructive"
+            className={`shrink-0 rounded-lg text-muted-foreground hover:text-destructive ${
+              compact ? "h-7 w-7" : "h-8 w-8"
+            }`}
             aria-label={`Remove ${selectedPerson.display_name}`}
             onClick={() => {
               onSelect("");
@@ -151,14 +161,16 @@ export function PeopleSearchSelect({
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
-            className="h-10 rounded-[var(--radius-control)] border-border/70 bg-background pl-10 text-sm"
+            className={`rounded-[var(--radius-control)] border-border/70 bg-background pl-10 ${
+              compact ? "h-8 text-base sm:text-xs" : "h-10 text-sm"
+            }`}
           />
 
           {showDropdown && (
             <div
               id={listboxId}
               role="listbox"
-              className={`actsix-overlay-surface absolute left-0 right-0 top-12 ${dropdownZIndexClass} overflow-hidden`}
+              className={`actsix-overlay-surface absolute left-0 right-0 ${compact ? "top-10" : "top-12"} ${dropdownZIndexClass} overflow-hidden`}
             >
               {!showAllOnFocus && cleanSearch.length < 2 && (
                 <div className="px-4 py-3 text-sm text-muted-foreground">

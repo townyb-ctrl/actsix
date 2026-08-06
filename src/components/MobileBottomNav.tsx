@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 
 import actsixIcon from "@/assets/branding/actsix-icon-black.png";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -550,7 +551,7 @@ export function MobileBottomNav() {
     setCaptureSaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 

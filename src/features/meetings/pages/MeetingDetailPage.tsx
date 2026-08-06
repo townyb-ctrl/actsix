@@ -39,6 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 
 const EMPTY_MEETING = {
   title: "",
@@ -339,7 +340,7 @@ function MeetingSourceCombobox({
   }, []);
 
   return (
-    <div ref={wrapperRef} className={`relative ${open ? "z-[300]" : "z-[20]"}`}>
+    <div ref={wrapperRef} className={`relative ${open ? "z-[var(--z-dropdown)]" : "z-0"}`}>
       <button
         type="button"
         className="flex min-h-10 w-full items-center justify-between gap-2.5 rounded-lg border border-border/70 bg-background px-3 py-2.5 text-left text-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
@@ -360,7 +361,7 @@ function MeetingSourceCombobox({
       </button>
 
       {open && (
-        <div className="actsix-panel absolute left-0 right-0 top-full z-[1200] mt-2 overflow-hidden rounded-xl">
+        <div className="actsix-panel absolute left-0 right-0 top-full z-[var(--z-dropdown-panel)] mt-2 overflow-hidden rounded-xl">
           <div className="border-b border-border/70 bg-background/95 p-2.5">
             <div className="actsix-search-field">
               <Search className="actsix-search-icon" />
@@ -588,7 +589,7 @@ const sendMeetingInvites = async () => {
   const firstError = results.find((result) => result.error)?.error;
 
   if (firstError) {
-    toast.error(firstError.message);
+    toast.error(friendlyErrorMessage(firstError));
     return;
   }
 
@@ -625,7 +626,7 @@ const sendMeetingInvites = async () => {
       .single();
 
     if (meetingError) {
-      toast.error(meetingError.message);
+      toast.error(friendlyErrorMessage(meetingError));
       return;
     }
 
@@ -636,7 +637,7 @@ const sendMeetingInvites = async () => {
       .order("created_at", { ascending: false });
 
     if (actionError) {
-      toast.error(actionError.message);
+      toast.error(friendlyErrorMessage(actionError));
       return;
     }
 
@@ -696,7 +697,7 @@ const sendMeetingInvites = async () => {
       .eq("id", meeting.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -719,7 +720,7 @@ const sendMeetingInvites = async () => {
       .eq("id", meeting.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -898,7 +899,7 @@ ${transcriptText.trim()}`;
       .eq("id", meeting.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -927,7 +928,7 @@ ${transcriptText.trim()}`;
       .eq("id", meeting.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -953,7 +954,7 @@ ${transcriptText.trim()}`;
       .eq("id", meeting.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -969,7 +970,7 @@ ${transcriptText.trim()}`;
     const { error } = await supabase.from("meetings").delete().eq("id", meeting.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1011,7 +1012,7 @@ ${transcriptText.trim()}`;
       foldersResult.error;
 
     if (firstError) {
-      toast.error(firstError.message);
+      toast.error(friendlyErrorMessage(firstError));
       return;
     }
 
@@ -1086,7 +1087,7 @@ ${transcriptText.trim()}`;
     const firstError = results.find((result) => result.error)?.error;
 
     if (firstError) {
-      toast.error(firstError.message);
+      toast.error(friendlyErrorMessage(firstError));
       return;
     }
 
@@ -1110,7 +1111,7 @@ ${transcriptText.trim()}`;
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1128,7 +1129,7 @@ ${transcriptText.trim()}`;
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1157,7 +1158,7 @@ ${transcriptText.trim()}`;
     const { error } = await (supabase as any).rpc(rpcName, rpcArgs);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1176,7 +1177,7 @@ ${transcriptText.trim()}`;
       .order("created_at", { ascending: false });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1206,7 +1207,7 @@ ${transcriptText.trim()}`;
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1235,7 +1236,7 @@ ${transcriptText.trim()}`;
     const { error } = await supabase.from("meeting_actions").delete().eq("id", id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1253,7 +1254,7 @@ ${transcriptText.trim()}`;
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1269,7 +1270,7 @@ ${transcriptText.trim()}`;
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1296,7 +1297,7 @@ ${transcriptText.trim()}`;
       .eq("id", meeting.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1785,7 +1786,7 @@ ${transcriptText.trim()}`;
                       value={actionTitle}
                       onChange={(event) => setActionTitle(event.target.value)}
                       placeholder="Action point..."
-                      className="h-10 rounded-xl border-border/70 bg-background shadow-none"
+                      className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                     />
 
                     <PeopleSearchSelect
@@ -1807,7 +1808,7 @@ ${transcriptText.trim()}`;
                         type="date"
                         value={due}
                         onChange={(event) => setDue(event.target.value)}
-                        className="h-10 rounded-xl border-border/70 bg-background shadow-none"
+                        className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                       />
 
                       <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl px-3">
@@ -1923,7 +1924,7 @@ ${transcriptText.trim()}`;
                     value={transcriptText}
                     onChange={(event) => saveTranscript(event.target.value)}
                     placeholder="Transcript will appear here..."
-                    className="w-full min-h-[240px] resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full min-h-[240px] resize-y rounded-[var(--radius-control)] border border-border/70 bg-card p-3 text-sm leading-6 outline-none transition focus-visible:border-brand-teal focus-visible:ring-2 focus-visible:ring-brand-teal/15"
                   />
                 </div>
               </div>
@@ -1950,7 +1951,7 @@ ${transcriptText.trim()}`;
                   value={generatedMinutes}
                   onChange={(event) => saveGeneratedMinutes(event.target.value)}
                   placeholder="Generated minutes and action points will appear here..."
-                  className="w-full min-h-[240px] resize-y rounded-xl border border-border/70 bg-card p-3 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full min-h-[240px] resize-y rounded-[var(--radius-control)] border border-border/70 bg-card p-3 text-sm leading-6 outline-none transition focus-visible:border-brand-teal focus-visible:ring-2 focus-visible:ring-brand-teal/15"
                 />
 
                 {generatedActionPoints.length > 0 && (
@@ -2186,7 +2187,7 @@ ${transcriptText.trim()}`;
               <Input
                 value={editDraft.title || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, title: event.target.value })}
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
 
@@ -2196,7 +2197,7 @@ ${transcriptText.trim()}`;
                 type="date"
                 value={editDraft.meeting_date || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, meeting_date: event.target.value || null })}
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
 
@@ -2206,7 +2207,7 @@ ${transcriptText.trim()}`;
                 type="time"
                 value={editDraft.meeting_time || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, meeting_time: event.target.value || null })}
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
 
@@ -2215,7 +2216,7 @@ ${transcriptText.trim()}`;
               <Input
                 value={editDraft.location || ""}
                 onChange={(event) => setEditDraft({ ...editDraft, location: event.target.value })}
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
             </div>
 
@@ -2346,7 +2347,7 @@ ${transcriptText.trim()}`;
                           )
                         }
                         placeholder="Section heading..."
-                        className="h-10 rounded-xl border-border/70 bg-background font-semibold shadow-none"
+                        className="font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                       />
 
                       <Button

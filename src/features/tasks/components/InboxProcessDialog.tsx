@@ -12,10 +12,8 @@ import {
   ChevronDown,
   CheckCircle2,
   Clock,
-  FileText,
   FolderKanban,
   Save,
-  Tags,
 } from "lucide-react";
 import ProjectSelect from "@/components/ProjectSelect";
 import NextActionFields from "@/components/NextActionFields";
@@ -155,7 +153,7 @@ const InboxProcessDialog = ({
               id={processTitleFieldId}
               value={item.title ?? ""}
               onChange={(event) => onChangeItem({ ...item, title: event.target.value })}
-              className="mt-1 h-9 rounded-xl border-border/70 bg-background"
+              className="mt-1 h-8 rounded-xl border-border/70 bg-background text-base sm:text-xs"
               placeholder={
                 processTarget === "project"
                   ? "Name the project"
@@ -276,27 +274,27 @@ const InboxProcessDialog = ({
 
             {processTarget === "waiting" && (
               <section>
-                <div className="mb-3 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-brand-teal" />
-                  <h3 className="font-extrabold tracking-tight">Person follow-up details</h3>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-brand-teal" />
+                  <h3 className="text-sm font-extrabold tracking-tight">Person follow-up details</h3>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-3">
-                  <div className="actsix-panel-soft p-4">
-                    <label htmlFor={waitingPersonFieldId} className="label-eyebrow">Person or team</label>
+                <div className="grid gap-2.5 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <label htmlFor={waitingPersonFieldId} className="label-eyebrow text-[0.65rem]">Person or team</label>
                     <Input
                       id={waitingPersonFieldId}
                       value={item.waiting_person ?? ""}
                       onChange={(event) =>
                         onChangeItem({ ...item, waiting_person: event.target.value })
                       }
-                      className="mt-2 border-border/70 bg-background"
+                      className="h-8 border-border/70 bg-background text-base sm:text-xs"
                       placeholder="Person or team"
                     />
                   </div>
 
-                  <div className="actsix-panel-soft p-4">
-                    <label htmlFor={waitingFollowUpFieldId} className="label-eyebrow">Follow-up date</label>
+                  <div className="space-y-1">
+                    <label htmlFor={waitingFollowUpFieldId} className="label-eyebrow text-[0.65rem]">Follow-up date</label>
                     <Input
                       id={waitingFollowUpFieldId}
                       type="date"
@@ -304,12 +302,12 @@ const InboxProcessDialog = ({
                       onChange={(event) =>
                         onChangeItem({ ...item, waiting_follow_up: event.target.value || null })
                       }
-                      className="mt-2 border-border/70 bg-background"
+                      className="h-8 border-border/70 bg-background text-base sm:text-xs"
                     />
                   </div>
 
-                  <div className="actsix-panel-soft p-4">
-                    <label htmlFor={waitingProjectFieldId} className="label-eyebrow">Project</label>
+                  <div className="space-y-1">
+                    <label htmlFor={waitingProjectFieldId} className="label-eyebrow text-[0.65rem]">Project</label>
                     <ProjectSelect
                       id={waitingProjectFieldId}
                       value={item.project ?? ""}
@@ -322,6 +320,7 @@ const InboxProcessDialog = ({
                         })
                       }
                       onCreated={onRefreshOptions}
+                      selectClassName="h-8 w-full rounded-lg border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                     />
                   </div>
                 </div>
@@ -330,20 +329,20 @@ const InboxProcessDialog = ({
 
             {processTarget === "someday" && (
               <section>
-                <div className="mb-3 flex items-center gap-2">
-                  <Archive className="h-4 w-4 text-brand-teal" />
-                  <h3 className="font-extrabold tracking-tight">Someday details</h3>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <Archive className="h-3.5 w-3.5 text-brand-teal" />
+                  <h3 className="text-sm font-extrabold tracking-tight">Someday details</h3>
                 </div>
 
-                <div className="actsix-panel-soft p-4">
-                  <label htmlFor={somedayCategoryFieldId} className="label-eyebrow">Category</label>
+                <div className="space-y-1">
+                  <label htmlFor={somedayCategoryFieldId} className="label-eyebrow text-[0.65rem]">Category</label>
                   <Input
                     id={somedayCategoryFieldId}
                     value={item.someday_category ?? "General"}
                     onChange={(event) =>
                       onChangeItem({ ...item, someday_category: event.target.value })
                     }
-                    className="mt-2 border-border/70 bg-background"
+                    className="h-8 border-border/70 bg-background text-sm"
                     placeholder="Idea, Future, Ministry..."
                   />
                 </div>
@@ -387,27 +386,21 @@ const InboxProcessDialog = ({
               </button>
 
               {moreOptionsOpen && (
-                <div className="grid gap-3 border-t border-border/70 p-4 md:grid-cols-2">
-                  <div className="md:col-span-2">
-                    <label htmlFor={notesFieldId} className="label-eyebrow flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5" />
-                      Notes
-                    </label>
+                <div className="grid gap-2.5 border-t border-border/70 p-3 sm:grid-cols-2">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label htmlFor={notesFieldId} className="label-eyebrow text-[0.65rem]">Notes</label>
                     <textarea
                       id={notesFieldId}
                       value={item.notes ?? ""}
                       onChange={(event) => onChangeItem({ ...item, notes: event.target.value })}
-                      className="mt-2 min-h-24 w-full rounded-md border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      className="min-h-14 w-full rounded-md border border-border/70 bg-background px-2.5 py-2 text-base outline-none focus:ring-2 focus:ring-ring sm:text-xs"
                       placeholder="Add details, links, thoughts, or next-step context..."
                     />
                   </div>
 
                   {processTarget === "task" && (
-                    <div className="rounded-xl border border-brand-teal/20 bg-card p-4 shadow-sm md:col-span-2">
-                      <label htmlFor={tagsFieldId} className="label-eyebrow flex items-center gap-2">
-                        <Tags className="h-3.5 w-3.5" />
-                        Tags
-                      </label>
+                    <div className="space-y-1 sm:col-span-2">
+                      <label htmlFor={tagsFieldId} className="label-eyebrow text-[0.65rem]">Tags</label>
                       <Input
                         id={tagsFieldId}
                         value={Array.isArray(item.tags) ? item.tags.join(", ") : ""}
@@ -420,19 +413,19 @@ const InboxProcessDialog = ({
                               .filter(Boolean),
                           })
                         }
-                        className="mt-2 h-10 rounded-xl border-brand-teal/20 bg-card shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                        className="h-8 rounded-lg border-border/70 bg-background text-base shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                         placeholder="Worship, Admin, Follow-up"
                       />
-                      <p className="mt-2 text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         Separate tags with commas.
                       </p>
                     </div>
                   )}
 
                   {processTarget !== "task" && (
-                    <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground md:col-span-2">
+                    <p className="text-sm text-muted-foreground sm:col-span-2">
                       No additional fields are required for this type.
-                    </div>
+                    </p>
                   )}
                 </div>
               )}

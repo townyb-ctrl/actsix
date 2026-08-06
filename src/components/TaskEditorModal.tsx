@@ -1,10 +1,4 @@
-import {
-  Archive,
-  FileText,
-  Save,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Save, Trash2, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,7 +41,6 @@ const TaskEditorModal = ({
 
   const titleId = "task-editor-title";
   const descriptionId = "task-editor-description";
-  const destinationId = "task-editor-destination";
   const sectionId = "task-editor-project-section";
   const taskTitleId = "task-editor-task-title";
   const notesId = "task-editor-notes";
@@ -61,14 +54,14 @@ const TaskEditorModal = ({
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
     >
-      <Card className="actsix-panel flex max-h-[92svh] w-full max-w-4xl flex-col overflow-hidden rounded-b-none sm:h-[88vh] sm:rounded-[var(--radius-overlay)]">
-        <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
+      <Card className="actsix-panel flex max-h-[92svh] w-full max-w-2xl flex-col overflow-hidden rounded-b-none sm:max-h-[88vh] sm:rounded-[var(--radius-overlay)]">
+        <div className="flex items-start justify-between gap-4 border-b border-border/70 p-4">
           <div className="min-w-0">
-            <p className="label-eyebrow">{eyebrow}</p>
-            <h2 id={titleId} className="mt-1 text-xl font-extrabold leading-tight">
+            <p className="label-eyebrow text-[0.65rem]">{eyebrow}</p>
+            <h2 id={titleId} className="text-lg font-extrabold leading-tight">
               {title}
             </h2>
-            <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">
+            <p id={descriptionId} className="sr-only">
               {description}
             </p>
           </div>
@@ -79,34 +72,24 @@ const TaskEditorModal = ({
           </Button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:space-y-5 sm:p-5">
-          <section>
-            <div className="mb-3 flex items-center gap-2">
-              <Archive className="h-4 w-4 text-brand-teal" />
-              <h3 className="font-extrabold">Destination</h3>
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <section className="space-y-2.5">
+            <div className="space-y-1">
+              <label htmlFor={taskTitleId} className="label-eyebrow text-[0.65rem]">Title</label>
+              <Input
+                id={taskTitleId}
+                value={task.title ?? ""}
+                onChange={(event) =>
+                  onChange({ ...task, title: event.target.value })
+                }
+                className="h-8 rounded-[var(--radius-control)] border-border/70 bg-background text-base shadow-none sm:text-xs"
+                placeholder="What needs to be done?"
+              />
             </div>
 
-            <div className="actsix-interactive-row border-brand-teal/25 bg-brand-teal/5 p-3">
-              <label htmlFor={destinationId} className="label-eyebrow">Where does this belong?</label>
-              <select
-                id={destinationId}
-                value="task"
-                disabled
-                className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm opacity-80"
-              >
-                <option value="task">Next Action</option>
-              </select>
-
-              <p className="mt-2 text-xs text-muted-foreground">
-                This item is already a Next Action.
-              </p>
-            </div>
-          </section>
-
-          {canChooseProjectSection && (
-            <section>
-              <div className="actsix-interactive-row bg-background/45 p-3">
-                <label htmlFor={sectionId} className="label-eyebrow">
+            {canChooseProjectSection && (
+              <div className="space-y-1">
+                <label htmlFor={sectionId} className="label-eyebrow text-[0.65rem]">
                   Project section
                 </label>
                 <select
@@ -118,7 +101,7 @@ const TaskEditorModal = ({
                       section_id: event.target.value || null,
                     })
                   }
-                  className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="h-8 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 >
                   <option value="">General</option>
                   {(projectSections || []).map((section) => (
@@ -127,39 +110,19 @@ const TaskEditorModal = ({
                     </option>
                   ))}
                 </select>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Move this task between General and the sections in this project.
-                </p>
               </div>
-            </section>
-          )}
+            )}
 
-          <section className="grid gap-3">
-            <div className="actsix-interactive-row bg-background/45 p-3">
-              <label htmlFor={taskTitleId} className="label-eyebrow">Title</label>
-              <Input
-                id={taskTitleId}
-                value={task.title ?? ""}
-                onChange={(event) =>
-                  onChange({ ...task, title: event.target.value })
-                }
-                className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background shadow-none"
-                placeholder="What needs to be done?"
-              />
-            </div>
-
-            <div className="actsix-interactive-row bg-background/45 p-3">
-              <label htmlFor={notesId} className="label-eyebrow flex items-center gap-2">
-                <FileText className="h-3.5 w-3.5" />
-                Notes
-              </label>
+            <div className="space-y-1">
+              <label htmlFor={notesId} className="label-eyebrow text-[0.65rem]">Notes</label>
               <textarea
                 id={notesId}
+                rows={1}
                 value={task.notes ?? ""}
                 onChange={(event) =>
                   onChange({ ...task, notes: event.target.value })
                 }
-                className="mt-2 min-h-24 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-2 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                className="min-h-8 w-full resize-y rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 py-1.5 text-base outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 placeholder="Add details, links, thoughts, or next-step context..."
               />
             </div>
@@ -170,55 +133,47 @@ const TaskEditorModal = ({
             onChange={onChange}
             onRefreshOptions={onRefreshOptions}
           />
-
-          <section className="actsix-interactive-row bg-muted/30 p-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h3 className="font-extrabold">Advanced</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Created:{" "}
-                  {task.created_at
-                    ? new Date(task.created_at).toLocaleDateString()
-                    : "Unknown"}
-                </p>
-              </div>
-
-              {onDelete && (
-                <Button
-                  variant="ghost"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => {
-                    const confirmed = window.confirm(
-                      `Delete "${task.title || "this task"}"? This can't be undone.`
-                    );
-                    if (confirmed) onDelete();
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete task
-                </Button>
-              )}
-            </div>
-          </section>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-3 border-t border-border/70 bg-background/90 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            Save changes to update this Next Action.
-          </p>
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border/70 bg-background/90 p-2.5">
+          <div className="flex items-center gap-3">
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-destructive hover:text-destructive"
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    `Delete "${task.title || "this task"}"? This can't be undone.`
+                  );
+                  if (confirmed) onDelete();
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Delete
+              </Button>
+            )}
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              Created{" "}
+              {task.created_at
+                ? new Date(task.created_at).toLocaleDateString()
+                : "date unknown"}
+            </p>
+          </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button variant="outline" className="actsix-btn-outline min-h-10" onClick={onClose}>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="actsix-btn-outline h-8" onClick={onClose}>
               Cancel
             </Button>
 
             <Button
               disabled={saving}
               variant="outline"
-              className="actsix-btn-outline min-h-10 border-brand-teal/50 font-bold text-brand-teal hover:text-brand-teal"
+              size="sm"
+              className="actsix-btn-outline h-8 border-brand-teal/50 font-bold text-brand-teal hover:text-brand-teal"
               onClick={onSave}
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-3.5 w-3.5 mr-1.5" />
               {saving ? "Saving..." : saveLabel}
             </Button>
           </div>

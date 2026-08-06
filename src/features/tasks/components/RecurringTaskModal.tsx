@@ -77,7 +77,7 @@ const RecurringTaskModal = ({
                 disabled={readOnly}
                 value={template.title}
                 onChange={(event) => update({ title: event.target.value })}
-                className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 placeholder="Prepare Sunday volunteer follow-up"
               />
             </div>
@@ -119,7 +119,7 @@ const RecurringTaskModal = ({
                       next_due_date: event.target.value,
                     })
                   }
-                  className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -149,7 +149,7 @@ const RecurringTaskModal = ({
                   min={1}
                   value={template.interval}
                   onChange={(event) => update({ interval: Math.max(1, Number(event.target.value) || 1) })}
-                  className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -177,7 +177,7 @@ const RecurringTaskModal = ({
                     type="date"
                     value={template.end_date || ""}
                     onChange={(event) => update({ end_date: event.target.value || null })}
-                    className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
               )}
@@ -192,7 +192,7 @@ const RecurringTaskModal = ({
                     min={1}
                     value={template.end_after_occurrences || 1}
                     onChange={(event) => update({ end_after_occurrences: Math.max(1, Number(event.target.value) || 1) })}
-                    className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
               )}

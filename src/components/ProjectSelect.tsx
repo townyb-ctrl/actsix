@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Plus } from "lucide-react";
 import { createProject as insertProject, defaultProjectPayload } from "@/features/projects/api/projectsApi";
 
@@ -44,7 +45,7 @@ const ProjectSelect = ({
       .order("name", { ascending: true });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -68,7 +69,7 @@ const ProjectSelect = ({
     setSaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 

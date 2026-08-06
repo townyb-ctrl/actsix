@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -101,13 +102,13 @@ const ServicePlannerTeamsPage = () => {
       ]);
 
     if (teamError) {
-      toast.error(teamError.message);
+      toast.error(friendlyErrorMessage(teamError));
       setLoading(false);
       return;
     }
 
     if (memberError) {
-      toast.error(memberError.message);
+      toast.error(friendlyErrorMessage(memberError));
       setLoading(false);
       return;
     }
@@ -146,7 +147,7 @@ const ServicePlannerTeamsPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -169,7 +170,7 @@ const ServicePlannerTeamsPage = () => {
       .eq("id", team.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -369,7 +370,7 @@ const ServicePlannerTeamsPage = () => {
                   value={teamName}
                   onChange={(event) => setTeamName(event.target.value)}
                   placeholder="Worship Team"
-                  className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -379,7 +380,7 @@ const ServicePlannerTeamsPage = () => {
                   value={teamDescription}
                   onChange={(event) => setTeamDescription(event.target.value)}
                   placeholder="People who serve in worship services"
-                  className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 

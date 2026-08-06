@@ -107,7 +107,7 @@ const ProjectSummaryCard = ({
           onClick={onChangeCover}
           aria-label={`Change cover image for ${project.name}`}
           title="Change cover image"
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/85 text-muted-foreground opacity-0 shadow-sm backdrop-blur transition hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40 group-hover:opacity-100"
+          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-background/85 text-muted-foreground opacity-0 shadow-sm backdrop-blur transition hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <ImagePlus className="h-4 w-4" />
         </button>

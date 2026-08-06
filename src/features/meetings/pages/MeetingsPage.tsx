@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 
 const formatDate = (date?: string | null) => {
   if (!date) return "No date";
@@ -61,7 +62,7 @@ const MeetingsPage = () => {
     if (error) {
       setLoadError("Could not load meetings right now.");
       setLoading(false);
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -98,7 +99,7 @@ const MeetingsPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -360,7 +361,7 @@ const MeetingsPage = () => {
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Executive Meeting"
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -370,7 +371,7 @@ const MeetingsPage = () => {
                     type="date"
                     value={meetingDate}
                     onChange={(event) => setMeetingDate(event.target.value)}
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -380,7 +381,7 @@ const MeetingsPage = () => {
                     type="time"
                     value={meetingTime}
                     onChange={(event) => setMeetingTime(event.target.value)}
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -390,7 +391,7 @@ const MeetingsPage = () => {
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                     placeholder="Location"
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 
@@ -400,7 +401,7 @@ const MeetingsPage = () => {
                     value={googleMeetUrl}
                     onChange={(event) => setGoogleMeetUrl(event.target.value)}
                     placeholder="https://meet.google.com/..."
-                    className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </div>
 

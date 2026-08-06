@@ -320,7 +320,7 @@ export function GuidedTour({ onStepChange, onComplete }: GuidedTourProps) {
   const isLastStep = stepIndex === tourSteps.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[2000] pointer-events-none">
+    <div className="fixed inset-0 z-[var(--z-tour)] pointer-events-none">
       <svg
         className="pointer-events-none absolute inset-0 h-full w-full"
         aria-hidden="true"

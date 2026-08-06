@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Edit3, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import TaskEditorModal from "@/components/TaskEditorModal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { FormDialog } from "@/components/ui/form-dialog";
 import ProjectEditorModal from "@/features/projects/components/ProjectEditorModal";
 import ProjectSectionEditorModal, {
   type ProjectSection,
@@ -22,6 +24,7 @@ import { type NewTaskDraft } from "@/features/projects/components/ProjectAddTask
 import { uploadProjectCover } from "@/features/projects/lib/uploadProjectCover";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { logActivity } from "@/lib/activityLog";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { toast } from "sonner";
 import {
   addProjectCollaborators,
@@ -172,7 +175,6 @@ const ProjectDetailPage = () => {
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [activeSectionId, setActiveSectionId] = useState<string>(ALL_TASKS_ID);
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("open");
-  const [taskSearch, setTaskSearch] = useState("");
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [savingTask, setSavingTask] = useState(false);
   const [editingProject, setEditingProject] = useState<any | null>(null);
@@ -183,6 +185,12 @@ const ProjectDetailPage = () => {
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [collaboratorRole, setCollaboratorRole] = useState("Collaborator");
   const bannerInputRef = useRef<HTMLInputElement | null>(null);
+
+  type PendingDelete =
+    | { kind: "project"; project: any }
+    | { kind: "section"; section: ProjectSection }
+    | { kind: "collaborator"; collaboratorId: string; label: string };
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   const load = async ({ showLoading = false } = {}) => {
     if (!user || !projectId || !currentPerson?.workspace_id) return;
@@ -197,7 +205,7 @@ const ProjectDetailPage = () => {
     if (projectError) {
       setLoadError(projectError.message || "Could not load this project.");
       setLoading(false);
-      toast.error(projectError.message);
+      toast.error(friendlyErrorMessage(projectError));
       return;
     }
 
@@ -218,21 +226,21 @@ const ProjectDetailPage = () => {
     if (taskError) {
       setLoadError(taskError.message || "Could not load project tasks.");
       setLoading(false);
-      toast.error(taskError.message);
+      toast.error(friendlyErrorMessage(taskError));
       return;
     }
 
     if (peopleError) {
       setLoadError(peopleError.message || "Could not load project people.");
       setLoading(false);
-      toast.error(peopleError.message);
+      toast.error(friendlyErrorMessage(peopleError));
       return;
     }
 
     if (collaboratorError) {
       setLoadError(collaboratorError.message || "Could not load project collaborators.");
       setLoading(false);
-      toast.error(collaboratorError.message);
+      toast.error(friendlyErrorMessage(collaboratorError));
       return;
     }
 
@@ -243,7 +251,7 @@ const ProjectDetailPage = () => {
       } else {
         setLoadError(sectionError.message || "Could not load project sections.");
         setLoading(false);
-        toast.error(sectionError.message);
+        toast.error(friendlyErrorMessage(sectionError));
         return;
       }
     } else {
@@ -253,7 +261,7 @@ const ProjectDetailPage = () => {
     if (activityError) {
       setLoadError(activityError.message || "Could not load project activity.");
       setLoading(false);
-      toast.error(activityError.message);
+      toast.error(friendlyErrorMessage(activityError));
       return;
     }
 
@@ -285,7 +293,7 @@ const ProjectDetailPage = () => {
       });
 
       if (actorPeopleError) {
-        toast.error(actorPeopleError.message);
+        toast.error(friendlyErrorMessage(actorPeopleError));
       }
 
       actorPeople = actorPeopleData || [];
@@ -426,8 +434,6 @@ const ProjectDetailPage = () => {
   }, [paneTasks, currentPerson?.id]);
 
   const visibleTasks = useMemo(() => {
-    const query = taskSearch.trim().toLowerCase();
-
     const matchesFilter = (task: any) => {
       if (taskFilter === "all") return true;
       if (taskFilter === "open") return !task.complete;
@@ -441,19 +447,7 @@ const ProjectDetailPage = () => {
       );
     };
 
-    const matchesSearch = (task: any) => {
-      if (!query) return true;
-
-      return (
-        (task.title || "").toLowerCase().includes(query) ||
-        (task.notes || "").toLowerCase().includes(query) ||
-        (task.assignedPersonName || "").toLowerCase().includes(query)
-      );
-    };
-
-    const filtered = paneTasks.filter(
-      (task) => matchesFilter(task) && matchesSearch(task)
-    );
+    const filtered = paneTasks.filter(matchesFilter);
 
     const sorted = sortProjectTasks(filtered);
 
@@ -464,7 +458,7 @@ const ProjectDetailPage = () => {
       ...task,
       section_name: sectionNameById.get(task.section_id) || "",
     }));
-  }, [paneTasks, taskFilter, taskSearch, currentPerson?.id, activeSectionId, sectionNameById]);
+  }, [paneTasks, taskFilter, currentPerson?.id, activeSectionId, sectionNameById]);
 
   const paneHeading =
     activeSectionId === ALL_TASKS_ID
@@ -476,9 +470,8 @@ const ProjectDetailPage = () => {
   const paneDescription =
     activeSectionId === GENERAL_SECTION_ID ? null : activeSection?.description || null;
 
-  const paneEmptyMessage = taskSearch.trim()
-    ? "No tasks match this search."
-    : taskFilter === "done"
+  const paneEmptyMessage =
+    taskFilter === "done"
       ? "Nothing completed here yet."
       : taskFilter === "mine"
         ? "Nothing here is assigned to you."
@@ -567,7 +560,7 @@ const ProjectDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -628,7 +621,7 @@ const ProjectDetailPage = () => {
     setSavingSection(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -644,17 +637,13 @@ const ProjectDetailPage = () => {
     load();
   };
 
-  const removeSection = async (section: ProjectSection) => {
-    const confirmed = window.confirm(
-      `Delete "${section.name}"? Its tasks will stay on the project without a section.`
-    );
+  const requestDeleteSection = (section: ProjectSection) => setPendingDelete({ kind: "section", section });
 
-    if (!confirmed) return;
-
+  const doDeleteSection = async (section: ProjectSection) => {
     const { error } = await deleteProjectSection(section.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -691,7 +680,7 @@ const ProjectDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -713,7 +702,7 @@ const ProjectDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -734,7 +723,7 @@ const ProjectDetailPage = () => {
     const { error } = await deleteProjectActionTask(id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -788,7 +777,7 @@ const ProjectDetailPage = () => {
     setSavingTask(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -804,17 +793,13 @@ const ProjectDetailPage = () => {
     load();
   };
 
-  const removeProject = async (targetProject: any) => {
-    const confirmed = window.confirm(
-      `Delete "${targetProject.name}"? Its sections, activity history, and links to tasks will be removed. This can't be undone.`
-    );
+  const requestDeleteProject = (targetProject: any) => setPendingDelete({ kind: "project", project: targetProject });
 
-    if (!confirmed) return;
-
+  const doDeleteProject = async (targetProject: any) => {
     const { error } = await deleteProject(targetProject.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -835,7 +820,7 @@ const ProjectDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -860,14 +845,21 @@ const ProjectDetailPage = () => {
     load();
   };
 
-  const removeCollaborator = async (collaboratorId: string) => {
+  const requestRemoveCollaborator = (collaboratorId: string) => {
+    const label =
+      collaborators.find((collaborator) => collaborator.id === collaboratorId)?.people?.display_name ||
+      "this person";
+    setPendingDelete({ kind: "collaborator", collaboratorId, label });
+  };
+
+  const doRemoveCollaborator = async (collaboratorId: string) => {
     const { error } = await removeProjectCollaborator({
       collaboratorId,
       userId: user?.id,
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -880,6 +872,15 @@ const ProjectDetailPage = () => {
 
     toast.success("Collaborator removed");
     load();
+  };
+
+  const confirmPendingDelete = async () => {
+    if (!pendingDelete) return;
+    setPendingDelete(null);
+
+    if (pendingDelete.kind === "project") return doDeleteProject(pendingDelete.project);
+    if (pendingDelete.kind === "section") return doDeleteSection(pendingDelete.section);
+    return doRemoveCollaborator(pendingDelete.collaboratorId);
   };
 
   const availablePeople = people.filter((person) => {
@@ -979,7 +980,7 @@ const ProjectDetailPage = () => {
       setEditingProject(null);
       load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update project");
+      toast.error(friendlyErrorMessage(error as { message?: string }, "Could not update project"));
     } finally {
       setSavingProject(false);
     }
@@ -1037,44 +1038,7 @@ const ProjectDetailPage = () => {
 
   return (
     <div className="min-w-0">
-      <PageHeader
-        eyebrow="Tasks"
-        title={project.name}
-        subtitle={project.area || "General"}
-        actions={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-lg px-2.5"
-              onClick={() =>
-                setEditingProject({
-                  ...project,
-                  event_start_at: toLocalDateTimeInput(project.event_start_at),
-                  event_end_at: toLocalDateTimeInput(project.event_end_at),
-                  add_to_calendar: Boolean(project.calendar_event_id),
-                })
-              }
-            >
-              <Edit3 className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              title="Delete project"
-              aria-label="Delete project"
-              className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive"
-              onClick={() => removeProject(project)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </>
-        }
-      />
+      <PageHeader eyebrow="Tasks" title={project.name} subtitle={project.area || "General"} />
 
       <div className="actsix-page-body space-y-3">
         <ProjectDetailHero
@@ -1084,6 +1048,15 @@ const ProjectDetailPage = () => {
           openCount={stats.openTasks.length}
           doneCount={stats.completedTasks.length}
           onChangeBanner={() => bannerInputRef.current?.click()}
+          onEditProject={() =>
+            setEditingProject({
+              ...project,
+              event_start_at: toLocalDateTimeInput(project.event_start_at),
+              event_end_at: toLocalDateTimeInput(project.event_end_at),
+              add_to_calendar: Boolean(project.calendar_event_id),
+            })
+          }
+          onDeleteProject={() => requestDeleteProject(project)}
         />
 
         {!projectSectionsAvailable && (
@@ -1115,8 +1088,6 @@ const ProjectDetailPage = () => {
             filter={taskFilter}
             onFilterChange={setTaskFilter}
             counts={paneCounts}
-            search={taskSearch}
-            onSearchChange={setTaskSearch}
             tasks={visibleTasks}
             emptyMessage={paneEmptyMessage}
             addTargetName={activeSectionId === ALL_TASKS_ID ? "this project" : paneHeading}
@@ -1126,7 +1097,7 @@ const ProjectDetailPage = () => {
             onEditTask={(task) => setEditingTask({ ...task })}
             onDeleteTask={(task) => removeTask(task.id)}
             onEditSection={activeSection ? () => setEditingSection({ ...activeSection }) : undefined}
-            onDeleteSection={activeSection ? () => removeSection(activeSection) : undefined}
+            onDeleteSection={activeSection ? () => requestDeleteSection(activeSection) : undefined}
           />
 
           <div className="min-w-0">
@@ -1134,7 +1105,7 @@ const ProjectDetailPage = () => {
               owner={projectOwner}
               collaborators={sidebarCollaborators}
               onAddCollaborator={() => setAddCollaboratorOpen(true)}
-              onRemoveCollaborator={removeCollaborator}
+              onRemoveCollaborator={requestRemoveCollaborator}
               activity={sidebarActivity}
             />
           </div>
@@ -1149,96 +1120,76 @@ const ProjectDetailPage = () => {
         onChange={handleBannerSelected}
       />
 
-      {addCollaboratorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/45 px-4 backdrop-blur-sm">
-          <Card className="actsix-panel relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-visible">
-            <form onSubmit={addCollaborator} className="flex min-h-0 flex-1 flex-col">
-              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border/70 p-4 sm:p-5">
-                <div>
-                  <p className="label-eyebrow">Project Collaborators</p>
-                  <h2 className="text-xl font-extrabold leading-tight">
-                    Add Collaborators
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Choose People profiles to connect to this project.
-                  </p>
-                </div>
+      <FormDialog
+        open={addCollaboratorOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPersonIds([]);
+            setCollaboratorRole("Collaborator");
+          }
+          setAddCollaboratorOpen(open);
+        }}
+        eyebrow="Project Collaborators"
+        title="Add Collaborators"
+        description="Choose People profiles to connect to this project."
+        size="lg"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setAddCollaboratorOpen(false)}
+            >
+              Cancel
+            </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => {
-                    setSelectedPersonIds([]);
-                    setCollaboratorRole("Collaborator");
-                    setAddCollaboratorOpen(false);
-                  }}
-                >
-                  Close
-                </Button>
-              </div>
+            <Button
+              type="submit"
+              form="add-collaborators-form"
+              className="actsix-btn-primary min-h-10 rounded-xl"
+              disabled={selectedPersonIds.length === 0}
+            >
+              <Plus className="h-4 w-4" />
+              {selectedPersonIds.length > 1
+                ? `Add ${selectedPersonIds.length} Collaborators`
+                : "Add Collaborator"}
+            </Button>
+          </>
+        }
+      >
+        <form id="add-collaborators-form" onSubmit={addCollaborator} className="space-y-4">
+          <div>
+            <label className="label-eyebrow">People</label>
+            <div className="mt-2">
+              <PeopleMultiSearchSelect
+                people={availablePeople}
+                selectedPersonIds={selectedPersonIds}
+                onChange={setSelectedPersonIds}
+                placeholder="Search by name, email, or phone..."
+                emptyText="No available collaborators found."
+                showAllOnFocus
+              />
+            </div>
+          </div>
 
-              <div className="relative z-20 min-h-0 flex-1 space-y-4 overflow-visible p-4 sm:p-5">
-                <div>
-                  <label className="label-eyebrow">People</label>
-                  <div className="mt-2">
-                    <PeopleMultiSearchSelect
-                      people={availablePeople}
-                      selectedPersonIds={selectedPersonIds}
-                      onChange={setSelectedPersonIds}
-                      placeholder="Search by name, email, or phone..."
-                      emptyText="No available collaborators found."
-                      showAllOnFocus
-                    />
-                  </div>
-                </div>
+          <div>
+            <label className="label-eyebrow">Role</label>
+            <Input
+              value={collaboratorRole}
+              onChange={(event) => setCollaboratorRole(event.target.value)}
+              placeholder="Collaborator"
+              className="mt-2 border-border/70 bg-background"
+            />
+          </div>
 
-                <div>
-                  <label className="label-eyebrow">Role</label>
-                  <Input
-                    value={collaboratorRole}
-                    onChange={(event) => setCollaboratorRole(event.target.value)}
-                    placeholder="Collaborator"
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                {availablePeople.length === 0 && (
-                  <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-                    Everyone in People is already linked to this project.
-                  </div>
-                )}
-              </div>
-
-              <div className="relative z-10 flex shrink-0 justify-end gap-2 border-t border-border/70 bg-background/95 p-4 sm:p-5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => {
-                    setSelectedPersonIds([]);
-                    setCollaboratorRole("Collaborator");
-                    setAddCollaboratorOpen(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  type="submit"
-                  className="actsix-btn-primary min-h-10 rounded-xl"
-                  disabled={selectedPersonIds.length === 0}
-                >
-                  <Plus className="h-4 w-4" />
-                  {selectedPersonIds.length > 1
-                    ? `Add ${selectedPersonIds.length} Collaborators`
-                    : "Add Collaborator"}
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+          {availablePeople.length === 0 && (
+            <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+              Everyone in People is already linked to this project.
+            </div>
+          )}
+        </form>
+      </FormDialog>
 
       <ProjectSectionEditorModal
         section={editingSection}
@@ -1258,7 +1209,7 @@ const ProjectDetailPage = () => {
         onDelete={
           editingProject
             ? () => {
-                removeProject(editingProject);
+                requestDeleteProject(editingProject);
                 setEditingProject(null);
               }
             : undefined
@@ -1283,6 +1234,35 @@ const ProjectDetailPage = () => {
             : undefined
         }
         onRefreshOptions={load}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        title={
+          pendingDelete?.kind === "project"
+            ? `Delete "${pendingDelete.project.name}"?`
+            : pendingDelete?.kind === "section"
+              ? `Delete "${pendingDelete.section.name}"?`
+              : `Remove ${pendingDelete?.kind === "collaborator" ? pendingDelete.label : ""}?`
+        }
+        description={
+          pendingDelete?.kind === "project"
+            ? "Its sections, activity history, and links to tasks will be removed. This can't be undone."
+            : pendingDelete?.kind === "section"
+              ? "Its tasks will stay on the project without a section."
+              : "They'll lose access to this project's tasks and details."
+        }
+        confirmLabel={
+          pendingDelete?.kind === "project"
+            ? "Delete Project"
+            : pendingDelete?.kind === "section"
+              ? "Delete Section"
+              : "Remove"
+        }
+        onConfirm={confirmPendingDelete}
       />
     </div>
   );

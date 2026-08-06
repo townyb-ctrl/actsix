@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export const fieldControlClass =
-  "h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-base md:text-sm shadow-none outline-none transition focus-visible:border-brand-teal focus-visible:ring-2 focus-visible:ring-brand-teal/15 focus-visible:ring-offset-0";
+  "h-8 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus-visible:border-brand-teal focus-visible:ring-2 focus-visible:ring-brand-teal/15 focus-visible:ring-offset-0 sm:text-xs";
 
 type FieldProps = {
   label: string;
@@ -29,13 +29,13 @@ export function Field({ label, htmlFor, hint, children, className }: FieldProps)
       : children;
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1", className)}>
       {htmlFor ? (
-        <label htmlFor={htmlFor} className="text-sm font-semibold">
+        <label htmlFor={htmlFor} className="label-eyebrow">
           {label}
         </label>
       ) : (
-        <span className="block text-sm font-semibold">{label}</span>
+        <span className="label-eyebrow block">{label}</span>
       )}
       {control}
       {hint && (

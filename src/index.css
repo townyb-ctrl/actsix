@@ -124,6 +124,18 @@
     --gradient-sidebar: linear-gradient(180deg, #1E1E1B 0%, #171714 100%);
     --shadow-card: 0 1px 0 rgba(207, 198, 181, 0.55), 0 4px 14px rgba(30, 30, 27, 0.045);
     --shadow-soft: 0 1px 6px rgba(30, 30, 27, 0.035);
+
+    /* z-index scale: shadcn/Radix primitives (dialog, sheet, dropdown-menu, etc.)
+       already own 40/50 via Tailwind's default scale - these tokens are only for
+       the app's own custom-built overlays, so nothing gets an arbitrary one-off
+       number again. Higher tiers intentionally sit above Radix's 50 for anything
+       that must win over an open dialog (a toast confirming an action, the tour). */
+    --z-dropdown: 40;
+    --z-dropdown-panel: 45;
+    --z-popover: 50;
+    --z-toast: 60;
+    --z-skip-link: 70;
+    --z-tour: 80;
   }
 
   .dark {
@@ -234,8 +246,7 @@
     button,
     a,
     select,
-    input[type="button"],
-    input[type="submit"] {
+    input:not([type="checkbox"]):not([type="radio"]) {
       min-height: 44px;
     }
 
@@ -489,6 +500,17 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     @apply h-6 rounded-full border-border/40 bg-transparent pl-6 pr-2 text-[11px] shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-brand-teal/20;
   }
 
+  /* Projects sections (project grid + a project's task pane): same control
+     band, but the search field sits next to a lot of other chrome, so it
+     drops to the pills' own 10px rather than the 11px default above. */
+  .actsix-search-input-sm {
+    @apply pl-5 text-[10px];
+  }
+
+  .actsix-search-icon-sm {
+    @apply left-1.5 h-2.5 w-2.5;
+  }
+
   .actsix-filter-pills {
     @apply flex snap-x items-center gap-1 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:overflow-visible sm:pb-0;
   }
@@ -587,5 +609,31 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
       opacity: 0;
       transition: opacity 120ms ease-out;
     }
+  }
+
+  /* Sidebar's own scroll track sits on the dark gradient surface - the OS default
+     light scrollbar reads as a bright, foreign stripe against it. Thin it down and
+     tint it to the sidebar's own foreground so it recedes until it's needed. */
+  [data-sidebar="sidebar"] * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--sidebar-foreground) / 0.16) transparent;
+  }
+
+  [data-sidebar="sidebar"] *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  [data-sidebar="sidebar"] *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  [data-sidebar="sidebar"] *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--sidebar-foreground) / 0.16);
+    border-radius: var(--radius-pill);
+  }
+
+  [data-sidebar="sidebar"] *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--sidebar-foreground) / 0.32);
   }
 }

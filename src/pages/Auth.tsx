@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Logo } from "@/components/Logo";
 
 const Auth = () => {
@@ -28,14 +29,14 @@ const Auth = () => {
         password,
         options: { emailRedirectTo: `${window.location.origin}/` },
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(friendlyErrorMessage(error));
       else {
         toast.success("Welcome - check your inbox to confirm.");
         navigate("/");
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) toast.error(error.message);
+      if (error) toast.error(friendlyErrorMessage(error));
       else navigate("/");
     }
     setBusy(false);
@@ -52,7 +53,7 @@ const Auth = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       setGoogleBusy(false);
     }
   };
@@ -92,7 +93,7 @@ const Auth = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-11 rounded-xl border-border/70 bg-background shadow-none"
+              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
             />
           </div>
 
@@ -105,7 +106,7 @@ const Auth = () => {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-11 rounded-xl border-border/70 bg-background shadow-none"
+              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
             />
           </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ export default function AlphaFeedback() {
     setLoading(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -100,7 +101,7 @@ export default function AlphaFeedback() {
       .eq("id", item.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       setFeedback((currentFeedback) =>
         currentFeedback.map((feedbackItem) =>
           feedbackItem.id === item.id ? { ...feedbackItem, metadata: item.metadata } : feedbackItem,

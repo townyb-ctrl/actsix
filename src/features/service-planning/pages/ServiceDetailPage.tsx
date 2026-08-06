@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -311,7 +312,7 @@ const ServiceDetailPage = () => {
       .single();
 
     if (serviceError) {
-      toast.error(serviceError.message);
+      toast.error(friendlyErrorMessage(serviceError));
       setLoading(false);
       return;
     }
@@ -355,9 +356,9 @@ const ServiceDetailPage = () => {
           .limit(20),
       ]);
 
-    if (orderError) toast.error(orderError.message);
-    if (teamError) toast.error(teamError.message);
-    if (activityError) toast.error(activityError.message);
+    if (orderError) toast.error(friendlyErrorMessage(orderError));
+    if (teamError) toast.error(friendlyErrorMessage(teamError));
+    if (activityError) toast.error(friendlyErrorMessage(activityError));
 
     const actorPersonIds = Array.from(
       new Set(
@@ -377,7 +378,7 @@ const ServiceDetailPage = () => {
         .in("id", actorPersonIds);
 
       if (actorPeopleError) {
-        toast.error(actorPeopleError.message);
+        toast.error(friendlyErrorMessage(actorPeopleError));
       }
 
       actorPeople = actorPeopleData || [];
@@ -401,7 +402,7 @@ const ServiceDetailPage = () => {
       .eq("service_type_id", serviceData.service_type_id);
 
     if (serviceTypeTeamError) {
-      toast.error(serviceTypeTeamError.message);
+      toast.error(friendlyErrorMessage(serviceTypeTeamError));
     }
 
     const linkedTeamIds = (serviceTypeTeamLinks || []).map((link: ServiceTypeTeam) => link.team_id);
@@ -434,9 +435,9 @@ const ServiceDetailPage = () => {
             .order("display_name", { ascending: true }),
         ]);
 
-      if (assignedTeamError) toast.error(assignedTeamError.message);
-      if (linkedMemberError) toast.error(linkedMemberError.message);
-      if (peopleError) toast.error(peopleError.message);
+      if (assignedTeamError) toast.error(friendlyErrorMessage(assignedTeamError));
+      if (linkedMemberError) toast.error(friendlyErrorMessage(linkedMemberError));
+      if (peopleError) toast.error(friendlyErrorMessage(peopleError));
 
       const nextAssignedTeams = assignedTeamData || [];
       const nextTeamMembers = linkedMemberData || [];
@@ -466,7 +467,7 @@ const ServiceDetailPage = () => {
         .in("team_id", linkedTeamIds);
 
       if (teamRolesError) {
-        toast.error(teamRolesError.message);
+        toast.error(friendlyErrorMessage(teamRolesError));
       }
 
       const existingOrderedRoles = (existingTeamRoles || []) as ServiceTeamRole[];
@@ -504,7 +505,7 @@ const ServiceDetailPage = () => {
           );
 
         if (insertTeamRolesError) {
-          toast.error(insertTeamRolesError.message);
+          toast.error(friendlyErrorMessage(insertTeamRolesError));
         }
       }
 
@@ -517,7 +518,7 @@ const ServiceDetailPage = () => {
           .order("sort_order", { ascending: true });
 
       if (refreshedTeamRolesError) {
-        toast.error(refreshedTeamRolesError.message);
+        toast.error(friendlyErrorMessage(refreshedTeamRolesError));
       }
 
       setServiceTeamRoles(refreshedTeamRoles || []);
@@ -531,7 +532,7 @@ const ServiceDetailPage = () => {
           .in("team_id", linkedTeamIds);
 
       if (requirementsError) {
-        toast.error(requirementsError.message);
+        toast.error(friendlyErrorMessage(requirementsError));
       }
 
       const existing = (existingRequirements || []) as ServiceTeamRoleRequirement[];
@@ -558,7 +559,7 @@ const ServiceDetailPage = () => {
           );
 
         if (insertRequirementsError) {
-          toast.error(insertRequirementsError.message);
+          toast.error(friendlyErrorMessage(insertRequirementsError));
         }
       }
 
@@ -572,7 +573,7 @@ const ServiceDetailPage = () => {
           .order("role_name", { ascending: true });
 
       if (refreshedRequirementsError) {
-        toast.error(refreshedRequirementsError.message);
+        toast.error(friendlyErrorMessage(refreshedRequirementsError));
       }
 
       setRoleRequirements(refreshedRequirements || []);
@@ -592,7 +593,7 @@ const ServiceDetailPage = () => {
       .maybeSingle();
 
     if (templateError) {
-      toast.error(templateError.message);
+      toast.error(friendlyErrorMessage(templateError));
     }
 
     setTemplate(templateData || null);
@@ -606,7 +607,7 @@ const ServiceDetailPage = () => {
         .order("sort_order", { ascending: true });
 
       if (templateItemError) {
-        toast.error(templateItemError.message);
+        toast.error(friendlyErrorMessage(templateItemError));
       }
 
       setTemplateItems(templateItemData || []);
@@ -656,7 +657,7 @@ const ServiceDetailPage = () => {
     });
 
     if (error) {
-      toast.error(`Could not log activity: ${error.message}`);
+      toast.error(`Could not log activity: ${friendlyErrorMessage(error)}`);
       return;
     }
 
@@ -697,7 +698,7 @@ const ServiceDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -724,7 +725,7 @@ const ServiceDetailPage = () => {
       .eq("id", item.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -752,7 +753,7 @@ const ServiceDetailPage = () => {
       .eq("user_id", requirement.user_id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -836,7 +837,7 @@ const ServiceDetailPage = () => {
         .eq("user_id", selectedMember.user_id);
 
       if (linkMemberError) {
-        toast.error(linkMemberError.message);
+        toast.error(friendlyErrorMessage(linkMemberError));
         return;
       }
     }
@@ -854,7 +855,7 @@ const ServiceDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -901,7 +902,7 @@ const ServiceDetailPage = () => {
       .eq("id", assignment.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1096,7 +1097,7 @@ const ServiceDetailPage = () => {
       .insert(itemsToInsert);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       setApplyingTemplate(false);
       return;
     }
@@ -1752,7 +1753,7 @@ const ServiceDetailPage = () => {
                   <select
                     value={selectedAssignmentPersonId}
                     onChange={(event) => setSelectedAssignmentPersonId(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="">No linked profile</option>
                     {people.map((person) => (
@@ -1898,7 +1899,7 @@ const ServiceDetailPage = () => {
                 <select
                   value={itemType}
                   onChange={(event) => setItemType(event.target.value)}
-                  className="mt-2 h-10 w-full rounded-md border border-border/70 bg-background px-3 text-sm"
+                  className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 >
                   <option>Song</option>
                   <option>Welcome</option>
@@ -1938,7 +1939,7 @@ const ServiceDetailPage = () => {
                   <select
                     value={selectedAssignmentPersonId}
                     onChange={(event) => setSelectedAssignmentPersonId(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="">No linked profile</option>
                     {people.map((person) => (

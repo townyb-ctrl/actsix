@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Copy, Filter, Mail, Merge, Phone, Plus, Search, Send, Upload, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { useConfirm } from "@/hooks/useConfirm";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,6 +66,7 @@ const PeoplePage = () => {
   const [csvRows, setCsvRows] = useState<CsvPersonRow[]>([]);
   const [csvError, setCsvError] = useState("");
   const [importingCsv, setImportingCsv] = useState(false);
+  const { confirmAction, confirmDialog } = useConfirm();
   const [searchTerm, setSearchTerm] = useState("");
   const [welcomeRecipients, setWelcomeRecipients] = useState<CsvPersonRow[]>([]);
   const [workspaceInvite, setWorkspaceInvite] = useState<WorkspaceInvite | null>(null);
@@ -169,7 +172,7 @@ const PeoplePage = () => {
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await confirmAction(
       `Merge ${duplicateEmailGroups.length} duplicate email group(s)? ACTSIX will keep the most complete profile for each email and remove the duplicates.`
     );
 
@@ -235,7 +238,7 @@ const PeoplePage = () => {
         .in("id", allGroupIds);
 
       if (clearAuthError) {
-        toast.error(clearAuthError.message);
+        toast.error(friendlyErrorMessage(clearAuthError));
         return;
       }
 
@@ -254,7 +257,7 @@ const PeoplePage = () => {
         .eq("workspace_id", workspace?.id);
 
       if (updatePrimaryError) {
-        toast.error(updatePrimaryError.message);
+        toast.error(friendlyErrorMessage(updatePrimaryError));
         return;
       }
 
@@ -265,7 +268,7 @@ const PeoplePage = () => {
         .in("person_id", duplicateIds);
 
       if (teamMemberError) {
-        toast.error(teamMemberError.message);
+        toast.error(friendlyErrorMessage(teamMemberError));
         return;
       }
 
@@ -276,7 +279,7 @@ const PeoplePage = () => {
         .in("person_id", duplicateIds);
 
       if (assignmentError) {
-        toast.error(assignmentError.message);
+        toast.error(friendlyErrorMessage(assignmentError));
         return;
       }
 
@@ -287,7 +290,7 @@ const PeoplePage = () => {
         .in("id", duplicateIds);
 
       if (deleteError) {
-        toast.error(deleteError.message);
+        toast.error(friendlyErrorMessage(deleteError));
         return;
       }
 
@@ -312,7 +315,7 @@ const PeoplePage = () => {
       .order("display_name", { ascending: true });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       setLoading(false);
       return;
     }
@@ -576,7 +579,7 @@ Once your account is active, ACTSIX will connect you to your People profile auto
       .in("email", emails.length > 0 ? emails : ["__no_email_matches__"]);
 
     if (existingPeopleError) {
-      toast.error(existingPeopleError.message);
+      toast.error(friendlyErrorMessage(existingPeopleError));
       setImportingCsv(false);
       return;
     }
@@ -630,7 +633,7 @@ ${row.notes}`
         .eq("workspace_id", workspace?.id ?? "00000000-0000-0000-0000-000000000000");
 
       if (updateError) {
-        toast.error(updateError.message);
+        toast.error(friendlyErrorMessage(updateError));
         setImportingCsv(false);
         return;
       }
@@ -654,7 +657,7 @@ ${row.notes}`
       );
 
       if (createError) {
-        toast.error(createError.message);
+        toast.error(friendlyErrorMessage(createError));
         setImportingCsv(false);
         return;
       }
@@ -715,7 +718,7 @@ ${row.notes}`
           return;
         }
       } catch (error: any) {
-        toast.error(error.message || "Could not check for duplicate email.");
+        toast.error(friendlyErrorMessage(error, "Could not check for duplicate email."));
         return;
       }
     }
@@ -739,7 +742,7 @@ ${row.notes}`
       .single();
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1087,7 +1090,7 @@ ${row.notes}`
                     </button>
                   ) : (
                     <span
-                      className="inline-flex h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 text-xs font-extrabold text-muted-foreground/50 md:h-8 md:w-8 md:rounded-full md:px-0"
+                      className="w-full font-extrabold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                       title={person.phone_number ? "Invalid phone format. Use +27..." : "No phone number"}
                     >
                       <Send className="h-3.5 w-3.5" />
@@ -1132,7 +1135,7 @@ ${row.notes}`
                     setCsvError(error instanceof Error ? error.message : "Could not read CSV file.");
                   });
                 }}
-                className="mt-2 h-11 rounded-xl border-border/70 bg-background shadow-none"
+                className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
               />
 
               <div className="mt-3 rounded-xl border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground">
@@ -1352,7 +1355,7 @@ ${row.notes}`
                   <select
                     value={gender}
                     onChange={(event) => setGender(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="">Not specified</option>
                     <option value="Male">Male</option>
@@ -1365,7 +1368,7 @@ ${row.notes}`
                   <select
                     value={membershipStatus}
                     onChange={(event) => setMembershipStatus(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="Member">Member</option>
                     <option value="Adherent">Adherent</option>
@@ -1380,7 +1383,7 @@ ${row.notes}`
                   onChange={(event) => setNotes(event.target.value)}
                   rows={4}
                   placeholder="Care notes, serving preferences, availability, family context..."
-                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 py-2 text-base outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 
@@ -1405,6 +1408,8 @@ ${row.notes}`
             </form>
         </DialogContent>
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Plus } from "lucide-react";
 
 type Context = {
@@ -49,7 +50,7 @@ const ContextSelect = ({ id, value, onChange, onCreated, selectClassName }: Cont
       .order("position", { ascending: true });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -77,7 +78,7 @@ const ContextSelect = ({ id, value, onChange, onCreated, selectClassName }: Cont
     setSaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 

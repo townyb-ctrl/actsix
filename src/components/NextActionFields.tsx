@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
-import { CheckCircle2, Clock, Tags, UserRound } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ProjectSelect from "@/components/ProjectSelect";
 import ContextSelect from "@/components/ContextSelect";
@@ -131,34 +131,27 @@ const NextActionFields = ({
   if (!item) return null;
 
   const durationOptions = [2, 5, 10, 15, 20, 25, 30, 45, 60, 90, 120];
-  const fieldClassName =
-    variant === "inbox"
-      ? "rounded-xl border border-brand-teal/20 bg-card p-4 shadow-sm"
-      : "rounded-xl border border-border/70 bg-background/70 p-4";
-  const mainFieldClassName =
-    variant === "inbox"
-      ? "rounded-xl border border-brand-teal/20 bg-card p-4 shadow-sm"
-      : "rounded-xl border border-border/70 bg-background/70 p-4";
   const inputClassName =
     variant === "inbox"
-      ? "mt-2 h-10 rounded-xl border-brand-teal/20 bg-card shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-      : "mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none";
+      ? "h-8 rounded-lg border-border/70 bg-card text-base shadow-none focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+      : "h-8 rounded-lg border-border/70 bg-background text-base shadow-none sm:text-xs";
   const selectClassName =
     variant === "inbox"
-      ? "mt-2 h-10 w-full rounded-xl border border-brand-teal/20 bg-card px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
-      : "mt-2 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15";
-  const labelClassName = "label-eyebrow flex h-5 items-center gap-2";
+      ? "h-8 w-full rounded-lg border border-border/70 bg-card px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+      : "h-8 w-full rounded-lg border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs";
+  const fieldWrapperClassName = "space-y-1";
+  const labelClassName = "label-eyebrow flex items-center gap-1.5 text-[0.65rem]";
 
   return (
     <>
       <section>
-        <div className="flex items-center gap-2 mb-3">
-          <CheckCircle2 className="h-4 w-4 text-brand-teal" />
-          <h3 className="font-extrabold tracking-tight">Next Action details</h3>
+        <div className="flex items-center gap-2 mb-1.5">
+          <CheckCircle2 className="h-3.5 w-3.5 text-brand-teal" />
+          <h3 className="text-sm font-extrabold tracking-tight">Next Action details</h3>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-3">
-          <div className={mainFieldClassName}>
+        <div className="grid grid-cols-2 gap-x-2.5 gap-y-2 sm:grid-cols-3">
+          <div className={fieldWrapperClassName}>
             <label htmlFor={projectFieldId} className={labelClassName}>Project</label>
             <ProjectSelect
               id={projectFieldId}
@@ -189,7 +182,7 @@ const NextActionFields = ({
             />
           </div>
 
-          <div className={mainFieldClassName}>
+          <div className={fieldWrapperClassName}>
             <label htmlFor={dueFieldId} className={labelClassName}>Due date</label>
             <Input
               id={dueFieldId}
@@ -202,11 +195,8 @@ const NextActionFields = ({
             />
           </div>
 
-          <div className={mainFieldClassName}>
-            <label htmlFor={durationFieldId} className={labelClassName}>
-              <Clock className="h-3.5 w-3.5" />
-              Est. Duration
-            </label>
+          <div className={fieldWrapperClassName}>
+            <label htmlFor={durationFieldId} className={labelClassName}>Est. Duration</label>
             <select
               id={durationFieldId}
               value={item.minutes ?? 15}
@@ -226,7 +216,7 @@ const NextActionFields = ({
             </select>
           </div>
 
-          <div className={mainFieldClassName}>
+          <div className={fieldWrapperClassName}>
             <label htmlFor={energyFieldId} className={labelClassName}>Energy</label>
             <select
               id={energyFieldId}
@@ -242,7 +232,7 @@ const NextActionFields = ({
             </select>
           </div>
 
-          <div className={mainFieldClassName}>
+          <div className={fieldWrapperClassName}>
             <label htmlFor={priorityFieldId} className={labelClassName}>Priority</label>
             <select
               id={priorityFieldId}
@@ -259,7 +249,7 @@ const NextActionFields = ({
             </select>
           </div>
 
-          <div className={mainFieldClassName}>
+          <div className={fieldWrapperClassName}>
             <label htmlFor={contextFieldId} className={labelClassName}>Context</label>
             <ContextSelect
               id={contextFieldId}
@@ -271,28 +261,24 @@ const NextActionFields = ({
           </div>
 
           {shouldShowAssignedTo && (
-            <div className={`${fieldClassName} md:col-span-2`}>
-              <label className="label-eyebrow flex items-center gap-2">
-                <UserRound className="h-3.5 w-3.5" />
-                Assigned To
-              </label>
-              <div className="mt-2">
-                <PeopleSearchSelect
-                  people={assignablePeople}
-                  selectedPersonId={item.assigned_person_id ?? ""}
-                  onSelect={(personId) =>
-                    onChange({
-                      ...item,
-                      assigned_person_id: personId || null,
-                    })
-                  }
-                  placeholder="Search project collaborators..."
-                  emptyText="No matching project collaborators found."
-                  showAllOnFocus
-                />
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Tasks can only be assigned to People who are collaborators on this project.
+            <div className={`${fieldWrapperClassName} col-span-2 sm:col-span-3`}>
+              <label className={labelClassName}>Assigned To</label>
+              <PeopleSearchSelect
+                people={assignablePeople}
+                selectedPersonId={item.assigned_person_id ?? ""}
+                onSelect={(personId) =>
+                  onChange({
+                    ...item,
+                    assigned_person_id: personId || null,
+                  })
+                }
+                placeholder="Search project collaborators..."
+                emptyText="No matching project collaborators found."
+                showAllOnFocus
+                compact
+              />
+              <p className="text-xs text-muted-foreground">
+                Only project collaborators can be assigned.
               </p>
             </div>
           )}
@@ -302,43 +288,33 @@ const NextActionFields = ({
             currentProject &&
             canAssignProjectTasks &&
             assignablePeople.length === 0 && (
-              <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground md:col-span-2">
+              <p className="col-span-2 text-xs text-muted-foreground sm:col-span-3">
                 Add collaborators to this project before assigning tasks.
-              </div>
+              </p>
             )}
+
+          {showOrganization && (
+            <div className={`${fieldWrapperClassName} col-span-2 sm:col-span-3`}>
+              <label htmlFor={tagsFieldId} className={labelClassName}>Tags</label>
+              <Input
+                id={tagsFieldId}
+                value={Array.isArray(item.tags) ? item.tags.join(", ") : ""}
+                onChange={(event) =>
+                  onChange({
+                    ...item,
+                    tags: event.target.value
+                      .split(",")
+                      .map((tag) => tag.trim())
+                      .filter(Boolean),
+                  })
+                }
+                className={inputClassName}
+                placeholder="Worship, Admin, Follow-up"
+              />
+            </div>
+          )}
         </div>
       </section>
-
-      {showOrganization && (
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <Tags className="h-4 w-4 text-brand-teal" />
-            <h3 className="font-extrabold tracking-tight">Organization</h3>
-          </div>
-
-          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
-            <label htmlFor={tagsFieldId} className="label-eyebrow">Tags</label>
-            <Input
-              id={tagsFieldId}
-              value={Array.isArray(item.tags) ? item.tags.join(", ") : ""}
-              onChange={(event) =>
-                onChange({
-                  ...item,
-                  tags: event.target.value
-                    .split(",")
-                    .map((tag) => tag.trim())
-                    .filter(Boolean),
-                })
-              }
-              className="mt-2 h-10 rounded-xl border-border/70 bg-background shadow-none"
-              placeholder="Worship, Admin, Follow-up"
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              Separate tags with commas.
-            </p>
-          </div>
-        </section>
-      )}
     </>
   );
 };

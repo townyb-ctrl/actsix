@@ -296,7 +296,7 @@ export function FeedbackBubble() {
 
   return (
     <div
-      className="fixed z-[900]"
+      className="fixed z-[var(--z-popover)]"
       style={{
         left: position.x,
         top: position.y,

@@ -12,6 +12,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { useConfirm } from "@/hooks/useConfirm";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -67,6 +69,7 @@ const RecurringTasksPage = () => {
   const [draft, setDraft] = useState<RecurringTemplateDraft | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
+  const { confirmAction, confirmDialog } = useConfirm();
 
   const load = async () => {
     if (!user) return;
@@ -77,7 +80,7 @@ const RecurringTasksPage = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       setLoading(false);
       return;
     }
@@ -160,7 +163,7 @@ const RecurringTasksPage = () => {
           .single();
 
     if (result.error) {
-      toast.error(result.error.message);
+      toast.error(friendlyErrorMessage(result.error));
       setSaving(false);
       return;
     }
@@ -169,7 +172,7 @@ const RecurringTasksPage = () => {
       try {
         await createTaskInstanceFromTemplate(result.data as RecurringTaskTemplate, payload.first_due_date);
       } catch (error: any) {
-        toast.error(error.message || "Template saved, but the first Next Action was not created.");
+        toast.error(friendlyErrorMessage(error, "Template saved, but the first Next Action was not created."));
       }
     }
 
@@ -187,7 +190,7 @@ const RecurringTasksPage = () => {
       .eq("id", template.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
     toast.success(status === "ended" ? "Recurrence ended" : `Recurring task ${status}`);
@@ -195,7 +198,7 @@ const RecurringTasksPage = () => {
   };
 
   const deleteTemplate = async (template: RecurringTaskTemplate) => {
-    const confirmed = window.confirm(`Delete "${template.title}"? Existing generated tasks will stay in Next Actions.`);
+    const confirmed = await confirmAction(`Delete "${template.title}"? Existing generated tasks will stay in Next Actions.`);
     if (!confirmed) return;
 
     const { error } = await (supabase as any)
@@ -204,7 +207,7 @@ const RecurringTasksPage = () => {
       .eq("id", template.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -221,7 +224,7 @@ const RecurringTasksPage = () => {
       .eq("id", template.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
     toast.success("Next occurrence skipped");
@@ -364,6 +367,8 @@ const RecurringTasksPage = () => {
         }}
         onSave={save}
       />
+
+      {confirmDialog}
     </div>
   );
 };

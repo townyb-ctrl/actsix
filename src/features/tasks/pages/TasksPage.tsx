@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { syncProjectStatsById, syncProjectStatsForIds } from "@/lib/syncProjectStats";
@@ -107,7 +108,7 @@ const TasksPage = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       setLoadError(error.message);
       setLoadingTasks(false);
       return;
@@ -187,7 +188,7 @@ const TasksPage = () => {
       .eq("id", task.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -196,7 +197,7 @@ const TasksPage = () => {
         const createdNext = await createNextRecurringTaskOnCompletion(task);
         if (createdNext) toast.success("Next recurring task created");
       } catch (recurringError: any) {
-        toast.error(recurringError.message || "Task completed, but the next recurring task was not created.");
+        toast.error(friendlyErrorMessage(recurringError, "Task completed, but the next recurring task was not created."));
       }
     }
 
@@ -211,7 +212,7 @@ const TasksPage = () => {
     const { error } = await supabase.from("tasks").delete().eq("id", id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -252,7 +253,7 @@ const TasksPage = () => {
     setSaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 

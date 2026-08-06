@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -233,7 +234,7 @@ const PersonDetailPage = () => {
       .single();
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       setLoading(false);
       return;
     }
@@ -255,7 +256,7 @@ const PersonDetailPage = () => {
       .order("role_name", { ascending: true });
 
     if (membershipError) {
-      toast.error(membershipError.message);
+      toast.error(friendlyErrorMessage(membershipError));
     }
 
     setMemberships(membershipData || []);
@@ -268,7 +269,7 @@ const PersonDetailPage = () => {
       .order("created_at", { ascending: false });
 
     if (groupMembershipError) {
-      toast.error(groupMembershipError.message);
+      toast.error(friendlyErrorMessage(groupMembershipError));
     }
 
     setGroupMemberships(groupMembershipData || []);
@@ -282,7 +283,7 @@ const PersonDetailPage = () => {
       .order("due", { ascending: true, nullsFirst: false });
 
     if (assignedTaskError) {
-      toast.error(assignedTaskError.message);
+      toast.error(friendlyErrorMessage(assignedTaskError));
     }
 
     setAssignedTasks(assignedTaskData || []);
@@ -295,7 +296,7 @@ const PersonDetailPage = () => {
       .order("created_at", { ascending: false });
 
     if (collaborationError) {
-      toast.error(collaborationError.message);
+      toast.error(friendlyErrorMessage(collaborationError));
     }
 
     const collaborations = collaborationData || [];
@@ -313,7 +314,7 @@ const PersonDetailPage = () => {
         .in("id", projectIds);
 
       if (collaborationProjectError) {
-        toast.error(collaborationProjectError.message);
+        toast.error(friendlyErrorMessage(collaborationProjectError));
       }
 
       setCollaborationProjects(collaborationProjectData || []);
@@ -329,7 +330,7 @@ const PersonDetailPage = () => {
       .order("created_at", { ascending: false });
 
     if (assignmentError) {
-      toast.error(assignmentError.message);
+      toast.error(friendlyErrorMessage(assignmentError));
     }
 
     const nextAssignments = assignmentData || [];
@@ -348,7 +349,7 @@ const PersonDetailPage = () => {
         .order("service_date", { ascending: false });
 
       if (servicesError) {
-        toast.error(servicesError.message);
+        toast.error(friendlyErrorMessage(servicesError));
       }
 
       setAssignmentServices(serviceData || []);
@@ -365,7 +366,7 @@ const PersonDetailPage = () => {
       .order("created_at", { ascending: false });
 
     if (trainingAssignmentError) {
-      toast.error(trainingAssignmentError.message);
+      toast.error(friendlyErrorMessage(trainingAssignmentError));
     }
 
     const nextTrainingAssignments = trainingAssignmentData || [];
@@ -377,7 +378,7 @@ const PersonDetailPage = () => {
       .order("title", { ascending: true });
 
     if (trainingCourseError) {
-      toast.error(trainingCourseError.message);
+      toast.error(friendlyErrorMessage(trainingCourseError));
     }
 
     const nextTrainingCourses: TrainingCourse[] = trainingCourseData || [];
@@ -452,7 +453,7 @@ const PersonDetailPage = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -489,7 +490,7 @@ const PersonDetailPage = () => {
       .eq("id", assignment.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -547,7 +548,7 @@ const PersonDetailPage = () => {
 
     if (error) {
       setAssigningTraining(false);
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -637,7 +638,7 @@ const PersonDetailPage = () => {
       });
 
     if (uploadError) {
-      toast.error(uploadError.message);
+      toast.error(friendlyErrorMessage(uploadError));
       return;
     }
 
@@ -660,7 +661,7 @@ const PersonDetailPage = () => {
       .eq("workspace_id", currentPerson?.workspace_id);
 
     if (updateError) {
-      toast.error(updateError.message);
+      toast.error(friendlyErrorMessage(updateError));
       return;
     }
 
@@ -690,7 +691,7 @@ const PersonDetailPage = () => {
       .eq("workspace_id", currentPerson?.workspace_id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1116,7 +1117,7 @@ const PersonDetailPage = () => {
                                         : assignment.progress || 25,
                                 })
                               }
-                              className="h-10 min-w-0 rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                             >
                               <option value="Not Started">Not Started</option>
                               <option value="In Progress">In Progress</option>
@@ -1133,7 +1134,7 @@ const PersonDetailPage = () => {
                                   progress: Number(event.target.value),
                                 })
                               }
-                              className="h-10 border-border/70 bg-background text-sm"
+                              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                             />
 
                             <Input
@@ -1144,7 +1145,7 @@ const PersonDetailPage = () => {
                                   due_date: event.target.value,
                                 })
                               }
-                              className="col-span-2 h-10 border-border/70 bg-background text-sm sm:col-span-1"
+                              className="col-span-2 sm:col-span-1 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                             />
                           </div>
                         )}
@@ -1496,7 +1497,7 @@ const PersonDetailPage = () => {
                   <select
                     value={selectedTrainingCourseId}
                     onChange={(event) => setSelectedTrainingCourseId(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     {availableTrainingCourses.map((course) => (
                       <option key={course.id} value={course.id}>
@@ -1600,7 +1601,7 @@ const PersonDetailPage = () => {
                   <select
                     value={gender}
                     onChange={(event) => setGender(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="">Not specified</option>
                     <option value="Male">Male</option>
@@ -1613,7 +1614,7 @@ const PersonDetailPage = () => {
                   <select
                     value={membershipStatus}
                     onChange={(event) => setMembershipStatus(event.target.value)}
-                    className="mt-2 h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="Member">Member</option>
                     <option value="Adherent">Adherent</option>
@@ -1627,7 +1628,7 @@ const PersonDetailPage = () => {
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                   rows={4}
-                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 py-3 text-sm outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 py-2 text-base outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </div>
 

@@ -1,7 +1,6 @@
-import { Edit3, ListChecks, Search, Trash2 } from "lucide-react";
+import { Edit3, ListChecks, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import CompactTaskRow from "@/components/CompactTaskRow";
 import { type PeopleSearchPerson } from "@/components/people/PeopleSearchSelect";
 import { type TeamMember } from "@/features/projects/components/CollaboratorAvatars";
@@ -27,8 +26,6 @@ type ProjectTaskPaneProps = {
   filter: TaskFilter;
   onFilterChange: (filter: TaskFilter) => void;
   counts: Record<TaskFilter, number>;
-  search: string;
-  onSearchChange: (value: string) => void;
   tasks: any[];
   emptyMessage: string;
   addTargetName: string;
@@ -49,8 +46,6 @@ const ProjectTaskPane = ({
   filter,
   onFilterChange,
   counts,
-  search,
-  onSearchChange,
   tasks,
   emptyMessage,
   addTargetName,
@@ -103,7 +98,7 @@ const ProjectTaskPane = ({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full"
+                className="h-11 w-11 rounded-full"
                 title="Edit section"
                 aria-label={`Edit section ${heading}`}
                 onClick={onEditSection}
@@ -117,7 +112,7 @@ const ProjectTaskPane = ({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
+                className="h-11 w-11 rounded-full text-muted-foreground hover:text-destructive"
                 title="Delete section"
                 aria-label={`Delete section ${heading}`}
                 onClick={onDeleteSection}
@@ -129,8 +124,6 @@ const ProjectTaskPane = ({
         )}
       </div>
 
-      {/* Same control band as the Projects grid: pills left, search right, one
-          height, so moving between the two screens feels like one product. */}
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-3">
         <div className="actsix-filter-pills">
           {TASK_FILTERS.map((entry) => {
@@ -158,17 +151,6 @@ const ProjectTaskPane = ({
               </button>
             );
           })}
-        </div>
-
-        <div className="actsix-search-field ml-auto w-36 lg:w-48">
-          <Search className="actsix-search-icon" />
-          <Input
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search tasks..."
-            aria-label="Search tasks"
-            className="actsix-search-input"
-          />
         </div>
       </div>
 

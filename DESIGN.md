@@ -165,6 +165,19 @@ Elevation is real but understated: a layered hierarchy exists (flat inline eleme
 ### Named Rules
 **The Whisper Rule.** No shadow in this system exceeds ~10% opacity. If a shadow reads as a hard drop rather than a soft lift, it's too strong for ACTSIX.
 
+### Z-Index Scale
+
+Radix/shadcn primitives (dialog, sheet, dropdown-menu, popover) already own Tailwind's default `z-40`/`z-50`. Custom-built overlays use these tokens instead of one-off numbers:
+
+- **`--z-dropdown` (40)**: in-page custom dropdowns/comboboxes while open.
+- **`--z-dropdown-panel` (45)**: the open panel content of a custom dropdown, one tier above its trigger.
+- **`--z-popover` (50)**: page-level floating UI — user menu, notification popover, feedback bubble.
+- **`--z-toast` (60)**: toast notifications — above dialogs so a confirmation fired from inside a modal stays visible.
+- **`--z-skip-link` (70)**: the keyboard-only skip-to-content link.
+- **`--z-tour` (80)**: the guided tour overlay — intentionally the top of the stack.
+
+**Never introduce a new arbitrary `z-[N]`.** Add a tier to this scale instead.
+
 ## Shapes
 
 Radii are consistently generous and layered by role, never sharp: `--radius-control` (0.75rem/12px) for interactive controls (buttons, inputs, segmented controls), `--radius-panel` (1rem/16px) for cards and containers, `--radius-pill` (999px) for chips, filter pills, and badges. A secondary numeric scale (`sm` 6px → `2xl` 16px) exists for shadcn primitives layered underneath the semantic scale. Borders are always drawn at reduced opacity against the border token (`border-border/70`, `border-brand-teal/25`) rather than full-strength — a hairline suggestion of an edge, not a hard rule.
@@ -192,16 +205,24 @@ Radii are consistently generous and layered by role, never sharp: `--radius-cont
 - **Internal Padding:** `p-5` (20px) header/content, `space-y-1.5` between header lines.
 
 ### Inputs / Fields
-- **Style:** `--radius-control`, `border-input`, `bg-background`, `h-10` default (`44px`+ on mobile).
-- **Focus:** 2px ring (`ring-ring`) with `ring-offset-2` — no border-color-only focus signal.
+- **Style:** `--radius-control`, `border-border/70`, `bg-background`, `h-8` default — the density every form field, popup editor, and inline row uses app-wide (set by the Next Actions / Task Editor forms, the reference for the whole system).
+- **Text:** `text-base` on mobile (prevents iOS auto-zoom) stepping down to `text-xs` at `sm:` — never a plain `text-sm` field.
+- **Label:** `.label-eyebrow` (uppercase, `0.16em` tracking, bold, muted) above every field, `space-y-1` from its control — labels are never plain sentence-case `text-sm font-semibold`.
+- **Focus:** `border-brand-teal` plus a 2px teal-tinted ring (`ring-brand-teal/15`) — no generic `ring-ring` border-color-only signal.
 - **Compact/search variant:** smaller `h-6` pill-shaped field matching filter-pill height, so search sits inline with filters without breaking the row rhythm.
+- **Shared primitive:** `fieldControlClass` in `src/components/ui/field.tsx` (paired with `<Field>`/`<FieldGroup>`/`<FieldRow>`) is the canonical implementation — reach for it before hand-rolling a field's className.
 
 ### Navigation (Sidebar)
 - **Style:** dark ink-charcoal gradient surface (`--gradient-sidebar`), a deliberate contrast island against the light parchment content area — the one place the system inverts to dark.
-- **Active state:** the active section/item inverts again — light pill (`bg-sidebar-foreground`) on the dark sidebar, plus a soft inset highlight + drop shadow on top-level active sections. This double-inversion (dark nav, light-on-dark active state) is the signature "you are here" signal — never color alone.
+- **Active state — two tiers, not one repeated pill.** A module with sub-pages (e.g. Tasks) shows two distinct signals at once, deliberately different in weight so they don't compete: the **parent row** gets an ambient teal wash (`bg-brand-teal/14`, teal-tinted border and icon) marking "you're in this module," while the **exact page** (the open sub-item, e.g. "Next Actions") gets the strong light pill (`bg-sidebar-foreground`) plus drop shadow — the system's one "here, precisely" signal. A single-page module with no children (People, Groups) goes straight to the light pill since it has no ambient/exact distinction to make. Teal marks location at the module level per the One Accent Rule; the light pill is reserved exclusively for the literal current page.
 - **Hierarchy:** top-level sections are pill rows with icon + 13px extra-bold label; nested items are smaller (12px semibold) and indented behind a hairline left border, echoing the outer panel's border language at a smaller scale.
-- **Collapsed state:** icon-only, centered, tooltips on hover — never truncated labels.
+- **Collapsed state:** icon-only, centered, tooltips on hover — never truncated labels. No teal here at all: the active module's icon carries the same quiet `bg-sidebar-foreground/10` circle every icon shows on hover, just persistently rather than only while the pointer is over it, plus a small rounded notch (`bg-background`) biting into the sidebar's right edge at that row — the page content reading as if it bleeds through next to the active icon. The tooltip appends the open sub-page name (e.g. "Tasks · Next Actions") for the precise location.
 - **Mobile:** a separate dock pattern (11px extra-bold labels, 32px icon targets) rather than a collapsed sidebar.
+- **Scroll track:** thin (6px), transparent track, sidebar-foreground-tinted thumb at low opacity — the OS default scrollbar never appears against the dark surface.
+- **Focus:** every nav link and icon-only control carries its own `focus-visible:ring-2 ring-sidebar-ring ring-offset-2 ring-offset-sidebar` — the dark surface never relies on the browser's unstyled default outline.
+- **Muted text floor:** de-emphasized sidebar text (footer role, empty states, section labels) never drops below `sidebar-foreground/58` — anything lower fails 4.5:1 against the dark surface. Icon-only glyphs (not text) may go lower since they only need to clear 3:1.
+
+
 
 ## Do's and Don'ts
 

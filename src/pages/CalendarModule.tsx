@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -226,9 +227,9 @@ export default function CalendarModule() {
       return;
     }
 
-    if (eventResult.error) toast.error(eventResult.error.message);
-    if (connectionResult.error) toast.error(connectionResult.error.message);
-    if (taskResult.error) toast.error(taskResult.error.message);
+    if (eventResult.error) toast.error(friendlyErrorMessage(eventResult.error));
+    if (connectionResult.error) toast.error(friendlyErrorMessage(connectionResult.error));
+    if (taskResult.error) toast.error(friendlyErrorMessage(taskResult.error));
 
     const calendarEvents = (eventResult.data || []).map((event: any) => ({
       id: `event-${event.id}`,
@@ -392,7 +393,7 @@ export default function CalendarModule() {
     setSaving(false);
 
     if (result.error) {
-      toast.error(result.error.message);
+      toast.error(friendlyErrorMessage(result.error));
       return;
     }
 
@@ -411,7 +412,7 @@ export default function CalendarModule() {
       .eq("workspace_id", workspace.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -450,7 +451,7 @@ export default function CalendarModule() {
     setSavingTask(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -492,7 +493,7 @@ export default function CalendarModule() {
       );
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -521,7 +522,7 @@ export default function CalendarModule() {
     setSyncingApple(false);
 
     if (error) {
-      toast.error(error.message || "Apple Calendar sync failed.");
+      toast.error(friendlyErrorMessage(error, "Apple Calendar sync failed."));
       return;
     }
 
@@ -793,24 +794,24 @@ export default function CalendarModule() {
       >
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1 md:col-span-2">
-            <span className="text-xs font-bold text-muted-foreground">Title</span>
-            <Input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="h-9 rounded-xl bg-background" />
+            <span className="label-eyebrow">Title</span>
+            <Input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground">Starts</span>
-            <Input type="datetime-local" value={form.startsAt} onChange={(event) => setForm((current) => ({ ...current, startsAt: event.target.value }))} className="h-9 rounded-xl bg-background" />
+            <span className="label-eyebrow">Starts</span>
+            <Input type="datetime-local" value={form.startsAt} onChange={(event) => setForm((current) => ({ ...current, startsAt: event.target.value }))} className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground">Ends</span>
-            <Input type="datetime-local" value={form.endsAt} onChange={(event) => setForm((current) => ({ ...current, endsAt: event.target.value }))} className="h-9 rounded-xl bg-background" />
+            <span className="label-eyebrow">Ends</span>
+            <Input type="datetime-local" value={form.endsAt} onChange={(event) => setForm((current) => ({ ...current, endsAt: event.target.value }))} className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground">Calendar</span>
-            <Input value={form.calendarName} onChange={(event) => setForm((current) => ({ ...current, calendarName: event.target.value }))} className="h-9 rounded-xl bg-background" />
+            <span className="label-eyebrow">Calendar</span>
+            <Input value={form.calendarName} onChange={(event) => setForm((current) => ({ ...current, calendarName: event.target.value }))} className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground">Status</span>
-            <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as CalendarStatus }))} className="h-9 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none">
+            <span className="label-eyebrow">Status</span>
+            <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as CalendarStatus }))} className="w-full font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs">
               <option>Tentative</option>
               <option>Confirmed</option>
               <option>Cancelled</option>
@@ -818,7 +819,7 @@ export default function CalendarModule() {
           </label>
           <label className="space-y-1 md:col-span-2">
             <span className="text-xs font-bold text-muted-foreground">Location</span>
-            <Input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="h-9 rounded-xl bg-background" />
+            <Input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
           </label>
           <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-background px-3 py-2 text-sm font-semibold">
             <input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />
@@ -858,7 +859,7 @@ export default function CalendarModule() {
               value={appleSyncForm.appleId}
               onChange={(event) => setAppleSyncForm((current) => ({ ...current, appleId: event.target.value }))}
               placeholder="name@icloud.com"
-              className="h-9 rounded-xl bg-background"
+              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
             />
           </label>
           <label className="space-y-1">
@@ -868,7 +869,7 @@ export default function CalendarModule() {
               value={appleSyncForm.appSpecificPassword}
               onChange={(event) => setAppleSyncForm((current) => ({ ...current, appSpecificPassword: event.target.value }))}
               placeholder="xxxx-xxxx-xxxx-xxxx"
-              className="h-9 rounded-xl bg-background"
+              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
             />
           </label>
           <label className="space-y-1 md:col-span-2">
@@ -877,7 +878,7 @@ export default function CalendarModule() {
               value={appleSyncForm.calendarUrl}
               onChange={(event) => setAppleSyncForm((current) => ({ ...current, calendarUrl: event.target.value }))}
               placeholder="https://caldav.icloud.com/..."
-              className="h-9 rounded-xl bg-background"
+              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
             />
           </label>
           <label className="space-y-1 md:col-span-2">
@@ -886,7 +887,7 @@ export default function CalendarModule() {
               value={appleSyncForm.accountLabel}
               onChange={(event) => setAppleSyncForm((current) => ({ ...current, accountLabel: event.target.value }))}
               placeholder="Brandon's Apple Calendar"
-              className="h-9 rounded-xl bg-background"
+              className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
             />
           </label>
         </div>

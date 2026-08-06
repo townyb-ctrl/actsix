@@ -24,6 +24,7 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -429,12 +430,12 @@ const TrainingCenter = () => {
         .order("display_name", { ascending: true }),
     ]);
 
-    if (sectionResult.error) toast.error(sectionResult.error.message);
-    if (courseResult.error) toast.error(courseResult.error.message);
-    if (assignmentResult.error) toast.error(assignmentResult.error.message);
-    if (lessonResult.error) toast.error(lessonResult.error.message);
-    if (lessonProgressResult.error) toast.error(lessonProgressResult.error.message);
-    if (peopleResult.error) toast.error(peopleResult.error.message);
+    if (sectionResult.error) toast.error(friendlyErrorMessage(sectionResult.error));
+    if (courseResult.error) toast.error(friendlyErrorMessage(courseResult.error));
+    if (assignmentResult.error) toast.error(friendlyErrorMessage(assignmentResult.error));
+    if (lessonResult.error) toast.error(friendlyErrorMessage(lessonResult.error));
+    if (lessonProgressResult.error) toast.error(friendlyErrorMessage(lessonProgressResult.error));
+    if (peopleResult.error) toast.error(friendlyErrorMessage(peopleResult.error));
 
     setSections(sectionResult.data ?? []);
     setCourses(courseResult.data ?? []);
@@ -905,7 +906,7 @@ const TrainingCenter = () => {
         return;
       }
 
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -998,7 +999,7 @@ const TrainingCenter = () => {
         );
         return;
       }
-      toast.error(courseResult.error.message);
+      toast.error(friendlyErrorMessage(courseResult.error));
       return;
     }
 
@@ -1013,7 +1014,7 @@ const TrainingCenter = () => {
 
       if (deleteLessonsError) {
         setSaving(false);
-        toast.error(deleteLessonsError.message);
+        toast.error(friendlyErrorMessage(deleteLessonsError));
         return;
       }
 
@@ -1033,7 +1034,7 @@ const TrainingCenter = () => {
 
         if (lessonError) {
           setSaving(false);
-          toast.error(lessonError.message);
+          toast.error(friendlyErrorMessage(lessonError));
           return;
         }
       }
@@ -1062,7 +1063,7 @@ const TrainingCenter = () => {
       .eq("workspace_id", workspace.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1097,7 +1098,7 @@ const TrainingCenter = () => {
     setSaving(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1154,7 +1155,7 @@ const TrainingCenter = () => {
         toast.error("Add the training-course-covers storage policies in Supabase, then upload again.");
         return;
       }
-      toast.error(uploadError.message);
+      toast.error(friendlyErrorMessage(uploadError));
       return;
     }
 
@@ -1291,7 +1292,7 @@ const TrainingCenter = () => {
       .eq("id", assignment.id);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1319,7 +1320,7 @@ const TrainingCenter = () => {
       .eq("id", assignmentId);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1346,7 +1347,7 @@ const TrainingCenter = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1391,7 +1392,7 @@ const TrainingCenter = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyErrorMessage(error));
       return;
     }
 
@@ -1676,7 +1677,7 @@ const TrainingCenter = () => {
                                     progress: nextValue,
                                   });
                                 }}
-                                className="h-9 w-24 border-border/70 bg-background text-sm"
+                                className="w-24 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                               />
                             </div>
                           )}
@@ -2359,7 +2360,7 @@ const TrainingCenter = () => {
                   }}
                   autoFocus
                   placeholder="Example: New Volunteers"
-                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </label>
 
@@ -2549,7 +2550,7 @@ const TrainingCenter = () => {
                                   })
                                 }
                                 disabled={!canManageTraining}
-                                className="mt-1 h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                                className="mt-1 w-full font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                               >
                                 <option>Not Started</option>
                                 <option>In Progress</option>
@@ -2570,7 +2571,7 @@ const TrainingCenter = () => {
                                   })
                                 }
                                 disabled={!canManageTraining}
-                                className="mt-1 h-10 rounded-xl border-border/70 bg-background shadow-none"
+                                className="mt-1 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                               />
                             </label>
 
@@ -2585,7 +2586,7 @@ const TrainingCenter = () => {
                                   })
                                 }
                                 disabled={!canManageTraining}
-                                className="mt-1 h-10 rounded-xl border-border/70 bg-background shadow-none"
+                                className="mt-1 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                               />
                             </label>
                           </div>
@@ -2612,7 +2613,7 @@ const TrainingCenter = () => {
                 <select
                   value={selectedCourseId}
                   onChange={(event) => setSelectedCourseId(event.target.value)}
-                  className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 >
                   {courses.map((course) => (
                     <option key={course.id} value={course.id}>
@@ -2628,7 +2629,7 @@ const TrainingCenter = () => {
                   type="date"
                   value={assignmentDueDate}
                   onChange={(event) => setAssignmentDueDate(event.target.value)}
-                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </label>
 
@@ -2688,7 +2689,7 @@ const TrainingCenter = () => {
                 <Input
                   value={courseForm.title}
                   onChange={(event) => setCourseForm((current) => ({ ...current, title: event.target.value }))}
-                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </label>
 
@@ -2700,7 +2701,7 @@ const TrainingCenter = () => {
                     onChange={(event) =>
                       setCourseForm((current) => ({ ...current, category: event.target.value }))
                     }
-                    className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
                 </label>
 
@@ -2711,7 +2712,7 @@ const TrainingCenter = () => {
                     onChange={(event) =>
                       setCourseForm((current) => ({ ...current, sectionId: event.target.value }))
                     }
-                    className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                    className="mt-2 w-full font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   >
                     <option value="">Unfiled</option>
                     {sections.map((section) => (
@@ -2731,7 +2732,7 @@ const TrainingCenter = () => {
                   onChange={(event) =>
                     setCourseForm((current) => ({ ...current, estimatedMinutes: event.target.value }))
                   }
-                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
                 </label>
               </div>
@@ -2745,9 +2746,9 @@ const TrainingCenter = () => {
                       setCourseForm((current) => ({ ...current, coverImageUrl: event.target.value }))
                     }
                     placeholder="https://example.com/training-cover.jpg"
-                    className="h-10 rounded-xl border-border/70 bg-background"
+                    className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                   />
-                  <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm font-bold text-foreground transition hover:bg-muted">
+                  <label className="font-bold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs">
                     <Camera className="h-4 w-4" />
                     {uploadingCover ? "Uploading..." : "Upload"}
                     <input
@@ -2784,7 +2785,7 @@ const TrainingCenter = () => {
                       status: event.target.value as TrainingCourse["status"],
                     }))
                   }
-                  className="mt-2 h-10 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-3 text-sm font-semibold outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 >
                   <option>Active</option>
                   <option>Draft</option>
@@ -2800,7 +2801,7 @@ const TrainingCenter = () => {
                     setCourseForm((current) => ({ ...current, description: event.target.value }))
                   }
                   rows={3}
-                  className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 py-2 text-base font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </label>
 
@@ -2811,7 +2812,7 @@ const TrainingCenter = () => {
                   onChange={(event) =>
                     setCourseForm((current) => ({ ...current, suggestedAudience: event.target.value }))
                   }
-                  className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background"
+                  className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
               </label>
 
@@ -2909,7 +2910,7 @@ const TrainingCenter = () => {
                             updateCourseLesson(lesson.tempId, { title: event.target.value })
                           }
                           placeholder="Example: Ministry vision and expectations"
-                          className="mt-2 h-10 rounded-[var(--radius-control)] border-border/70 bg-background shadow-none"
+                          className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                         />
                       </label>
 
@@ -2922,7 +2923,7 @@ const TrainingCenter = () => {
                           }
                           rows={5}
                           placeholder="Write the training content, notes, links, or instructions for this lesson."
-                          className="mt-2 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15"
+                          className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 py-2 text-base font-medium outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                         />
                       </label>
 
@@ -2981,7 +2982,7 @@ const TrainingCenter = () => {
                                     })
                                   }
                                   placeholder="Media title"
-                                  className="h-10 rounded-xl border-border/70 bg-background"
+                                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                                 />
 
                                 <Input
@@ -2996,7 +2997,7 @@ const TrainingCenter = () => {
                                       ? "https://youtube.com/watch?v=..."
                                       : "https://example.com/image.jpg"
                                   }
-                                  className="h-10 rounded-xl border-border/70 bg-background"
+                                  className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                                 />
 
                                 <Button

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { friendlyErrorMessage } from "@/lib/friendlyError";
 
 type AgendaPoint = {
   text: string;
@@ -363,7 +364,7 @@ const RecurringMeetingDetailPage = () => {
 
     if (error) {
       console.error("Create recurring meeting occurrence failed:", error);
-      toast.error(error.message || "Could not create meeting.");
+      toast.error(friendlyErrorMessage(error, "Could not create meeting."));
       return;
     }
 

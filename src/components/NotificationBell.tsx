@@ -407,7 +407,7 @@ export function NotificationBell({
       {!isMobile && open && createPortal(
         <div
           ref={panelRef}
-          className="actsix-overlay-surface fixed z-[1000] flex max-h-[21rem] w-[min(21.25rem,calc(100vw-1.5rem))] flex-col overflow-hidden text-foreground"
+          className="actsix-overlay-surface fixed z-[var(--z-popover)] flex max-h-[21rem] w-[min(21.25rem,calc(100vw-1.5rem))] flex-col overflow-hidden text-foreground"
           style={{
             left: panelPosition.left,
             top: panelPosition.top,
