@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Clock,
   FolderKanban,
-  GraduationCap,
   Home,
   Inbox,
   LayoutGrid,
@@ -181,15 +180,6 @@ const navSections: NavSection[] = [
       { title: "Calendar", url: "/calendar", icon: CalendarDays },
       { title: "Reminders", url: "/reminders", icon: Bell, badgeKey: "reminders_open" },
     ],
-  },
-  {
-    id: "training",
-    title: "Training",
-    url: "/training",
-    icon: GraduationCap,
-    matchPrefixes: ["/training"],
-    group: "Content",
-    items: [],
   },
   {
     id: "sermon_hub",
@@ -410,8 +400,8 @@ export function AppSidebar() {
             type="button"
             className={cn(
               collapsed
-                ? "flex h-11 w-11 items-center justify-center rounded-lg border border-sidebar-border/80 bg-sidebar-foreground/10 text-sidebar-foreground/65 transition hover:bg-sidebar-foreground/20 hover:text-sidebar-foreground"
-                : "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-sidebar-border/80 bg-sidebar-foreground/10 text-sidebar-foreground/65 transition hover:bg-sidebar-foreground/20 hover:text-sidebar-foreground",
+                ? "flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-foreground/40 transition hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground/80"
+                : "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/40 transition hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground/80",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
             )}
             onClick={toggleSidebar}
@@ -424,7 +414,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="bg-transparent">
-        <SidebarGroup>
+        <SidebarGroup className={collapsed ? "p-0" : undefined}>
           <SidebarGroupContent data-tour="sidebar-primary-nav">
             <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 pl-3 pr-5"}>
               {visibleSections.map((section, index) => {
@@ -458,34 +448,31 @@ export function AppSidebar() {
                         section.id === "settings" && !collapsed && "mt-2 border-t border-sidebar-border/70 pt-2.5"
                       )}
                     >
+                    {collapsed && sectionActive && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute right-0 top-1/2 h-[35.2px] w-4 -translate-y-1/2 translate-x-1/2 rounded-full bg-background shadow-card"
+                      />
+                    )}
                     {collapsed ? (
-                      <>
-                        {sectionActive && (
-                          <span
-                            aria-hidden="true"
-                            className="absolute right-0 top-1/2 h-9 w-3 -translate-y-1/2 translate-x-1/2 rounded-l-full bg-background"
-                          />
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={
+                          sectionActive && activeLeafTitle
+                            ? `${section.title} · ${activeLeafTitle}`
+                            : section.title
+                        }
+                        className={cn(
+                          "mx-auto justify-center rounded transition-colors hover:bg-transparent",
+                          sectionActive
+                            ? "text-sidebar-foreground"
+                            : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
                         )}
-
-                        <SidebarMenuButton
-                          asChild
-                          tooltip={
-                            sectionActive && activeLeafTitle
-                              ? `${section.title} · ${activeLeafTitle}`
-                              : section.title
-                          }
-                          className={cn(
-                            "mx-auto h-11 w-11 justify-center rounded-xl p-0 transition-colors",
-                            sectionActive
-                              ? "bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/10"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
-                          )}
-                        >
-                          <NavLink to={section.url} className="flex h-full w-full items-center justify-center">
-                            <SectionIcon className="h-[18px] w-[18px]" />
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </>
+                      >
+                        <NavLink to={section.url} className="flex h-full w-full items-center justify-center">
+                          <SectionIcon className="h-[18px] w-[18px]" />
+                        </NavLink>
+                      </SidebarMenuButton>
                     ) : hasSubmenu ? (
                       <>
                         <div

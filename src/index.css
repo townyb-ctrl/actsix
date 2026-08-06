@@ -111,17 +111,20 @@
     --brand-amber: 36 53% 52%;
     --brand-coral: 8 52% 48%;
 
-    --sidebar-background: 60 5% 11%;
+    /* Dark slate-teal instead of neutral charcoal - same hue family as the
+       brand teal accent below, so the panel reads as "ours" rather than
+       generic dark-UI grey. */
+    --sidebar-background: 184 20% 11%;
     --sidebar-foreground: 40 36% 95%;
     --sidebar-primary: 180 51% 36%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 180 51% 36%;
     --sidebar-accent-foreground: 40 36% 95%;
-    --sidebar-border: 60 5% 23%;
+    --sidebar-border: 184 18% 20%;
     --sidebar-ring: 180 51% 36%;
 
     --gradient-content: linear-gradient(135deg, #F3EFE7 0%, #EDE8DD 100%);
-    --gradient-sidebar: linear-gradient(180deg, #1E1E1B 0%, #171714 100%);
+    --gradient-sidebar: linear-gradient(160deg, #1B2C2D 0%, #0D1416 100%);
     --shadow-card: 0 1px 0 rgba(207, 198, 181, 0.55), 0 4px 14px rgba(30, 30, 27, 0.045);
     --shadow-soft: 0 1px 6px rgba(30, 30, 27, 0.035);
 
