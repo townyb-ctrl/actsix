@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { fieldControlClass } from "@/components/ui/field";
 import { makeAgendaPoint, makeAgendaSection, type AgendaSection } from "@/features/meetings/lib/meetingAgenda";
 
 export type MeetingAgendaModalProps = {
@@ -11,16 +12,27 @@ export type MeetingAgendaModalProps = {
   draft: AgendaSection[];
   onChange: (updater: (sections: AgendaSection[]) => AgendaSection[]) => void;
   onSave: () => void;
+  /** True when the meeting already has written minutes that a refill would replace. */
+  minutesAtRisk?: boolean;
 };
 
-export function MeetingAgendaModal({ open, onOpenChange, draft, onChange, onSave }: MeetingAgendaModalProps) {
+export function MeetingAgendaModal({
+  open,
+  onOpenChange,
+  draft,
+  onChange,
+  onSave,
+  minutesAtRisk = false,
+}: MeetingAgendaModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="actsix-panel max-h-[86vh] max-w-3xl overflow-y-auto rounded-xl">
         <DialogHeader>
           <DialogTitle>Edit Agenda</DialogTitle>
           <DialogDescription>
-            Build the agenda here. Saving will auto-fill the Minutes section.
+            {minutesAtRisk
+              ? "Build the agenda here. Your existing minutes stay exactly as they are — we'll ask first if you want to replace them."
+              : "Build the agenda here. Saving will also fill the Minutes section with an outline to write into."}
           </DialogDescription>
         </DialogHeader>
 
@@ -44,13 +56,15 @@ export function MeetingAgendaModal({ open, onOpenChange, draft, onChange, onSave
                         )
                       }
                       placeholder="Section heading..."
-                      className="font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                      aria-label={`Section ${sectionIndex + 1} heading`}
+                      className={`font-semibold ${fieldControlClass}`}
                     />
 
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
+                      aria-label={`Remove section ${sectionIndex + 1}`}
                       className="text-muted-foreground hover:text-destructive"
                       onClick={() =>
                         onChange((sections) =>
@@ -90,13 +104,15 @@ export function MeetingAgendaModal({ open, onOpenChange, draft, onChange, onSave
                             )
                           }
                           placeholder="Agenda point..."
-                          className="border-border/70 bg-background"
+                          aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}`}
+                          className={fieldControlClass}
                         />
 
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
+                          aria-label={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
                           className="text-muted-foreground hover:text-destructive"
                           onClick={() =>
                             onChange((sections) =>
@@ -154,8 +170,8 @@ export function MeetingAgendaModal({ open, onOpenChange, draft, onChange, onSave
             <Plus className="h-4 w-4 mr-2" />
             Add Section
           </Button>
-          <Button className="actsix-btn-primary min-h-10 rounded-xl" onClick={onSave}>
-            Save Agenda and Fill Minutes
+          <Button type="button" className="actsix-btn-primary min-h-10 rounded-xl" onClick={onSave}>
+            Save Agenda
           </Button>
         </DialogFooter>
       </DialogContent>

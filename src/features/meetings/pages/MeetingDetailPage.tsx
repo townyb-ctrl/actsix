@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CalendarDays, Clock3, Copy, MapPin, MoreHorizontal, Pencil, Trash2, Video } from "lucide-react";
+import { CalendarDays, Clock3, Copy, MapPin, MoreHorizontal, Pencil, Plus, Trash2, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { createNotificationForPerson } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { PageHeader } from "@/components/PageHeader";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   MeetingPeopleHeaderActions,
   MeetingPeopleSection,
@@ -24,14 +26,17 @@ import {
   cleanAgendaSections,
   formatDate,
   generateMinutesFromAgenda,
+  getAgendaSeriesMeta,
   getRecurringSeriesIdFromAgenda,
+  type AgendaSeriesMeta,
   makeAgendaSection,
   parseAgendaPayload,
-  parseAttendees,
   serializeAgenda,
   type AgendaSection,
 } from "@/features/meetings/lib/meetingAgenda";
+import { hasMinutesContent } from "@/features/meetings/lib/meetingMinutes";
 import type {
+  ActionPointProposal,
   FolderOption,
   GroupOption,
   Meeting,
@@ -51,8 +56,6 @@ const EMPTY_MEETING: MeetingEditDraft = {
   location: "",
 };
 
-const TRANSCRIBER_ENABLED = import.meta.env.VITE_ACTSIX_TRANSCRIBER_ENABLED === "true";
-
 const MeetingDetailPage = () => {
   const { meetingId } = useParams();
   const navigate = useNavigate();
@@ -61,26 +64,32 @@ const MeetingDetailPage = () => {
 
   const [transcriptText, setTranscriptText] = useState("");
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<number | null>(null);
   const [transcribing, setTranscribing] = useState(false);
-  const [processingTranscript, setProcessingTranscript] = useState(false);
+  const [generatingMinutes, setGeneratingMinutes] = useState(false);
   const [generatedMinutes, setGeneratedMinutes] = useState("");
-  const [generatedActionPoints, setGeneratedActionPoints] = useState<string[]>([]);
+  const [actionProposals, setActionProposals] = useState<ActionPointProposal[]>([]);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [editDraft, setEditDraft] = useState<MeetingEditDraft>(EMPTY_MEETING);
   const [actions, setActions] = useState<MeetingAction[]>([]);
-  const [attendeesText, setAttendeesText] = useState("");
+  const [expectedAttendees, setExpectedAttendees] = useState<string[]>([]);
   const [apologies, setApologies] = useState<string[]>([]);
+  const [agendaSeriesMeta, setAgendaSeriesMeta] = useState<AgendaSeriesMeta>({});
   const [agendaSections, setAgendaSections] = useState<AgendaSection[]>([
     makeAgendaSection(),
   ]);
   const [agendaDraft, setAgendaDraft] = useState<AgendaSection[]>([
     makeAgendaSection(),
   ]);
-  const [attendeesDraft, setAttendeesDraft] = useState("");
-  const [apologiesDraft, setApologiesDraft] = useState("");
   const [actionTitle, setActionTitle] = useState("");
+  const [actionFormOpen, setActionFormOpen] = useState(false);
   const [assignee, setAssignee] = useState("");
   const [selectedActionPersonId, setSelectedActionPersonId] = useState("");
   const [due, setDue] = useState("");
@@ -94,7 +103,13 @@ const MeetingDetailPage = () => {
   const [chairpersonId, setChairpersonId] = useState("");
   const [minuteTakerId, setMinuteTakerId] = useState("");
   const [meetingMenuOpen, setMeetingMenuOpen] = useState(false);
-  const [rightPanelTab, setRightPanelTab] = useState<"people" | "actions">("people");
+  const meetingMenuRef = useRef<HTMLDivElement | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  // Holds the minutes we *would* have written, when the meeting already has
+  // minutes worth protecting. Non-null means the refill confirm is showing.
+  const [pendingMinutesRefill, setPendingMinutesRefill] = useState<string | null>(null);
+  const [minutesSavedAt, setMinutesSavedAt] = useState<Date | null>(null);
+  const [minutesSaving, setMinutesSaving] = useState(false);
 
   const [meetingPeople, setMeetingPeople] = useState<MeetingPerson[]>([]);
   const [peopleOptions, setPeopleOptions] = useState<PersonOption[]>([]);
@@ -262,43 +277,34 @@ const MeetingDetailPage = () => {
     }
 
     const agendaPayload = parseAgendaPayload(meetingData.agenda);
+    setAgendaSeriesMeta(getAgendaSeriesMeta(meetingData.agenda));
 
     setMeeting(meetingData as Meeting);
     setEditDraft(meetingData);
     setChairpersonId(meetingData.chairperson_id || "");
     setMinuteTakerId(meetingData.minute_taker_id || "");
     setGoogleMeetUrlDraft(meetingData.google_meet_url || "");
-    setAttendeesText(
-      Array.isArray(meetingData.attendees)
-        ? meetingData.attendees.join(", ")
-        : ""
+    setExpectedAttendees(
+      Array.isArray(meetingData.attendees) ? meetingData.attendees.filter(Boolean) : []
     );
     setApologies(agendaPayload.apologies ?? []);
     setAgendaSections(agendaPayload.sections);
     setActions((actionData ?? []) as MeetingAction[]);
+    setTranscriptText(meetingData.transcript || "");
   };
-
-  useEffect(() => {
-    if (!meetingId) return;
-
-    const savedTranscript = localStorage.getItem(`actsix_meeting_transcript_${meetingId}`) || "";
-    setTranscriptText(savedTranscript);
-
-    const savedGeneratedMinutes = localStorage.getItem(`actsix_meeting_generated_minutes_${meetingId}`) || "";
-    const savedGeneratedActionPoints = localStorage.getItem(`actsix_meeting_generated_actions_${meetingId}`) || "[]";
-
-    setGeneratedMinutes(savedGeneratedMinutes);
-
-    try {
-      setGeneratedActionPoints(JSON.parse(savedGeneratedActionPoints));
-    } catch {
-      setGeneratedActionPoints([]);
-    }
-  }, [meetingId]);
 
   useEffect(() => {
     load();
   }, [user, meetingId]);
+
+  // A recording in progress must not survive a route change - stop the mic
+  // and the timer instead of leaking both.
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current !== null) window.clearInterval(recordingTimerRef.current);
+      mediaRecorderRef.current?.stream.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
 
   const saveMeetingDetails = async () => {
     if (!meeting) return;
@@ -374,69 +380,110 @@ const MeetingDetailPage = () => {
     }
   };
 
-  const saveTranscript = (value: string) => {
-    setTranscriptText(value);
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recordedChunksRef.current = [];
 
-    if (meetingId) {
-      localStorage.setItem(`actsix_meeting_transcript_${meetingId}`, value);
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordedChunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setAudioBlob(new Blob(recordedChunksRef.current, { type: recorder.mimeType || "audio/webm" }));
+        setTranscriptFile(null);
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setRecordingSeconds(0);
+      recordingTimerRef.current = window.setInterval(() => setRecordingSeconds((seconds) => seconds + 1), 1000);
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not access the microphone. Check your browser's mic permission for this site.");
     }
   };
 
-  const saveGeneratedMinutes = (value: string) => {
-    setGeneratedMinutes(value);
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
 
-    if (meetingId) {
-      localStorage.setItem(`actsix_meeting_generated_minutes_${meetingId}`, value);
+    if (recordingTimerRef.current !== null) {
+      window.clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
     }
   };
 
-  const saveGeneratedActionPoints = (items: string[]) => {
-    setGeneratedActionPoints(items);
+  const transcribeAudio = async () => {
+    const audioSource = audioBlob || transcriptFile;
 
-    if (meetingId) {
-      localStorage.setItem(`actsix_meeting_generated_actions_${meetingId}`, JSON.stringify(items));
+    if (!audioSource || !meetingId) {
+      toast.error("Record or choose an audio file first.");
+      return;
+    }
+
+    setTranscribing(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("meetingId", meetingId);
+      formData.append("file", audioSource, transcriptFile?.name || `recording-${Date.now()}.webm`);
+
+      const { data, error } = await supabase.functions.invoke("meeting-ai", { body: formData });
+      if (error) throw error;
+
+      setTranscriptText(data.transcript || "");
+      setMeeting((prev) =>
+        prev ? { ...prev, transcript: data.transcript || "", recording_path: data.recordingPath || prev.recording_path } : prev
+      );
+      toast.success("Transcript created");
+    } catch (error) {
+      console.error(error);
+      toast.error(friendlyErrorMessage(error, "Could not transcribe audio."));
+    } finally {
+      setTranscribing(false);
     }
   };
 
-  const processTranscriptIntoMinutes = async () => {
-    if (!transcriptText.trim()) {
+  const generateMinutes = async () => {
+    if (!transcriptText.trim() || !meetingId) {
       toast.error("There is no transcript to process yet.");
       return;
     }
 
-    setProcessingTranscript(true);
+    setGeneratingMinutes(true);
 
     try {
-      const response = await fetch("http://localhost:5055/process", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke("meeting-ai", {
+        body: {
+          action: "summarize",
+          meetingId,
           transcript: transcriptText,
-          meeting_title: meeting?.title || "Staff Meeting",
-        }),
+          meetingTitle: meeting?.title || "Meeting",
+          people: meetingActionPeople.map((person) => ({ id: person.id, name: person.display_name })),
+        },
       });
+      if (error) throw error;
 
-      if (!response.ok) {
-        throw new Error("Transcript processing failed.");
-      }
-
-      const result = await response.json();
-
-      saveGeneratedMinutes(result.minutes || "");
-      saveGeneratedActionPoints(result.action_points || []);
-
-      toast.success(
-        result.source === "ollama"
-          ? "Minutes generated with local AI"
-          : "Minutes generated with fallback processor"
+      setGeneratedMinutes(data.minutes || "");
+      setActionProposals(
+        (data.actionPoints || []).map((point: Record<string, string>) => ({
+          id: crypto.randomUUID(),
+          title: point.title || "",
+          assigneePersonId: point.assignee_person_id || "",
+          assigneeName: point.assignee_name || "",
+          due: point.due || "",
+        }))
       );
+      toast.success("Minutes generated");
     } catch (error) {
       console.error(error);
-      toast.error("Could not generate minutes from transcript.");
+      toast.error(friendlyErrorMessage(error, "Could not generate minutes from transcript."));
     } finally {
-      setProcessingTranscript(false);
+      setGeneratingMinutes(false);
     }
   };
 
@@ -450,45 +497,49 @@ const MeetingDetailPage = () => {
         : generatedMinutes.trim(),
     });
 
-    toast.success("Generated notes copied into minutes");
+    toast.success("Generated minutes merged into meeting minutes");
   };
 
-  const transcribeAudio = async () => {
-    if (!transcriptFile) {
-      toast.error("Please choose an audio file first.");
-      return;
+  const updateActionProposal = (id: string, patch: Partial<ActionPointProposal>) => {
+    setActionProposals((proposals) => proposals.map((proposal) => (proposal.id === id ? { ...proposal, ...patch } : proposal)));
+  };
+
+  const dismissActionProposal = (id: string) => {
+    setActionProposals((proposals) => proposals.filter((proposal) => proposal.id !== id));
+  };
+
+  const confirmActionProposal = async (id: string) => {
+    const proposal = actionProposals.find((item) => item.id === id);
+    if (!proposal) return;
+
+    const added = await insertMeetingAction(proposal.title, proposal.assigneePersonId, proposal.assigneeName, proposal.due);
+    if (!added) return;
+
+    setActionProposals((proposals) => proposals.filter((item) => item.id !== id));
+    toast.success("Action point added");
+    loadActions();
+  };
+
+  const confirmAllActionProposals = async () => {
+    const proposals = actionProposals.filter((proposal) => proposal.title.trim());
+    let addedCount = 0;
+
+    for (const proposal of proposals) {
+      const added = await insertMeetingAction(proposal.title, proposal.assigneePersonId, proposal.assigneeName, proposal.due);
+      if (added) addedCount += 1;
     }
 
-    setTranscribing(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", transcriptFile);
-
-      const response = await fetch("http://localhost:5055/transcribe", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Transcription server did not respond successfully.");
-      }
-
-      const result = await response.json();
-      saveTranscript(result.text || "");
-      toast.success("Transcript created");
-    } catch (error) {
-      console.error(error);
-      toast.error("Could not transcribe audio. Make sure the local transcriber server is running.");
-    } finally {
-      setTranscribing(false);
-    }
+    setActionProposals([]);
+    if (addedCount) toast.success(`${addedCount} action point${addedCount === 1 ? "" : "s"} added`);
+    loadActions();
   };
 
   const saveMinutes = async (html: string) => {
     if (!meeting) return;
 
     const latestMinutes = html || meeting.notes || "";
+
+    setMinutesSaving(true);
 
     const { error } = await supabase
       .from("meetings")
@@ -498,25 +549,37 @@ const MeetingDetailPage = () => {
       })
       .eq("id", meeting.id);
 
+    setMinutesSaving(false);
+
     if (error) {
       toast.error(friendlyErrorMessage(error));
       return;
     }
 
     setMeeting({ ...meeting, notes: latestMinutes });
+    setMinutesSavedAt(new Date());
   };
 
+  /**
+   * Saving the agenda used to write the generated minutes skeleton over
+   * `notes` unconditionally, which silently destroyed minutes someone had
+   * already written — fix a typo in the agenda after the meeting and the whole
+   * record was gone. The agenda now always saves; refilling the minutes only
+   * happens on its own, and only with permission once there is work at risk.
+   */
   const saveAgenda = async () => {
     if (!meeting) return;
 
     const cleaned = cleanAgendaSections(agendaDraft);
+    const serialized = serializeAgenda(cleaned, apologies, agendaSeriesMeta);
     const generated = generateMinutesFromAgenda(cleaned);
+    const minutesAtRisk = hasMinutesContent(meeting.notes);
 
     const { error } = await supabase
       .from("meetings")
       .update({
-        agenda: serializeAgenda(cleaned, apologies),
-        notes: generated,
+        agenda: serialized,
+        ...(minutesAtRisk ? {} : { notes: generated }),
         updated_at: new Date().toISOString(),
       })
       .eq("id", meeting.id);
@@ -527,24 +590,31 @@ const MeetingDetailPage = () => {
     }
 
     setAgendaSections(cleaned);
-    setMeeting({ ...meeting, agenda: serializeAgenda(cleaned, apologies), notes: generated });
-    toast.success("Agenda saved and minutes filled");
+    setMeeting({
+      ...meeting,
+      agenda: serialized,
+      ...(minutesAtRisk ? {} : { notes: generated }),
+    });
     setAgendaOpen(false);
+
+    if (minutesAtRisk) {
+      toast.success("Agenda saved. Your minutes were left as they are.");
+      setPendingMinutesRefill(generated);
+      return;
+    }
+
+    toast.success("Agenda saved and minutes filled");
   };
 
-  const savePeople = async () => {
-    if (!meeting) return;
+  const confirmMinutesRefill = async () => {
+    if (!meeting || pendingMinutesRefill === null) return;
 
-    const attendees = parseAttendees(attendeesDraft);
-    const apologiesList = parseAttendees(apologiesDraft);
+    const generated = pendingMinutesRefill;
+    setPendingMinutesRefill(null);
 
     const { error } = await supabase
       .from("meetings")
-      .update({
-        attendees,
-        agenda: serializeAgenda(agendaSections, apologiesList),
-        updated_at: new Date().toISOString(),
-      })
+      .update({ notes: generated, updated_at: new Date().toISOString() })
       .eq("id", meeting.id);
 
     if (error) {
@@ -552,10 +622,9 @@ const MeetingDetailPage = () => {
       return;
     }
 
-    setAttendeesText(attendees.join(", "));
-    setApologies(apologiesList);
-    toast.success("Attendees and apologies updated");
-    setPeopleOpen(false);
+    setMeeting({ ...meeting, notes: generated });
+    setMinutesSavedAt(new Date());
+    toast.success("Minutes refilled from the agenda");
   };
 
   const deleteMeeting = async () => {
@@ -742,45 +811,62 @@ const MeetingDetailPage = () => {
     setActions((data ?? []) as MeetingAction[]);
   };
 
-  const addAction = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!actionTitle.trim() || !user || !meeting) return;
-
-    const selectedActionPerson = meetingActionPeople.find(
-      (person) => person.id === selectedActionPersonId
-    );
-    const newActionId = crypto.randomUUID();
+  /** Shared by the manual add form and the AI action-point review list. */
+  const insertMeetingAction = async (
+    title: string,
+    assignedPersonId: string,
+    assigneeName: string,
+    dueDate: string
+  ): Promise<boolean> => {
+    if (!title.trim() || !user || !meeting) return false;
 
     const { error } = await supabase.from("meeting_actions").insert({
-      id: newActionId,
+      id: crypto.randomUUID(),
       meeting_id: meeting.id,
       user_id: user.id,
-      title: actionTitle.trim(),
-      assignee: selectedActionPerson?.display_name || assignee.trim(),
-      assigned_person_id: selectedActionPersonId || null,
-      due: due || null,
+      title: title.trim(),
+      assignee: assigneeName.trim(),
+      assigned_person_id: assignedPersonId || null,
+      due: dueDate || null,
       linked_project: "",
       status: "Open",
     });
 
     if (error) {
       toast.error(friendlyErrorMessage(error));
-      return;
+      return false;
     }
 
-    if (selectedActionPersonId) {
+    if (assignedPersonId) {
       await createNotificationForPerson({
-        personId: selectedActionPersonId,
+        personId: assignedPersonId,
         currentUserId: user.id,
         actorPersonId: currentPerson?.id || null,
         title: "Meeting action point assigned",
-        message: `You have been assigned: ${actionTitle.trim()}`,
+        message: `You have been assigned: ${title.trim()}`,
         type: "assignment",
         entityType: "meeting_action",
         entityId: meeting.id,
       });
     }
+
+    return true;
+  };
+
+  const addAction = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const selectedActionPerson = meetingActionPeople.find(
+      (person) => person.id === selectedActionPersonId
+    );
+
+    const added = await insertMeetingAction(
+      actionTitle,
+      selectedActionPersonId,
+      selectedActionPerson?.display_name || assignee.trim(),
+      due
+    );
+    if (!added) return;
 
     setActionTitle("");
     setAssignee("");
@@ -881,6 +967,19 @@ const MeetingDetailPage = () => {
     loadMeetingPeopleSources();
   }, [meetingId, user?.id, currentPerson?.workspace_id]);
 
+  useEffect(() => {
+    if (!meetingMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!meetingMenuRef.current?.contains(event.target as Node)) {
+        setMeetingMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [meetingMenuOpen]);
+
   if (!meeting) {
     return (
       <div>
@@ -897,20 +996,20 @@ const MeetingDetailPage = () => {
         subtitle="Agenda, minutes, attendees, apologies, and action points."
       />
 
-      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <section className="actsix-panel-soft overflow-visible">
           <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
                   <CalendarDays className="h-3.5 w-3.5 text-brand-teal" />
                   {formatDate(meeting.meeting_date)}
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
                   <Clock3 className="h-3.5 w-3.5 text-brand-teal" />
                   {meeting.meeting_time ? meeting.meeting_time.slice(0, 5) : "No time"}
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
                   <MapPin className="h-3.5 w-3.5 text-brand-teal" />
                   {meeting.location || "No location"}
                 </span>
@@ -922,9 +1021,7 @@ const MeetingDetailPage = () => {
                 <>
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-9 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal"
+                    className="actsix-btn-primary h-9 rounded-lg"
                     onClick={openGoogleMeet}
                     disabled={!(meeting?.google_meet_url || googleMeetUrlDraft).trim()}
                   >
@@ -945,7 +1042,7 @@ const MeetingDetailPage = () => {
                 </>
               )}
 
-              <div className="relative">
+              <div className="relative" ref={meetingMenuRef}>
                 <Button
                   type="button"
                   variant="ghost"
@@ -976,7 +1073,7 @@ const MeetingDetailPage = () => {
                       className="flex w-full items-center gap-3 border-t border-border/70 px-4 py-3 text-left text-sm font-semibold text-destructive transition hover:bg-destructive/10"
                       onClick={() => {
                         setMeetingMenuOpen(false);
-                        deleteMeeting();
+                        setDeleteConfirmOpen(true);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1018,7 +1115,7 @@ const MeetingDetailPage = () => {
                       type="button"
                       variant={currentUserMeetingStatus === "attended" ? "default" : "outline"}
                       size="sm"
-                      className="h-6 rounded-md px-2 text-[11px]"
+                      className="h-11 rounded-md px-2 text-xs sm:h-6 sm:text-[11px]"
                       onClick={() => updateMeetingPersonStatus(currentUserMeetingPerson.person_id, "attended")}
                     >
                       Accept
@@ -1027,7 +1124,7 @@ const MeetingDetailPage = () => {
                       type="button"
                       variant={currentUserMeetingStatus === "unavailable" ? "default" : "outline"}
                       size="sm"
-                      className="h-6 rounded-md px-2 text-[11px]"
+                      className="h-11 rounded-md px-2 text-xs sm:h-6 sm:text-[11px]"
                       onClick={() => updateMeetingPersonStatus(currentUserMeetingPerson.person_id, "unavailable")}
                     >
                       Decline
@@ -1052,56 +1149,30 @@ const MeetingDetailPage = () => {
             <MeetingMinutesEditor
               notes={meeting.notes}
               onSave={saveMinutes}
-              transcriberEnabled={TRANSCRIBER_ENABLED}
               onOpenTranscript={() => setTranscriptOpen(true)}
               onOpenAgenda={openAgendaModal}
+              saving={minutesSaving}
+              savedAt={minutesSavedAt}
             />
           </div>
 
-          {/* RIGHT COLUMN: People + Action Points */}
-          <Card className="actsix-panel overflow-hidden lg:min-h-[calc(100vh-18rem)]">
-            <div className="border-b border-border/70 bg-background/55 px-4 pt-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-end gap-5">
-                  <button
-                    type="button"
-                    className={`border-b-2 pb-2 text-sm font-extrabold transition ${
-                      rightPanelTab === "people"
-                        ? "border-brand-teal text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
-                    }`}
-                    onClick={() => setRightPanelTab("people")}
-                  >
-                    Meeting People
-                  </button>
-                  <button
-                    type="button"
-                    className={`border-b-2 pb-2 text-sm font-extrabold transition ${
-                      rightPanelTab === "actions"
-                        ? "border-brand-teal text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
-                    }`}
-                    onClick={() => setRightPanelTab("actions")}
-                  >
-                    Meeting Actions
-                  </button>
-                </div>
-
-                {rightPanelTab === "people" && (
-                  <div className="-mt-0.5 shrink-0 pb-2">
-                    <MeetingPeopleHeaderActions
-                      meetingPeopleCount={meetingPeople.length}
-                      inviteRecipientsCount={inviteRecipients.length}
-                      onInviteOpen={openInviteModal}
-                      onOpenPeopleDialog={() => setPeopleOpen(true)}
-                      onOpenMeetingPeopleDialog={() => setMeetingPeopleOpen(true)}
-                    />
-                  </div>
-                )}
+          {/* RIGHT COLUMN: People and Action Points, both always visible -
+              stacked, not tabbed. A tab hides whichever isn't selected;
+              this sidebar's whole job is keeping both reachable without
+              a click (see detail-page-layout-pattern). */}
+          <div className="flex flex-col gap-4">
+            <Card className="actsix-panel overflow-hidden">
+              <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-background/55 px-4 py-3">
+                <h2 className="pt-0.5 text-base font-extrabold tracking-tight">Meeting People</h2>
+                <MeetingPeopleHeaderActions
+                  meetingPeopleCount={meetingPeople.length}
+                  inviteRecipientsCount={inviteRecipients.length}
+                  onInviteOpen={openInviteModal}
+                  onOpenPeopleDialog={() => setPeopleOpen(true)}
+                  onOpenMeetingPeopleDialog={() => setMeetingPeopleOpen(true)}
+                />
               </div>
-            </div>
 
-            {rightPanelTab === "people" ? (
               <MeetingPeopleSection
                 meetingPeople={meetingPeople}
                 currentUserMeetingPerson={currentUserMeetingPerson}
@@ -1119,12 +1190,35 @@ const MeetingDetailPage = () => {
                 onOpenMeetingPeopleDialog={() => setMeetingPeopleOpen(true)}
                 onUpdateStatus={updateMeetingPersonStatus}
                 onRemoveMeetingPerson={removeMeetingPersonFromMeeting}
+                expectedAttendees={expectedAttendees}
                 showHeaderActions={false}
               />
-            ) : (
+            </Card>
+
+            <Card className="actsix-panel overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-background/55 px-4 py-3">
+                <h2 className="text-base font-extrabold tracking-tight">Action Points</h2>
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-semibold uppercase">
+                    {actions.length} {actions.length === 1 ? "item" : "items"}
+                  </Badge>
+                  <Button
+                    type="button"
+                    size="icon"
+                    aria-label="Add action point"
+                    className="actsix-btn-primary h-7 w-7 rounded-lg"
+                    onClick={() => setActionFormOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
               <MeetingActionsPanel
                 actions={actions}
                 meetingActionPeople={meetingActionPeople}
+                formOpen={actionFormOpen}
+                onFormOpenChange={setActionFormOpen}
                 actionTitle={actionTitle}
                 onActionTitleChange={setActionTitle}
                 selectedActionPersonId={selectedActionPersonId}
@@ -1138,30 +1232,38 @@ const MeetingDetailPage = () => {
                 onSubmit={addAction}
                 onRemoveAction={removeAction}
               />
-            )}
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
 
       <MeetingTranscriptionModal
-        open={TRANSCRIBER_ENABLED && transcriptOpen}
+        open={transcriptOpen}
         onClose={() => setTranscriptOpen(false)}
-        transcriptFile={transcriptFile}
-        onFileChange={setTranscriptFile}
+        isRecording={isRecording}
+        recordingSeconds={recordingSeconds}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        hasAudioSource={Boolean(audioBlob || transcriptFile)}
+        audioSourceLabel={audioBlob ? "Recording" : transcriptFile?.name || ""}
+        onFileChange={(file) => {
+          setTranscriptFile(file);
+          setAudioBlob(null);
+        }}
         transcribing={transcribing}
         onTranscribe={transcribeAudio}
         transcriptText={transcriptText}
-        onTranscriptChange={saveTranscript}
+        onTranscriptChange={setTranscriptText}
+        generatingMinutes={generatingMinutes}
+        onGenerateMinutes={generateMinutes}
         generatedMinutes={generatedMinutes}
-        onGeneratedMinutesChange={saveGeneratedMinutes}
-        generatedActionPoints={generatedActionPoints}
-        onClearGenerated={() => {
-          saveGeneratedMinutes("");
-          saveGeneratedActionPoints([]);
-        }}
-        processingTranscript={processingTranscript}
-        onProcessTranscript={processTranscriptIntoMinutes}
         onCopyGeneratedNotes={copyGeneratedMinutesToMinutes}
+        actionProposals={actionProposals}
+        meetingActionPeople={meetingActionPeople}
+        onUpdateProposal={updateActionProposal}
+        onDismissProposal={dismissActionProposal}
+        onConfirmProposal={confirmActionProposal}
+        onConfirmAllProposals={confirmAllActionProposals}
       />
 
       <MeetingPeopleSourcesModal
@@ -1211,6 +1313,29 @@ const MeetingDetailPage = () => {
         draft={agendaDraft}
         onChange={setAgendaDraft}
         onSave={saveAgenda}
+        minutesAtRisk={hasMinutesContent(meeting?.notes)}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete this meeting?"
+        description={`"${meeting?.title ?? ""}" will be removed along with its minutes${
+          actions.length > 0
+            ? ` and ${actions.length} action point${actions.length === 1 ? "" : "s"}`
+            : ""
+        }. This cannot be undone.`}
+        confirmLabel="Delete Meeting"
+        onConfirm={deleteMeeting}
+      />
+
+      <ConfirmDialog
+        open={pendingMinutesRefill !== null}
+        onOpenChange={(open) => !open && setPendingMinutesRefill(null)}
+        title="Replace the minutes you've written?"
+        description="The agenda is already saved. Refilling replaces everything currently in the Minutes section with a fresh, empty outline from the agenda. Your existing minutes cannot be recovered."
+        confirmLabel="Replace Minutes"
+        onConfirm={confirmMinutesRefill}
       />
     </div>
   );

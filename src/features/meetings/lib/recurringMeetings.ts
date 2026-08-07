@@ -71,6 +71,78 @@ export const toRecurringMeetingInsert = (input: {
   people_group_member_ids: input.peopleGroupMemberIds || [],
 });
 
+const FIELD_TO_COLUMN: Partial<Record<keyof RecurringMeeting, string>> = {
+  title: "title",
+  frequency: "frequency",
+  startDate: "start_date",
+  meetingTime: "meeting_time",
+  location: "location",
+  occurrences: "occurrences",
+  regularAttendees: "regular_attendees",
+  regularAgenda: "regular_agenda",
+  peopleGroupId: "people_group_id",
+  peopleGroupName: "people_group_name",
+  peopleGroupMemberIds: "people_group_member_ids",
+};
+
+/**
+ * Maps a partial RecurringMeeting patch onto its DB column names, so callers
+ * only ever name one field once instead of hand-writing a parallel
+ * camelCase<->snake_case update object per call site.
+ */
+export const toRecurringMeetingPatch = (patch: Partial<RecurringMeeting>) => {
+  const dbPatch: Record<string, unknown> = {};
+
+  for (const key of Object.keys(patch) as (keyof RecurringMeeting)[]) {
+    const column = FIELD_TO_COLUMN[key];
+    if (column) dbPatch[column] = patch[key];
+  }
+
+  return dbPatch;
+};
+
+export const addMonths = (date: Date, months: number) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+};
+
+export const toDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+export type SeriesOccurrence = {
+  index: number;
+  number: number;
+  date: string;
+};
+
+export const buildOccurrences = (series: {
+  startDate?: string;
+  frequency: "Weekly" | "Monthly";
+  occurrences?: number;
+}): SeriesOccurrence[] => {
+  if (!series.startDate) return [];
+
+  const start = new Date(series.startDate + "T00:00:00");
+
+  return Array.from({ length: series.occurrences || 12 }, (_, index) => {
+    const date =
+      series.frequency === "Weekly"
+        ? new Date(start.getTime() + index * 7 * 24 * 60 * 60 * 1000)
+        : addMonths(start, index);
+
+    return {
+      index,
+      number: index + 1,
+      date: toDateInputValue(date),
+    };
+  });
+};
+
 export const generateMinutesFromAgenda = (agenda: AgendaSection[] = []) => {
   return agenda
     .filter((section) => section.heading.trim() || section.points.length)
@@ -88,4 +160,13 @@ export const generateMinutesFromAgenda = (agenda: AgendaSection[] = []) => {
       return `${sectionNumber}. ${title}\n\n${points}`;
     })
     .join("\n\n");
+};
+
+/**
+ * Tells the sidebar's series list to reload. The sidebar can't see this page's
+ * state, and nothing dispatched this event after the move to Supabase, so a
+ * freshly created series stayed missing from the nav until a full remount.
+ */
+export const notifyRecurringMeetingsChanged = () => {
+  window.dispatchEvent(new Event("actsix-recurring-meetings-updated"));
 };

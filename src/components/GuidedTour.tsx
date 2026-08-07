@@ -121,7 +121,7 @@ const tours: Partial<Record<TourKey, TourStep[]>> = {
     {
       selector: '[data-tour="meetings-stats"]',
       title: "Meetings gives you the current shape",
-      body: "See total, scheduled, and unscheduled meetings before you drill into the list.",
+      body: "This line tells you how many meetings you are looking at, and how many are still unscheduled.",
       path: "/meetings",
       placement: "bottom",
     },

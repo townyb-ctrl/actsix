@@ -310,7 +310,7 @@ const PeopleGroupDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body pt-12">
         <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-loading-state" role="status">Loading group...</div>
         </Card>
@@ -320,7 +320,7 @@ const PeopleGroupDetailPage = () => {
 
   if (!group) {
     return (
-      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body pt-12">
         <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-empty-state">Group not found.</div>
           <Button
@@ -375,7 +375,7 @@ const PeopleGroupDetailPage = () => {
         }
       />
 
-      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <div className="actsix-panel-soft flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link
             to="/groups"

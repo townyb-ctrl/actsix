@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   CalendarDays,
+  ChevronDown,
   Clock3,
   MapPin,
+  Pencil,
   Plus,
   Repeat,
   ArrowUpRight,
@@ -15,17 +17,34 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Field, FieldRow, fieldControlClass } from "@/components/ui/field";
+import { PeopleMultiSearchSelect } from "@/components/people/PeopleMultiSearchSelect";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
+import { useRecurringPeopleGroupOptions } from "@/features/meetings/hooks/useRecurringPeopleGroupOptions";
 import { toast } from "sonner";
 import { friendlyErrorMessage } from "@/lib/friendlyError";
 import {
   fromRecurringMeetingRow,
   generateMinutesFromAgenda,
+  buildOccurrences,
+  notifyRecurringMeetingsChanged,
+  toRecurringMeetingPatch,
   type AgendaSection,
   type RecurringMeeting,
 } from "@/features/meetings/lib/recurringMeetings";
+
+type WorkspacePerson = {
+  id: string;
+  display_name: string;
+  email: string | null;
+  avatar_url: string | null;
+};
 
 type CreatedMeetingMap = Record<number, string>;
 
@@ -39,34 +58,109 @@ const formatDate = (date?: string) => {
   });
 };
 
-const addMonths = (date: Date, months: number) => {
-  const next = new Date(date);
-  next.setMonth(next.getMonth() + months);
-  return next;
+const ordinalDay = (day: number) => {
+  if (day % 100 >= 11 && day % 100 <= 13) return `${day}th`;
+  return `${day}${["th", "st", "nd", "rd"][day % 10] || "th"}`;
 };
 
-const toDateInputValue = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+/** "Meeting 1" tells a leader nothing; the actual date does. */
+const formatOccurrenceHeading = (date?: string) => {
+  if (!date) return "No date set";
+
+  const parsed = new Date(date + "T00:00:00");
+  const month = parsed.toLocaleDateString(undefined, { month: "long" });
+  return `${ordinalDay(parsed.getDate())} ${month} ${parsed.getFullYear()}`;
 };
 
 const RecurringMeetingDetailPage = () => {
   const { seriesId } = useParams();
   const { user } = useAuth();
+  const { person: currentPerson } = useCurrentPerson();
   const { workspace } = useCurrentWorkspace();
+  const peopleGroupOptions = useRecurringPeopleGroupOptions();
 
   const [series, setSeries] = useState<RecurringMeeting | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [createdMap, setCreatedMap] = useState<CreatedMeetingMap>({});
   const [creatingOccurrence, setCreatingOccurrence] = useState<string | null>(null);
+  const [occurrencesOpen, setOccurrencesOpen] = useState(true);
+  const [futureMeetingsOpen, setFutureMeetingsOpen] = useState(false);
 
   const [attendeeInput, setAttendeeInput] = useState("");
   const [attendeesOpen, setAttendeesOpen] = useState(false);
   const [agendaDraft, setAgendaDraft] = useState<AgendaSection[]>([]);
   const [agendaOpen, setAgendaOpen] = useState(false);
+
+  const [workspacePeople, setWorkspacePeople] = useState<WorkspacePerson[]>([]);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editTitleTouched, setEditTitleTouched] = useState(false);
+  const [editFrequency, setEditFrequency] = useState<"Weekly" | "Monthly">("Weekly");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editMeetingTime, setEditMeetingTime] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editOccurrences, setEditOccurrences] = useState("12");
+  const [editPeopleGroupId, setEditPeopleGroupId] = useState("");
+
+  useEffect(() => {
+    if (!currentPerson?.workspace_id) return;
+
+    (supabase as any)
+      .from("people")
+      .select("id, display_name, email, avatar_url")
+      .eq("workspace_id", currentPerson.workspace_id)
+      .order("display_name", { ascending: true })
+      .then(({ data, error }: { data: WorkspacePerson[] | null; error: unknown }) => {
+        if (error) return;
+        setWorkspacePeople(data ?? []);
+      });
+  }, [currentPerson?.workspace_id]);
+
+  const openEditModal = () => {
+    if (!series) return;
+
+    setEditTitle(series.title);
+    setEditFrequency(series.frequency);
+    setEditStartDate(series.startDate);
+    setEditMeetingTime(series.meetingTime);
+    setEditLocation(series.location);
+    setEditOccurrences(String(series.occurrences || 12));
+    setEditPeopleGroupId(series.peopleGroupId || "");
+    setEditTitleTouched(false);
+    setEditOpen(true);
+  };
+
+  const saveEditedSeries = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!editTitle.trim()) {
+      setEditTitleTouched(true);
+      return;
+    }
+
+    const selectedGroup = peopleGroupOptions.find((group) => group.id === editPeopleGroupId);
+
+    setEditSaving(true);
+    await saveSeries({
+      title: editTitle.trim(),
+      frequency: editFrequency,
+      startDate: editStartDate,
+      meetingTime: editMeetingTime,
+      location: editLocation.trim(),
+      occurrences: Number(editOccurrences) || 12,
+      // Switching (or clearing) the linked group replaces the copied
+      // membership outright, matching how the create form treats it.
+      peopleGroupId: selectedGroup?.id,
+      peopleGroupName: selectedGroup?.name,
+      peopleGroupMemberIds: selectedGroup?.members.map((member) => member.person_id) || [],
+    });
+    setEditSaving(false);
+    setEditOpen(false);
+    toast.success("Recurring meeting updated");
+  };
 
   const load = async () => {
     if (!seriesId) return;
@@ -110,44 +204,33 @@ const RecurringMeetingDetailPage = () => {
     load();
   }, [seriesId]);
 
-  const saveSeries = async (patch: Partial<Pick<RecurringMeeting, "regularAttendees" | "regularAgenda">>) => {
+  const saveSeries = async (patch: Partial<RecurringMeeting>) => {
     if (!series) return;
 
+    const previousSeries = series;
     const nextSeries = { ...series, ...patch };
     setSeries(nextSeries);
 
-    const dbPatch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (patch.regularAttendees) dbPatch.regular_attendees = patch.regularAttendees;
-    if (patch.regularAgenda) dbPatch.regular_agenda = patch.regularAgenda;
-
     const { error } = await (supabase as any)
       .from("recurring_meeting_series")
-      .update(dbPatch)
+      .update({ ...toRecurringMeetingPatch(patch), updated_at: new Date().toISOString() })
       .eq("id", series.id);
 
     if (error) {
       toast.error(friendlyErrorMessage(error));
-      setSeries(series);
+      setSeries(previousSeries);
+      return;
     }
+
+    // Only the nav-visible fields matter to the sidebar, but re-notifying on
+    // every save is cheap and keeps this in one place instead of guessing
+    // which patches the sidebar cares about.
+    notifyRecurringMeetingsChanged();
   };
 
   const occurrences = useMemo(() => {
-    if (!series?.startDate) return [];
-
-    const start = new Date(series.startDate + "T00:00:00");
-
-    return Array.from({ length: series.occurrences || 12 }, (_, index) => {
-      const date =
-        series.frequency === "Weekly"
-          ? new Date(start.getTime() + index * 7 * 24 * 60 * 60 * 1000)
-          : addMonths(start, index);
-
-      return {
-        index,
-        number: index + 1,
-        date: toDateInputValue(date),
-      };
-    });
+    if (!series) return [];
+    return buildOccurrences(series);
   }, [series]);
 
   const addRegularAttendee = () => {
@@ -173,6 +256,33 @@ const RecurringMeetingDetailPage = () => {
     saveSeries({
       regularAttendees: (series.regularAttendees || []).filter((attendee) => attendee !== name),
     });
+  };
+
+  // Regular attendees are stored as free-text names (some may not have a
+  // People profile at all), so the multi-select works off a best-effort
+  // name match rather than owning the list of IDs directly.
+  const regularAttendeeNames = useMemo(() => series?.regularAttendees || [], [series?.regularAttendees]);
+
+  const matchedAttendeePersonIds = useMemo(() => {
+    const byName = new Map(workspacePeople.map((person) => [person.display_name.trim().toLowerCase(), person.id]));
+    return regularAttendeeNames
+      .map((name) => byName.get(name.trim().toLowerCase()))
+      .filter((id): id is string => Boolean(id));
+  }, [workspacePeople, regularAttendeeNames]);
+
+  const handleAttendeePersonIdsChange = (personIds: string[]) => {
+    if (!series) return;
+
+    const matchedIds = new Set(matchedAttendeePersonIds);
+    const unmatchedNames = regularAttendeeNames.filter((name) => {
+      const person = workspacePeople.find((p) => p.display_name.trim().toLowerCase() === name.trim().toLowerCase());
+      return !person || !matchedIds.has(person.id);
+    });
+    const selectedNames = personIds
+      .map((id) => workspacePeople.find((person) => person.id === id)?.display_name)
+      .filter((name): name is string => Boolean(name));
+
+    saveSeries({ regularAttendees: [...unmatchedNames, ...selectedNames] });
   };
 
   const openAgendaEditor = () => {
@@ -277,7 +387,12 @@ const RecurringMeetingDetailPage = () => {
       location: series.location || "",
       type: "Recurring",
       attendees: series.regularAttendees || [],
+      // type must match the tag parseAgendaPayload checks for - without it,
+      // the single-meeting agenda editor doesn't recognize this as structured
+      // JSON and falls back to treating the whole payload as one line of
+      // plain-text agenda, garbling it on the very first open.
       agenda: JSON.stringify({
+        type: "actsix-agenda-v1",
         sections: regularAgenda,
         apologies: [],
         recurringSeriesId: series.id,
@@ -343,11 +458,82 @@ const RecurringMeetingDetailPage = () => {
     toast.success("Meeting created with regular attendees and agenda");
   };
 
+  const renderOccurrenceRow = (occurrence: { index: number; number: number; date: string }) => {
+    if (!series) return null;
+
+    const createdMeetingId = createdMap[occurrence.index];
+
+    const rowContent = (
+      <>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+          <CalendarDays className="h-5 w-5" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="font-extrabold tracking-tight">
+            {formatOccurrenceHeading(occurrence.date)}
+          </div>
+
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="text-muted-foreground/70">Meeting {occurrence.number}</span>
+
+            {series.meetingTime && (
+              <span className="inline-flex items-center gap-1">
+                <Clock3 className="h-3.5 w-3.5" />
+                {series.meetingTime}
+              </span>
+            )}
+
+            <span className="inline-flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" />
+              {series.peopleGroupName
+                ? `${series.peopleGroupName} group`
+                : `${(series.regularAttendees || []).length} regular attendees`}
+            </span>
+
+            <span className="inline-flex items-center gap-1">
+              <ListChecks className="h-3.5 w-3.5" />
+              {(series.regularAgenda || []).length} agenda sections
+            </span>
+          </div>
+        </div>
+      </>
+    );
+
+    if (createdMeetingId) {
+      return (
+        <Link
+          key={occurrence.index}
+          to={`/meetings/${createdMeetingId}`}
+          className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/30"
+        >
+          {rowContent}
+          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+      );
+    }
+
+    return (
+      <div key={occurrence.index} className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/30">
+        {rowContent}
+        <Button
+          type="button"
+          className="actsix-btn-primary min-h-10 rounded-xl"
+          onClick={() => createMeetingFromOccurrence(occurrence)}
+          disabled={creatingOccurrence === `${occurrence.index}`}
+        >
+          <Plus className="h-4 w-4" />
+          {creatingOccurrence === `${occurrence.index}` ? "Creating..." : "Create Meeting"}
+        </Button>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div>
         <PageHeader eyebrow="Meetings" title="Recurring Meeting" />
-        <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="actsix-page-body">
           <div className="actsix-loading-state" role="status">
             Loading recurring meeting...
           </div>
@@ -365,7 +551,7 @@ const RecurringMeetingDetailPage = () => {
           subtitle="This recurring meeting could not be found."
         />
 
-        <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="actsix-page-body">
           <Card className="actsix-panel p-4 sm:p-5">
             <div className="actsix-empty-state min-h-[10rem] text-left">
               Recurring meeting not found.
@@ -382,9 +568,15 @@ const RecurringMeetingDetailPage = () => {
         eyebrow="Meetings"
         title={series.title}
         subtitle="Manage regular attendees, regular agenda, and generated meetings."
+        actions={
+          <Button type="button" variant="outline" className="actsix-btn-outline min-h-10" onClick={openEditModal}>
+            <Pencil className="h-4 w-4" />
+            Edit Series
+          </Button>
+        }
       />
 
-      <div className="w-full space-y-5 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <Card className="actsix-panel-soft p-4">
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
@@ -510,79 +702,55 @@ const RecurringMeetingDetailPage = () => {
         </Card>
 
         <Card className="actsix-panel overflow-hidden">
-          <div className="border-b border-border/70 p-4">
-            <p className="label-eyebrow">Generated Meetings</p>
-            <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-              Meetings inside this recurring meeting
-            </h2>
-          </div>
-
-          <div className="divide-y divide-border/70">
-            {occurrences.map((occurrence) => {
-              const createdMeetingId = createdMap[occurrence.index];
-
-              return (
-                <div
-                  key={occurrence.index}
-                  className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/30"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-                    <CalendarDays className="h-5 w-5" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="font-extrabold tracking-tight">
-                      Meeting {occurrence.number}
-                    </div>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {formatDate(occurrence.date)}
-                      </span>
-
-                      {series.meetingTime && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock3 className="h-3.5 w-3.5" />
-                          {series.meetingTime}
-                        </span>
-                      )}
-
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
-                        {series.peopleGroupName
-                          ? `${series.peopleGroupName} group`
-                          : `${(series.regularAttendees || []).length} regular attendees`}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1">
-                        <ListChecks className="h-3.5 w-3.5" />
-                        {(series.regularAgenda || []).length} agenda sections
-                      </span>
-                    </div>
-                  </div>
-
-                  {createdMeetingId ? (
-                    <Button asChild variant="outline" className="rounded-xl">
-                      <Link to={`/meetings/${createdMeetingId}`}>
-                        Open Meeting
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  ) : (
-                    <Button
-                      className="actsix-btn-primary min-h-10 rounded-xl"
-                      onClick={() => createMeetingFromOccurrence(occurrence)}
-                      disabled={creatingOccurrence === `${occurrence.index}`}
-                    >
-                      <Plus className="h-4 w-4" />
-                      {creatingOccurrence === `${occurrence.index}` ? "Creating..." : "Create Meeting"}
-                    </Button>
-                  )}
+          <Collapsible open={occurrencesOpen} onOpenChange={setOccurrencesOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 border-b border-border/70 p-4 text-left transition hover:bg-muted/20"
+              >
+                <div>
+                  <p className="label-eyebrow">Generated Meetings</p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+                    Meetings inside this recurring meeting
+                  </h2>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {Object.keys(createdMap).length} of {occurrences.length} created
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+                <ChevronDown
+                  className={cn(
+                    "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
+                    occurrencesOpen && "rotate-180"
+                  )}
+                />
+              </button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <div className="divide-y divide-border/70">
+                {occurrences[0] && renderOccurrenceRow(occurrences[0])}
+
+                {occurrences.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-bold text-muted-foreground transition hover:bg-muted/20 hover:text-foreground"
+                      onClick={() => setFutureMeetingsOpen((open) => !open)}
+                    >
+                      {futureMeetingsOpen
+                        ? "Hide future meetings"
+                        : `Show ${occurrences.length - 1} future meeting${occurrences.length - 1 === 1 ? "" : "s"}`}
+                      <ChevronDown
+                        className={cn("h-4 w-4 shrink-0 transition-transform", futureMeetingsOpen && "rotate-180")}
+                      />
+                    </button>
+
+                    {futureMeetingsOpen && occurrences.slice(1).map(renderOccurrenceRow)}
+                  </>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
       </div>
 
@@ -600,9 +768,23 @@ const RecurringMeetingDetailPage = () => {
                 </p>
               </div>
 
-              <Button variant="outline" className="rounded-xl" onClick={() => setAttendeesOpen(false)}>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setAttendeesOpen(false)}>
                 Close
               </Button>
+            </div>
+
+            <div className="mt-4">
+              <p className="label-eyebrow">Add from People</p>
+              <div className="mt-2">
+                <PeopleMultiSearchSelect
+                  people={workspacePeople}
+                  selectedPersonIds={matchedAttendeePersonIds}
+                  onChange={handleAttendeePersonIdsChange}
+                  placeholder="Search people..."
+                  emptyText="No matching People profiles found."
+                  showAllOnFocus
+                />
+              </div>
             </div>
 
             <div className="mt-4 flex gap-2">
@@ -612,7 +794,8 @@ const RecurringMeetingDetailPage = () => {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") addRegularAttendee();
                 }}
-                placeholder="Add regular attendee..."
+                placeholder="Or type a name not in your People directory..."
+                aria-label="Add regular attendee by name"
                 className="border-border/70 bg-background"
               />
 
@@ -668,7 +851,7 @@ const RecurringMeetingDetailPage = () => {
                 </p>
               </div>
 
-              <Button variant="outline" className="rounded-xl" onClick={() => setAgendaOpen(false)}>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setAgendaOpen(false)}>
                 Close
               </Button>
             </div>
@@ -685,6 +868,7 @@ const RecurringMeetingDetailPage = () => {
                       value={section.heading}
                       onChange={(event) => updateAgendaSection(sectionIndex, event.target.value)}
                       placeholder="Section heading..."
+                      aria-label={`Section ${sectionIndex + 1} heading`}
                       className="border-border/70 bg-background font-bold"
                     />
 
@@ -692,6 +876,7 @@ const RecurringMeetingDetailPage = () => {
                       type="button"
                       variant="outline"
                       className="rounded-xl text-destructive"
+                      aria-label={`Remove section ${sectionIndex + 1}`}
                       onClick={() => removeAgendaSection(sectionIndex)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -711,6 +896,7 @@ const RecurringMeetingDetailPage = () => {
                             updateAgendaPoint(sectionIndex, pointIndex, event.target.value)
                           }
                           placeholder="Agenda point..."
+                          aria-label={`Agenda point ${sectionIndex + 1}.${pointIndex + 1}`}
                           className="border-border/70 bg-background"
                         />
 
@@ -718,6 +904,7 @@ const RecurringMeetingDetailPage = () => {
                           type="button"
                           variant="outline"
                           className="rounded-xl text-destructive"
+                          aria-label={`Remove agenda point ${sectionIndex + 1}.${pointIndex + 1}`}
                           onClick={() => removeAgendaPoint(sectionIndex, pointIndex)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -752,6 +939,127 @@ const RecurringMeetingDetailPage = () => {
           </Card>
         </div>
       )}
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="actsix-panel max-w-2xl rounded-xl">
+          <DialogHeader>
+            <DialogTitle>Edit Recurring Meeting</DialogTitle>
+            <DialogDescription>
+              Changes apply to this series and any meetings you generate from it after saving.
+              Meetings already created keep their own date and time.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={saveEditedSeries} className="space-y-4">
+            <FieldRow>
+              <Field
+                label="Meeting Title"
+                htmlFor="edit-recurring-title"
+                hint={editTitleTouched && !editTitle.trim() ? "Title is required." : undefined}
+                className={cn(editTitleTouched && !editTitle.trim() && "[&_p]:text-brand-danger")}
+              >
+                <Input
+                  id="edit-recurring-title"
+                  value={editTitle}
+                  onChange={(event) => setEditTitle(event.target.value)}
+                  aria-invalid={(editTitleTouched && !editTitle.trim()) || undefined}
+                  className={cn(
+                    fieldControlClass,
+                    editTitleTouched && !editTitle.trim() && "border-brand-danger focus-visible:border-brand-danger focus-visible:ring-brand-danger/15"
+                  )}
+                />
+              </Field>
+
+              <Field label="Frequency" htmlFor="edit-recurring-frequency">
+                <select
+                  id="edit-recurring-frequency"
+                  value={editFrequency}
+                  onChange={(event) => setEditFrequency(event.target.value as "Weekly" | "Monthly")}
+                  className={fieldControlClass}
+                >
+                  <option>Weekly</option>
+                  <option>Monthly</option>
+                </select>
+              </Field>
+            </FieldRow>
+
+            <FieldRow>
+              <Field label="Start Date" htmlFor="edit-recurring-start-date">
+                <Input
+                  id="edit-recurring-start-date"
+                  type="date"
+                  value={editStartDate}
+                  onChange={(event) => setEditStartDate(event.target.value)}
+                  className={fieldControlClass}
+                />
+              </Field>
+
+              <Field label="Time" htmlFor="edit-recurring-time">
+                <Input
+                  id="edit-recurring-time"
+                  type="time"
+                  value={editMeetingTime}
+                  onChange={(event) => setEditMeetingTime(event.target.value)}
+                  className={fieldControlClass}
+                />
+              </Field>
+            </FieldRow>
+
+            <FieldRow>
+              <Field label="Location" htmlFor="edit-recurring-location">
+                <Input
+                  id="edit-recurring-location"
+                  value={editLocation}
+                  onChange={(event) => setEditLocation(event.target.value)}
+                  className={fieldControlClass}
+                />
+              </Field>
+
+              <Field label="Number of Meetings" htmlFor="edit-recurring-occurrences">
+                <Input
+                  id="edit-recurring-occurrences"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={editOccurrences}
+                  onChange={(event) => setEditOccurrences(event.target.value)}
+                  className={fieldControlClass}
+                />
+              </Field>
+            </FieldRow>
+
+            <Field
+              label="People Group Source"
+              htmlFor="edit-recurring-people-group"
+              hint="Switching groups replaces the regular attendees copied from the previous one."
+            >
+              <select
+                id="edit-recurring-people-group"
+                value={editPeopleGroupId}
+                onChange={(event) => setEditPeopleGroupId(event.target.value)}
+                className={fieldControlClass}
+              >
+                <option value="">No linked group</option>
+                {peopleGroupOptions.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name} - {group.members.length} people
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+
+              <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl" disabled={editSaving}>
+                {editSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

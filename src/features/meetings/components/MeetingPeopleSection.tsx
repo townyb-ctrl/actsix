@@ -109,6 +109,7 @@ export function MeetingPeopleSection({
   onOpenMeetingPeopleDialog,
   onUpdateStatus,
   onRemoveMeetingPerson,
+  expectedAttendees = [],
   showHeaderActions = true,
 }: {
   meetingPeople: MeetingPerson[];
@@ -127,8 +128,20 @@ export function MeetingPeopleSection({
   onOpenMeetingPeopleDialog: () => void;
   onUpdateStatus: (personId: string, status: string) => void;
   onRemoveMeetingPerson: (personId: string) => void;
+  /** Free-text names carried over from a recurring series' Regular Attendees. */
+  expectedAttendees?: string[];
   showHeaderActions?: boolean;
 }) {
+  // Names already present as linked meeting people would just read twice.
+  const linkedNames = new Set(
+    meetingPeople.map((meetingPerson) =>
+      getMeetingPersonInfo(meetingPerson).displayName.trim().toLowerCase()
+    )
+  );
+  const unlinkedExpectedAttendees = expectedAttendees.filter(
+    (name) => name.trim() && !linkedNames.has(name.trim().toLowerCase())
+  );
+
   return (
     <>
       <div aria-label="Meeting people main list">
@@ -150,7 +163,7 @@ export function MeetingPeopleSection({
               No people have been added to this meeting yet. Click <span className="font-semibold text-foreground">Edit People</span> to add individuals, groups, or folders.
             </div>
           ) : (
-            <div className="max-h-[calc(100vh-25rem)] min-h-[18rem] space-y-1.5 overflow-y-auto pr-1">
+            <div className="max-h-[22rem] min-h-[8rem] space-y-1.5 overflow-y-auto pr-1">
               {meetingPeople.map((meetingPerson) => {
                 const personInfo = getMeetingPersonInfo(meetingPerson);
                 const roleLabels = [
@@ -215,7 +228,7 @@ export function MeetingPeopleSection({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 rounded-lg text-muted-foreground opacity-60 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                        className="h-11 w-11 rounded-lg text-muted-foreground opacity-60 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 sm:h-7 sm:w-7"
                         title="Remove from meeting"
                         onClick={() => onRemoveMeetingPerson(meetingPerson.person_id)}
                       >
@@ -225,6 +238,26 @@ export function MeetingPeopleSection({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {unlinkedExpectedAttendees.length > 0 && (
+            <div className="mt-3 border-t border-border/60 pt-3">
+              <p className="label-eyebrow">Expected from the series</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Typed as regular attendees on the recurring meeting. Add them above to track
+                attendance.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {unlinkedExpectedAttendees.map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs font-semibold text-muted-foreground"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -284,8 +317,9 @@ export function MeetingPeopleSection({
             </div>
 
             <div>
-              <label className="label-eyebrow">Invite message</label>
+              <label htmlFor="meeting-invite-message" className="label-eyebrow">Invite message</label>
               <Textarea
+                id="meeting-invite-message"
                 value={inviteMessage}
                 onChange={(event) => onInviteMessageChange(event.target.value)}
                 placeholder="Hey {{username}}, you have been invited to a {{meeting_name}} meeting. On {{meeting_date}} at {{meeting_time}}. Please respond with your availability."
@@ -304,6 +338,7 @@ export function MeetingPeopleSection({
               Cancel
             </Button>
             <Button
+              type="button"
               className="actsix-btn-primary min-h-10 rounded-xl"
               onClick={onSendInvites}
               disabled={inviteRecipients.length === 0}
@@ -340,9 +375,8 @@ export function MeetingPeopleHeaderActions({
       <div className="relative">
         <Button
           type="button"
-          variant="outline"
           size="icon"
-          className="h-8 w-8 rounded-lg"
+          className="actsix-btn-primary h-7 w-7 rounded-lg"
           onClick={() => setMenuOpen((open) => !open)}
           aria-label="People actions"
         >

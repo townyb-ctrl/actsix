@@ -45,6 +45,21 @@ export const renderMinutesHtml = (notes?: string | null) => {
     .join("");
 };
 
+/**
+ * True when the stored notes hold something a person actually wrote, rather
+ * than the empty markup a contentEditable leaves behind (`<div><br></div>`).
+ * Refilling minutes from the agenda overwrites notes wholesale, so this is the
+ * guard that decides whether doing so would destroy real work.
+ */
+export const hasMinutesContent = (notes?: string | null) =>
+  Boolean(
+    notes &&
+      notes
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;/gi, " ")
+        .trim()
+  );
+
 export const getMinutesDocumentHtml = (element: HTMLDivElement | null) => {
   if (!element) return "";
 

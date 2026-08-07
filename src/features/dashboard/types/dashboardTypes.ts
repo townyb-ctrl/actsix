@@ -101,7 +101,6 @@ export type DashboardWidgetData = {
   nextService: DashboardServiceInstance | null;
   serviceOrderItems: DashboardServiceOrderItem[];
   serviceTeamAssignments: DashboardServiceTeamAssignment[];
-  now: Date;
   todayKey: string;
 };
 

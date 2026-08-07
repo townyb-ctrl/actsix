@@ -285,7 +285,7 @@ const TasksPage = () => {
         subtitle="The next thing to do, in any context."
       />
 
-      <div className="-mt-1 w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack -mt-1">
         {!loadingTasks && loadError && (
           <Card className="actsix-panel-soft flex flex-col items-center gap-3 p-8 text-center">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">

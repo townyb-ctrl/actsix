@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Search, UsersRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -15,6 +15,7 @@ export function MeetingSourceCombobox({
   placeholder,
   searchPlaceholder,
   emptyText,
+  label,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -22,11 +23,15 @@ export function MeetingSourceCombobox({
   placeholder: string;
   searchPlaceholder: string;
   emptyText: string;
+  /** Accessible name for the trigger. The visible caption above it is not a
+   *  `<label>` — this is a button, not a native form control. */
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const dropdownId = useRef(`meeting-source-${Math.random().toString(36).slice(2)}`);
+  const instanceId = useId();
+  const dropdownId = useRef(`meeting-source-${instanceId}`);
 
   const selectedOption = options.find((option) => option.value === value);
 
@@ -80,6 +85,9 @@ export function MeetingSourceCombobox({
     <div ref={wrapperRef} className={`relative ${open ? "z-[var(--z-dropdown)]" : "z-0"}`}>
       <button
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label}
         className="flex min-h-10 w-full items-center justify-between gap-2.5 rounded-lg border border-border/70 bg-background px-3 py-2.5 text-left text-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
         onClick={() => {
           if (!open) {
@@ -107,6 +115,7 @@ export function MeetingSourceCombobox({
                 onFocus={announceOpen}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
                 className="actsix-search-input pr-3 focus-visible:ring-brand-teal/40"
                 autoFocus
               />

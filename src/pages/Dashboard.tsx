@@ -222,16 +222,38 @@ const HomePanel = ({
   children: ReactNode;
   className?: string;
 }) => (
-  <Card className={`min-w-0 overflow-hidden rounded-[1.2rem] border border-border/50 bg-card shadow-[0_1px_0_rgba(207,198,181,0.32)] ${className}`}>
-    <div className="border-b border-border/40 px-5 py-4 sm:px-6">
+  <Card className={`actsix-panel min-w-0 overflow-hidden ${className}`}>
+    <div className="border-b border-border/60 px-4 py-3.5 sm:px-5">
       <p className="label-eyebrow">{eyebrow}</p>
       <h2 className="mt-0.5 text-lg font-extrabold tracking-tight text-foreground">
         {title}
       </h2>
     </div>
-    <div className="p-5 sm:p-6">{children}</div>
+    <div className="p-4 sm:p-5">{children}</div>
   </Card>
 );
+
+// The clock owns its own ticking state so the 30s update repaints two chips
+// instead of re-rendering the dashboard's widget tree and calendar grid.
+const HeaderClock = () => {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <>
+      <span className="rounded-full border border-border/55 bg-white px-3 py-1">
+        {now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+      </span>
+      <span className="rounded-full border border-border/55 bg-white px-3 py-1">
+        {now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+      </span>
+    </>
+  );
+};
 
 const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
   const Icon = item.icon;
@@ -272,7 +294,6 @@ const Dashboard = () => {
   const [serviceOrderItems, setServiceOrderItems] = useState<ServiceOrderItem[]>([]);
   const [serviceTeamAssignments, setServiceTeamAssignments] = useState<ServiceTeamAssignment[]>([]);
   const [calendarView, setCalendarView] = useState<"month" | "week">("week");
-  const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
   const [customizeMode, setCustomizeMode] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -319,7 +340,10 @@ const Dashboard = () => {
         supabase
           .from("tasks")
           .select("id, title, project, project_id, complete")
-          .not("project", "is", null),
+          // Project stats match on project_id first and fall back to the legacy
+          // project name, so both carriers have to come back. Filtering on the
+          // name alone dropped every task that only had project_id set.
+          .or("project.not.is.null,project_id.not.is.null"),
         supabase
           .from("projects")
           .select("*")
@@ -374,11 +398,6 @@ const Dashboard = () => {
       setLoading(false);
     })();
   }, [user, currentPerson?.id]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   const todayKey = useMemo(() => toDateKey(startOfToday()), []);
 
@@ -511,13 +530,11 @@ const Dashboard = () => {
       nextService,
       serviceOrderItems,
       serviceTeamAssignments,
-      now,
       todayKey,
     }),
     [
       meetings,
       nextService,
-      now,
       projectTasks,
       projects,
       serviceOrderItems,
@@ -574,25 +591,6 @@ const Dashboard = () => {
     return (displayName || "there").trim().split(/\s+/)[0] || "there";
   }, [displayName]);
 
-  const clockLabel = useMemo(
-    () =>
-      now.toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    [now]
-  );
-
-  const dateLabel = useMemo(
-    () =>
-      now.toLocaleDateString(undefined, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      }),
-    [now]
-  );
-
   if (!workspaceLoading && !workspace) {
     return (
       <div>
@@ -602,7 +600,7 @@ const Dashboard = () => {
           subtitle="Join the Alpha Testing Workspace before using ACTSIX."
         />
 
-        <div className="w-full px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+        <div className="actsix-page-body">
           <Card className="actsix-panel-soft p-4 sm:p-5">
             <h2 className="text-2xl font-extrabold tracking-tight">
               Connect ACTSIX to your church
@@ -626,7 +624,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="overflow-x-hidden">
-        <div className="mx-auto flex w-full max-w-[92rem] flex-col gap-4 px-4 pb-28 pt-4 sm:px-6 md:gap-5 md:pb-12 xl:px-8 2xl:max-w-[104rem] 2xl:px-10">
+        <div className="actsix-page-body flex flex-col gap-4 pt-4">
           <section className="actsix-panel p-4 sm:p-5">
             <div className="actsix-loading-state" role="status">
               Loading your home overview...
@@ -641,9 +639,9 @@ const Dashboard = () => {
     <div className="overflow-x-hidden">
       <div
         data-tour="home-overview"
-        className="mx-auto flex w-full max-w-[92rem] flex-col gap-6 px-5 pb-28 pt-6 sm:px-8 md:gap-7 md:pb-14 xl:px-10 2xl:max-w-[104rem] 2xl:px-12"
+        className="actsix-page-body flex flex-col gap-4 pt-4"
       >
-        <section className="rounded-[1.35rem] border border-border/45 bg-card p-5 shadow-[0_1px_0_rgba(207,198,181,0.3)] sm:p-6">
+        <section className="actsix-panel p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <p className="label-eyebrow text-brand-teal">Home</p>
@@ -651,12 +649,7 @@ const Dashboard = () => {
                 {greeting}, {firstName}
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-extrabold text-muted-foreground sm:text-sm">
-                <span className="rounded-full border border-border/55 bg-white px-3 py-1">
-                  {dateLabel}
-                </span>
-                <span className="rounded-full border border-border/55 bg-white px-3 py-1">
-                  {clockLabel}
-                </span>
+                <HeaderClock />
                 {workspace?.name && (
                   <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-brand-teal">
                     {workspace.name}
@@ -675,7 +668,57 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <Card className="actsix-panel min-w-0 overflow-hidden md:hidden">
+        {customizeMode ? (
+          <>
+            <DashboardCustomizeBar
+              savedState={savedState}
+              onAddWidget={() => setLibraryOpen(true)}
+              onResetLayout={() => setResetConfirmOpen(true)}
+              onDone={() => setCustomizeMode(false)}
+            />
+
+            <DashboardGrid
+              widgets={layout.widgets}
+              definitions={widgetDefinitions}
+              data={widgetData}
+              customizeMode={customizeMode}
+              onMoveWidget={moveWidget}
+              onReorderWidget={reorderWidget}
+              onResizeWidget={resizeWidget}
+              onRemoveWidget={removeWidget}
+              onConfigureWidget={setSettingsWidget}
+              onUpdateWidgetSettings={updateWidgetSettings}
+            />
+          </>
+        ) : (
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(23rem,0.88fr)]">
+            <div className="space-y-4">
+              <HomePanel eyebrow="Today" title="Next Actions">
+                {renderHomeWidget("todays-tasks", { itemLimit: 6 })}
+              </HomePanel>
+
+              <HomePanel eyebrow="Momentum" title="Active Projects">
+                {renderHomeWidget("my-projects", { itemLimit: 4 })}
+              </HomePanel>
+            </div>
+
+            <div className="space-y-4">
+              <HomePanel eyebrow="Upcoming" title="Next Service">
+                {renderHomeWidget("upcoming-services", { itemLimit: 3 })}
+              </HomePanel>
+
+              <HomePanel eyebrow="Follow-up" title="People to Check In On">
+                {renderHomeWidget("people-followups", { itemLimit: 4 })}
+              </HomePanel>
+
+              <HomePanel eyebrow="Start" title="Quick Actions">
+                {renderHomeWidget("quick-actions")}
+              </HomePanel>
+            </div>
+          </section>
+        )}
+
+        <Card className="actsix-panel mt-4 min-w-0 overflow-hidden md:hidden">
           <SectionHeader
             eyebrow="Calendar"
             title="Upcoming Agenda"
@@ -696,7 +739,7 @@ const Dashboard = () => {
           </div>
         </Card>
 
-        <Card className="actsix-panel hidden min-w-0 overflow-hidden md:block">
+        <Card className="actsix-panel hidden min-w-0 overflow-hidden md:mt-4 md:block">
           <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="label-eyebrow">Calendar</p>
@@ -794,55 +837,6 @@ const Dashboard = () => {
           </div>
         </Card>
 
-        {customizeMode ? (
-          <>
-            <DashboardCustomizeBar
-              savedState={savedState}
-              onAddWidget={() => setLibraryOpen(true)}
-              onResetLayout={() => setResetConfirmOpen(true)}
-              onDone={() => setCustomizeMode(false)}
-            />
-
-            <DashboardGrid
-              widgets={layout.widgets}
-              definitions={widgetDefinitions}
-              data={widgetData}
-              customizeMode={customizeMode}
-              onMoveWidget={moveWidget}
-              onReorderWidget={reorderWidget}
-              onResizeWidget={resizeWidget}
-              onRemoveWidget={removeWidget}
-              onConfigureWidget={setSettingsWidget}
-              onUpdateWidgetSettings={updateWidgetSettings}
-            />
-          </>
-        ) : (
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_minmax(23rem,0.88fr)]">
-            <div className="space-y-6">
-              <HomePanel eyebrow="Today" title="Next Actions">
-                {renderHomeWidget("todays-tasks", { itemLimit: 6 })}
-              </HomePanel>
-
-              <HomePanel eyebrow="Momentum" title="Active Projects">
-                {renderHomeWidget("my-projects", { itemLimit: 4 })}
-              </HomePanel>
-            </div>
-
-            <div className="space-y-6">
-              <HomePanel eyebrow="Upcoming" title="Next Service">
-                {renderHomeWidget("upcoming-services", { itemLimit: 3 })}
-              </HomePanel>
-
-              <HomePanel eyebrow="Follow-up" title="People to Check In On">
-                {renderHomeWidget("people-followups", { itemLimit: 4 })}
-              </HomePanel>
-
-              <HomePanel eyebrow="Start" title="Quick Actions">
-                {renderHomeWidget("quick-actions")}
-              </HomePanel>
-            </div>
-          </section>
-        )}
 
         <WidgetLibraryModal
           open={libraryOpen}

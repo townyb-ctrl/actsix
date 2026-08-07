@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { fieldControlClass } from "@/components/ui/field";
 import { toast } from "sonner";
 import { friendlyErrorMessage } from "@/lib/friendlyError";
 
@@ -159,7 +160,7 @@ const MeetingsPage = () => {
   };
 
   return (
-    <div className="pb-12">
+    <div>
       <PageHeader
         eyebrow="Meetings"
         title="Meetings"
@@ -172,6 +173,7 @@ const MeetingsPage = () => {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search meetings..."
+                aria-label="Search meetings"
                 className="actsix-search-input"
               />
             </div>
@@ -188,18 +190,20 @@ const MeetingsPage = () => {
         }
       />
 
-      <div className="w-full space-y-4 px-4 sm:px-6 xl:px-8 2xl:px-10">
-        <div data-tour="meetings-stats" className="actsix-panel-soft grid gap-2 p-2 md:grid-cols-3">
-          {[
-            ["Total meetings", totalCount],
-            ["Scheduled", upcomingCount],
-            ["Unscheduled", unscheduledCount],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-[calc(var(--radius-panel)-0.35rem)] bg-background px-4 py-3">
-              <p className="label-eyebrow">{label}</p>
-              <div className="mt-1 text-xl font-extrabold tracking-tight">{value}</div>
-            </div>
-          ))}
+      <div className="actsix-page-body actsix-page-stack">
+        {/* Counts read as one line above the list, the same way Next Actions
+            states its filter result — three metric tiles pushed the meetings
+            themselves below the fold for numbers nobody acts on. */}
+        <div
+          data-tour="meetings-stats"
+          className="flex min-w-0 items-center gap-2 pl-2 text-xs text-muted-foreground"
+        >
+          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">
+            Showing {filteredMeetings.length} of {totalCount} meetings
+            {" - "}
+            {upcomingCount} scheduled, {unscheduledCount} unscheduled
+          </span>
         </div>
 
         <div data-tour="meetings-actions" className="actsix-panel overflow-hidden">
@@ -253,11 +257,20 @@ const MeetingsPage = () => {
               )}
 
               {!loading && !loadError && filteredMeetings.map((meeting) => (
-                <Link
+                // The row link is an overlay rather than a wrapper: nesting the
+                // Copy/Open Meet buttons inside an <a> is invalid HTML, and on a
+                // phone a slightly-off tap on "Copy Link" navigated away instead.
+                <div
                   key={meeting.id}
-                  to={`/meetings/${meeting.id}`}
-                  className="group flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-brand-teal/5 sm:flex-row sm:items-center"
+                  className="group relative flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-brand-teal/5 sm:flex-row sm:items-center"
                 >
+                  <Link
+                    to={`/meetings/${meeting.id}`}
+                    className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-teal/40"
+                  >
+                    <span className="sr-only">{meeting.title}</span>
+                  </Link>
+
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal ring-1 ring-brand-teal/15">
                     <UsersRound className="h-5 w-5" />
                   </div>
@@ -297,7 +310,7 @@ const MeetingsPage = () => {
                   </div>
 
 
-                  <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+                  <div className="relative flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                     {meeting.google_meet_url && (
                       <>
                         <button
@@ -324,7 +337,7 @@ const MeetingsPage = () => {
 
                     <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-brand-teal transition-colors" />
                   </div>
-                </Link>
+                </div>
               ))}
           </div>
         </div>
@@ -356,52 +369,57 @@ const MeetingsPage = () => {
             <form onSubmit={createMeeting} className="mt-6 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label className="label-eyebrow">Meeting Title</label>
+                  <label htmlFor="meeting-title" className="label-eyebrow">Meeting Title</label>
                   <Input
+                    id="meeting-title"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Executive Meeting"
-                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                    className={fieldControlClass}
                   />
                 </div>
 
                 <div>
-                  <label className="label-eyebrow">Date</label>
+                  <label htmlFor="meeting-date" className="label-eyebrow">Date</label>
                   <Input
+                    id="meeting-date"
                     type="date"
                     value={meetingDate}
                     onChange={(event) => setMeetingDate(event.target.value)}
-                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                    className={fieldControlClass}
                   />
                 </div>
 
                 <div>
-                  <label className="label-eyebrow">Time</label>
+                  <label htmlFor="meeting-time" className="label-eyebrow">Time</label>
                   <Input
+                    id="meeting-time"
                     type="time"
                     value={meetingTime}
                     onChange={(event) => setMeetingTime(event.target.value)}
-                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                    className={fieldControlClass}
                   />
                 </div>
 
                 <div>
-                  <label className="label-eyebrow">Location</label>
+                  <label htmlFor="meeting-location" className="label-eyebrow">Location</label>
                   <Input
+                    id="meeting-location"
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                     placeholder="Location"
-                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                    className={fieldControlClass}
                   />
                 </div>
 
                 <div>
-                  <label className="label-eyebrow">Google Meet Link</label>
+                  <label htmlFor="meeting-meet-url" className="label-eyebrow">Google Meet Link</label>
                   <Input
+                    id="meeting-meet-url"
                     value={googleMeetUrl}
                     onChange={(event) => setGoogleMeetUrl(event.target.value)}
                     placeholder="https://meet.google.com/..."
-                    className="mt-2 h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                    className={fieldControlClass}
                   />
                 </div>
 

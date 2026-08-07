@@ -280,7 +280,7 @@ const ServiceContactDetailPage = () => {
         }
       />
 
-      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <Link to="/people/contacts" className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-brand-teal">
           <ArrowLeft className="h-3.5 w-3.5" />
           All Service Contacts

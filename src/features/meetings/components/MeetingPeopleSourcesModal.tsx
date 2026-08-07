@@ -85,13 +85,14 @@ export function MeetingPeopleSourcesModal({
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="actsix-panel-soft p-4">
-                  <label className="label-eyebrow">Chairperson</label>
+                  <span className="label-eyebrow block">Chairperson</span>
                   <div className="mt-2">
                     <MeetingSourceCombobox
                       value={chairpersonId}
                       onChange={onChairpersonChange}
                       options={meetingLeaderOptions}
                       placeholder="Select chairperson..."
+                      label="Chairperson"
                       searchPlaceholder="Search meeting people..."
                       emptyText="No meeting people found."
                     />
@@ -99,13 +100,14 @@ export function MeetingPeopleSourcesModal({
                 </div>
 
                 <div className="actsix-panel-soft p-4">
-                  <label className="label-eyebrow">Minute taker</label>
+                  <span className="label-eyebrow block">Minute taker</span>
                   <div className="mt-2">
                     <MeetingSourceCombobox
                       value={minuteTakerId}
                       onChange={onMinuteTakerChange}
                       options={meetingLeaderOptions}
                       placeholder="Select minute taker..."
+                      label="Minute taker"
                       searchPlaceholder="Search meeting people..."
                       emptyText="No meeting people found."
                     />
@@ -139,7 +141,7 @@ export function MeetingPeopleSourcesModal({
 
             <div className="grid gap-3 lg:grid-cols-2">
               <div className="rounded-xl border border-border/70 bg-background/70 p-3">
-                <label className="label-eyebrow">Add individual</label>
+                <span className="label-eyebrow block">Add individual</span>
                 <div className="mt-2 flex gap-2">
                   <div className="min-w-0 flex-1">
                     <PeopleMultiSearchSelect
@@ -164,7 +166,7 @@ export function MeetingPeopleSourcesModal({
               </div>
 
               <div className="rounded-xl border border-border/70 bg-background/70 p-3">
-                <label className="label-eyebrow">Add group or folder</label>
+                <span className="label-eyebrow block">Add group or folder</span>
                 <div className="mt-2 flex gap-2">
                   <div className="min-w-0 flex-1">
                     <MeetingSourceCombobox
@@ -172,6 +174,7 @@ export function MeetingPeopleSourcesModal({
                       onChange={onSelectedMeetingGroupFolderIdChange}
                       options={meetingGroupFolderOptions}
                       placeholder="Search groups and folders..."
+                      label="Add group or folder"
                       searchPlaceholder="Search groups or folders..."
                       emptyText="No groups or folders found."
                     />

@@ -12,6 +12,8 @@ export type Meeting = {
   status?: string;
   agenda: string | null;
   notes: string | null;
+  transcript: string | null;
+  recording_path: string | null;
   attendees: string[] | null;
   google_meet_url: string | null;
   chairperson_id: string | null;
@@ -31,6 +33,15 @@ export type MeetingAction = {
   linked_project: string | null;
   status: string;
   created_at?: string;
+};
+
+/** An AI-proposed action point awaiting review before it becomes a real MeetingAction. */
+export type ActionPointProposal = {
+  id: string;
+  title: string;
+  assigneePersonId: string;
+  assigneeName: string;
+  due: string;
 };
 
 export type MeetingPersonProfile = {

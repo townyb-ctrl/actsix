@@ -200,7 +200,7 @@ const ServiceContactsPage = () => {
         }
       />
 
-      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="actsix-search-field w-full sm:w-64">
             <Search className="actsix-search-icon" />

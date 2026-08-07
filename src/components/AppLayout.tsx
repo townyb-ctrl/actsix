@@ -110,7 +110,6 @@ export default function AppLayout() {
   const backTarget = getBackTarget(location.pathname);
   const routeModuleKey = getModuleKeyForPath(location.pathname);
   const routeModuleActive = isModuleActive(routeModuleKey);
-  const isHomeRoute = location.pathname === "/";
   const profilePath = currentPerson?.id ? `/people/${currentPerson.id}` : "/settings";
   const accountName = currentPerson?.display_name || displayName || user?.email || "Profile";
 
@@ -342,7 +341,7 @@ export default function AppLayout() {
               onActivate={activateRouteModule}
             />
           ) : (
-            <main id="main-content" className={`flex-1 overflow-y-auto overscroll-contain ${isHomeRoute ? "" : "md:px-4 xl:px-6 2xl:px-8"}`}>
+            <main id="main-content" className="flex-1 overflow-y-auto overscroll-contain md:px-4 xl:px-6 2xl:px-8">
               <Outlet />
             </main>
           )}

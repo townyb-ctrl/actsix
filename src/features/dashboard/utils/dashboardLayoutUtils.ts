@@ -168,10 +168,7 @@ export const priorityClass = (priority?: string | null) => {
   return "bg-brand-teal/10 text-brand-teal border-brand-teal/20";
 };
 
-export const projectProgress = (project: DashboardProject, tasks: DashboardTask[]) => {
-  const projectTasks = tasks.filter(
-    (task) => task.project_id === project.id || (!task.project_id && task.project === project.name)
-  );
+const summarizeProject = (project: DashboardProject, projectTasks: DashboardTask[]) => {
   const openTasks = projectTasks.filter((task) => !task.complete);
   const completedTasks = projectTasks.filter((task) => task.complete);
 
@@ -185,4 +182,42 @@ export const projectProgress = (project: DashboardProject, tasks: DashboardTask[
     progress,
     nextAction: openTasks[0]?.title || project.next_action || "No next action set",
   };
+};
+
+export const projectProgress = (project: DashboardProject, tasks: DashboardTask[]) =>
+  summarizeProject(
+    project,
+    tasks.filter(
+      (task) => task.project_id === project.id || (!task.project_id && task.project === project.name)
+    )
+  );
+
+/**
+ * Same result as calling projectProgress once per project, but it buckets the
+ * task list in a single pass instead of re-scanning every task per project.
+ * Callers that need stats for a whole project list should use this — the
+ * per-project version inside a sort comparator is O(projects x tasks).
+ */
+export const projectProgressByProject = (
+  projects: DashboardProject[],
+  tasks: DashboardTask[]
+) => {
+  const idByName = new Map(projects.map((project) => [project.name, project.id]));
+  const tasksByProject = new Map<string, DashboardTask[]>();
+
+  for (const task of tasks) {
+    const projectId = task.project_id ?? (task.project ? idByName.get(task.project) : undefined);
+    if (!projectId) continue;
+
+    const bucket = tasksByProject.get(projectId);
+    if (bucket) bucket.push(task);
+    else tasksByProject.set(projectId, [task]);
+  }
+
+  return new Map(
+    projects.map((project) => [
+      project.id,
+      summarizeProject(project, tasksByProject.get(project.id) ?? []),
+    ])
+  );
 };

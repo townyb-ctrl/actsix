@@ -707,7 +707,7 @@ const PersonDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body pt-12">
         <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-loading-state" role="status">Loading person profile...</div>
         </Card>
@@ -717,7 +717,7 @@ const PersonDetailPage = () => {
 
   if (!person) {
     return (
-      <div className="px-4 py-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body pt-12">
         <Card className="actsix-panel p-4 sm:p-5">
           <div className="actsix-empty-state">Person not found.</div>
         </Card>
@@ -726,7 +726,7 @@ const PersonDetailPage = () => {
   }
 
   return (
-    <div className="w-full space-y-5 px-4 pb-12 pt-5 sm:px-6 xl:px-8 2xl:px-10">
+    <div className="actsix-page-body actsix-page-stack pt-5">
       <Card className="actsix-panel overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5">
           <div className="flex min-w-0 items-start gap-4">

@@ -2,8 +2,10 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+// h-11 (44px) meets DESIGN.md's mobile touch-target floor; sm: steps back
+// down to the compact 32px desktop row once touch isn't the input method.
 export const fieldControlClass =
-  "h-8 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus-visible:border-brand-teal focus-visible:ring-2 focus-visible:ring-brand-teal/15 focus-visible:ring-offset-0 sm:text-xs";
+  "h-11 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus-visible:border-brand-teal focus-visible:ring-2 focus-visible:ring-brand-teal/15 focus-visible:ring-offset-0 sm:h-8 sm:text-xs";
 
 type FieldProps = {
   label: string;

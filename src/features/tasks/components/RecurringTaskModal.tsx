@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId } from "react";
 import { CalendarClock, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,6 +37,17 @@ const RecurringTaskModal = ({
   const endConditionFieldId = `${fieldId}-end-condition`;
   const endDateFieldId = `${fieldId}-end-date`;
   const occurrencesFieldId = `${fieldId}-occurrences`;
+
+  useEffect(() => {
+    if (!template) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [template, onClose]);
 
   if (!template) return null;
 

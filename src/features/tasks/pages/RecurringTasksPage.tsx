@@ -245,7 +245,7 @@ const RecurringTasksPage = () => {
         }
       />
 
-      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <div className="grid gap-3 md:grid-cols-3">
           {(
             [

@@ -18,23 +18,20 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Field, FieldRow, fieldControlClass } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import {
   fromRecurringMeetingRow,
+  notifyRecurringMeetingsChanged,
   toRecurringMeetingInsert,
   type RecurringMeeting,
 } from "@/features/meetings/lib/recurringMeetings";
-
-type PeopleGroupOption = {
-  id: string;
-  name: string;
-  members: {
-    person_id: string;
-    display_name: string;
-  }[];
-};
+import { useRecurringPeopleGroupOptions } from "@/features/meetings/hooks/useRecurringPeopleGroupOptions";
 
 const formatDate = (date?: string | null) => {
   if (!date) return "No start date";
@@ -62,9 +59,10 @@ const RecurringMeetingsPage = () => {
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
   const [occurrences, setOccurrences] = useState("12");
-  const [peopleGroupOptions, setPeopleGroupOptions] = useState<PeopleGroupOption[]>([]);
+  const peopleGroupOptions = useRecurringPeopleGroupOptions();
   const [selectedPeopleGroupId, setSelectedPeopleGroupId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [titleTouched, setTitleTouched] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RecurringMeeting | null>(null);
 
   const loadSeries = async () => {
@@ -92,58 +90,6 @@ const RecurringMeetingsPage = () => {
     loadSeries();
   }, [workspace?.id]);
 
-  useEffect(() => {
-    const loadPeopleGroupOptions = async () => {
-      if (!user) return;
-
-      const { data: groupsData, error: groupsError } = await (supabase as any)
-        .from("people_groups")
-        .select("id, name")
-        .eq("user_id", user.id)
-        .order("name", { ascending: true });
-
-      if (groupsError) {
-        console.error(groupsError);
-        return;
-      }
-
-      const { data: membersData, error: membersError } = await (supabase as any)
-        .from("people_group_members")
-        .select("group_id, person_id, people(id, display_name)")
-        .eq("user_id", user.id);
-
-      if (membersError) {
-        console.error(membersError);
-      }
-
-      const membersByGroup = new Map<string, PeopleGroupOption["members"]>();
-
-      (membersData || []).forEach((member: any) => {
-        const person = Array.isArray(member.people) ? member.people[0] : member.people;
-
-        if (!member.group_id || !member.person_id) return;
-
-        const existing = membersByGroup.get(member.group_id) || [];
-
-        existing.push({
-          person_id: member.person_id,
-          display_name: person?.display_name || "Unnamed person",
-        });
-
-        membersByGroup.set(member.group_id, existing);
-      });
-
-      setPeopleGroupOptions(
-        (groupsData || []).map((group: any) => ({
-          id: group.id,
-          name: group.name,
-          members: membersByGroup.get(group.id) || [],
-        }))
-      );
-    };
-
-    loadPeopleGroupOptions();
-  }, [user]);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -162,7 +108,11 @@ const RecurringMeetingsPage = () => {
   const createRecurringMeeting = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!title.trim() || !workspace || !user) return;
+    if (!title.trim()) {
+      setTitleTouched(true);
+      return;
+    }
+    if (!workspace || !user) return;
 
     const selectedPeopleGroup = peopleGroupOptions.find(
       (group) => group.id === selectedPeopleGroupId
@@ -198,6 +148,7 @@ const RecurringMeetingsPage = () => {
     }
 
     toast.success("Recurring meeting created");
+    notifyRecurringMeetingsChanged();
     setTitle("");
     setFrequency("Weekly");
     setStartDate("");
@@ -205,8 +156,14 @@ const RecurringMeetingsPage = () => {
     setLocation("");
     setOccurrences("12");
     setSelectedPeopleGroupId("");
+    setTitleTouched(false);
     setAddOpen(false);
     loadSeries();
+  };
+
+  const closeAddModal = () => {
+    setAddOpen(false);
+    setTitleTouched(false);
   };
 
   const confirmDeleteRecurringMeeting = async () => {
@@ -226,6 +183,7 @@ const RecurringMeetingsPage = () => {
     }
 
     toast.success("Recurring meeting deleted");
+    notifyRecurringMeetingsChanged();
     setDeleteTarget(null);
     loadSeries();
   };
@@ -244,6 +202,7 @@ const RecurringMeetingsPage = () => {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search recurring..."
+                aria-label="Search recurring meetings"
                 className="actsix-search-input"
               />
             </div>
@@ -260,7 +219,7 @@ const RecurringMeetingsPage = () => {
         }
       />
 
-      <div className="w-full space-y-4 px-4 pb-12 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body actsix-page-stack">
         <Card className="actsix-panel overflow-hidden">
           {loading ? (
             <div className="actsix-loading-state m-3" role="status">
@@ -281,252 +240,210 @@ const RecurringMeetingsPage = () => {
               )}
 
               {filteredItems.map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/meetings/recurring/${item.id}`}
-                  className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-                    <Repeat className="h-5 w-5" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-extrabold tracking-tight">
-                      {item.title}
+                <div key={item.id} className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30">
+                  <Link to={`/meetings/recurring/${item.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
+                      <Repeat className="h-5 w-5" />
                     </div>
 
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <Repeat className="h-3.5 w-3.5" />
-                        {item.frequency}
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-extrabold tracking-tight">
+                        {item.title}
+                      </div>
 
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        Starts {formatDate(item.startDate)}
-                      </span>
-
-                      {item.meetingTime && (
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
-                          <Clock3 className="h-3.5 w-3.5" />
-                          {item.meetingTime}
+                          <Repeat className="h-3.5 w-3.5" />
+                          {item.frequency}
                         </span>
-                      )}
 
-                      {item.location && (
                         <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {item.location}
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          Starts {formatDate(item.startDate)}
                         </span>
-                      )}
 
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
-                        {item.peopleGroupName
-                          ? `${item.peopleGroupName} group`
-                          : `${item.regularAttendees?.length || 0} regular attendees`}
-                      </span>
+                        {item.meetingTime && (
+                          <span className="inline-flex items-center gap-1">
+                            <Clock3 className="h-3.5 w-3.5" />
+                            {item.meetingTime}
+                          </span>
+                        )}
 
-                      <span className="inline-flex items-center gap-1">
-                        <ListChecks className="h-3.5 w-3.5" />
-                        {item.regularAgenda?.length || 0} agenda sections
-                      </span>
+                        {item.location && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {item.location}
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          {item.peopleGroupName
+                            ? `${item.peopleGroupName} group`
+                            : `${item.regularAttendees?.length || 0} regular attendees`}
+                        </span>
+
+                        <span className="inline-flex items-center gap-1">
+                          <ListChecks className="h-3.5 w-3.5" />
+                          {item.regularAgenda?.length || 0} agenda sections
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <span className="text-xs font-bold text-muted-foreground">
-                    {item.occurrences} meetings
-                  </span>
+                    <span className="shrink-0 text-xs font-bold text-muted-foreground">
+                      {item.occurrences} meetings
+                    </span>
+
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-brand-teal" />
+                  </Link>
 
                   <button
                     type="button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      setDeleteTarget(item);
-                    }}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => setDeleteTarget(item)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
                     aria-label={`Delete ${item.title}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
-
-                  <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand-teal" />
-                </Link>
+                </div>
               ))}
             </div>
           )}
         </Card>
       </div>
 
-      {addOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="actsix-panel w-full max-w-3xl p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="label-eyebrow">Recurring Meeting</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
-                  Add Recurring Meeting
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Create a repeated meeting pattern like a weekly staff meeting or monthly executive meeting.
-                </p>
-              </div>
+      <Dialog open={addOpen} onOpenChange={(next) => (next ? setAddOpen(true) : closeAddModal())}>
+        <DialogContent className="actsix-panel max-w-3xl rounded-xl">
+          <DialogHeader>
+            <p className="label-eyebrow">Recurring Meeting</p>
+            <DialogTitle>Add Recurring Meeting</DialogTitle>
+            <DialogDescription>
+              Create a repeated meeting pattern like a weekly staff meeting or monthly executive meeting.
+            </DialogDescription>
+          </DialogHeader>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setAddOpen(false)}
+          <form onSubmit={createRecurringMeeting} className="space-y-4">
+            <FieldRow>
+              <Field
+                label="Meeting Title"
+                htmlFor="recurring-title"
+                hint={titleTouched && !title.trim() ? "Title is required." : undefined}
+                className={cn(titleTouched && !title.trim() && "[&_p]:text-brand-danger")}
               >
-                Close
-              </Button>
-            </div>
+                <Input
+                  id="recurring-title"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Staff Meeting"
+                  aria-invalid={(titleTouched && !title.trim()) || undefined}
+                  className={cn(
+                    fieldControlClass,
+                    titleTouched && !title.trim() && "border-brand-danger focus-visible:border-brand-danger focus-visible:ring-brand-danger/15"
+                  )}
+                />
+              </Field>
 
-            <form onSubmit={createRecurringMeeting} className="mt-6 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label-eyebrow">Meeting Title</label>
-                  <Input
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
-                    placeholder="Staff Meeting"
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Frequency</label>
-                  <select
-                    value={frequency}
-                    onChange={(event) => setFrequency(event.target.value as "Weekly" | "Monthly")}
-                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
-                  >
-                    <option>Weekly</option>
-                    <option>Monthly</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Start Date</label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Time</label>
-                  <Input
-                    type="time"
-                    value={meetingTime}
-                    onChange={(event) => setMeetingTime(event.target.value)}
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Location</label>
-                  <Input
-                    value={location}
-                    onChange={(event) => setLocation(event.target.value)}
-                    placeholder="Location"
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">People Group Source</label>
-                  <select
-                    value={selectedPeopleGroupId}
-                    onChange={(event) => setSelectedPeopleGroupId(event.target.value)}
-                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
-                  >
-                    <option value="">No linked group</option>
-                    {peopleGroupOptions.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name} - {group.members.length} people
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Use this for recurring meetings that happen within a fixed team or leadership group.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="label-eyebrow">Number of Meetings</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={occurrences}
-                    onChange={(event) => setOccurrences(event.target.value)}
-                    className="mt-2 border-border/70 bg-background"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setAddOpen(false)}
+              <Field label="Frequency" htmlFor="recurring-frequency">
+                <select
+                  id="recurring-frequency"
+                  value={frequency}
+                  onChange={(event) => setFrequency(event.target.value as "Weekly" | "Monthly")}
+                  className={fieldControlClass}
                 >
-                  Cancel
-                </Button>
+                  <option>Weekly</option>
+                  <option>Monthly</option>
+                </select>
+              </Field>
+            </FieldRow>
 
-                <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl" disabled={saving}>
-                  <Plus className="h-4 w-4" />
-                  {saving ? "Creating..." : "Create Recurring Meeting"}
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+            <FieldRow>
+              <Field label="Start Date" htmlFor="recurring-start-date">
+                <Input
+                  id="recurring-start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(event) => setStartDate(event.target.value)}
+                  className={fieldControlClass}
+                />
+              </Field>
 
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="actsix-panel w-full max-w-md p-4 sm:p-5">
-            <div className="h-12 w-12 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center mb-4">
-              <Trash2 className="h-5 w-5" />
-            </div>
+              <Field label="Time" htmlFor="recurring-time">
+                <Input
+                  id="recurring-time"
+                  type="time"
+                  value={meetingTime}
+                  onChange={(event) => setMeetingTime(event.target.value)}
+                  className={fieldControlClass}
+                />
+              </Field>
+            </FieldRow>
 
-            <h2 className="text-xl font-extrabold tracking-tight">
-              Delete recurring meeting?
-            </h2>
+            <FieldRow>
+              <Field label="Location" htmlFor="recurring-location">
+                <Input
+                  id="recurring-location"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  placeholder="Location"
+                  className={fieldControlClass}
+                />
+              </Field>
 
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              This will remove <strong>{deleteTarget.title}</strong> from your recurring meetings list.
-              Existing meetings that were already created will not be deleted.
-            </p>
+              <Field label="Number of Meetings" htmlFor="recurring-occurrences">
+                <Input
+                  id="recurring-occurrences"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={occurrences}
+                  onChange={(event) => setOccurrences(event.target.value)}
+                  className={fieldControlClass}
+                />
+              </Field>
+            </FieldRow>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setDeleteTarget(null)}
+            <Field
+              label="People Group Source"
+              htmlFor="recurring-people-group"
+              hint="Use this for recurring meetings that happen within a fixed team or leadership group."
+            >
+              <select
+                id="recurring-people-group"
+                value={selectedPeopleGroupId}
+                onChange={(event) => setSelectedPeopleGroupId(event.target.value)}
+                className={fieldControlClass}
               >
+                <option value="">No linked group</option>
+                {peopleGroupOptions.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name} - {group.members.length} people
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={closeAddModal}>
                 Cancel
               </Button>
 
-              <Button
-                type="button"
-                variant="destructive"
-                className="rounded-xl"
-                onClick={confirmDeleteRecurringMeeting}
-              >
-                Delete Recurring Meeting
+              <Button type="submit" className="actsix-btn-primary min-h-10 rounded-xl" disabled={saving}>
+                <Plus className="h-4 w-4" />
+                {saving ? "Creating..." : "Create Recurring Meeting"}
               </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete recurring meeting?"
+        description={`This will remove "${deleteTarget?.title ?? ""}" from your recurring meetings list. Existing meetings that were already created will not be deleted.`}
+        confirmLabel="Delete Recurring Meeting"
+        onConfirm={confirmDeleteRecurringMeeting}
+      />
     </div>
   );
 };

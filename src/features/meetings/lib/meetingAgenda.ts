@@ -14,10 +14,36 @@ export type AgendaSection = {
   points: AgendaPoint[];
 };
 
+/** Carried in the agenda JSON so a meeting generated from a recurring series
+ *  can still find its way back to that series after the agenda is edited. */
+export type AgendaSeriesMeta = {
+  recurringSeriesId?: string | null;
+  peopleGroupId?: string | null;
+  peopleGroupName?: string | null;
+};
+
 export type AgendaPayload = {
   type: "actsix-agenda-v1";
   sections: AgendaSection[];
   apologies?: string[];
+};
+
+export const getAgendaSeriesMeta = (
+  agenda?: string | Record<string, unknown> | null
+): AgendaSeriesMeta => {
+  if (!agenda) return {};
+
+  try {
+    const parsed = typeof agenda === "string" ? JSON.parse(agenda) : agenda;
+
+    return {
+      recurringSeriesId: typeof parsed?.recurringSeriesId === "string" ? parsed.recurringSeriesId : null,
+      peopleGroupId: typeof parsed?.peopleGroupId === "string" ? parsed.peopleGroupId : null,
+      peopleGroupName: typeof parsed?.peopleGroupName === "string" ? parsed.peopleGroupName : null,
+    };
+  } catch {
+    return {};
+  }
 };
 
 export const makeAgendaPoint = (): AgendaPoint => ({
@@ -89,7 +115,11 @@ export const parseAgendaPayload = (value?: string | null): AgendaPayload => {
   };
 };
 
-export const serializeAgenda = (sections: AgendaSection[], apologies: string[]) =>
+export const serializeAgenda = (
+  sections: AgendaSection[],
+  apologies: string[],
+  seriesMeta?: AgendaSeriesMeta
+) =>
   JSON.stringify({
     type: "actsix-agenda-v1",
     sections: sections.map((section) => ({
@@ -98,6 +128,13 @@ export const serializeAgenda = (sections: AgendaSection[], apologies: string[]) 
       points: section.points,
     })),
     apologies: cleanNameList(apologies),
+    // Round-trip the series link instead of dropping it: without this, saving
+    // the agenda on a meeting generated from a recurring series silently
+    // detached it from that series (getRecurringSeriesIdFromAgenda would
+    // return null on the very next load).
+    ...(seriesMeta?.recurringSeriesId ? { recurringSeriesId: seriesMeta.recurringSeriesId } : {}),
+    ...(seriesMeta?.peopleGroupId ? { peopleGroupId: seriesMeta.peopleGroupId } : {}),
+    ...(seriesMeta?.peopleGroupName ? { peopleGroupName: seriesMeta.peopleGroupName } : {}),
   });
 
 export const parseAttendees = (value: string) =>

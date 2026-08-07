@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Field, FieldRow, fieldControlClass } from "@/components/ui/field";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -782,14 +783,14 @@ ${row.notes}`
   }, [user, workspace?.id]);
 
   return (
-    <div className="w-full min-w-0 space-y-4 pb-10">
+    <div className="w-full min-w-0 space-y-4">
       <PageHeader
         eyebrow="People"
         title="People"
         subtitle="Alpha workspace users appear here automatically. Everyone can view the directory; only admins and editors can manage profiles."
       />
 
-      <div className="px-4 sm:px-6 xl:px-8 2xl:px-10">
+      <div className="actsix-page-body">
         <div data-tour="people-search" className="mb-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center">
           <div className="flex min-w-0 flex-wrap items-center gap-2 xl:justify-self-start">
             <h2 className="shrink-0 text-lg font-extrabold tracking-tight">
@@ -1020,10 +1021,13 @@ ${row.notes}`
 
           <div className="divide-y divide-border">
             {filteredPeople.map((person) => (
-              <Link
+              <div
                 key={person.id}
-                to={`/people/${person.id}`}
                 className="flex min-w-0 flex-col gap-2.5 px-3 py-2.5 transition hover:bg-brand-teal/5 md:grid md:grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(240px,1fr)_auto] md:items-center md:gap-3 md:px-3 md:py-2"
+              >
+              <Link
+                to={`/people/${person.id}`}
+                className="contents"
               >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <PersonAvatar
@@ -1072,6 +1076,7 @@ ${row.notes}`
                     <span className="text-muted-foreground/55">—</span>
                   )}
                 </div>
+              </Link>
 
                 <div className="flex justify-start md:justify-end">
                   {isMessageablePhone(person.phone_number) ? (
@@ -1079,11 +1084,7 @@ ${row.notes}`
                       type="button"
                       className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-teal bg-brand-teal/10 px-3 text-xs font-extrabold text-brand-teal transition hover:bg-brand-teal/15 md:h-8 md:w-8 md:rounded-full md:px-0"
                       title="Message on WhatsApp"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        window.open(getWhatsappHref(person.phone_number), "_blank", "noreferrer");
-                      }}
+                      onClick={() => window.open(getWhatsappHref(person.phone_number), "_blank", "noreferrer")}
                     >
                       <Send className="h-3.5 w-3.5" />
                       <span className="md:hidden">Message</span>
@@ -1098,7 +1099,7 @@ ${row.notes}`
                     </span>
                   )}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
           </Card>
@@ -1125,8 +1126,9 @@ ${row.notes}`
           </DialogHeader>
 
             <div className="mt-1 rounded-[var(--radius-panel)] border border-border/70 bg-background/70 p-4">
-              <label className="label-eyebrow">CSV File</label>
+              <label htmlFor="import-csv-file" className="label-eyebrow">CSV File</label>
               <Input
+                id="import-csv-file"
                 type="file"
                 accept=".csv,text/csv"
                 onChange={(event) => {
@@ -1305,87 +1307,87 @@ ${row.notes}`
             </DialogHeader>
 
             <form onSubmit={createPerson} className="mt-2 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label-eyebrow">First Name</label>
+              <FieldRow>
+                <Field label="First Name" htmlFor="add-person-first-name">
                   <Input
+                    id="add-person-first-name"
                     value={firstName}
                     onChange={(event) => setFirstName(event.target.value)}
                     placeholder="Brandon"
-                    className="mt-2 border-border/70 bg-background"
+                    className={fieldControlClass}
                   />
-                </div>
+                </Field>
 
-                <div>
-                  <label className="label-eyebrow">Last Name</label>
+                <Field label="Last Name" htmlFor="add-person-last-name">
                   <Input
+                    id="add-person-last-name"
                     value={lastName}
                     onChange={(event) => setLastName(event.target.value)}
                     placeholder="Townsend"
-                    className="mt-2 border-border/70 bg-background"
+                    className={fieldControlClass}
                   />
-                </div>
-              </div>
+                </Field>
+              </FieldRow>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label-eyebrow">Phone / WhatsApp Number</label>
+              <FieldRow>
+                <Field label="Phone / WhatsApp Number" htmlFor="add-person-phone">
                   <Input
+                    id="add-person-phone"
                     value={phoneNumber}
                     onChange={(event) => setPhoneNumber(event.target.value)}
                     placeholder="073 775 4927"
-                    className="mt-2 border-border/70 bg-background"
+                    className={fieldControlClass}
                   />
-                </div>
+                </Field>
 
-                <div>
-                  <label className="label-eyebrow">Email</label>
+                <Field label="Email" htmlFor="add-person-email">
                   <Input
+                    id="add-person-email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="name@example.com"
-                    className="mt-2 border-border/70 bg-background"
+                    className={fieldControlClass}
                   />
-                </div>
-              </div>
+                </Field>
+              </FieldRow>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label-eyebrow">Gender</label>
+              <FieldRow>
+                <Field label="Gender" htmlFor="add-person-gender">
                   <select
+                    id="add-person-gender"
                     value={gender}
                     onChange={(event) => setGender(event.target.value)}
-                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                    className={fieldControlClass}
                   >
                     <option value="">Not specified</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                   </select>
-                </div>
+                </Field>
 
-                <div>
-                  <label className="label-eyebrow">Membership</label>
+                <Field label="Membership" htmlFor="add-person-membership">
                   <select
+                    id="add-person-membership"
                     value={membershipStatus}
                     onChange={(event) => setMembershipStatus(event.target.value)}
-                    className="mt-2 w-full h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                    className={fieldControlClass}
                   >
                     <option value="Member">Member</option>
                     <option value="Adherent">Adherent</option>
                   </select>
-                </div>
-              </div>
+                </Field>
+              </FieldRow>
 
-              <div>
-                <label className="label-eyebrow">Notes</label>
+              <Field label="Notes" htmlFor="add-person-notes">
                 <textarea
+                  id="add-person-notes"
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                   rows={4}
                   placeholder="Care notes, serving preferences, availability, family context..."
-                  className="mt-2 w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 py-2 text-base outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
+                  className="w-full rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 py-2 text-base outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs"
                 />
-              </div>
+              </Field>
 
               <DialogFooter className="grid grid-cols-2 gap-2 pt-2 sm:flex sm:justify-end">
                 <Button

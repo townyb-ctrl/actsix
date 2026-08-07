@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Save, Trash2, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import NextActionFields from "@/components/NextActionFields";
 
 type TaskEditorModalProps = {
@@ -37,6 +39,19 @@ const TaskEditorModal = ({
   onDelete,
   onRefreshOptions,
 }: TaskEditorModalProps) => {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    if (!task) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [task, onClose]);
+
   if (!task) return null;
 
   const titleId = "task-editor-title";
@@ -142,12 +157,7 @@ const TaskEditorModal = ({
                 variant="ghost"
                 size="sm"
                 className="h-8 text-destructive hover:text-destructive"
-                onClick={() => {
-                  const confirmed = window.confirm(
-                    `Delete "${task.title || "this task"}"? This can't be undone.`
-                  );
-                  if (confirmed) onDelete();
-                }}
+                onClick={() => setDeleteConfirmOpen(true)}
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                 Delete
@@ -168,9 +178,8 @@ const TaskEditorModal = ({
 
             <Button
               disabled={saving}
-              variant="outline"
               size="sm"
-              className="actsix-btn-outline h-8 border-brand-teal/50 font-bold text-brand-teal hover:text-brand-teal"
+              className="actsix-btn-primary h-8"
               onClick={onSave}
             >
               <Save className="h-3.5 w-3.5 mr-1.5" />
@@ -179,6 +188,19 @@ const TaskEditorModal = ({
           </div>
         </div>
       </Card>
+
+      {onDelete && (
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title="Delete task?"
+          description={`Delete "${task.title || "this task"}"? This can't be undone.`}
+          onConfirm={() => {
+            setDeleteConfirmOpen(false);
+            onDelete();
+          }}
+        />
+      )}
     </div>
   );
 };

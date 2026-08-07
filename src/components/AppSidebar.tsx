@@ -74,25 +74,6 @@ type RecurringSidebarMeeting = {
   frequency?: string;
 };
 
-const RECURRING_MEETINGS_STORAGE_KEY = "actsix_recurring_meetings";
-
-const loadRecurringSidebarMeetings = (): RecurringSidebarMeeting[] => {
-  try {
-    const items = JSON.parse(localStorage.getItem(RECURRING_MEETINGS_STORAGE_KEY) || "[]");
-
-    return Array.isArray(items)
-      ? items
-          .filter((item) => item?.id && item?.title)
-          .map((item) => ({
-            id: item.id,
-            title: item.title,
-            frequency: item.frequency,
-          }))
-      : [];
-  } catch {
-    return [];
-  }
-};
 
 const navSections: NavSection[] = [
   {
@@ -276,21 +257,46 @@ export function AppSidebar() {
     setMoreOpenSections((current) => new Set(current).add(activeSection.id));
   }, [activeSection, pathname]);
 
+  // Recurring series moved to Supabase, but this list kept reading the old
+  // localStorage key nothing writes any more - so the sidebar told every user
+  // they had no recurring meetings while the Meetings pages listed them.
   useEffect(() => {
-    const refreshRecurringMeetings = () => {
-      setRecurringSidebarMeetings(loadRecurringSidebarMeetings());
+    const workspaceId = workspace?.id;
+
+    if (!workspaceId) {
+      setRecurringSidebarMeetings([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const refreshRecurringMeetings = async () => {
+      const { data, error } = await (supabase as any)
+        .from("recurring_meeting_series")
+        .select("id, title, frequency")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: true });
+
+      if (cancelled || error) return;
+
+      setRecurringSidebarMeetings(
+        (data ?? []).map((row: { id: string; title: string; frequency?: string }) => ({
+          id: row.id,
+          title: row.title,
+          frequency: row.frequency,
+        }))
+      );
     };
 
     refreshRecurringMeetings();
 
-    window.addEventListener("storage", refreshRecurringMeetings);
     window.addEventListener("actsix-recurring-meetings-updated", refreshRecurringMeetings);
 
     return () => {
-      window.removeEventListener("storage", refreshRecurringMeetings);
+      cancelled = true;
       window.removeEventListener("actsix-recurring-meetings-updated", refreshRecurringMeetings);
     };
-  }, []);
+  }, [workspace?.id]);
 
   useEffect(() => {
     if (!user) return;
