@@ -64,4 +64,17 @@ describe("renderMinutesHtml", () => {
   it("escapes HTML-special characters in plain-text lines", () => {
     expect(renderMinutesHtml("<script>evil()</script>")).not.toContain("<script>");
   });
+
+  it("styles a three-level line as a sub-point, distinct from a two-level point", () => {
+    const out = renderMinutesHtml("1. OFFICE ADMIN\n1.1 IFBB Venue Hire\n1.1.1 Timings");
+    expect(out).toContain('class="minutes-agenda-point"');
+    expect(out).toContain('class="minutes-agenda-subpoint"');
+  });
+
+  it("renders an underscore-wrapped line as an italic subtitle, without the underscores", () => {
+    const out = renderMinutesHtml("1. WEEKEND FEEDBACK\n_Wins, Challenges, Changes_");
+    expect(out).toContain('class="minutes-subtitle"');
+    expect(out).toContain("Wins, Challenges, Changes");
+    expect(out).not.toContain("_Wins");
+  });
 });

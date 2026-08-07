@@ -120,6 +120,21 @@ export function MeetingMinutesEditor({
           color: hsl(var(--foreground));
         }
 
+        .minutes-agenda-subpoint {
+          margin-top: 0.35rem;
+          margin-bottom: 0.1rem;
+          margin-left: 1.25rem;
+          font-weight: 600;
+          color: hsl(var(--foreground));
+        }
+
+        .minutes-subtitle {
+          margin-top: 0.1rem;
+          margin-bottom: 0.35rem;
+          font-style: italic;
+          color: hsl(var(--muted-foreground));
+        }
+
         .minutes-document .minutes-blank-line {
           min-height: 0.15rem;
           line-height: 0.15rem;

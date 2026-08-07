@@ -32,6 +32,15 @@ export const renderMinutesHtml = (notes?: string | null) => {
         return `<div class="minutes-section-heading">${escaped.toUpperCase()}</div>`;
       }
 
+      const subtitleMatch = line.match(/^_(.+)_$/);
+      if (subtitleMatch) {
+        return `<div class="minutes-subtitle">${escapeHtml(subtitleMatch[1])}</div>`;
+      }
+
+      if (/^\d+\.\d+\.\d+\s+/.test(line)) {
+        return `<div class="minutes-agenda-subpoint">${escaped}</div>`;
+      }
+
       if (/^\d+\.\d+\s+/.test(line)) {
         return `<div class="minutes-agenda-point">${escaped}</div>`;
       }
