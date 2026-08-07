@@ -1,4 +1,5 @@
-import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,12 @@ export function MeetingAgendaModal({
   onSave,
   minutesAtRisk = false,
 }: MeetingAgendaModalProps) {
+  // Tag/subtitle stay collapsed for the common case (a plain section) - this
+  // is purely display state, not agenda data, so it lives here rather than
+  // in the draft. A section that already has a tag or subtitle opens by
+  // default so existing content is never hidden behind an extra click.
+  const [expandedTagSections, setExpandedTagSections] = useState<Set<string>>(new Set());
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="actsix-panel max-h-[86vh] max-w-3xl overflow-y-auto rounded-xl">
@@ -106,49 +113,71 @@ export function MeetingAgendaModal({
                     </Button>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-1 rounded-full border border-border/70 p-0.5">
-                      {LAYOUT_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          aria-pressed={section.layout === option.value}
-                          className={`rounded-full px-2.5 py-1 text-xs font-bold transition ${
-                            section.layout === option.value
-                              ? "bg-brand-teal/10 text-brand-teal"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                          onClick={() =>
-                            onChange((sections) => updateSection(sections, section.id, { layout: option.value }))
-                          }
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+                  {(() => {
+                    const tagOpen =
+                      expandedTagSections.has(section.id) || Boolean(section.tag || section.subtitle);
 
-                    <Input
-                      value={section.tag}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        onChange((sections) => updateSection(sections, section.id, { tag: value }));
-                      }}
-                      placeholder="Tag (optional), e.g. (Allan)"
-                      aria-label={`Section ${sectionIndex + 1} tag`}
-                      className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
-                    />
+                    return (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-1 rounded-full border border-border/70 p-0.5">
+                          {LAYOUT_OPTIONS.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              aria-pressed={section.layout === option.value}
+                              className={`rounded-full px-2.5 py-1 text-xs font-bold transition ${
+                                section.layout === option.value
+                                  ? "bg-brand-teal/10 text-brand-teal"
+                                  : "text-muted-foreground hover:text-foreground"
+                              }`}
+                              onClick={() =>
+                                onChange((sections) => updateSection(sections, section.id, { layout: option.value }))
+                              }
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
 
-                    <Input
-                      value={section.subtitle}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
-                      }}
-                      placeholder="Subtitle (optional)"
-                      aria-label={`Section ${sectionIndex + 1} subtitle`}
-                      className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
-                    />
-                  </div>
+                        {tagOpen ? (
+                          <>
+                            <Input
+                              value={section.tag}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                onChange((sections) => updateSection(sections, section.id, { tag: value }));
+                              }}
+                              placeholder="Tag, e.g. (Allan)"
+                              aria-label={`Section ${sectionIndex + 1} tag`}
+                              className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
+                            />
+
+                            <Input
+                              value={section.subtitle}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
+                              }}
+                              placeholder="Subtitle"
+                              aria-label={`Section ${sectionIndex + 1} subtitle`}
+                              className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
+                            />
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal"
+                            onClick={() =>
+                              setExpandedTagSections((ids) => new Set(ids).add(section.id))
+                            }
+                          >
+                            <Tag className="h-3.5 w-3.5" />
+                            Tag / Subtitle
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="space-y-2">
                     {section.points.map((point, pointIndex) => (
@@ -192,6 +221,29 @@ export function MeetingAgendaModal({
                             />
                           )}
 
+                          {section.layout === "list" && point.children.length === 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Add sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                              className="text-muted-foreground hover:text-brand-teal"
+                              onClick={() =>
+                                onChange((sections) =>
+                                  updateSection(sections, section.id, (item) => ({
+                                    ...item,
+                                    points: updatePoint(item.points, point.id, (parent) => ({
+                                      ...parent,
+                                      children: [...parent.children, makeAgendaPoint()],
+                                    })),
+                                  }))
+                                )
+                              }
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+
                           <Button
                             type="button"
                             variant="ghost"
@@ -214,7 +266,7 @@ export function MeetingAgendaModal({
                           </Button>
                         </div>
 
-                        {section.layout === "list" && (
+                        {section.layout === "list" && point.children.length > 0 && (
                           <div className="ml-12 space-y-1.5">
                             {point.children.map((child, childIndex) => (
                               <div key={child.id} className="flex items-center gap-2">
@@ -267,8 +319,9 @@ export function MeetingAgendaModal({
                             <Button
                               type="button"
                               variant="ghost"
-                              size="sm"
-                              className="h-7 rounded-lg text-xs text-muted-foreground hover:text-brand-teal"
+                              size="icon"
+                              aria-label={`Add another sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                              className="ml-14 h-7 w-7 text-muted-foreground hover:text-brand-teal"
                               onClick={() =>
                                 onChange((sections) =>
                                   updateSection(sections, section.id, (item) => ({
@@ -281,8 +334,7 @@ export function MeetingAgendaModal({
                                 )
                               }
                             >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Add sub-point
+                              <Plus className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         )}

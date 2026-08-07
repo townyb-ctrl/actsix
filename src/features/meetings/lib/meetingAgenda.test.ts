@@ -204,6 +204,29 @@ describe("generateMinutesFromAgenda", () => {
     expect(out).toContain("Sam vH");
     expect(out).not.toContain("Notes:");
   });
+
+  it("keeps a dated point's children in the output instead of dropping them", () => {
+    const out = generateMinutesFromAgenda([
+      {
+        id: "1",
+        heading: "What's Next",
+        tag: "",
+        subtitle: "",
+        layout: "dated",
+        points: [
+          {
+            id: "p1",
+            text: "IFBB Venue Hire",
+            date: "2026-08-19",
+            children: [{ id: "c1", text: "Affected: Worship & Linkway Men", date: "", children: [] }],
+          },
+        ],
+      },
+    ]);
+
+    expect(out).toContain("IFBB Venue Hire");
+    expect(out).toContain("Affected: Worship & Linkway Men");
+  });
 });
 
 describe("cleanAgendaSections", () => {

@@ -113,6 +113,13 @@ export function MeetingMinutesEditor({
           margin-top: 0;
         }
 
+        .minutes-section-tag {
+          text-transform: none;
+          font-weight: 700;
+          letter-spacing: normal;
+          color: hsl(var(--muted-foreground));
+        }
+
         .minutes-agenda-point {
           margin-top: 0.45rem;
           margin-bottom: 0.1rem;

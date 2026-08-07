@@ -239,12 +239,16 @@ export const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
 
       let pointsBlock = "";
 
-      if (section.layout === "dated") {
+      if (section.layout === "dated" || section.layout === "boxed") {
+        const dated = section.layout === "dated";
         pointsBlock = section.points
-          .map((point) => `• ${point.text}${point.date ? ` — ${formatDate(point.date)}` : ""}`)
+          .map((point) =>
+            [
+              `• ${point.text}${dated && point.date ? ` — ${formatDate(point.date)}` : ""}`,
+              ...point.children.map((child) => `  • ${child.text}`),
+            ].join("\n")
+          )
           .join("\n");
-      } else if (section.layout === "boxed") {
-        pointsBlock = section.points.map((point) => `• ${point.text}`).join("\n");
       } else {
         pointsBlock = section.points
           .map((point, pointIndex) => {

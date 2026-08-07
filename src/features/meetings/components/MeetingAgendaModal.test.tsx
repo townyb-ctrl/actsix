@@ -45,13 +45,31 @@ describe("MeetingAgendaModal", () => {
     expect(result[0].points[0].children).toHaveLength(1);
   });
 
-  it("typing a tag calls onChange with the tag applied to that section", () => {
+  it("keeps tag/subtitle collapsed behind a toggle for a plain section", () => {
+    const draft = [baseSection()];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
+
+    expect(screen.queryByLabelText(/section 1 tag/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Tag \/ Subtitle/i })).toBeInTheDocument();
+  });
+
+  it("opens tag/subtitle automatically when a section already has one set", () => {
+    const draft = [baseSection({ tag: "(Allan)" })];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
+
+    expect(screen.getByLabelText(/section 1 tag/i)).toBeInTheDocument();
+  });
+
+  it("typing a tag, after opening the toggle, calls onChange with the tag applied to that section", () => {
     const onChange = vi.fn();
     const draft = [baseSection()];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={onChange} onSave={() => {}} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/Tag \(optional\)/), { target: { value: "(Allan)" } });
+    fireEvent.click(screen.getByRole("button", { name: /Tag \/ Subtitle/i }));
+    fireEvent.change(screen.getByLabelText(/section 1 tag/i), { target: { value: "(Allan)" } });
 
     const result = onChange.mock.calls[0][0](draft);
     expect(result[0].tag).toBe("(Allan)");

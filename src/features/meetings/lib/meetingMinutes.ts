@@ -29,7 +29,16 @@ export const renderMinutesHtml = (notes?: string | null) => {
       const escaped = escapeHtml(line);
 
       if (/^\d+\.\s+/.test(line)) {
-        return `<div class="minutes-section-heading">${escaped.toUpperCase()}</div>`;
+        // A trailing " (tag)" - "1. WORD OF ENCOURAGEMENT (Allan)" - keeps
+        // its own case; the section-heading class uppercases everything via
+        // CSS, so the tag needs its own span to opt back out.
+        const headingMatch = line.match(/^(.*?)(\s\([^()]*\))?$/);
+        const mainText = headingMatch?.[1] ?? line;
+        const tagText = headingMatch?.[2]?.trim() ?? "";
+
+        return `<div class="minutes-section-heading">${escapeHtml(mainText).toUpperCase()}${
+          tagText ? ` <span class="minutes-section-tag">${escapeHtml(tagText)}</span>` : ""
+        }</div>`;
       }
 
       const subtitleMatch = line.match(/^_(.+)_$/);

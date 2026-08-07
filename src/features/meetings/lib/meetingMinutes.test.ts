@@ -61,6 +61,13 @@ describe("renderMinutesHtml", () => {
     expect(out).toContain("Free text");
   });
 
+  it("uppercases the heading but keeps a trailing tag's own case, in its own span", () => {
+    const out = renderMinutesHtml("1. WORD OF ENCOURAGEMENT (Allan)");
+    expect(out).toContain("WORD OF ENCOURAGEMENT");
+    expect(out).toContain('<span class="minutes-section-tag">(Allan)</span>');
+    expect(out).not.toContain("(ALLAN)");
+  });
+
   it("escapes HTML-special characters in plain-text lines", () => {
     expect(renderMinutesHtml("<script>evil()</script>")).not.toContain("<script>");
   });
