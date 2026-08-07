@@ -232,9 +232,11 @@ export function MeetingAgendaModal({
                           expandedTagSections.has(section.id) || Boolean(section.tag || section.subtitle);
 
                         return (
-                          <div className="space-y-1.5">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <div className="flex items-center gap-1 rounded-full border border-border/70 p-0.5">
+                          <div className="space-y-2.5">
+                            {/* Layout picker and its explanation stay paired - the
+                                caption is about this control, not a separate idea. */}
+                            <div className="space-y-1">
+                              <div className="flex h-8 items-center gap-1 self-start rounded-full border border-border/70 p-0.5">
                                 {LAYOUT_OPTIONS.map((option) => (
                                   <button
                                     key={option.value}
@@ -242,7 +244,7 @@ export function MeetingAgendaModal({
                                     title={option.hint}
                                     aria-pressed={section.layout === option.value}
                                     className={cn(
-                                      "rounded-full px-2.5 py-1 text-xs font-bold transition",
+                                      "flex h-full items-center rounded-full px-2.5 text-xs font-bold transition",
                                       focusRingClass,
                                       section.layout === option.value
                                         ? "bg-brand-teal/10 text-brand-teal"
@@ -257,48 +259,51 @@ export function MeetingAgendaModal({
                                 ))}
                               </div>
 
-                              {tagOpen ? (
-                                <>
-                                  <Input
-                                    value={section.tag}
-                                    onChange={(event) => {
-                                      const value = event.target.value;
-                                      onChange((sections) => updateSection(sections, section.id, { tag: value }));
-                                    }}
-                                    placeholder="Tag, e.g. (Allan)"
-                                    aria-label={`Section ${sectionIndex + 1} tag`}
-                                    className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
-                                  />
-
-                                  <Input
-                                    value={section.subtitle}
-                                    onChange={(event) => {
-                                      const value = event.target.value;
-                                      onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
-                                    }}
-                                    placeholder="Subtitle, e.g. Wins, Challenges, Changes"
-                                    aria-label={`Section ${sectionIndex + 1} subtitle`}
-                                    className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
-                                  />
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
-                                    focusRingClass
-                                  )}
-                                  onClick={() => setExpandedTagSections((ids) => new Set(ids).add(section.id))}
-                                >
-                                  <Tag className="h-3.5 w-3.5" />
-                                  Tag / Subtitle
-                                </button>
-                              )}
+                              <p className="text-xs text-muted-foreground">
+                                {LAYOUT_OPTIONS.find((option) => option.value === section.layout)?.hint}
+                              </p>
                             </div>
 
-                            <p className="text-xs text-muted-foreground">
-                              {LAYOUT_OPTIONS.find((option) => option.value === section.layout)?.hint}
-                            </p>
+                            {/* Tag/subtitle is a separate, secondary concern - its own
+                                row so it doesn't fight the layout picker for space or
+                                get mistaken for part of the same control. */}
+                            {tagOpen ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Input
+                                  value={section.tag}
+                                  onChange={(event) => {
+                                    const value = event.target.value;
+                                    onChange((sections) => updateSection(sections, section.id, { tag: value }));
+                                  }}
+                                  placeholder="Tag, e.g. (Allan)"
+                                  aria-label={`Section ${sectionIndex + 1} tag`}
+                                  className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
+                                />
+
+                                <Input
+                                  value={section.subtitle}
+                                  onChange={(event) => {
+                                    const value = event.target.value;
+                                    onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
+                                  }}
+                                  placeholder="Subtitle, e.g. Wins, Challenges, Changes"
+                                  aria-label={`Section ${sectionIndex + 1} subtitle`}
+                                  className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
+                                />
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className={cn(
+                                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
+                                  focusRingClass
+                                )}
+                                onClick={() => setExpandedTagSections((ids) => new Set(ids).add(section.id))}
+                              >
+                                <Tag className="h-3.5 w-3.5" />
+                                Tag / Subtitle
+                              </button>
+                            )}
                           </div>
                         );
                       })()}
