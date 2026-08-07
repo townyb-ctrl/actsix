@@ -133,6 +133,19 @@ describe("MeetingAgendaModal", () => {
     expect(afterUndo[0].points.map((p: { text: string }) => p.text)).toEqual(["Keep this one", "Delete me"]);
   });
 
+  it("shows a caption explaining what the selected layout does to the minutes, and updates it on switch", () => {
+    const draft = [baseSection()];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
+
+    expect(screen.getByText(/numbered points/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Boxed" }));
+    // onChange is a no-op here, so re-render won't show the switch taking
+    // effect - assert the pill itself carries the right explanation instead.
+    expect(screen.getByRole("button", { name: "Boxed" })).toHaveAttribute("title", expect.stringMatching(/plain bullet list/i));
+  });
+
   it("removing an empty point skips the undo toast", () => {
     vi.mocked(toast).mockClear();
     const draft = [

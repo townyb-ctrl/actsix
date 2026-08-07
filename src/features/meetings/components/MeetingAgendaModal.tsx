@@ -42,10 +42,13 @@ export type MeetingAgendaModalProps = {
   minutesAtRisk?: boolean;
 };
 
-const LAYOUT_OPTIONS: { value: AgendaSectionLayout; label: string }[] = [
-  { value: "list", label: "List" },
-  { value: "dated", label: "Dated" },
-  { value: "boxed", label: "Boxed" },
+// What each layout actually produces in the generated Minutes - shown as a
+// one-line caption under the picker so the choice isn't a guess. Mirrors
+// generateMinutesFromAgenda's own three branches exactly.
+const LAYOUT_OPTIONS: { value: AgendaSectionLayout; label: string; hint: string }[] = [
+  { value: "list", label: "List", hint: "Numbered points, each with space for Notes and Decisions." },
+  { value: "dated", label: "Dated", hint: "A bullet list with an optional date next to each point." },
+  { value: "boxed", label: "Boxed", hint: "A plain bullet list - no dates, no discussion space." },
 ];
 
 /** Swaps one section in place, by id. */
@@ -220,68 +223,75 @@ export function MeetingAgendaModal({
                       expandedTagSections.has(section.id) || Boolean(section.tag || section.subtitle);
 
                     return (
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-1 rounded-full border border-border/70 p-0.5">
-                          {LAYOUT_OPTIONS.map((option) => (
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex items-center gap-1 rounded-full border border-border/70 p-0.5">
+                            {LAYOUT_OPTIONS.map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                title={option.hint}
+                                aria-pressed={section.layout === option.value}
+                                className={cn(
+                                  "rounded-full px-2.5 py-1 text-xs font-bold transition",
+                                  focusRingClass,
+                                  section.layout === option.value
+                                    ? "bg-brand-teal/10 text-brand-teal"
+                                    : "text-muted-foreground hover:text-foreground"
+                                )}
+                                onClick={() =>
+                                  onChange((sections) => updateSection(sections, section.id, { layout: option.value }))
+                                }
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {tagOpen ? (
+                            <>
+                              <Input
+                                value={section.tag}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  onChange((sections) => updateSection(sections, section.id, { tag: value }));
+                                }}
+                                placeholder="Tag, e.g. (Allan)"
+                                aria-label={`Section ${sectionIndex + 1} tag`}
+                                className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
+                              />
+
+                              <Input
+                                value={section.subtitle}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
+                                }}
+                                placeholder="Subtitle"
+                                aria-label={`Section ${sectionIndex + 1} subtitle`}
+                                className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
+                              />
+                            </>
+                          ) : (
                             <button
-                              key={option.value}
                               type="button"
-                              aria-pressed={section.layout === option.value}
                               className={cn(
-                                "rounded-full px-2.5 py-1 text-xs font-bold transition",
-                                focusRingClass,
-                                section.layout === option.value
-                                  ? "bg-brand-teal/10 text-brand-teal"
-                                  : "text-muted-foreground hover:text-foreground"
+                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
+                                focusRingClass
                               )}
                               onClick={() =>
-                                onChange((sections) => updateSection(sections, section.id, { layout: option.value }))
+                                setExpandedTagSections((ids) => new Set(ids).add(section.id))
                               }
                             >
-                              {option.label}
+                              <Tag className="h-3.5 w-3.5" />
+                              Tag / Subtitle
                             </button>
-                          ))}
+                          )}
                         </div>
 
-                        {tagOpen ? (
-                          <>
-                            <Input
-                              value={section.tag}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                onChange((sections) => updateSection(sections, section.id, { tag: value }));
-                              }}
-                              placeholder="Tag, e.g. (Allan)"
-                              aria-label={`Section ${sectionIndex + 1} tag`}
-                              className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
-                            />
-
-                            <Input
-                              value={section.subtitle}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
-                              }}
-                              placeholder="Subtitle"
-                              aria-label={`Section ${sectionIndex + 1} subtitle`}
-                              className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
-                            />
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            className={cn(
-                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
-                              focusRingClass
-                            )}
-                            onClick={() =>
-                              setExpandedTagSections((ids) => new Set(ids).add(section.id))
-                            }
-                          >
-                            <Tag className="h-3.5 w-3.5" />
-                            Tag / Subtitle
-                          </button>
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {LAYOUT_OPTIONS.find((option) => option.value === section.layout)?.hint}
+                        </p>
                       </div>
                     );
                   })()}
