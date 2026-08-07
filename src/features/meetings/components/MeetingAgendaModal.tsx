@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Tag, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,10 @@ const isSectionEmpty = (section: AgendaSection) =>
   !section.tag.trim() &&
   !section.subtitle.trim() &&
   section.points.every((point) => !point.text.trim() && point.children.every((child) => !child.text.trim()));
+
+/** How many points a section actually has something written in - the number
+ *  shown on its collapsed summary row. */
+const filledPointCount = (section: AgendaSection) => section.points.filter((point) => point.text.trim()).length;
 
 export type MeetingAgendaModalProps = {
   open: boolean;
@@ -92,9 +96,27 @@ export function MeetingAgendaModal({
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const baselineRef = useRef<AgendaSection[] | null>(null);
 
+  // A real agenda runs to 7+ sections, and all of them rendering open at
+  // once is why Save Agenda used to scroll out of view - collapse everything
+  // to a one-line summary by default, except a section that's actually empty
+  // (it needs typing into right away) or the only section in the agenda
+  // (nothing to collapse against). An explicit click always overrides the
+  // default, and defaults reset fresh each time the modal opens.
+  const [collapseOverride, setCollapseOverride] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
-    if (open) baselineRef.current = draft;
+    if (open) {
+      baselineRef.current = draft;
+      setCollapseOverride({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  const isSectionExpanded = (section: AgendaSection) =>
+    section.id in collapseOverride ? collapseOverride[section.id] : isSectionEmpty(section) || draft.length === 1;
+
+  const toggleSection = (section: AgendaSection) =>
+    setCollapseOverride((overrides) => ({ ...overrides, [section.id]: !isSectionExpanded(section) }));
 
   const isDirty = open && baselineRef.current !== null && JSON.stringify(draft) !== JSON.stringify(baselineRef.current);
 
@@ -118,8 +140,8 @@ export function MeetingAgendaModal({
 
   return (
     <Dialog open={open} onOpenChange={requestClose}>
-      <DialogContent className="actsix-panel max-h-[86vh] max-w-3xl overflow-y-auto rounded-xl">
-        <DialogHeader>
+      <DialogContent className="actsix-panel flex max-h-[86vh] max-w-3xl flex-col overflow-hidden rounded-xl p-0">
+        <DialogHeader className="shrink-0 border-b border-border/70 px-5 pb-4 pt-5">
           <DialogTitle>Edit Agenda</DialogTitle>
           <DialogDescription>
             {minutesAtRisk
@@ -128,8 +150,12 @@ export function MeetingAgendaModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
-          {draft.map((section, sectionIndex) => (
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
+          {draft.map((section, sectionIndex) => {
+            const expanded = isSectionExpanded(section);
+            const pointCount = filledPointCount(section);
+
+            return (
             <Card key={section.id} className="actsix-panel-soft p-4">
               <div className="flex items-start gap-3">
                 <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
@@ -138,16 +164,46 @@ export function MeetingAgendaModal({
 
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Input
-                      value={section.heading}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        onChange((sections) => updateSection(sections, section.id, { heading: value }));
-                      }}
-                      placeholder="Section heading..."
-                      aria-label={`Section ${sectionIndex + 1} heading`}
-                      className={`font-semibold ${fieldControlClass}`}
-                    />
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-control)] py-1 text-left",
+                        focusRingClass
+                      )}
+                      onClick={() => toggleSection(section)}
+                      aria-expanded={expanded}
+                      aria-label={expanded ? `Collapse section ${sectionIndex + 1}` : `Expand section ${sectionIndex + 1}`}
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                          expanded ? "rotate-0" : "-rotate-90"
+                        )}
+                      />
+                      {expanded ? (
+                        <span className="sr-only">Section {sectionIndex + 1} heading below</span>
+                      ) : (
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                          {section.heading.trim() || <span className="italic text-muted-foreground">Untitled section</span>}
+                          <span className="ml-2 font-normal text-muted-foreground">
+                            {pointCount === 0 ? "No points yet" : `${pointCount} point${pointCount === 1 ? "" : "s"}`}
+                          </span>
+                        </span>
+                      )}
+                    </button>
+
+                    {expanded && (
+                      <Input
+                        value={section.heading}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          onChange((sections) => updateSection(sections, section.id, { heading: value }));
+                        }}
+                        placeholder="Section heading..."
+                        aria-label={`Section ${sectionIndex + 1} heading`}
+                        className={cn(fieldControlClass, "min-w-0 flex-1 font-semibold")}
+                      />
+                    )}
 
                     <Button
                       type="button"
@@ -155,7 +211,7 @@ export function MeetingAgendaModal({
                       size="icon"
                       aria-label={`Remove section ${sectionIndex + 1}`}
                       title={`Remove section ${sectionIndex + 1}`}
-                      className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
+                      className={cn(iconButtonSizeClass, "shrink-0 text-muted-foreground hover:text-destructive")}
                       onClick={() =>
                         isSectionEmpty(section) ? removeSection(section.id) : setRemoveSectionId(section.id)
                       }
@@ -164,7 +220,7 @@ export function MeetingAgendaModal({
                     </Button>
                   </div>
 
-                  {(() => {
+                  {expanded && (() => {
                     const tagOpen =
                       expandedTagSections.has(section.id) || Boolean(section.tag || section.subtitle);
 
@@ -235,6 +291,7 @@ export function MeetingAgendaModal({
                     );
                   })()}
 
+                  {expanded && (
                   <div className="space-y-2">
                     {section.points.map((point, pointIndex) => (
                       <div key={point.id} className="space-y-1.5">
@@ -401,7 +458,9 @@ export function MeetingAgendaModal({
                       </div>
                     ))}
                   </div>
+                  )}
 
+                  {expanded && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -419,13 +478,15 @@ export function MeetingAgendaModal({
                     <Plus className="h-4 w-4 mr-2" />
                     Add agenda point
                   </Button>
+                  )}
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="shrink-0 gap-2 border-t border-border/70 px-5 py-4 sm:gap-0">
           <Button
             type="button"
             variant="outline"

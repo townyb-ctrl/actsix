@@ -74,4 +74,31 @@ describe("MeetingAgendaModal", () => {
     const result = onChange.mock.calls[0][0](draft);
     expect(result[0].tag).toBe("(Allan)");
   });
+
+  it("collapses a filled section by default once there's more than one, and expands it on click", () => {
+    const draft = [
+      baseSection({ id: "s1", heading: "Weekend Feedback", points: [{ id: "p1", text: "Sunday School", date: "", children: [] }] }),
+      baseSection({ id: "s2", heading: "", points: [{ id: "p2", text: "", date: "", children: [] }] }),
+    ];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
+
+    // Filled section 1 collapses to a summary row - its heading input isn't rendered.
+    expect(screen.queryByLabelText(/section 1 heading/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Weekend Feedback")).toBeInTheDocument();
+
+    // Empty section 2 stays expanded so it's ready to type into immediately.
+    expect(screen.getByLabelText(/section 2 heading/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /expand section 1/i }));
+    expect(screen.getByLabelText(/section 1 heading/i)).toBeInTheDocument();
+  });
+
+  it("keeps the single section in a fresh agenda expanded by default", () => {
+    const draft = [baseSection({ heading: "Only Section" })];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
+
+    expect(screen.getByLabelText(/section 1 heading/i)).toBeInTheDocument();
+  });
 });
