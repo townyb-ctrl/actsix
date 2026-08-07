@@ -132,6 +132,78 @@ describe("generateMinutesFromAgenda", () => {
     expect(out).toContain("1. BUDGET");
     expect(out).toContain("1.1 Q1 review");
   });
+
+  it("numbers a nested child one level deeper than its parent point", () => {
+    const out = generateMinutesFromAgenda([
+      {
+        id: "1",
+        heading: "Office Admin",
+        tag: "",
+        subtitle: "",
+        layout: "list",
+        points: [
+          {
+            id: "p1",
+            text: "IFBB Venue Hire",
+            date: "",
+            children: [{ id: "c1", text: "Timings", date: "", children: [] }],
+          },
+        ],
+      },
+    ]);
+
+    expect(out).toContain("1.1 IFBB Venue Hire");
+    expect(out).toContain("1.1.1 Timings");
+  });
+
+  it("appends the section tag after the heading and renders the subtitle in italics markup", () => {
+    const out = generateMinutesFromAgenda([
+      {
+        id: "1",
+        heading: "Word Of Encouragement",
+        tag: "(Allan)",
+        subtitle: "Wins, Challenges, Changes",
+        layout: "list",
+        points: [],
+      },
+    ]);
+
+    expect(out).toContain("1. WORD OF ENCOURAGEMENT (Allan)");
+    expect(out).toContain("_Wins, Challenges, Changes_");
+  });
+
+  it("renders a dated-layout section as bullet + date, with no Notes/Decisions blanks", () => {
+    const out = generateMinutesFromAgenda([
+      {
+        id: "1",
+        heading: "What's Next",
+        tag: "",
+        subtitle: "",
+        layout: "dated",
+        points: [{ id: "p1", text: "Link Ladies", date: "2026-08-06", children: [] }],
+      },
+    ]);
+
+    expect(out).toContain("Link Ladies");
+    expect(out).not.toContain("Notes:");
+    expect(out).not.toContain("1.1");
+  });
+
+  it("renders a boxed-layout section as a plain bullet list, with no Notes/Decisions blanks", () => {
+    const out = generateMinutesFromAgenda([
+      {
+        id: "1",
+        heading: "Announcers List",
+        tag: "",
+        subtitle: "",
+        layout: "boxed",
+        points: [{ id: "p1", text: "Sam vH", date: "", children: [] }],
+      },
+    ]);
+
+    expect(out).toContain("Sam vH");
+    expect(out).not.toContain("Notes:");
+  });
 });
 
 describe("cleanAgendaSections", () => {

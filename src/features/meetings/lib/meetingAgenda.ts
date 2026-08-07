@@ -214,7 +214,17 @@ export const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
     .map((section) => ({
       ...section,
       heading: section.heading.trim(),
-      points: section.points.map((point) => ({ ...point, text: point.text.trim() })).filter((point) => point.text),
+      tag: (section.tag || "").trim(),
+      subtitle: (section.subtitle || "").trim(),
+      points: section.points
+        .map((point) => ({
+          ...point,
+          text: point.text.trim(),
+          children: (point.children || [])
+            .map((child) => ({ ...child, text: child.text.trim() }))
+            .filter((child) => child.text),
+        }))
+        .filter((point) => point.text || point.children.length),
     }))
     .filter((section) => section.heading || section.points.length);
 
@@ -224,12 +234,35 @@ export const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
     .map((section, sectionIndex) => {
       const sectionNumber = sectionIndex + 1;
       const title = (section.heading || "Untitled Section").toUpperCase();
+      const titleLine = `${sectionNumber}. ${title}${section.tag ? ` ${section.tag}` : ""}`;
+      const subtitleLine = section.subtitle ? `_${section.subtitle}_` : "";
 
-      const points = section.points
-        .map((point, pointIndex) => `${sectionNumber}.${pointIndex + 1} ${point.text}\nNotes:\nDecisions:`)
-        .join("\n\n");
+      let pointsBlock = "";
 
-      return points ? `${sectionNumber}. ${title}\n${points}` : `${sectionNumber}. ${title}`;
+      if (section.layout === "dated") {
+        pointsBlock = section.points
+          .map((point) => `• ${point.text}${point.date ? ` — ${formatDate(point.date)}` : ""}`)
+          .join("\n");
+      } else if (section.layout === "boxed") {
+        pointsBlock = section.points.map((point) => `• ${point.text}`).join("\n");
+      } else {
+        pointsBlock = section.points
+          .map((point, pointIndex) => {
+            const pointNumber = pointIndex + 1;
+            const pointLine = `${sectionNumber}.${pointNumber} ${point.text}\nNotes:\nDecisions:`;
+            const childLines = point.children
+              .map(
+                (child, childIndex) =>
+                  `${sectionNumber}.${pointNumber}.${childIndex + 1} ${child.text}\nNotes:\nDecisions:`
+              )
+              .join("\n\n");
+
+            return childLines ? `${pointLine}\n\n${childLines}` : pointLine;
+          })
+          .join("\n\n");
+      }
+
+      return [titleLine, subtitleLine, pointsBlock].filter(Boolean).join("\n");
     })
     .join("\n\n");
 };
