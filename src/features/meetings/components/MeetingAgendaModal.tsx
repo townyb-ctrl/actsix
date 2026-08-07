@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { fieldControlClass } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import {
   makeAgendaPoint,
   makeAgendaSection,
@@ -12,6 +14,24 @@ import {
   type AgendaSection,
   type AgendaSectionLayout,
 } from "@/features/meetings/lib/meetingAgenda";
+
+// Matches Button's own focus-visible treatment - the layout-picker pills and
+// the Tag/Subtitle toggle below are raw <button>s (not <Button>) so they need
+// it spelled out explicitly, or keyboard focus on them is invisible.
+const focusRingClass =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background";
+
+/** Icon-button size: 44px touch-target floor by default, the compact 32px
+ *  desktop size once touch isn't the input method - same convention as the
+ *  minutes editor's toolbar. */
+const iconButtonSizeClass = "h-11 w-11 sm:h-8 sm:w-8";
+
+/** True once a section has nothing in it worth confirming before deleting. */
+const isSectionEmpty = (section: AgendaSection) =>
+  !section.heading.trim() &&
+  !section.tag.trim() &&
+  !section.subtitle.trim() &&
+  section.points.every((point) => !point.text.trim() && point.children.every((child) => !child.text.trim()));
 
 export type MeetingAgendaModalProps = {
   open: boolean;
@@ -64,8 +84,40 @@ export function MeetingAgendaModal({
   // default so existing content is never hidden behind an extra click.
   const [expandedTagSections, setExpandedTagSections] = useState<Set<string>>(new Set());
 
+  // Closing (Escape, outside-click, the header X) used to silently discard
+  // whatever was typed since the draft resets from the saved agenda every
+  // time the modal opens - so re-opening it looked like nothing happened,
+  // but the edits were gone. Snapshot the draft on open and confirm before
+  // losing anything that's changed since.
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  const baselineRef = useRef<AgendaSection[] | null>(null);
+
+  useEffect(() => {
+    if (open) baselineRef.current = draft;
+  }, [open]);
+
+  const isDirty = open && baselineRef.current !== null && JSON.stringify(draft) !== JSON.stringify(baselineRef.current);
+
+  const requestClose = (nextOpen: boolean) => {
+    if (!nextOpen && isDirty) {
+      setDiscardConfirmOpen(true);
+      return;
+    }
+    onOpenChange(nextOpen);
+  };
+
+  // A section can hold several points' worth of typing - deleting one by
+  // accident is a bigger loss than deleting a single point, so it gets a
+  // confirm step. An already-empty section (nothing typed yet) skips it.
+  const [removeSectionId, setRemoveSectionId] = useState<string | null>(null);
+
+  const removeSection = (sectionId: string) =>
+    onChange((sections) =>
+      sections.length > 1 ? sections.filter((item) => item.id !== sectionId) : [makeAgendaSection()]
+    );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={requestClose}>
       <DialogContent className="actsix-panel max-h-[86vh] max-w-3xl overflow-y-auto rounded-xl">
         <DialogHeader>
           <DialogTitle>Edit Agenda</DialogTitle>
@@ -102,11 +154,10 @@ export function MeetingAgendaModal({
                       variant="ghost"
                       size="icon"
                       aria-label={`Remove section ${sectionIndex + 1}`}
-                      className="text-muted-foreground hover:text-destructive"
+                      title={`Remove section ${sectionIndex + 1}`}
+                      className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
                       onClick={() =>
-                        onChange((sections) =>
-                          sections.length > 1 ? sections.filter((item) => item.id !== section.id) : [makeAgendaSection()]
-                        )
+                        isSectionEmpty(section) ? removeSection(section.id) : setRemoveSectionId(section.id)
                       }
                     >
                       <Trash2 className="h-4 w-4" />
@@ -125,11 +176,13 @@ export function MeetingAgendaModal({
                               key={option.value}
                               type="button"
                               aria-pressed={section.layout === option.value}
-                              className={`rounded-full px-2.5 py-1 text-xs font-bold transition ${
+                              className={cn(
+                                "rounded-full px-2.5 py-1 text-xs font-bold transition",
+                                focusRingClass,
                                 section.layout === option.value
                                   ? "bg-brand-teal/10 text-brand-teal"
                                   : "text-muted-foreground hover:text-foreground"
-                              }`}
+                              )}
                               onClick={() =>
                                 onChange((sections) => updateSection(sections, section.id, { layout: option.value }))
                               }
@@ -166,7 +219,10 @@ export function MeetingAgendaModal({
                         ) : (
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal"
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
+                              focusRingClass
+                            )}
                             onClick={() =>
                               setExpandedTagSections((ids) => new Set(ids).add(section.id))
                             }
@@ -200,7 +256,7 @@ export function MeetingAgendaModal({
                             }}
                             placeholder="Agenda point..."
                             aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}`}
-                            className={fieldControlClass}
+                            className={cn(fieldControlClass, "min-w-0 flex-1")}
                           />
 
                           {section.layout === "dated" && (
@@ -217,7 +273,7 @@ export function MeetingAgendaModal({
                                 );
                               }}
                               aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1} date`}
-                              className={`w-40 shrink-0 ${fieldControlClass}`}
+                              className={cn(fieldControlClass, "w-40 shrink-0")}
                             />
                           )}
 
@@ -227,7 +283,8 @@ export function MeetingAgendaModal({
                               variant="ghost"
                               size="icon"
                               aria-label={`Add sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
-                              className="text-muted-foreground hover:text-brand-teal"
+                              title={`Add sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                              className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-brand-teal")}
                               onClick={() =>
                                 onChange((sections) =>
                                   updateSection(sections, section.id, (item) => ({
@@ -249,7 +306,8 @@ export function MeetingAgendaModal({
                             variant="ghost"
                             size="icon"
                             aria-label={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
-                            className="text-muted-foreground hover:text-destructive"
+                            title={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
+                            className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
                             onClick={() =>
                               onChange((sections) =>
                                 updateSection(sections, section.id, (item) => ({
@@ -298,7 +356,8 @@ export function MeetingAgendaModal({
                                   variant="ghost"
                                   size="icon"
                                   aria-label={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  title={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
+                                  className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
                                   onClick={() =>
                                     onChange((sections) =>
                                       updateSection(sections, section.id, (item) => ({
@@ -321,7 +380,8 @@ export function MeetingAgendaModal({
                               variant="ghost"
                               size="icon"
                               aria-label={`Add another sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
-                              className="ml-14 h-7 w-7 text-muted-foreground hover:text-brand-teal"
+                              title={`Add another sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                              className={cn(iconButtonSizeClass, "ml-14 text-muted-foreground hover:text-brand-teal")}
                               onClick={() =>
                                 onChange((sections) =>
                                   updateSection(sections, section.id, (item) => ({
@@ -380,6 +440,30 @@ export function MeetingAgendaModal({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmDialog
+        open={removeSectionId !== null}
+        onOpenChange={(next) => !next && setRemoveSectionId(null)}
+        title="Remove this section?"
+        description="This deletes the section heading and all of its points. This can't be undone."
+        confirmLabel="Remove Section"
+        onConfirm={() => {
+          if (removeSectionId) removeSection(removeSectionId);
+          setRemoveSectionId(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={discardConfirmOpen}
+        onOpenChange={(next) => !next && setDiscardConfirmOpen(false)}
+        title="Discard unsaved changes?"
+        description="You have unsaved edits to this agenda. Closing now will lose them."
+        confirmLabel="Discard Changes"
+        onConfirm={() => {
+          setDiscardConfirmOpen(false);
+          onOpenChange(false);
+        }}
+      />
     </Dialog>
   );
 }
