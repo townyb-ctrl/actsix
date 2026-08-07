@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import { MeetingAgendaModal } from "./MeetingAgendaModal";
 import { makeAgendaSection, type AgendaSection } from "@/features/meetings/lib/meetingAgenda";
+
+vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
 
 const baseSection = (overrides: Partial<AgendaSection> = {}): AgendaSection => ({
   ...makeAgendaSection(),
@@ -100,5 +103,51 @@ describe("MeetingAgendaModal", () => {
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
 
     expect(screen.getByLabelText(/section 1 heading/i)).toBeInTheDocument();
+  });
+
+  it("removing a point with text offers an undo that restores it", () => {
+    vi.mocked(toast).mockClear();
+    const onChange = vi.fn();
+    const draft = [
+      baseSection({
+        points: [
+          { id: "p1", text: "Keep this one", date: "", children: [] },
+          { id: "p2", text: "Delete me", date: "", children: [] },
+        ],
+      }),
+    ];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={onChange} onSave={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove point 1.2" }));
+
+    // The delete itself.
+    const afterDelete = onChange.mock.calls[0][0](draft);
+    expect(afterDelete[0].points.map((p: { text: string }) => p.text)).toEqual(["Keep this one"]);
+
+    // An undo toast fired with the removed point restorable.
+    expect(toast).toHaveBeenCalledWith("Point removed", expect.objectContaining({ action: expect.any(Object) }));
+    const undo = vi.mocked(toast).mock.calls[0][1].action.onClick;
+    undo();
+    const afterUndo = onChange.mock.calls[1][0](afterDelete);
+    expect(afterUndo[0].points.map((p: { text: string }) => p.text)).toEqual(["Keep this one", "Delete me"]);
+  });
+
+  it("removing an empty point skips the undo toast", () => {
+    vi.mocked(toast).mockClear();
+    const draft = [
+      baseSection({
+        points: [
+          { id: "p1", text: "Keep this one", date: "", children: [] },
+          { id: "p2", text: "", date: "", children: [] },
+        ],
+      }),
+    ];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove point 1.2" }));
+
+    expect(toast).not.toHaveBeenCalled();
   });
 });

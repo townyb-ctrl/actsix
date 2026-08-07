@@ -238,6 +238,14 @@ describe("cleanAgendaSections", () => {
     expect(cleaned[0].heading).toBe("");
   });
 
+  it("keeps a section with only a tag or subtitle, no heading and no points", () => {
+    const cleaned = cleanAgendaSections([
+      { id: "1", heading: "", tag: "(Allan)", subtitle: "", layout: "list", points: [] },
+    ]);
+    expect(cleaned).toHaveLength(1);
+    expect(cleaned[0].tag).toBe("(Allan)");
+  });
+
   it("keeps a section with only a heading", () => {
     const cleaned = cleanAgendaSections([{ id: "1", heading: "Intro", tag: "", subtitle: "", layout: "list", points: [] }]);
     expect(cleaned).toEqual([{ id: "1", heading: "Intro", tag: "", subtitle: "", layout: "list", points: [] }]);

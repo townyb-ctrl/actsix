@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { fieldControlClass } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
+  isSectionEmpty,
   makeAgendaPoint,
   makeAgendaSection,
   type AgendaPoint,
@@ -25,13 +27,6 @@ const focusRingClass =
  *  desktop size once touch isn't the input method - same convention as the
  *  minutes editor's toolbar. */
 const iconButtonSizeClass = "h-11 w-11 sm:h-8 sm:w-8";
-
-/** True once a section has nothing in it worth confirming before deleting. */
-const isSectionEmpty = (section: AgendaSection) =>
-  !section.heading.trim() &&
-  !section.tag.trim() &&
-  !section.subtitle.trim() &&
-  section.points.every((point) => !point.text.trim() && point.children.every((child) => !child.text.trim()));
 
 /** How many points a section actually has something written in - the number
  *  shown on its collapsed summary row. */
@@ -365,7 +360,17 @@ export function MeetingAgendaModal({
                             aria-label={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
                             title={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
                             className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
-                            onClick={() =>
+                            onClick={() => {
+                              // A section always keeps at least one point row,
+                              // so deleting the last one swaps in a fresh blank
+                              // one rather than leaving the section empty -
+                              // undo has to put the real point back in that
+                              // case, not append alongside the placeholder.
+                              const hadContent = point.text.trim() || point.children.some((child) => child.text.trim());
+                              const wasOnlyPoint = section.points.length === 1;
+                              const removedPoint = point;
+                              const removedIndex = pointIndex;
+
                               onChange((sections) =>
                                 updateSection(sections, section.id, (item) => ({
                                   ...item,
@@ -374,8 +379,29 @@ export function MeetingAgendaModal({
                                       ? item.points.filter((agendaPoint) => agendaPoint.id !== point.id)
                                       : [makeAgendaPoint()],
                                 }))
-                              )
-                            }
+                              );
+
+                              if (hadContent) {
+                                toast("Point removed", {
+                                  action: {
+                                    label: "Undo",
+                                    onClick: () =>
+                                      onChange((sections) =>
+                                        updateSection(sections, section.id, (item) => ({
+                                          ...item,
+                                          points: wasOnlyPoint
+                                            ? [removedPoint]
+                                            : [
+                                                ...item.points.slice(0, removedIndex),
+                                                removedPoint,
+                                                ...item.points.slice(removedIndex),
+                                              ],
+                                        }))
+                                      ),
+                                  },
+                                });
+                              }
+                            }}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -415,7 +441,11 @@ export function MeetingAgendaModal({
                                   aria-label={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
                                   title={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
                                   className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
-                                  onClick={() =>
+                                  onClick={() => {
+                                    const hadContent = Boolean(child.text.trim());
+                                    const removedChild = child;
+                                    const removedIndex = childIndex;
+
                                     onChange((sections) =>
                                       updateSection(sections, section.id, (item) => ({
                                         ...item,
@@ -424,8 +454,30 @@ export function MeetingAgendaModal({
                                           children: parent.children.filter((c) => c.id !== child.id),
                                         })),
                                       }))
-                                    )
-                                  }
+                                    );
+
+                                    if (hadContent) {
+                                      toast("Sub-point removed", {
+                                        action: {
+                                          label: "Undo",
+                                          onClick: () =>
+                                            onChange((sections) =>
+                                              updateSection(sections, section.id, (item) => ({
+                                                ...item,
+                                                points: updatePoint(item.points, point.id, (parent) => ({
+                                                  ...parent,
+                                                  children: [
+                                                    ...parent.children.slice(0, removedIndex),
+                                                    removedChild,
+                                                    ...parent.children.slice(removedIndex),
+                                                  ],
+                                                })),
+                                              }))
+                                            ),
+                                        },
+                                      });
+                                    }
+                                  }}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>

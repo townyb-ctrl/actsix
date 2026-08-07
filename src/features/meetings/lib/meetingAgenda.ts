@@ -78,6 +78,14 @@ export const makeAgendaSection = (): AgendaSection => ({
 export const cleanNameList = (items: string[]) =>
   items.map((item) => item.trim()).filter(Boolean);
 
+/** True once a section has nothing in it worth confirming before deleting -
+ *  or, on save, worth telling the user their empty section got pruned. */
+export const isSectionEmpty = (section: AgendaSection) =>
+  !section.heading.trim() &&
+  !section.tag.trim() &&
+  !section.subtitle.trim() &&
+  section.points.every((point) => !point.text.trim() && point.children.every((child) => !child.text.trim()));
+
 const AGENDA_SECTION_LAYOUTS: AgendaSectionLayout[] = ["list", "dated", "boxed"];
 
 const parseAgendaChildPoint = (child: any): AgendaPoint => ({
@@ -288,7 +296,11 @@ export const cleanAgendaSections = (sections: AgendaSection[]) => {
         }))
         .filter((point) => point.text || point.children.length),
     }))
-    .filter((section) => section.heading || section.points.length);
+    // Was `section.heading || section.points.length`, which silently dropped
+    // a section that had only a tag or subtitle typed in (no heading, no
+    // points yet) - isSectionEmpty is the one true "nothing here" check,
+    // shared with the confirm-before-delete logic in the editor itself.
+    .filter((section) => !isSectionEmpty(section));
 
   return cleaned.length ? cleaned : [makeAgendaSection()];
 };

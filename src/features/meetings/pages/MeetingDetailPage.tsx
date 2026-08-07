@@ -28,6 +28,7 @@ import {
   generateMinutesFromAgenda,
   getAgendaSeriesMeta,
   getRecurringSeriesIdFromAgenda,
+  isSectionEmpty,
   type AgendaSeriesMeta,
   makeAgendaSection,
   parseAgendaPayload,
@@ -571,6 +572,11 @@ const MeetingDetailPage = () => {
     if (!meeting) return;
 
     const cleaned = cleanAgendaSections(agendaDraft);
+    // cleanAgendaSections prunes any section left blank (no heading, no
+    // points, no tag/subtitle) - silently, from its point of view. Count
+    // what it dropped so the person saving finds out, instead of noticing
+    // a section is just gone the next time they open the editor.
+    const droppedCount = agendaDraft.filter(isSectionEmpty).length;
     const serialized = serializeAgenda(cleaned, apologies, agendaSeriesMeta);
     const generated = generateMinutesFromAgenda(cleaned);
     const minutesAtRisk = hasMinutesContent(meeting.notes);
@@ -597,13 +603,16 @@ const MeetingDetailPage = () => {
     });
     setAgendaOpen(false);
 
+    const droppedNote =
+      droppedCount > 0 ? ` (${droppedCount} empty section${droppedCount === 1 ? "" : "s"} removed)` : "";
+
     if (minutesAtRisk) {
-      toast.success("Agenda saved. Your minutes were left as they are.");
+      toast.success(`Agenda saved. Your minutes were left as they are.${droppedNote}`);
       setPendingMinutesRefill(generated);
       return;
     }
 
-    toast.success("Agenda saved and minutes filled");
+    toast.success(`Agenda saved and minutes filled${droppedNote}`);
   };
 
   const confirmMinutesRefill = async () => {
