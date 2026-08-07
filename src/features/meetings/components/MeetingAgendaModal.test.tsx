@@ -146,6 +146,18 @@ describe("MeetingAgendaModal", () => {
     expect(screen.getByRole("button", { name: "Boxed" })).toHaveAttribute("title", expect.stringMatching(/plain bullet list/i));
   });
 
+  it("gives each section a real heading so a screen reader can jump section-to-section", () => {
+    const draft = [
+      baseSection({ id: "s1", heading: "Weekend Feedback" }),
+      baseSection({ id: "s2", heading: "" }),
+    ];
+
+    render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
+
+    expect(screen.getByRole("heading", { level: 3, name: /section 1: weekend feedback/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: /section 2: untitled section/i })).toBeInTheDocument();
+  });
+
   it("removing an empty point skips the undo toast", () => {
     vi.mocked(toast).mockClear();
     const draft = [

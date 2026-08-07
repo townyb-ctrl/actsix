@@ -161,6 +161,14 @@ export function MeetingAgendaModal({
                 </div>
 
                 <div className="flex-1 space-y-3">
+                  {/* Visual heading is the styled Input/toggle below - this is
+                      a real heading purely so a screen reader can jump
+                      section-to-section (headings, not a linear tab crawl)
+                      on a long agenda. Text mirrors the collapsed summary. */}
+                  <h3 className="sr-only">
+                    Section {sectionIndex + 1}: {section.heading.trim() || "Untitled section"}
+                  </h3>
+
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
