@@ -154,404 +154,403 @@ export function MeetingAgendaModal({
             const pointCount = filledPointCount(section);
 
             return (
-            <Card key={section.id} className="actsix-panel-soft p-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
-                  {sectionIndex + 1}
-                </div>
-
-                <div className="flex-1 space-y-3">
-                  {/* Visual heading is the styled Input/toggle below - this is
-                      a real heading purely so a screen reader can jump
-                      section-to-section (headings, not a linear tab crawl)
-                      on a long agenda. Text mirrors the collapsed summary. */}
-                  <h3 className="sr-only">
-                    Section {sectionIndex + 1}: {section.heading.trim() || "Untitled section"}
-                  </h3>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-control)] py-1 text-left",
-                        focusRingClass
-                      )}
-                      onClick={() => toggleSection(section)}
-                      aria-expanded={expanded}
-                      aria-label={expanded ? `Collapse section ${sectionIndex + 1}` : `Expand section ${sectionIndex + 1}`}
-                    >
-                      <ChevronDown
-                        className={cn(
-                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-                          expanded ? "rotate-0" : "-rotate-90"
-                        )}
-                      />
-                      {expanded ? (
-                        <span className="sr-only">Section {sectionIndex + 1} heading below</span>
-                      ) : (
-                        <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                          {section.heading.trim() || <span className="italic text-muted-foreground">Untitled section</span>}
-                          <span className="ml-2 font-normal text-muted-foreground">
-                            {pointCount === 0 ? "No points yet" : `${pointCount} point${pointCount === 1 ? "" : "s"}`}
-                          </span>
-                        </span>
-                      )}
-                    </button>
-
-                    {expanded && (
-                      <Input
-                        value={section.heading}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          onChange((sections) => updateSection(sections, section.id, { heading: value }));
-                        }}
-                        placeholder="Section heading..."
-                        aria-label={`Section ${sectionIndex + 1} heading`}
-                        className={cn(fieldControlClass, "min-w-0 flex-1 font-semibold")}
-                      />
-                    )}
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Remove section ${sectionIndex + 1}`}
-                      title={`Remove section ${sectionIndex + 1}`}
-                      className={cn(iconButtonSizeClass, "shrink-0 text-muted-foreground hover:text-destructive")}
-                      onClick={() =>
-                        isSectionEmpty(section) ? removeSection(section.id) : setRemoveSectionId(section.id)
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+              <Card key={section.id} className="actsix-panel-soft p-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-sm font-extrabold text-brand-teal">
+                    {sectionIndex + 1}
                   </div>
 
-                  {expanded && (() => {
-                    const tagOpen =
-                      expandedTagSections.has(section.id) || Boolean(section.tag || section.subtitle);
+                  <div className="flex-1 space-y-3">
+                    {/* Visual heading is the styled Input/toggle below - this is
+                        a real heading purely so a screen reader can jump
+                        section-to-section (headings, not a linear tab crawl)
+                        on a long agenda. Text mirrors the collapsed summary. */}
+                    <h3 className="sr-only">
+                      Section {sectionIndex + 1}: {section.heading.trim() || "Untitled section"}
+                    </h3>
 
-                    return (
-                      <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="flex items-center gap-1 rounded-full border border-border/70 p-0.5">
-                            {LAYOUT_OPTIONS.map((option) => (
-                              <button
-                                key={option.value}
-                                type="button"
-                                title={option.hint}
-                                aria-pressed={section.layout === option.value}
-                                className={cn(
-                                  "rounded-full px-2.5 py-1 text-xs font-bold transition",
-                                  focusRingClass,
-                                  section.layout === option.value
-                                    ? "bg-brand-teal/10 text-brand-teal"
-                                    : "text-muted-foreground hover:text-foreground"
-                                )}
-                                onClick={() =>
-                                  onChange((sections) => updateSection(sections, section.id, { layout: option.value }))
-                                }
-                              >
-                                {option.label}
-                              </button>
-                            ))}
-                          </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-control)] py-1 text-left",
+                          focusRingClass
+                        )}
+                        onClick={() => toggleSection(section)}
+                        aria-expanded={expanded}
+                        aria-label={expanded ? `Collapse section ${sectionIndex + 1}` : `Expand section ${sectionIndex + 1}`}
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                            expanded ? "rotate-0" : "-rotate-90"
+                          )}
+                        />
+                        {expanded ? (
+                          <span className="sr-only">Section {sectionIndex + 1} heading below</span>
+                        ) : (
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                            {section.heading.trim() || <span className="italic text-muted-foreground">Untitled section</span>}
+                            <span className="ml-2 font-normal text-muted-foreground">
+                              {pointCount === 0 ? "No points yet" : `${pointCount} point${pointCount === 1 ? "" : "s"}`}
+                            </span>
+                          </span>
+                        )}
+                      </button>
 
-                          {tagOpen ? (
-                            <>
-                              <Input
-                                value={section.tag}
-                                onChange={(event) => {
-                                  const value = event.target.value;
-                                  onChange((sections) => updateSection(sections, section.id, { tag: value }));
-                                }}
-                                placeholder="Tag, e.g. (Allan)"
-                                aria-label={`Section ${sectionIndex + 1} tag`}
-                                className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
-                              />
+                      {expanded && (
+                        <Input
+                          value={section.heading}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            onChange((sections) => updateSection(sections, section.id, { heading: value }));
+                          }}
+                          placeholder="Section heading..."
+                          aria-label={`Section ${sectionIndex + 1} heading`}
+                          className={cn(fieldControlClass, "min-w-0 flex-1 font-semibold")}
+                        />
+                      )}
 
-                              <Input
-                                value={section.subtitle}
-                                onChange={(event) => {
-                                  const value = event.target.value;
-                                  onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
-                                }}
-                                placeholder="Subtitle"
-                                aria-label={`Section ${sectionIndex + 1} subtitle`}
-                                className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
-                              />
-                            </>
-                          ) : (
-                            <button
-                              type="button"
-                              className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
-                                focusRingClass
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove section ${sectionIndex + 1}`}
+                        title={`Remove section ${sectionIndex + 1}`}
+                        className={cn(iconButtonSizeClass, "shrink-0 text-muted-foreground hover:text-destructive")}
+                        onClick={() =>
+                          isSectionEmpty(section) ? removeSection(section.id) : setRemoveSectionId(section.id)
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {expanded &&
+                      (() => {
+                        const tagOpen =
+                          expandedTagSections.has(section.id) || Boolean(section.tag || section.subtitle);
+
+                        return (
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex items-center gap-1 rounded-full border border-border/70 p-0.5">
+                                {LAYOUT_OPTIONS.map((option) => (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    title={option.hint}
+                                    aria-pressed={section.layout === option.value}
+                                    className={cn(
+                                      "rounded-full px-2.5 py-1 text-xs font-bold transition",
+                                      focusRingClass,
+                                      section.layout === option.value
+                                        ? "bg-brand-teal/10 text-brand-teal"
+                                        : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    onClick={() =>
+                                      onChange((sections) => updateSection(sections, section.id, { layout: option.value }))
+                                    }
+                                  >
+                                    {option.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              {tagOpen ? (
+                                <>
+                                  <Input
+                                    value={section.tag}
+                                    onChange={(event) => {
+                                      const value = event.target.value;
+                                      onChange((sections) => updateSection(sections, section.id, { tag: value }));
+                                    }}
+                                    placeholder="Tag, e.g. (Allan)"
+                                    aria-label={`Section ${sectionIndex + 1} tag`}
+                                    className={`h-8 max-w-[10rem] text-xs ${fieldControlClass}`}
+                                  />
+
+                                  <Input
+                                    value={section.subtitle}
+                                    onChange={(event) => {
+                                      const value = event.target.value;
+                                      onChange((sections) => updateSection(sections, section.id, { subtitle: value }));
+                                    }}
+                                    placeholder="Subtitle, e.g. Wins, Challenges, Changes"
+                                    aria-label={`Section ${sectionIndex + 1} subtitle`}
+                                    className={`h-8 max-w-[14rem] text-xs italic ${fieldControlClass}`}
+                                  />
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
+                                    focusRingClass
+                                  )}
+                                  onClick={() => setExpandedTagSections((ids) => new Set(ids).add(section.id))}
+                                >
+                                  <Tag className="h-3.5 w-3.5" />
+                                  Tag / Subtitle
+                                </button>
                               )}
-                              onClick={() =>
-                                setExpandedTagSections((ids) => new Set(ids).add(section.id))
-                              }
-                            >
-                              <Tag className="h-3.5 w-3.5" />
-                              Tag / Subtitle
-                            </button>
-                          )}
-                        </div>
+                            </div>
 
-                        <p className="text-xs text-muted-foreground">
-                          {LAYOUT_OPTIONS.find((option) => option.value === section.layout)?.hint}
-                        </p>
-                      </div>
-                    );
-                  })()}
-
-                  {expanded && (
-                  <div className="space-y-2">
-                    {section.points.map((point, pointIndex) => (
-                      <div key={point.id} className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-10 shrink-0 text-xs font-bold text-muted-foreground">
-                            {sectionIndex + 1}.{pointIndex + 1}
+                            <p className="text-xs text-muted-foreground">
+                              {LAYOUT_OPTIONS.find((option) => option.value === section.layout)?.hint}
+                            </p>
                           </div>
+                        );
+                      })()}
 
-                          <Input
-                            value={point.text}
-                            onChange={(event) => {
-                              const value = event.target.value;
-                              onChange((sections) =>
-                                updateSection(sections, section.id, (item) => ({
-                                  ...item,
-                                  points: updatePoint(item.points, point.id, { text: value }),
-                                }))
-                              );
-                            }}
-                            placeholder="Agenda point..."
-                            aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}`}
-                            className={cn(fieldControlClass, "min-w-0 flex-1")}
-                          />
+                    {expanded && (
+                      <div className="space-y-2">
+                        {section.points.map((point, pointIndex) => (
+                          <div key={point.id} className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-10 shrink-0 text-xs font-bold text-muted-foreground">
+                                {sectionIndex + 1}.{pointIndex + 1}
+                              </div>
 
-                          {section.layout === "dated" && (
-                            <Input
-                              type="date"
-                              value={point.date}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                onChange((sections) =>
-                                  updateSection(sections, section.id, (item) => ({
-                                    ...item,
-                                    points: updatePoint(item.points, point.id, { date: value }),
-                                  }))
-                                );
-                              }}
-                              aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1} date`}
-                              className={cn(fieldControlClass, "w-40 shrink-0")}
-                            />
-                          )}
+                              <Input
+                                value={point.text}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  onChange((sections) =>
+                                    updateSection(sections, section.id, (item) => ({
+                                      ...item,
+                                      points: updatePoint(item.points, point.id, { text: value }),
+                                    }))
+                                  );
+                                }}
+                                placeholder="Agenda point..."
+                                aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}`}
+                                className={cn(fieldControlClass, "min-w-0 flex-1")}
+                              />
 
-                          {section.layout === "list" && point.children.length === 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Add sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
-                              title={`Add sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
-                              className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-brand-teal")}
-                              onClick={() =>
-                                onChange((sections) =>
-                                  updateSection(sections, section.id, (item) => ({
-                                    ...item,
-                                    points: updatePoint(item.points, point.id, (parent) => ({
-                                      ...parent,
-                                      children: [...parent.children, makeAgendaPoint()],
-                                    })),
-                                  }))
-                                )
-                              }
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
-                            title={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
-                            className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
-                            onClick={() => {
-                              // A section always keeps at least one point row,
-                              // so deleting the last one swaps in a fresh blank
-                              // one rather than leaving the section empty -
-                              // undo has to put the real point back in that
-                              // case, not append alongside the placeholder.
-                              const hadContent = point.text.trim() || point.children.some((child) => child.text.trim());
-                              const wasOnlyPoint = section.points.length === 1;
-                              const removedPoint = point;
-                              const removedIndex = pointIndex;
-
-                              onChange((sections) =>
-                                updateSection(sections, section.id, (item) => ({
-                                  ...item,
-                                  points:
-                                    item.points.length > 1
-                                      ? item.points.filter((agendaPoint) => agendaPoint.id !== point.id)
-                                      : [makeAgendaPoint()],
-                                }))
-                              );
-
-                              if (hadContent) {
-                                toast("Point removed", {
-                                  action: {
-                                    label: "Undo",
-                                    onClick: () =>
-                                      onChange((sections) =>
-                                        updateSection(sections, section.id, (item) => ({
-                                          ...item,
-                                          points: wasOnlyPoint
-                                            ? [removedPoint]
-                                            : [
-                                                ...item.points.slice(0, removedIndex),
-                                                removedPoint,
-                                                ...item.points.slice(removedIndex),
-                                              ],
-                                        }))
-                                      ),
-                                  },
-                                });
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-
-                        {section.layout === "list" && point.children.length > 0 && (
-                          <div className="ml-12 space-y-1.5">
-                            {point.children.map((child, childIndex) => (
-                              <div key={child.id} className="flex items-center gap-2">
-                                <div className="w-14 shrink-0 text-xs font-bold text-muted-foreground">
-                                  {sectionIndex + 1}.{pointIndex + 1}.{childIndex + 1}
-                                </div>
-
+                              {section.layout === "dated" && (
                                 <Input
-                                  value={child.text}
+                                  type="date"
+                                  value={point.date}
                                   onChange={(event) => {
                                     const value = event.target.value;
                                     onChange((sections) =>
                                       updateSection(sections, section.id, (item) => ({
                                         ...item,
-                                        points: updatePoint(item.points, point.id, (parent) => ({
-                                          ...parent,
-                                          children: updatePoint(parent.children, child.id, { text: value }),
-                                        })),
+                                        points: updatePoint(item.points, point.id, { date: value }),
                                       }))
                                     );
                                   }}
-                                  placeholder="Sub-point..."
-                                  aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}, sub-point ${childIndex + 1}`}
-                                  className={`h-8 text-sm ${fieldControlClass}`}
+                                  aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1} date`}
+                                  className={cn(fieldControlClass, "w-40 shrink-0")}
                                 />
+                              )}
 
+                              {section.layout === "list" && point.children.length === 0 && (
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  aria-label={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
-                                  title={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
-                                  className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
-                                  onClick={() => {
-                                    const hadContent = Boolean(child.text.trim());
-                                    const removedChild = child;
-                                    const removedIndex = childIndex;
-
+                                  aria-label={`Add sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                                  title={`Add sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                                  className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-brand-teal")}
+                                  onClick={() =>
                                     onChange((sections) =>
                                       updateSection(sections, section.id, (item) => ({
                                         ...item,
                                         points: updatePoint(item.points, point.id, (parent) => ({
                                           ...parent,
-                                          children: parent.children.filter((c) => c.id !== child.id),
+                                          children: [...parent.children, makeAgendaPoint()],
                                         })),
                                       }))
-                                    );
-
-                                    if (hadContent) {
-                                      toast("Sub-point removed", {
-                                        action: {
-                                          label: "Undo",
-                                          onClick: () =>
-                                            onChange((sections) =>
-                                              updateSection(sections, section.id, (item) => ({
-                                                ...item,
-                                                points: updatePoint(item.points, point.id, (parent) => ({
-                                                  ...parent,
-                                                  children: [
-                                                    ...parent.children.slice(0, removedIndex),
-                                                    removedChild,
-                                                    ...parent.children.slice(removedIndex),
-                                                  ],
-                                                })),
-                                              }))
-                                            ),
-                                        },
-                                      });
-                                    }
-                                  }}
+                                    )
+                                  }
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Plus className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
+                                title={`Remove point ${sectionIndex + 1}.${pointIndex + 1}`}
+                                className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
+                                onClick={() => {
+                                  // A section always keeps at least one point row,
+                                  // so deleting the last one swaps in a fresh blank
+                                  // one rather than leaving the section empty -
+                                  // undo has to put the real point back in that
+                                  // case, not append alongside the placeholder.
+                                  const hadContent = point.text.trim() || point.children.some((child) => child.text.trim());
+                                  const wasOnlyPoint = section.points.length === 1;
+                                  const removedPoint = point;
+                                  const removedIndex = pointIndex;
+
+                                  onChange((sections) =>
+                                    updateSection(sections, section.id, (item) => ({
+                                      ...item,
+                                      points:
+                                        item.points.length > 1
+                                          ? item.points.filter((agendaPoint) => agendaPoint.id !== point.id)
+                                          : [makeAgendaPoint()],
+                                    }))
+                                  );
+
+                                  if (hadContent) {
+                                    toast("Point removed", {
+                                      action: {
+                                        label: "Undo",
+                                        onClick: () =>
+                                          onChange((sections) =>
+                                            updateSection(sections, section.id, (item) => ({
+                                              ...item,
+                                              points: wasOnlyPoint
+                                                ? [removedPoint]
+                                                : [
+                                                    ...item.points.slice(0, removedIndex),
+                                                    removedPoint,
+                                                    ...item.points.slice(removedIndex),
+                                                  ],
+                                            }))
+                                          ),
+                                      },
+                                    });
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+
+                            {section.layout === "list" && point.children.length > 0 && (
+                              <div className="ml-12 space-y-1.5">
+                                {point.children.map((child, childIndex) => (
+                                  <div key={child.id} className="flex items-center gap-2">
+                                    <div className="w-14 shrink-0 text-xs font-bold text-muted-foreground">
+                                      {sectionIndex + 1}.{pointIndex + 1}.{childIndex + 1}
+                                    </div>
+
+                                    <Input
+                                      value={child.text}
+                                      onChange={(event) => {
+                                        const value = event.target.value;
+                                        onChange((sections) =>
+                                          updateSection(sections, section.id, (item) => ({
+                                            ...item,
+                                            points: updatePoint(item.points, point.id, (parent) => ({
+                                              ...parent,
+                                              children: updatePoint(parent.children, child.id, { text: value }),
+                                            })),
+                                          }))
+                                        );
+                                      }}
+                                      placeholder="Sub-point..."
+                                      aria-label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}, sub-point ${childIndex + 1}`}
+                                      className={`h-8 text-sm ${fieldControlClass}`}
+                                    />
+
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      aria-label={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
+                                      title={`Remove sub-point ${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
+                                      className={cn(iconButtonSizeClass, "text-muted-foreground hover:text-destructive")}
+                                      onClick={() => {
+                                        const hadContent = Boolean(child.text.trim());
+                                        const removedChild = child;
+                                        const removedIndex = childIndex;
+
+                                        onChange((sections) =>
+                                          updateSection(sections, section.id, (item) => ({
+                                            ...item,
+                                            points: updatePoint(item.points, point.id, (parent) => ({
+                                              ...parent,
+                                              children: parent.children.filter((c) => c.id !== child.id),
+                                            })),
+                                          }))
+                                        );
+
+                                        if (hadContent) {
+                                          toast("Sub-point removed", {
+                                            action: {
+                                              label: "Undo",
+                                              onClick: () =>
+                                                onChange((sections) =>
+                                                  updateSection(sections, section.id, (item) => ({
+                                                    ...item,
+                                                    points: updatePoint(item.points, point.id, (parent) => ({
+                                                      ...parent,
+                                                      children: [
+                                                        ...parent.children.slice(0, removedIndex),
+                                                        removedChild,
+                                                        ...parent.children.slice(removedIndex),
+                                                      ],
+                                                    })),
+                                                  }))
+                                                ),
+                                            },
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={`Add another sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                                  title={`Add another sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
+                                  className={cn(iconButtonSizeClass, "ml-14 text-muted-foreground hover:text-brand-teal")}
+                                  onClick={() =>
+                                    onChange((sections) =>
+                                      updateSection(sections, section.id, (item) => ({
+                                        ...item,
+                                        points: updatePoint(item.points, point.id, (parent) => ({
+                                          ...parent,
+                                          children: [...parent.children, makeAgendaPoint()],
+                                        })),
+                                      }))
+                                    )
+                                  }
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
-                            ))}
-
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Add another sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
-                              title={`Add another sub-point under ${sectionIndex + 1}.${pointIndex + 1}`}
-                              className={cn(iconButtonSizeClass, "ml-14 text-muted-foreground hover:text-brand-teal")}
-                              onClick={() =>
-                                onChange((sections) =>
-                                  updateSection(sections, section.id, (item) => ({
-                                    ...item,
-                                    points: updatePoint(item.points, point.id, (parent) => ({
-                                      ...parent,
-                                      children: [...parent.children, makeAgendaPoint()],
-                                    })),
-                                  }))
-                                )
-                              }
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </Button>
+                            )}
                           </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  )}
+                    )}
 
-                  {expanded && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-xl text-brand-teal hover:text-brand-teal"
-                    onClick={() =>
-                      onChange((sections) =>
-                        updateSection(sections, section.id, (item) => ({
-                          ...item,
-                          points: [...item.points, makeAgendaPoint()],
-                        }))
-                      )
-                    }
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add agenda point
-                  </Button>
-                  )}
+                    {expanded && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-xl text-brand-teal hover:text-brand-teal"
+                        onClick={() =>
+                          onChange((sections) =>
+                            updateSection(sections, section.id, (item) => ({
+                              ...item,
+                              points: [...item.points, makeAgendaPoint()],
+                            }))
+                          )
+                        }
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add agenda point
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
             );
           })}
         </div>
