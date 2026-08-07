@@ -18,11 +18,13 @@ describe("parseAgendaPayload", () => {
 
   it("round-trips a v1 JSON payload", () => {
     const stored = serializeAgenda(
-      [{ id: "a", heading: "Budget", points: [{ id: "p1", text: "Q1" }] }],
+      [{ id: "a", heading: "Budget", tag: "", subtitle: "", layout: "list", points: [{ id: "p1", text: "Q1", date: "", children: [] }] }],
       ["Jane"]
     );
     const payload = parseAgendaPayload(stored);
-    expect(payload.sections).toEqual([{ id: "a", heading: "Budget", points: [{ id: "p1", text: "Q1" }] }]);
+    expect(payload.sections).toEqual([
+      { id: "a", heading: "Budget", tag: "", subtitle: "", layout: "list", points: [{ id: "p1", text: "Q1", date: "", children: [] }] },
+    ]);
     expect(payload.apologies).toEqual(["Jane"]);
   });
 
@@ -30,6 +32,7 @@ describe("parseAgendaPayload", () => {
     const payload = parseAgendaPayload("Discuss budget\nApprove minutes");
     expect(payload.sections).toHaveLength(1);
     expect(payload.sections[0].heading).toBe("Agenda");
+    expect(payload.sections[0].layout).toBe("list");
     expect(payload.sections[0].points.map((p) => p.text)).toEqual(["Discuss budget", "Approve minutes"]);
   });
 
@@ -47,6 +50,62 @@ describe("parseAgendaPayload", () => {
     expect(payload.sections[0].points[0].text).toBe("plain string point");
     expect(payload.sections[0].points[0].id).toBeTruthy();
   });
+
+  it("parses layout, tag, subtitle, and one level of nested children", () => {
+    const stored = JSON.stringify({
+      type: "actsix-agenda-v1",
+      sections: [
+        {
+          id: "s1",
+          heading: "Office Admin",
+          tag: "(Allan)",
+          subtitle: "Wins, Challenges, Changes",
+          layout: "list",
+          points: [
+            {
+              id: "p1",
+              text: "IFBB Venue Hire",
+              children: [{ id: "c1", text: "Timings" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    const payload = parseAgendaPayload(stored);
+    const section = payload.sections[0];
+
+    expect(section.tag).toBe("(Allan)");
+    expect(section.subtitle).toBe("Wins, Challenges, Changes");
+    expect(section.layout).toBe("list");
+    expect(section.points[0].children).toEqual([{ id: "c1", text: "Timings", date: "", children: [] }]);
+  });
+
+  it("defaults layout to 'list' and drops a grandchild's own children", () => {
+    const stored = JSON.stringify({
+      type: "actsix-agenda-v1",
+      sections: [
+        {
+          id: "s1",
+          heading: "No layout set",
+          points: [{ id: "p1", text: "Point", children: [{ id: "c1", text: "Child", children: [{ id: "g1", text: "Grandchild" }] }] }],
+        },
+      ],
+    });
+
+    const payload = parseAgendaPayload(stored);
+    expect(payload.sections[0].layout).toBe("list");
+    expect(payload.sections[0].points[0].children[0].children).toEqual([]);
+  });
+
+  it("rejects an unrecognized layout value and falls back to 'list'", () => {
+    const stored = JSON.stringify({
+      type: "actsix-agenda-v1",
+      sections: [{ id: "s1", heading: "Weird", layout: "grid", points: [] }],
+    });
+
+    expect(parseAgendaPayload(stored).sections[0].layout).toBe("list");
+  });
 });
 
 describe("cleanNameList", () => {
@@ -63,12 +122,12 @@ describe("parseAttendees", () => {
 
 describe("generateMinutesFromAgenda", () => {
   it("returns empty string when every section is blank", () => {
-    expect(generateMinutesFromAgenda([{ id: "1", heading: "  ", points: [] }])).toBe("");
+    expect(generateMinutesFromAgenda([{ id: "1", heading: "  ", tag: "", subtitle: "", layout: "list", points: [] }])).toBe("");
   });
 
   it("numbers sections/points and trims whitespace", () => {
     const out = generateMinutesFromAgenda([
-      { id: "1", heading: " Budget ", points: [{ id: "p", text: " Q1 review " }] },
+      { id: "1", heading: " Budget ", tag: "", subtitle: "", layout: "list", points: [{ id: "p", text: " Q1 review ", date: "", children: [] }] },
     ]);
     expect(out).toContain("1. BUDGET");
     expect(out).toContain("1.1 Q1 review");
@@ -78,15 +137,48 @@ describe("generateMinutesFromAgenda", () => {
 describe("cleanAgendaSections", () => {
   it("drops empty points and empty sections, keeps at least one section", () => {
     const cleaned = cleanAgendaSections([
-      { id: "1", heading: "", points: [{ id: "p1", text: "  " }] },
+      { id: "1", heading: "", tag: "", subtitle: "", layout: "list", points: [{ id: "p1", text: "  ", date: "", children: [] }] },
     ]);
     expect(cleaned).toHaveLength(1);
     expect(cleaned[0].heading).toBe("");
   });
 
   it("keeps a section with only a heading", () => {
-    const cleaned = cleanAgendaSections([{ id: "1", heading: "Intro", points: [] }]);
-    expect(cleaned).toEqual([{ id: "1", heading: "Intro", points: [] }]);
+    const cleaned = cleanAgendaSections([{ id: "1", heading: "Intro", tag: "", subtitle: "", layout: "list", points: [] }]);
+    expect(cleaned).toEqual([{ id: "1", heading: "Intro", tag: "", subtitle: "", layout: "list", points: [] }]);
+  });
+
+  it("trims tag and subtitle, and drops empty children", () => {
+    const cleaned = cleanAgendaSections([
+      {
+        id: "1",
+        heading: "Intro",
+        tag: "  (Allan)  ",
+        subtitle: "  Wins  ",
+        layout: "list",
+        points: [{ id: "p1", text: "Point", date: "", children: [{ id: "c1", text: "  ", date: "", children: [] }] }],
+      },
+    ]);
+
+    expect(cleaned[0].tag).toBe("(Allan)");
+    expect(cleaned[0].subtitle).toBe("Wins");
+    expect(cleaned[0].points[0].children).toEqual([]);
+  });
+
+  it("keeps a point that has children but no text of its own", () => {
+    const cleaned = cleanAgendaSections([
+      {
+        id: "1",
+        heading: "Intro",
+        tag: "",
+        subtitle: "",
+        layout: "list",
+        points: [{ id: "p1", text: "  ", date: "", children: [{ id: "c1", text: "Child", date: "", children: [] }] }],
+      },
+    ]);
+
+    expect(cleaned[0].points).toHaveLength(1);
+    expect(cleaned[0].points[0].children).toHaveLength(1);
   });
 });
 

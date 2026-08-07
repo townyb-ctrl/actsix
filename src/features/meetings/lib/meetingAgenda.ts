@@ -3,14 +3,27 @@
 // minutes skeleton from an agenda. No React, no Supabase: safe to unit test
 // and safe to import from anywhere in the module.
 
+export type AgendaSectionLayout = "list" | "dated" | "boxed";
+
 export type AgendaPoint = {
   id: string;
   text: string;
+  /** Only meaningful when the owning section's layout is "dated". */
+  date: string;
+  /** One level only - a child point's own `children` is always kept empty,
+   *  enforced here in parsing and by the editor UI not offering the control. */
+  children: AgendaPoint[];
 };
 
 export type AgendaSection = {
   id: string;
   heading: string;
+  /** Short tag rendered beside the heading, e.g. "(Allan)". Empty when unused. */
+  tag: string;
+  /** Italic line rendered under the heading. Empty when unused. */
+  subtitle: string;
+  /** Defaults to "list" - absent on every agenda stored before this field existed. */
+  layout: AgendaSectionLayout;
   points: AgendaPoint[];
 };
 
@@ -49,16 +62,53 @@ export const getAgendaSeriesMeta = (
 export const makeAgendaPoint = (): AgendaPoint => ({
   id: crypto.randomUUID(),
   text: "",
+  date: "",
+  children: [],
 });
 
 export const makeAgendaSection = (): AgendaSection => ({
   id: crypto.randomUUID(),
   heading: "",
+  tag: "",
+  subtitle: "",
+  layout: "list",
   points: [makeAgendaPoint()],
 });
 
 export const cleanNameList = (items: string[]) =>
   items.map((item) => item.trim()).filter(Boolean);
+
+const AGENDA_SECTION_LAYOUTS: AgendaSectionLayout[] = ["list", "dated", "boxed"];
+
+const parseAgendaChildPoint = (child: any): AgendaPoint => ({
+  id: child?.id || crypto.randomUUID(),
+  text: typeof child === "string" ? child : child?.text || "",
+  date: typeof child?.date === "string" ? child.date : "",
+  // A child's own children are always dropped - nesting is capped at one level.
+  children: [],
+});
+
+const parseAgendaPoint = (point: any): AgendaPoint => ({
+  id: point?.id || crypto.randomUUID(),
+  text: typeof point === "string" ? point : point?.text || "",
+  date: typeof point?.date === "string" ? point.date : "",
+  children:
+    typeof point === "object" && Array.isArray(point?.children)
+      ? point.children.map(parseAgendaChildPoint)
+      : [],
+});
+
+const parseAgendaSection = (section: any): AgendaSection => ({
+  id: section.id || crypto.randomUUID(),
+  heading: section.heading || "",
+  tag: typeof section.tag === "string" ? section.tag : "",
+  subtitle: typeof section.subtitle === "string" ? section.subtitle : "",
+  layout: AGENDA_SECTION_LAYOUTS.includes(section.layout) ? section.layout : "list",
+  points:
+    Array.isArray(section.points) && section.points.length
+      ? section.points.map(parseAgendaPoint)
+      : [makeAgendaPoint()],
+});
 
 export const parseAgendaPayload = (value?: string | null): AgendaPayload => {
   if (!value) {
@@ -76,17 +126,7 @@ export const parseAgendaPayload = (value?: string | null): AgendaPayload => {
       return {
         type: "actsix-agenda-v1",
         sections: parsed.sections.length
-          ? parsed.sections.map((section: any) => ({
-              id: section.id || crypto.randomUUID(),
-              heading: section.heading || "",
-              points:
-                Array.isArray(section.points) && section.points.length
-                  ? section.points.map((point: any) => ({
-                      id: point.id || crypto.randomUUID(),
-                      text: typeof point === "string" ? point : point.text || "",
-                    }))
-                  : [makeAgendaPoint()],
-            }))
+          ? parsed.sections.map(parseAgendaSection)
           : [makeAgendaSection()],
         apologies: Array.isArray(parsed.apologies) ? cleanNameList(parsed.apologies) : [],
       };
@@ -106,8 +146,11 @@ export const parseAgendaPayload = (value?: string | null): AgendaPayload => {
       {
         id: crypto.randomUUID(),
         heading: "Agenda",
+        tag: "",
+        subtitle: "",
+        layout: "list",
         points: lines.length
-          ? lines.map((line) => ({ id: crypto.randomUUID(), text: line }))
+          ? lines.map((line) => ({ id: crypto.randomUUID(), text: line, date: "", children: [] }))
           : [makeAgendaPoint()],
       },
     ],
@@ -125,7 +168,20 @@ export const serializeAgenda = (
     sections: sections.map((section) => ({
       id: section.id,
       heading: section.heading,
-      points: section.points,
+      tag: section.tag,
+      subtitle: section.subtitle,
+      layout: section.layout,
+      points: section.points.map((point) => ({
+        id: point.id,
+        text: point.text,
+        date: point.date,
+        children: point.children.map((child) => ({
+          id: child.id,
+          text: child.text,
+          date: child.date,
+          children: [],
+        })),
+      })),
     })),
     apologies: cleanNameList(apologies),
     // Round-trip the series link instead of dropping it: without this, saving
@@ -183,9 +239,17 @@ export const cleanAgendaSections = (sections: AgendaSection[]) => {
     .map((section) => ({
       ...section,
       heading: section.heading.trim(),
+      tag: section.tag.trim(),
+      subtitle: section.subtitle.trim(),
       points: section.points
-        .map((point) => ({ ...point, text: point.text.trim() }))
-        .filter((point) => point.text),
+        .map((point) => ({
+          ...point,
+          text: point.text.trim(),
+          children: point.children
+            .map((child) => ({ ...child, text: child.text.trim() }))
+            .filter((child) => child.text),
+        }))
+        .filter((point) => point.text || point.children.length),
     }))
     .filter((section) => section.heading || section.points.length);
 
