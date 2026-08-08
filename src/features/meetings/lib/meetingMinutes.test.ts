@@ -78,6 +78,25 @@ describe("renderMinutesHtml", () => {
     expect(out).toContain('class="minutes-agenda-subpoint"');
   });
 
+  it("indents Notes:/Decisions: to the depth of the point they belong to", () => {
+    const out = renderMinutesHtml(
+      "1. OFFICE ADMIN\n1.1 Venue hire\nNotes:\nDecisions:\n1.1.1 Timings\nNotes:\nDecisions:"
+    );
+
+    // The point's own labels sit at point depth; the sub-point's carry the
+    // deeper class, so they no longer read as belonging to the parent.
+    expect(out).toContain('<div class="minutes-note-label">Notes:</div>');
+    expect(out).toContain('<div class="minutes-note-label minutes-note-label-sub">Notes:</div>');
+    expect(out).toContain('<div class="minutes-note-label minutes-note-label-sub">Decisions:</div>');
+  });
+
+  it("resets label depth at the next section heading", () => {
+    const out = renderMinutesHtml("1. A\n1.1.1 Deep\nNotes:\n2. B\nNotes:");
+    // The second "Notes:" follows a heading, not a sub-point - it must not
+    // inherit the previous section's indent.
+    expect(out.split("minutes-note-label-sub").length - 1).toBe(1);
+  });
+
   it("renders an underscore-wrapped line as an italic subtitle, without the underscores", () => {
     const out = renderMinutesHtml("1. WEEKEND FEEDBACK\n_Wins, Challenges, Changes_");
     expect(out).toContain('class="minutes-subtitle"');

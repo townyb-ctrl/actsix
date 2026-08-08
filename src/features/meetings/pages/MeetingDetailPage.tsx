@@ -18,6 +18,7 @@ import {
 import { MeetingTranscriptionModal } from "@/features/meetings/components/MeetingTranscriptionModal";
 import { MeetingEditModal, type MeetingEditDraft } from "@/features/meetings/components/MeetingEditModal";
 import { MeetingAgendaModal } from "@/features/meetings/components/MeetingAgendaModal";
+import { MeetingAgendaCard } from "@/features/meetings/components/MeetingAgendaCard";
 import { MeetingAttendanceModal } from "@/features/meetings/components/MeetingAttendanceModal";
 import { MeetingPeopleSourcesModal } from "@/features/meetings/components/MeetingPeopleSourcesModal";
 import { MeetingActionsPanel } from "@/features/meetings/components/MeetingActionsPanel";
@@ -1159,7 +1160,6 @@ const MeetingDetailPage = () => {
               notes={meeting.notes}
               onSave={saveMinutes}
               onOpenTranscript={() => setTranscriptOpen(true)}
-              onOpenAgenda={openAgendaModal}
               saving={minutesSaving}
               savedAt={minutesSavedAt}
             />
@@ -1170,6 +1170,11 @@ const MeetingDetailPage = () => {
               this sidebar's whole job is keeping both reachable without
               a click (see detail-page-layout-pattern). */}
           <div className="flex flex-col gap-4">
+            {/* The plan sits above the people and the actions it produces, and
+                beside the minutes it's being written into - reference while
+                you work, not a modal you have to leave the page for. */}
+            <MeetingAgendaCard sections={agendaSections} onEdit={openAgendaModal} />
+
             <Card className="actsix-panel overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-background/55 px-4 py-3">
                 <h2 className="pt-0.5 text-base font-extrabold tracking-tight">Meeting People</h2>

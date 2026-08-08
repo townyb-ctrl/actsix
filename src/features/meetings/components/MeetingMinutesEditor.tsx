@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bold, FileText, Heading1, Heading2, Italic, Mic, Pilcrow } from "lucide-react";
+import { Bold, Heading1, Heading2, Italic, Mic, Pilcrow } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getMinutesDocumentHtml, renderMinutesHtml } from "@/features/meetings/lib/meetingMinutes";
@@ -7,7 +7,6 @@ import { getMinutesDocumentHtml, renderMinutesHtml } from "@/features/meetings/l
 export type MeetingMinutesEditorProps = {
   notes: string | null;
   onSave: (html: string) => void;
-  onOpenAgenda: () => void;
   onOpenTranscript: () => void;
   /** True while a save request is in flight. */
   saving?: boolean;
@@ -35,7 +34,6 @@ const runMinutesCommand = (minutesRef: React.RefObject<HTMLDivElement>, command:
 export function MeetingMinutesEditor({
   notes,
   onSave,
-  onOpenAgenda,
   onOpenTranscript,
   saving = false,
   savedAt = null,
@@ -117,16 +115,6 @@ export function MeetingMinutesEditor({
               onClick={() => setToolbarOpen((open) => !open)}
             >
               {toolbarOpen ? "Hide Format" : "Format"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-11 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8"
-              onClick={onOpenAgenda}
-            >
-              <FileText className="h-4 w-4 mr-1.5" />
-              Edit Agenda
             </Button>
             <Button
               type="button"

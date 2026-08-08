@@ -689,6 +689,35 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     color: hsl(var(--foreground));
   }
 
+  /* "Notes:" / "Decisions:" are scaffolding the generator leaves behind for
+     someone to write under - never the writing itself. They sit quieter than
+     body copy so what a person actually types is the darkest thing on the
+     page, and indent to their own point's depth. */
+  .minutes-note-label {
+    margin-top: 0.15rem;
+    margin-left: 0.9rem;
+    font-size: 0.92em;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* The document's own line-height is set for typed prose; on these two label
+     rows it just opened a hole between a point and the space to write under
+     it. They set their own tighter box, and the Notes/Decisions pair sits
+     together rather than drifting apart. */
+  .minutes-document .minutes-note-label {
+    min-height: 0;
+    line-height: 1.5;
+  }
+
+  .minutes-document .minutes-note-label + .minutes-note-label {
+    margin-top: 0;
+  }
+
+  .minutes-note-label-sub {
+    margin-left: 2.15rem;
+  }
+
   .minutes-subtitle {
     margin-top: 0.1rem;
     margin-bottom: 0.35rem;

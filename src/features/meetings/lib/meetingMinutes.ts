@@ -23,10 +23,31 @@ export const renderMinutesHtml = (notes?: string | null) => {
     return sanitizeMinutesHtml(notes);
   }
 
+  // How deep the last numbered line was, so the bare "Notes:"/"Decisions:"
+  // scaffolding lines that follow it can be indented to match. Without this
+  // they render flush left, and a sub-point's notes read as though they belong
+  // to its parent point.
+  let depth: 0 | 1 | 2 = 0;
+
   return notes
     .split("\n")
     .map((line) => {
       const escaped = escapeHtml(line);
+
+      const labelMatch = line.match(/^(Notes|Decisions):(.*)$/);
+      if (labelMatch) {
+        return `<div class="minutes-note-label${
+          depth === 2 ? " minutes-note-label-sub" : ""
+        }">${escapeHtml(labelMatch[1])}:${escapeHtml(labelMatch[2])}</div>`;
+      }
+
+      if (/^\d+\.\s+/.test(line)) {
+        depth = 0;
+      } else if (/^\d+\.\d+\.\d+\s+/.test(line)) {
+        depth = 2;
+      } else if (/^\d+\.\d+\s+/.test(line)) {
+        depth = 1;
+      }
 
       if (/^\d+\.\s+/.test(line)) {
         // A trailing " (tag)" - "1. WORD OF ENCOURAGEMENT (Allan)" - keeps
