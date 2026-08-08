@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createNotificationForPerson } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import { MeetingAttendanceModal } from "@/features/meetings/components/MeetingAt
 import { MeetingPeopleSourcesModal } from "@/features/meetings/components/MeetingPeopleSourcesModal";
 import { MeetingActionsPanel } from "@/features/meetings/components/MeetingActionsPanel";
 import { MeetingMinutesEditor } from "@/features/meetings/components/MeetingMinutesEditor";
+import { MeetingPrintSheet } from "@/features/meetings/components/MeetingPrintSheet";
 import {
   cleanAgendaSections,
   formatDate,
@@ -63,6 +65,7 @@ const MeetingDetailPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
+  const { workspace } = useCurrentWorkspace();
 
   const [transcriptText, setTranscriptText] = useState("");
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
@@ -968,6 +971,11 @@ const MeetingDetailPage = () => {
     setEditOpen(true);
   };
 
+  // The sheet is always mounted (hidden until print media applies), so this
+  // only has to open the dialog - no render-then-print dance, and no window
+  // reference left behind if someone cancels.
+  const printMinutes = () => window.print();
+
   const openAgendaModal = () => {
     setAgendaDraft(agendaSections.length ? agendaSections : [makeAgendaSection()]);
     setAgendaOpen(true);
@@ -1160,6 +1168,7 @@ const MeetingDetailPage = () => {
               notes={meeting.notes}
               onSave={saveMinutes}
               onOpenTranscript={() => setTranscriptOpen(true)}
+              onPrint={printMinutes}
               saving={minutesSaving}
               savedAt={minutesSavedAt}
             />
@@ -1319,6 +1328,18 @@ const MeetingDetailPage = () => {
         onOpenChange={setPeopleOpen}
         meetingPeople={meetingPeople}
         onUpdateStatus={updateMeetingPersonStatus}
+      />
+
+      <MeetingPrintSheet
+        workspaceName={workspace?.name ?? "ACTSIX"}
+        logoUrl={workspace?.logo_url}
+        title={meeting.title}
+        date={meeting.meeting_date}
+        time={meeting.meeting_time}
+        location={meeting.location}
+        attendees={expectedAttendees}
+        apologies={apologies}
+        notes={meeting.notes}
       />
 
       <MeetingAgendaModal

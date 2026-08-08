@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bold, Heading1, Heading2, Italic, Mic, Pilcrow } from "lucide-react";
+import { Bold, Heading1, Heading2, Italic, Mic, Pilcrow, Printer } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getMinutesDocumentHtml, renderMinutesHtml } from "@/features/meetings/lib/meetingMinutes";
@@ -8,6 +8,8 @@ export type MeetingMinutesEditorProps = {
   notes: string | null;
   onSave: (html: string) => void;
   onOpenTranscript: () => void;
+  /** Opens the browser print dialog on the printable minutes document. */
+  onPrint: () => void;
   /** True while a save request is in flight. */
   saving?: boolean;
   /** When the last successful save landed, or null if nothing has saved yet. */
@@ -35,6 +37,7 @@ export function MeetingMinutesEditor({
   notes,
   onSave,
   onOpenTranscript,
+  onPrint,
   saving = false,
   savedAt = null,
 }: MeetingMinutesEditorProps) {
@@ -125,6 +128,16 @@ export function MeetingMinutesEditor({
             >
               <Mic className="h-4 w-4 mr-1.5" />
               Record &amp; Transcribe
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-11 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8"
+              onClick={onPrint}
+            >
+              <Printer className="h-4 w-4 mr-1.5" />
+              Export
             </Button>
           </div>
         </div>

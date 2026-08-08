@@ -1937,6 +1937,7 @@ export type Database = {
           id: string
           join_code: string
           join_phrase_hash: string | null
+          logo_url: string | null
           name: string
           owner_user_id: string
           release_mode: string
@@ -1948,6 +1949,7 @@ export type Database = {
           id?: string
           join_code: string
           join_phrase_hash?: string | null
+          logo_url?: string | null
           name: string
           owner_user_id: string
           release_mode?: string
@@ -1959,6 +1961,7 @@ export type Database = {
           id?: string
           join_code?: string
           join_phrase_hash?: string | null
+          logo_url?: string | null
           name?: string
           owner_user_id?: string
           release_mode?: string

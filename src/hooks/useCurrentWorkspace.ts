@@ -9,6 +9,9 @@ export type Workspace = {
   name: string;
   slug: string;
   join_code: string;
+  /** Null until someone uploads one in Workspace Settings; printed documents
+   *  fall back to the workspace name alone. */
+  logo_url: string | null;
   owner_user_id: string;
   release_mode: "alpha" | "beta" | "full" | string;
   created_at: string;

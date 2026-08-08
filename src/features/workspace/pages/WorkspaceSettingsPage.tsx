@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { WorkspaceLogoCard } from "@/features/workspace/components/WorkspaceLogoCard";
+import { useAuth } from "@/hooks/useAuth";
 
 type WorkspaceMemberRow = {
   id: string;
@@ -34,7 +36,8 @@ const formatRoleLabel = (role: string) =>
 
 const WorkspaceSettingsPage = () => {
   const navigate = useNavigate();
-  const { workspace, role, isAdmin, loading, leaveWorkspace } = useCurrentWorkspace();
+  const { workspace, role, isAdmin, loading, leaveWorkspace, reloadWorkspace } = useCurrentWorkspace();
+  const { user } = useAuth();
   const [members, setMembers] = useState<WorkspaceMemberRow[]>([]);
   const [joinPhrase, setJoinPhrase] = useState("");
   const [busy, setBusy] = useState(false);
@@ -247,6 +250,15 @@ const WorkspaceSettingsPage = () => {
               </div>
             </div>
           </Card>
+
+          <WorkspaceLogoCard
+            workspaceId={workspace.id}
+            workspaceName={workspace.name}
+            logoUrl={workspace.logo_url}
+            userId={user?.id}
+            canEdit={isAdmin}
+            onChange={() => void reloadWorkspace()}
+          />
 
           <Card className="actsix-panel p-4 sm:p-5">
             <div className="flex items-start gap-3">
