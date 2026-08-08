@@ -7,8 +7,8 @@ import { getMinutesDocumentHtml, renderMinutesHtml } from "@/features/meetings/l
 export type MeetingMinutesEditorProps = {
   notes: string | null;
   onSave: (html: string) => void;
-  onOpenTranscript: () => void;
   onOpenAgenda: () => void;
+  onOpenTranscript: () => void;
   /** True while a save request is in flight. */
   saving?: boolean;
   /** When the last successful save landed, or null if nothing has saved yet. */
@@ -35,8 +35,8 @@ const runMinutesCommand = (minutesRef: React.RefObject<HTMLDivElement>, command:
 export function MeetingMinutesEditor({
   notes,
   onSave,
-  onOpenTranscript,
   onOpenAgenda,
+  onOpenTranscript,
   saving = false,
   savedAt = null,
 }: MeetingMinutesEditorProps) {
@@ -94,91 +94,6 @@ export function MeetingMinutesEditor({
 
   return (
     <Card className="actsix-panel overflow-hidden">
-      <style>{`
-        .minutes-document:empty::before {
-          content: attr(data-placeholder);
-          color: hsl(var(--muted-foreground));
-        }
-
-        .minutes-section-heading {
-          margin-top: 0.75rem;
-          margin-bottom: 0.15rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: hsl(var(--foreground));
-        }
-
-        .minutes-section-heading:first-child {
-          margin-top: 0;
-        }
-
-        .minutes-section-tag {
-          text-transform: none;
-          font-weight: 700;
-          letter-spacing: normal;
-          color: hsl(var(--muted-foreground));
-        }
-
-        .minutes-agenda-point {
-          margin-top: 0.45rem;
-          margin-bottom: 0.1rem;
-          font-weight: 700;
-          color: hsl(var(--foreground));
-        }
-
-        .minutes-agenda-subpoint {
-          margin-top: 0.35rem;
-          margin-bottom: 0.1rem;
-          margin-left: 1.25rem;
-          font-weight: 600;
-          color: hsl(var(--foreground));
-        }
-
-        .minutes-subtitle {
-          margin-top: 0.1rem;
-          margin-bottom: 0.35rem;
-          font-style: italic;
-          color: hsl(var(--muted-foreground));
-        }
-
-        .minutes-document .minutes-blank-line {
-          min-height: 0.15rem;
-          line-height: 0.15rem;
-        }
-
-        .minutes-document div {
-          min-height: 1.4em;
-        }
-
-        .minutes-document h1 {
-          margin: 0.35rem 0 0.2rem;
-          font-size: 1.25rem;
-          line-height: 1.4;
-          font-weight: 800;
-          color: hsl(var(--foreground));
-        }
-
-        .minutes-document h2 {
-          margin: 0.3rem 0 0.15rem;
-          font-size: 1.05rem;
-          line-height: 1.45;
-          font-weight: 800;
-          color: hsl(var(--foreground));
-        }
-
-        .minutes-document b,
-        .minutes-document strong {
-          font-weight: 800;
-          color: hsl(var(--foreground));
-        }
-
-        .minutes-document i,
-        .minutes-document em {
-          font-style: italic;
-        }
-      `}</style>
-
       <div className="border-b border-border/70 bg-background/55 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -320,7 +235,7 @@ export function MeetingMinutesEditor({
           ref={minutesRef}
           contentEditable
           suppressContentEditableWarning
-          className="minutes-document min-h-[26.25rem] h-[calc(100vh-25rem)] max-h-[58rem] overflow-y-auto cursor-text rounded-xl border border-border/70 bg-background/70 p-4 text-sm leading-7 text-foreground outline-none transition focus:border-brand-teal/35 focus:bg-background focus:ring-2 focus:ring-brand-teal/15"
+          className="minutes-document min-h-[26.25rem] h-[calc(100vh-25rem)] max-h-[58rem] overflow-y-auto cursor-text rounded-xl border border-border/70 bg-background/70 p-4 text-sm leading-6 text-foreground outline-none transition focus:border-brand-teal/35 focus:bg-background focus:ring-2 focus:ring-brand-teal/15"
           data-placeholder="Click here to add meeting notes, decisions, and minutes..."
           dangerouslySetInnerHTML={{ __html: renderMinutesHtml(notes || "") }}
           onKeyDown={(event) => {
