@@ -118,6 +118,16 @@ const parseAgendaSection = (section: any): AgendaSection => ({
       : [makeAgendaPoint()],
 });
 
+/** Reads a stored bare section array - a recurring series' `regular_agenda`
+ *  column, which predates tags, subtitles, layouts and sub-points - into fully
+ *  formed sections, backfilling every field added since the row was written.
+ *  Returns [] for an empty/absent agenda so callers can tell "none" from "one
+ *  blank one" themselves. */
+export const parseAgendaSections = (value: unknown): AgendaSection[] =>
+  Array.isArray(value)
+    ? value.filter((section) => section && typeof section === "object").map(parseAgendaSection)
+    : [];
+
 export const parseAgendaPayload = (value?: string | null): AgendaPayload => {
   if (!value) {
     return { type: "actsix-agenda-v1", sections: [makeAgendaSection()], apologies: [] };

@@ -2,14 +2,18 @@
 // list page and the series detail page so the DB<->UI mapping and the minutes
 // generator live in exactly one place instead of two drifting copies.
 
-export type AgendaPoint = {
-  text: string;
-};
+// A series' regular agenda is the same thing as a meeting's agenda - it just
+// starts life on the series and gets copied into every meeting generated from
+// it. It used to be declared here as its own thinner {heading, points[{text}]}
+// shape, which meant the series editor could only ever offer a fraction of
+// what the meeting editor did. One model, one editor, one minutes generator.
+import { parseAgendaSections, type AgendaSection } from "@/features/meetings/lib/meetingAgenda";
 
-export type AgendaSection = {
-  heading: string;
-  points: AgendaPoint[];
-};
+export {
+  generateMinutesFromAgenda,
+  type AgendaPoint,
+  type AgendaSection,
+} from "@/features/meetings/lib/meetingAgenda";
 
 export type RecurringMeeting = {
   id: string;
@@ -35,7 +39,10 @@ export const fromRecurringMeetingRow = (row: any): RecurringMeeting => ({
   location: row.location || "",
   occurrences: row.occurrences || 12,
   regularAttendees: row.regular_attendees || [],
-  regularAgenda: row.regular_agenda || [],
+  // Parsed rather than passed straight through: rows written before tags,
+  // subtitles, layouts, sub-points and stable ids existed still have to arrive
+  // as complete sections, or the editor renders undefined into every field.
+  regularAgenda: parseAgendaSections(row.regular_agenda),
   peopleGroupId: row.people_group_id || undefined,
   peopleGroupName: row.people_group_name || undefined,
   peopleGroupMemberIds: row.people_group_member_ids || [],
@@ -141,25 +148,6 @@ export const buildOccurrences = (series: {
       date: toDateInputValue(date),
     };
   });
-};
-
-export const generateMinutesFromAgenda = (agenda: AgendaSection[] = []) => {
-  return agenda
-    .filter((section) => section.heading.trim() || section.points.length)
-    .map((section, sectionIndex) => {
-      const sectionNumber = sectionIndex + 1;
-      const title = (section.heading || "Untitled Section").toUpperCase();
-
-      const points = section.points
-        .filter((point) => point.text.trim())
-        .map((point, pointIndex) => {
-          return `${sectionNumber}.${pointIndex + 1} ${point.text}\n\nNotes:\nDecisions:\n`;
-        })
-        .join("\n");
-
-      return `${sectionNumber}. ${title}\n\n${points}`;
-    })
-    .join("\n\n");
 };
 
 /**

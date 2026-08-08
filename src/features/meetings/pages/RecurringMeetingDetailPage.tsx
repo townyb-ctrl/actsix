@@ -27,6 +27,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { useRecurringPeopleGroupOptions } from "@/features/meetings/hooks/useRecurringPeopleGroupOptions";
+import { MeetingAgendaModal } from "@/features/meetings/components/MeetingAgendaModal";
+import { cleanAgendaSections, isSectionEmpty, makeAgendaSection } from "@/features/meetings/lib/meetingAgenda";
 import { toast } from "sonner";
 import { friendlyErrorMessage } from "@/lib/friendlyError";
 import {
@@ -188,9 +190,7 @@ const RecurringMeetingDetailPage = () => {
     const foundSeries = fromRecurringMeetingRow(seriesRow);
 
     setSeries(foundSeries);
-    setAgendaDraft(
-      foundSeries.regularAgenda.length ? foundSeries.regularAgenda : [{ heading: "", points: [{ text: "" }] }]
-    );
+    setAgendaDraft(foundSeries.regularAgenda.length ? foundSeries.regularAgenda : [makeAgendaSection()]);
 
     const map: CreatedMeetingMap = {};
     (occurrenceRows || []).forEach((row: any) => {
@@ -288,74 +288,18 @@ const RecurringMeetingDetailPage = () => {
   const openAgendaEditor = () => {
     if (!series) return;
 
-    setAgendaDraft(
-      series.regularAgenda.length ? series.regularAgenda : [{ heading: "", points: [{ text: "" }] }]
-    );
+    setAgendaDraft(series.regularAgenda.length ? series.regularAgenda : [makeAgendaSection()]);
     setAgendaOpen(true);
-  };
-
-  const addAgendaSection = () => {
-    setAgendaDraft((previous) => [...previous, { heading: "", points: [{ text: "" }] }]);
-  };
-
-  const removeAgendaSection = (sectionIndex: number) => {
-    setAgendaDraft((previous) => previous.filter((_, index) => index !== sectionIndex));
-  };
-
-  const updateAgendaSection = (sectionIndex: number, value: string) => {
-    setAgendaDraft((previous) =>
-      previous.map((section, index) =>
-        index === sectionIndex ? { ...section, heading: value } : section
-      )
-    );
-  };
-
-  const addAgendaPoint = (sectionIndex: number) => {
-    setAgendaDraft((previous) =>
-      previous.map((section, index) =>
-        index === sectionIndex
-          ? { ...section, points: [...section.points, { text: "" }] }
-          : section
-      )
-    );
-  };
-
-  const removeAgendaPoint = (sectionIndex: number, pointIndex: number) => {
-    setAgendaDraft((previous) =>
-      previous.map((section, index) =>
-        index === sectionIndex
-          ? { ...section, points: section.points.filter((_, pIndex) => pIndex !== pointIndex) }
-          : section
-      )
-    );
-  };
-
-  const updateAgendaPoint = (sectionIndex: number, pointIndex: number, value: string) => {
-    setAgendaDraft((previous) =>
-      previous.map((section, index) =>
-        index === sectionIndex
-          ? {
-              ...section,
-              points: section.points.map((point, pIndex) =>
-                pIndex === pointIndex ? { text: value } : point
-              ),
-            }
-          : section
-      )
-    );
   };
 
   const saveRegularAgenda = () => {
     if (!series) return;
 
-    const cleanedAgenda = agendaDraft
-      .map((section) => ({
-        heading: section.heading.trim(),
-        points: section.points
-          .map((point) => ({ text: point.text.trim() }))
-          .filter((point) => point.text),
-      }))
-      .filter((section) => section.heading || section.points.length);
+    // cleanAgendaSections always hands back at least one section, so an agenda
+    // emptied down to nothing has to be stored as a real empty list rather than
+    // that one blank placeholder - the series header counts these.
+    const cleaned = cleanAgendaSections(agendaDraft);
+    const cleanedAgenda = cleaned.length === 1 && isSectionEmpty(cleaned[0]) ? [] : cleaned;
 
     saveSeries({ regularAgenda: cleanedAgenda });
     setAgendaOpen(false);
@@ -837,108 +781,17 @@ const RecurringMeetingDetailPage = () => {
         </div>
       )}
 
-      {agendaOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <Card className="actsix-panel max-h-[86vh] w-full max-w-3xl overflow-auto p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="label-eyebrow">Regular Agenda</p>
-                <h2 className="text-xl font-extrabold tracking-tight">
-                  Manage Regular Agenda
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  This agenda will be copied into every meeting created from this recurring meeting.
-                </p>
-              </div>
+      <MeetingAgendaModal
+        open={agendaOpen}
+        onOpenChange={setAgendaOpen}
+        draft={agendaDraft}
+        onChange={(updater) => setAgendaDraft((sections) => updater(sections))}
+        onSave={saveRegularAgenda}
+        title="Regular Agenda"
+        description="This agenda is copied into every meeting created from this recurring meeting."
+        saveLabel="Save Regular Agenda"
+      />
 
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setAgendaOpen(false)}>
-                Close
-              </Button>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              {agendaDraft.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="rounded-xl border border-border/70 bg-background p-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center text-sm font-extrabold">
-                      {sectionIndex + 1}
-                    </div>
-
-                    <Input
-                      value={section.heading}
-                      onChange={(event) => updateAgendaSection(sectionIndex, event.target.value)}
-                      placeholder="Section heading..."
-                      aria-label={`Section ${sectionIndex + 1} heading`}
-                      className="border-border/70 bg-background font-bold"
-                    />
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-xl text-destructive"
-                      aria-label={`Remove section ${sectionIndex + 1}`}
-                      onClick={() => removeAgendaSection(sectionIndex)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="mt-3 space-y-2 pl-10">
-                    {section.points.map((point, pointIndex) => (
-                      <div key={pointIndex} className="flex items-center gap-2">
-                        <span className="w-10 text-xs font-bold text-muted-foreground">
-                          {sectionIndex + 1}.{pointIndex + 1}
-                        </span>
-
-                        <Input
-                          value={point.text}
-                          onChange={(event) =>
-                            updateAgendaPoint(sectionIndex, pointIndex, event.target.value)
-                          }
-                          placeholder="Agenda point..."
-                          aria-label={`Agenda point ${sectionIndex + 1}.${pointIndex + 1}`}
-                          className="border-border/70 bg-background"
-                        />
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="rounded-xl text-destructive"
-                          aria-label={`Remove agenda point ${sectionIndex + 1}.${pointIndex + 1}`}
-                          onClick={() => removeAgendaPoint(sectionIndex, pointIndex)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="rounded-xl text-brand-teal"
-                      onClick={() => addAgendaPoint(sectionIndex)}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add agenda point
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex justify-between gap-2">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={addAgendaSection}>
-                <Plus className="h-4 w-4" />
-                Add Section
-              </Button>
-
-              <Button type="button" className="actsix-btn-primary min-h-10 rounded-xl" onClick={saveRegularAgenda}>
-                Save Regular Agenda
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="actsix-panel max-w-2xl rounded-xl">
