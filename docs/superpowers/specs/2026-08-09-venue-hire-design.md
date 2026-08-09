@@ -243,9 +243,11 @@ components never call Supabase directly, matching `projectsApi.ts`.
   no hint about whether the token ever existed.
 - **Public submission fails** — inline error on the form with the submitted
   values preserved, and a retry.
-- **Space in use on delete** — `on delete restrict` means deleting a space with
-  bookings fails; the UI offers deactivation (`is_active = false`) instead,
-  which hides it from new bookings while preserving history.
+- **Retiring a space** — there is no delete affordance in the UI; a space is
+  retired with deactivation (`is_active = false`), which hides it from new
+  bookings while preserving its history. `on delete restrict` on
+  `venue_bookings.space_id` protects that history at the database level even
+  though the UI never attempts the delete.
 
 ## Testing
 

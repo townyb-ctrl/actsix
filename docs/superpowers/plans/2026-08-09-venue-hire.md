@@ -15,7 +15,7 @@
 - No new npm dependencies. Everything here uses what is already installed.
 - Follow `.ai/CLAUDE.md`: data access in `api/*.ts`, thin pages, focused components, no new `any` in new code (`(supabase as any)` casts are the established pattern for tables missing from generated types — new tables will not be in `src/integrations/supabase/types.ts`, so use that cast).
 - Every table row carries `workspace_id` and `user_id`. RLS is scoped to active `workspace_members` rows, copying `supabase/migrations/20260612130000_create_calendar_module.sql`.
-- Text columns are `text not null default ''`, never nullable, except where the spec explicitly says nullable.
+- Optional text columns are `text not null default ''`, never nullable, except where the spec explicitly says nullable. Required identifiers (`venue_spaces.name`, `venue_bookings.title`) are `text not null` with no default — a default of `''` would silently accept a blank name.
 - Currency and dates render with the `en-ZA` locale, matching `src/pages/PublicEventRegistration.tsx`.
 - Money fields apply only to `booking_type = 'external'`. Internal bookings store 0 / `'Not applicable'` and the UI hides those inputs entirely.
 - Overlaps are warned about, never blocked. No database exclusion constraint.

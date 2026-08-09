@@ -45,6 +45,9 @@ const CalendarModule = lazy(() => import("./pages/CalendarModule"));
 const Reminders = lazy(() => import("./pages/Reminders"));
 const PublicEventRegistration = lazy(() => import("./pages/PublicEventRegistration"));
 const Meetups = lazy(() => import("./pages/Placeholder").then((module) => ({ default: module.Meetups })));
+const Venues = lazy(() => import("./pages/Venues"));
+const VenueSpaces = lazy(() => import("./pages/VenueSpaces"));
+const PublicVenueRequest = lazy(() => import("./pages/PublicVenueRequest"));
 
 const queryClient = new QueryClient();
 
@@ -73,6 +76,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/workspace-setup" element={<WorkspaceSetup />} />
               <Route path="/register/:token" element={<PublicEventRegistration />} />
+              <Route path="/venue-request/:token" element={<PublicVenueRequest />} />
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
 
@@ -102,6 +106,8 @@ const App = () => (
                 <Route path="/service-planner/teams" element={<ServicePlannerTeams />} />
                 <Route path="/service-planner/teams/:teamId" element={<ServicePlannerTeamDetail />} />
                 <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
+                <Route path="/venues" element={<Venues />} />
+                <Route path="/venues/spaces" element={<VenueSpaces />} />
                 <Route path="/people" element={<People />} />
                 <Route path="/groups" element={<PeopleGroups />} />
                 <Route path="/groups/:groupId" element={<PeopleGroupDetail />} />

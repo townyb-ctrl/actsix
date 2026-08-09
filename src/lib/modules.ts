@@ -2,11 +2,11 @@ import type { ActsixModuleKey } from "@/lib/releaseMode";
 
 export type ActiveModuleKey = Extract<
   ActsixModuleKey,
-  "home" | "tasks" | "people" | "groups" | "meetings" | "service_planner" | "sermon_hub" | "calendar"
+  "home" | "tasks" | "people" | "groups" | "meetings" | "service_planner" | "sermon_hub" | "calendar" | "venues"
 >;
 
 export const REQUIRED_MODULES: ActiveModuleKey[] = ["home", "tasks", "people"];
-export const OPTIONAL_MODULES: ActiveModuleKey[] = ["groups", "meetings", "service_planner", "calendar", "sermon_hub"];
+export const OPTIONAL_MODULES: ActiveModuleKey[] = ["groups", "meetings", "service_planner", "calendar", "sermon_hub", "venues"];
 
 export const DEFAULT_ACTIVE_MODULES: Record<ActiveModuleKey, boolean> = {
   home: true,
@@ -17,6 +17,7 @@ export const DEFAULT_ACTIVE_MODULES: Record<ActiveModuleKey, boolean> = {
   service_planner: false,
   calendar: true,
   sermon_hub: true,
+  venues: false,
 };
 
 export const MODULE_LABELS: Record<ActiveModuleKey, string> = {
@@ -28,6 +29,7 @@ export const MODULE_LABELS: Record<ActiveModuleKey, string> = {
   service_planner: "Service Planner",
   calendar: "Calendar",
   sermon_hub: "Sermon / Lesson Hub",
+  venues: "Venue Hire",
 };
 
 export const MODULE_DESCRIPTIONS: Record<ActiveModuleKey, string> = {
@@ -39,6 +41,7 @@ export const MODULE_DESCRIPTIONS: Record<ActiveModuleKey, string> = {
   service_planner: "Service dates, teams, order of service, and repertoire.",
   calendar: "Unified ministry calendar with Google, Outlook, and Apple sync setup.",
   sermon_hub: "Sermon planning, lesson outlines, teaching series, and reusable notes.",
+  venues: "Bookable spaces, internal reservations, and external hire with fees.",
 };
 
 export const isRequiredModule = (moduleKey: ActiveModuleKey) =>
@@ -71,6 +74,7 @@ export const getModuleKeyForPath = (pathname: string): ActiveModuleKey => {
   if (pathname === "/service-planner" || pathname.startsWith("/service-planner/")) {
     return "service_planner";
   }
+  if (pathname === "/venues" || pathname.startsWith("/venues/")) return "venues";
 
   return "home";
 };

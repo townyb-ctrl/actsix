@@ -12,7 +12,8 @@ export type ActsixModuleKey =
   | "resources"
   | "chat"
   | "reports"
-  | "media";
+  | "media"
+  | "venues";
 
 const releaseMode = (import.meta.env.VITE_ACTSIX_RELEASE_MODE || "alpha") as ActsixReleaseMode;
 
@@ -29,6 +30,7 @@ const alphaModules: Record<ActsixModuleKey, boolean> = {
   chat: false,
   reports: false,
   media: false,
+  venues: true,
 };
 
 const betaModules: Record<ActsixModuleKey, boolean> = {
@@ -48,6 +50,7 @@ const fullModules: Record<ActsixModuleKey, boolean> = {
   chat: true,
   reports: true,
   media: true,
+  venues: true,
 };
 
 const moduleMap: Record<ActsixReleaseMode, Record<ActsixModuleKey, boolean>> = {

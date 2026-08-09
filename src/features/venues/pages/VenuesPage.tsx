@@ -1,0 +1,209 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
+import { getVenueBookings, getVenueSpaces } from "@/features/venues/api/venuesApi";
+import type { VenueBooking, VenueSpace } from "@/features/venues/lib/venueBookings";
+import VenueBookingList from "@/features/venues/components/VenueBookingList";
+import VenueBookingModal from "@/features/venues/components/VenueBookingModal";
+import VenueCalendar from "@/features/venues/components/VenueCalendar";
+
+type StatusFilter = "All" | "Pending" | "Confirmed" | "Cancelled";
+
+const FILTERS: StatusFilter[] = ["All", "Pending", "Confirmed", "Cancelled"];
+
+const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
+
+/**
+ * The query window is wider than the visible month on both ends: the grid
+ * shows leading/trailing days of adjacent months, a booking that starts
+ * before the window can still cover a day inside it, and the booking modal's
+ * conflict check needs bookings in adjacent months to catch a clash near a
+ * month boundary (e.g. a booking on the 31st against one on the 1st). A full
+ * month of margin on each side covers all three without falling back to
+ * fetching every booking ever. Trade-off: a booking that starts more than a
+ * month before the window and is still running when the window opens - or a
+ * brand-new booking the user backdates further out than that - won't be
+ * fetched, so the conflict check can miss it. Real venue bookings run hours
+ * to days, not months, so this is accepted rather than fetching unbounded.
+ */
+const queryWindowFor = (visibleMonth: Date) => {
+  const from = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+  const to = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 2, 0, 23, 59, 59, 999);
+  return { fromIso: from.toISOString(), toIso: to.toISOString() };
+};
+
+export default function VenuesPage() {
+  const { user } = useAuth();
+  const { workspace } = useCurrentWorkspace();
+
+  const [spaces, setSpaces] = useState<VenueSpace[]>([]);
+  const [bookings, setBookings] = useState<VenueBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<StatusFilter>("All");
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
+  const [editingBooking, setEditingBooking] = useState<VenueBooking | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Clicking "next month" repeatedly fires overlapping requests; nothing
+  // guarantees they resolve in the order they were sent. Each call stamps
+  // its own token and only paints state if it's still the most recent call
+  // by the time its response lands, so a slow month+1 response can't land
+  // after a fast month+3 response and paint the wrong bookings under the
+  // wrong month label.
+  const loadToken = useRef(0);
+
+  const load = async () => {
+    if (!workspace?.id) return;
+    setLoading(true);
+
+    const token = ++loadToken.current;
+    const { fromIso, toIso } = queryWindowFor(visibleMonth);
+
+    const [spacesResult, bookingsResult] = await Promise.all([
+      getVenueSpaces(workspace.id),
+      getVenueBookings({ workspaceId: workspace.id, fromIso, toIso }),
+    ]);
+
+    if (token !== loadToken.current) return; // a newer request has already superseded this one
+
+    if (spacesResult.error || bookingsResult.error) {
+      toast.error("Could not load venue bookings", {
+        description: (spacesResult.error || bookingsResult.error)?.message,
+      });
+    }
+
+    setSpaces((spacesResult.data as VenueSpace[]) || []);
+    setBookings((bookingsResult.data as VenueBooking[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, [workspace?.id, visibleMonth]);
+
+  const pendingCount = useMemo(
+    () => bookings.filter((booking) => booking.status === "Pending").length,
+    [bookings]
+  );
+
+  const visibleBookings = useMemo(
+    () => (filter === "All" ? bookings : bookings.filter((booking) => booking.status === filter)),
+    [bookings, filter]
+  );
+
+  const activeSpaceCount = useMemo(
+    () => spaces.filter((space) => space.is_active).length,
+    [spaces]
+  );
+
+  const openNewBooking = () => {
+    setEditingBooking(null);
+    setModalOpen(true);
+  };
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Venue Hire</h1>
+          <p className="text-sm text-muted-foreground">
+            Who has the building, and when.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/venues/spaces">Spaces</Link>
+          </Button>
+          <Button onClick={openNewBooking} disabled={activeSpaceCount === 0}>
+            <Plus className="mr-2 h-4 w-4" />
+            New booking
+          </Button>
+        </div>
+      </div>
+
+      {activeSpaceCount === 0 && !loading ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <CalendarDays className="h-8 w-8 text-muted-foreground" />
+            <p className="font-medium">Add a space first</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Nothing can be booked until the workspace has at least one active bookable space.
+            </p>
+            <Button asChild>
+              <Link to="/venues/spaces">Go to Spaces</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {filter === "Cancelled" ? (
+            <p className="text-sm text-muted-foreground">
+              Cancelled bookings never occupy the calendar — they're listed below.
+            </p>
+          ) : (
+            <VenueCalendar
+              visibleMonth={visibleMonth}
+              bookings={visibleBookings}
+              spaces={spaces}
+              loading={loading}
+              onMonthChange={setVisibleMonth}
+              onSelectBooking={(booking) => {
+                setEditingBooking(booking);
+                setModalOpen(true);
+              }}
+            />
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {FILTERS.map((option) => (
+              <Button
+                key={option}
+                size="sm"
+                variant={filter === option ? "default" : "outline"}
+                onClick={() => setFilter(option)}
+              >
+                {option}
+                {option === "Pending" && pendingCount > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {pendingCount}
+                  </Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading bookings…</p>
+          ) : (
+            <VenueBookingList
+              bookings={visibleBookings}
+              spaces={spaces}
+              onEdit={(booking) => {
+                setEditingBooking(booking);
+                setModalOpen(true);
+              }}
+            />
+          )}
+        </>
+      )}
+
+      <VenueBookingModal
+        open={modalOpen}
+        booking={editingBooking}
+        spaces={spaces}
+        bookings={bookings}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        onOpenChange={setModalOpen}
+        onSaved={load}
+      />
+    </div>
+  );
+}
