@@ -26,6 +26,12 @@ unrelated, pre-existing migration-history drift in
 with this module. Applying the SQL directly through the dashboard is the only
 supported path until that drift is separately resolved.
 
+Before this migration was applied, the calendar's `42P01` guard (missing
+`venue_bookings` table) was already exercised: `/calendar` loaded with no
+visible error toast and no console error naming `venue_bookings`. That
+pre-migration state is not re-tested below — every step from here on assumes
+the migration is already applied.
+
 ## 1. Turn the module on and confirm the sidebar
 
 1. Go to Settings and switch the "Venue Hire" module on (it ships off by
@@ -195,14 +201,28 @@ Hall" (fill Title/Space/Starts/Ends, Type "Internal", save).
    to Service Contacts", and save. Confirm it saves cleanly and the contact
    is created (per step 11's check).
 
-## 16. Revoke the request link
+## 16. Public request form — sanitized error on an unguarded failure (security)
+
+1. Using the still-valid link from step 13, submit a request that trips a
+   failure the RPC does not explicitly raise a friendly message for — for
+   example a `title` long enough to hit a column length limit, if the table
+   has one, or another value that would only fail at the database
+   constraint level rather than the RPC's own validation.
+2. Confirm the visitor sees only the generic message "We could not send
+   your request. Please try again." — not raw Postgres error text (no
+   column names, constraint names, or SQL fragments anywhere on the page).
+   This exercises the error-message allowlist added in Task 6's review fix
+   (commit `5612cfae`), which shows only a fixed set of known-safe RPC
+   messages and falls back to the generic string for anything else.
+
+## 17. Revoke the request link
 
 1. Back on `/venues/spaces`, click "Revoke link".
 2. Reload the same public URL from step 13 in the private window. Confirm
    only the dead-link message renders now — same no-leak requirement as
    step 14.
 
-## 17. Calendar integration
+## 18. Calendar integration
 
 1. Visit `/calendar`.
 2. Confirm confirmed and pending venue bookings appear on their correct
@@ -217,7 +237,7 @@ Hall" (fill Title/Space/Starts/Ends, Type "Internal", save).
    `/calendar`. Confirm the cancelled booking no longer appears.
 7. Confirm no console errors appear during any calendar step above.
 
-## 18. General pass
+## 19. General pass
 
 1. Skim back through the browser console for the whole session — no errors
    should have appeared at any point above.
