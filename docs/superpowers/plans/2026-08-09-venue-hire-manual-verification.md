@@ -224,7 +224,55 @@ Hall" (fill Title/Space/Starts/Ends, Type "Internal", save).
    `/calendar`. Confirm the cancelled booking no longer appears.
 7. Confirm no console errors appear during any calendar step above.
 
-## 18. General pass
+## 18. Booking calendar view (/venues)
+
+1. On `/venues`, confirm a month-grid calendar renders above the status
+   filter chips, Monday-first, with the current month labelled and today's
+   date visually distinct (e.g. a filled circle) from the other days.
+2. Click the previous-month and next-month arrows a few times, then click
+   "Today". Confirm the month label updates each time and the grid always
+   shows six full weeks, with days outside the labelled month visibly
+   muted.
+3. Create a booking that spans three or more days (e.g. Fri 6pm to Mon
+   9am). Confirm it renders as a chip on every day it covers — not only the
+   day it starts — including its start and end days.
+4. Give two spaces different calendar colours in `/venues/spaces` (Edit
+   space → Calendar colour), leaving a third space's colour unset. Create a
+   booking in each space and confirm each chip's colour matches its space
+   on the calendar, and the unset-colour space's chip still renders legibly
+   (neutral grey), not blank or unstyled.
+5. Set a booking's status to Cancelled. Confirm it disappears from the
+   calendar immediately (it may still appear in the list below, depending
+   on the active filter) — cancelled bookings never occupy a calendar cell.
+6. Create more bookings on a single day than fit in the cell (4-5+, all in
+   the same space is fine). Confirm the cell shows a limited number of chips
+   plus a "+N more" line rather than growing the cell unboundedly or
+   overflowing into neighbouring cells.
+7. Click a booking chip on the calendar. Confirm the same `VenueBookingModal`
+   used by the list opens, pre-filled with that booking's details.
+8. Confirm the status filter chips affect the calendar too: filter to
+   "Confirmed" and confirm Pending/Cancelled bookings disappear from the
+   calendar grid, matching what the list below shows.
+9. Cross-month conflict check: create a booking ending at 23:00 on the last
+   day of the currently visible month. Without navigating away, open "New
+   booking" and try to create a second booking in the same space starting
+   at 01:00 on the 1st of the next month, overlapping the first. Confirm the
+   clash warning still appears (the page's query window intentionally
+   fetches a month of margin on each side of the visible month precisely so
+   this adjacent-month clash isn't missed) — then tick "Book anyway" or
+   change the time to resolve it.
+10. Shrink the browser window (or use responsive/device mode) to a narrow
+    mobile width. Confirm the page itself never scrolls horizontally — the
+    calendar grid instead scrolls independently within its own card if it's
+    too wide to fit.
+11. Tab through the calendar's controls with the keyboard only (previous
+    month, Today, next month, then into a day's booking chip). Confirm every
+    control is reachable and operable via keyboard, and that the visible
+    month label is inside a live region so a screen reader announces month
+    changes.
+12. Confirm no console errors appear during any calendar step above.
+
+## 19. General pass
 
 1. Skim back through the browser console for the whole session — no errors
    should have appeared at any point above.

@@ -12,10 +12,32 @@ import { getVenueBookings, getVenueSpaces } from "@/features/venues/api/venuesAp
 import type { VenueBooking, VenueSpace } from "@/features/venues/lib/venueBookings";
 import VenueBookingList from "@/features/venues/components/VenueBookingList";
 import VenueBookingModal from "@/features/venues/components/VenueBookingModal";
+import VenueCalendar from "@/features/venues/components/VenueCalendar";
 
 type StatusFilter = "All" | "Pending" | "Confirmed" | "Cancelled";
 
 const FILTERS: StatusFilter[] = ["All", "Pending", "Confirmed", "Cancelled"];
+
+const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
+
+/**
+ * The query window is wider than the visible month on both ends: the grid
+ * shows leading/trailing days of adjacent months, a booking that starts
+ * before the window can still cover a day inside it, and the booking modal's
+ * conflict check needs bookings in adjacent months to catch a clash near a
+ * month boundary (e.g. a booking on the 31st against one on the 1st). A full
+ * month of margin on each side covers all three without falling back to
+ * fetching every booking ever. Trade-off: a booking that starts more than a
+ * month before the window and is still running when the window opens - or a
+ * brand-new booking the user backdates further out than that - won't be
+ * fetched, so the conflict check can miss it. Real venue bookings run hours
+ * to days, not months, so this is accepted rather than fetching unbounded.
+ */
+const queryWindowFor = (visibleMonth: Date) => {
+  const from = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+  const to = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 2, 0, 23, 59, 59, 999);
+  return { fromIso: from.toISOString(), toIso: to.toISOString() };
+};
 
 export default function VenuesPage() {
   const { user } = useAuth();
@@ -25,6 +47,7 @@ export default function VenuesPage() {
   const [bookings, setBookings] = useState<VenueBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<StatusFilter>("All");
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const [editingBooking, setEditingBooking] = useState<VenueBooking | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -32,9 +55,11 @@ export default function VenuesPage() {
     if (!workspace?.id) return;
     setLoading(true);
 
+    const { fromIso, toIso } = queryWindowFor(visibleMonth);
+
     const [spacesResult, bookingsResult] = await Promise.all([
       getVenueSpaces(workspace.id),
-      getVenueBookings({ workspaceId: workspace.id }),
+      getVenueBookings({ workspaceId: workspace.id, fromIso, toIso }),
     ]);
 
     if (spacesResult.error || bookingsResult.error) {
@@ -50,7 +75,7 @@ export default function VenuesPage() {
 
   useEffect(() => {
     load();
-  }, [workspace?.id]);
+  }, [workspace?.id, visibleMonth]);
 
   const pendingCount = useMemo(
     () => bookings.filter((booking) => booking.status === "Pending").length,
@@ -107,6 +132,18 @@ export default function VenuesPage() {
         </Card>
       ) : (
         <>
+          <VenueCalendar
+            visibleMonth={visibleMonth}
+            bookings={visibleBookings}
+            spaces={spaces}
+            loading={loading}
+            onMonthChange={setVisibleMonth}
+            onSelectBooking={(booking) => {
+              setEditingBooking(booking);
+              setModalOpen(true);
+            }}
+          />
+
           <div className="flex flex-wrap gap-2">
             {FILTERS.map((option) => (
               <Button

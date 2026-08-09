@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { upsertVenueSpace } from "@/features/venues/api/venuesApi";
 import type { VenueSpace } from "@/features/venues/lib/venueBookings";
 
@@ -17,6 +18,18 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 };
+
+/** Fixed palette so the calendar's chip colours stay legible and distinct - no free-form picker. */
+const SPACE_COLOR_PALETTE = [
+  { value: "#0d9488", label: "Teal" },
+  { value: "#d97706", label: "Amber" },
+  { value: "#0284c7", label: "Sky" },
+  { value: "#e11d48", label: "Rose" },
+  { value: "#7c3aed", label: "Violet" },
+  { value: "#059669", label: "Emerald" },
+  { value: "#ea580c", label: "Orange" },
+  { value: "#475569", label: "Slate" },
+];
 
 export default function VenueSpaceEditorModal({
   open,
@@ -31,6 +44,7 @@ export default function VenueSpaceEditorModal({
   const [capacity, setCapacity] = useState("");
   const [hourlyRate, setHourlyRate] = useState("0");
   const [dailyRate, setDailyRate] = useState("0");
+  const [color, setColor] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -40,6 +54,7 @@ export default function VenueSpaceEditorModal({
     setCapacity(space?.capacity != null ? String(space.capacity) : "");
     setHourlyRate(String(space?.hourly_rate ?? 0));
     setDailyRate(String(space?.daily_rate ?? 0));
+    setColor(space?.color || "");
   }, [open, space]);
 
   const save = async (event: FormEvent) => {
@@ -65,6 +80,7 @@ export default function VenueSpaceEditorModal({
         capacity: capacity.trim() ? Number(capacity) : null,
         hourly_rate: Number(hourlyRate) || 0,
         daily_rate: Number(dailyRate) || 0,
+        color,
       },
     });
     setSaving(false);
@@ -137,6 +153,34 @@ export default function VenueSpaceEditorModal({
               />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label>Calendar colour</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              {SPACE_COLOR_PALETTE.map((swatch) => (
+                <button
+                  key={swatch.value}
+                  type="button"
+                  onClick={() => setColor(swatch.value)}
+                  aria-label={`${swatch.label} calendar colour`}
+                  aria-pressed={color === swatch.value}
+                  className={cn(
+                    "h-7 w-7 rounded-full border-2 transition",
+                    color === swatch.value ? "border-foreground" : "border-transparent"
+                  )}
+                  style={{ backgroundColor: swatch.value }}
+                />
+              ))}
+              {color && (
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setColor("")}>
+                  Clear
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Shown on booking chips in the venue calendar. No colour set falls back to a neutral grey.
+            </p>
+          </div>
+
           <p className="text-xs text-muted-foreground">
             Rates pre-fill the fee on a new external hire. Changing them never alters bookings
             already made.

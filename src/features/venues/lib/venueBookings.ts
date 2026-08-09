@@ -74,6 +74,25 @@ export const findConflicts = (
   });
 };
 
+/**
+ * True when a booking's interval touches the given calendar day at all - a
+ * multi-day booking must appear on every day it covers, not only the day it
+ * starts. Uses the same half-open interval as findConflicts: a booking ending
+ * at midnight does not spill onto the next day.
+ */
+export const bookingCoversDay = (
+  booking: Pick<VenueBooking, "starts_at" | "ends_at">,
+  day: Date
+): boolean => {
+  const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+  const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+
+  const start = new Date(booking.starts_at).getTime();
+  const end = new Date(booking.ends_at).getTime();
+
+  return start < dayEnd && end > dayStart;
+};
+
 export const formatBookingRange = (startsAt: string, endsAt: string) => {
   const start = new Date(startsAt);
   const end = new Date(endsAt);

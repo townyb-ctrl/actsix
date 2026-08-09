@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findConflicts, type VenueBooking } from "./venueBookings";
+import { bookingCoversDay, findConflicts, type VenueBooking } from "./venueBookings";
 
 const booking = (overrides: Partial<VenueBooking> & { id: string }): VenueBooking => ({
   workspace_id: "workspace-1",
@@ -106,5 +106,40 @@ describe("findConflicts", () => {
     });
 
     expect(findConflicts(candidate, [first, second])).toEqual([first, second]);
+  });
+});
+
+describe("bookingCoversDay", () => {
+  it("is true for the day a same-day booking falls on", () => {
+    const booking = { starts_at: "2026-08-10T10:00:00.000Z", ends_at: "2026-08-10T12:00:00.000Z" };
+    expect(bookingCoversDay(booking, new Date(2026, 7, 10))).toBe(true);
+  });
+
+  it("is false for a day the booking does not touch", () => {
+    const booking = { starts_at: "2026-08-10T10:00:00.000Z", ends_at: "2026-08-10T12:00:00.000Z" };
+    expect(bookingCoversDay(booking, new Date(2026, 7, 11))).toBe(false);
+  });
+
+  it("is true for every day a multi-day booking spans, including start and end days", () => {
+    const booking = { starts_at: "2026-08-10T18:00:00.000Z", ends_at: "2026-08-13T09:00:00.000Z" };
+    expect(bookingCoversDay(booking, new Date(2026, 7, 10))).toBe(true);
+    expect(bookingCoversDay(booking, new Date(2026, 7, 11))).toBe(true);
+    expect(bookingCoversDay(booking, new Date(2026, 7, 12))).toBe(true);
+    expect(bookingCoversDay(booking, new Date(2026, 7, 13))).toBe(true);
+    expect(bookingCoversDay(booking, new Date(2026, 7, 14))).toBe(false);
+  });
+
+  it("does not spill onto the next day when a booking ends exactly at midnight", () => {
+    const booking = {
+      starts_at: new Date(2026, 7, 10, 20, 0, 0).toISOString(),
+      ends_at: new Date(2026, 7, 11, 0, 0, 0).toISOString(),
+    };
+    expect(bookingCoversDay(booking, new Date(2026, 7, 11))).toBe(false);
+  });
+
+  it("spans a month boundary", () => {
+    const booking = { starts_at: "2026-08-31T10:00:00.000Z", ends_at: "2026-09-01T10:00:00.000Z" };
+    expect(bookingCoversDay(booking, new Date(2026, 7, 31))).toBe(true);
+    expect(bookingCoversDay(booking, new Date(2026, 8, 1))).toBe(true);
   });
 });
