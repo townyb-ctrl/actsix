@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  AlignLeft,
   CalendarRange,
   ChevronDown,
   CopyPlus,
@@ -10,8 +11,9 @@ import {
   ListOrdered,
   PencilLine,
   Plus,
-  Tag,
+  TextQuote,
   Trash2,
+  UserPlus,
 } from "lucide-react";
 import {
   DndContext,
@@ -41,7 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { fieldControlClass } from "@/components/ui/field";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { renderMinutesHtml } from "@/features/meetings/lib/meetingMinutes";
 import { toast } from "sonner";
 import {
@@ -57,7 +59,7 @@ import {
 } from "@/features/meetings/lib/meetingAgenda";
 
 // Matches Button's own focus-visible treatment - the drag handles, summary
-// rows and the Tag/Subtitle toggle below are raw <button>s (not <Button>) so
+// rows and the Subheading toggle below are raw <button>s (not <Button>) so
 // they need it spelled out explicitly, or keyboard focus on them is invisible.
 const focusRingClass =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background";
@@ -97,21 +99,27 @@ const LAYOUT_OPTIONS: {
 }[] = [
   {
     value: "list",
-    label: "List",
-    hint: "Numbered points, each with space for Notes and Decisions.",
+    label: "Discussion Point",
+    hint: "Numbered, with Notes and Decisions.",
     icon: ListOrdered,
   },
   {
     value: "dated",
-    label: "Dated",
-    hint: "A bullet list with an optional date next to each point.",
+    label: "Dates To Remember",
+    hint: "Bullets with an optional date.",
     icon: CalendarRange,
   },
   {
     value: "boxed",
     label: "Boxed",
-    hint: "A plain bullet list - no dates, no discussion space.",
+    hint: "Plain bullets.",
     icon: List,
+  },
+  {
+    value: "text",
+    label: "Text",
+    hint: "Plain lines, nothing else.",
+    icon: AlignLeft,
   },
 ];
 
@@ -162,6 +170,9 @@ const orderedFieldIds = (section: AgendaSection) => {
   return ids;
 };
 
+/** A person who can carry an agenda point - the meeting's own people list. */
+export type AgendaOwnerOption = { id: string; name: string };
+
 export type MeetingAgendaModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -176,6 +187,9 @@ export type MeetingAgendaModalProps = {
   title?: string;
   description?: string;
   saveLabel?: string;
+  /** Meeting people offered as point owners. Empty (a recurring series' regular
+   *  agenda, which has no attendee list of its own) hides the control. */
+  people?: AgendaOwnerOption[];
 };
 
 export function MeetingAgendaModal({
@@ -188,6 +202,7 @@ export function MeetingAgendaModal({
   title = "Edit Agenda",
   description,
   saveLabel = "Save Agenda",
+  people = [],
 }: MeetingAgendaModalProps) {
   // One section is being written in at a time; the rest rest as quiet summary
   // cards. Focus is the source of truth - clicking a card, tabbing into it, or
@@ -195,11 +210,11 @@ export function MeetingAgendaModal({
   // keyboard and the pointer never disagree about which card is open.
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
-  // Tag/subtitle stay put away for the common case (a plain section) - this is
+  // The subheading stays put away for the common case (a plain section) - this is
   // purely display state, not agenda data, so it lives here rather than in the
-  // draft. A section that already has a tag or subtitle opens by default so
+  // draft. A section that already has a subheading opens by default so
   // existing content is never hidden behind an extra click.
-  const [expandedTagSections, setExpandedTagSections] = useState<Set<string>>(new Set());
+  const [expandedSubheadingSections, setExpandedSubheadingSections] = useState<Set<string>>(new Set());
 
   // Closing (Escape, outside-click, the header X) used to silently discard
   // whatever was typed since the draft resets from the saved agenda every
@@ -338,18 +353,21 @@ export function MeetingAgendaModal({
               <DialogDescription>
                 {description ??
                   (minutesAtRisk
-                    ? "Build the agenda here. Your existing minutes stay exactly as they are — we'll ask first if you want to replace them."
-                    : "Build the agenda here. Saving will also fill the Minutes section with an outline to write into.")}
+                    ? "Your written minutes stay as they are — we'll ask before replacing them."
+                    : "Saving fills the minutes with an outline to write into.")}
               </DialogDescription>
             </div>
 
             {/* Two views of one thing, so a segmented control rather than a
                 button that changes its own label - the pair shows there's
                 somewhere to go back to. */}
-            <div className="actsix-segmented h-9 shrink-0" role="group" aria-label="Agenda view">
+            {/* The 44px mobile touch floor is in px while h-* is in rem, and the
+                root font-size steps down on small screens - so the track is
+                sized in px here, or its own buttons grow out of it. */}
+            <div className="actsix-segmented min-h-[52px] shrink-0 sm:min-h-0 sm:h-9" role="group" aria-label="Agenda view">
               {[
                 { value: false, label: "Build", icon: PencilLine },
-                { value: true, label: "Minutes", icon: Eye },
+                { value: true, label: "Preview", icon: Eye },
               ].map((view) => (
                 <button
                   key={view.label}
@@ -406,8 +424,9 @@ export function MeetingAgendaModal({
                     sectionCount={draft.length}
                     active={activeSectionId === section.id}
                     dragSensors={dragSensors}
-                    tagOpen={expandedTagSections.has(section.id) || Boolean(section.tag || section.subtitle)}
-                    onOpenTag={() => setExpandedTagSections((ids) => new Set(ids).add(section.id))}
+                    people={people}
+                    subheadingOpen={expandedSubheadingSections.has(section.id) || Boolean(section.subtitle)}
+                    onOpenSubheading={() => setExpandedSubheadingSections((ids) => new Set(ids).add(section.id))}
                     onActivate={() => {
                       // The summary row the click landed on is about to
                       // unmount - hand focus to the heading rather than
@@ -502,9 +521,10 @@ type SectionCardProps = {
   sectionIndex: number;
   sectionCount: number;
   active: boolean;
-  tagOpen: boolean;
+  subheadingOpen: boolean;
   dragSensors: ReturnType<typeof useSensors>;
-  onOpenTag: () => void;
+  people: AgendaOwnerOption[];
+  onOpenSubheading: () => void;
   onActivate: () => void;
   onChange: (updater: (sections: AgendaSection[]) => AgendaSection[]) => void;
   onFocusField: (id: string) => void;
@@ -518,9 +538,10 @@ function SectionCard({
   sectionIndex,
   sectionCount,
   active,
-  tagOpen,
+  subheadingOpen,
   dragSensors,
-  onOpenTag,
+  people,
+  onOpenSubheading,
   onActivate,
   onChange,
   onFocusField,
@@ -717,7 +738,10 @@ function SectionCard({
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      // Translate, not Transform: dnd-kit also puts a scale in the transform
+      // when the dragged card and the one it's over are different heights, and
+      // applying it stretches the card's text while it moves.
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
         "group/section relative rounded-[var(--radius-panel)] border bg-card transition-[box-shadow,border-color,transform] duration-200 ease-out",
         active ? "border-brand-teal/30 shadow-md" : "border-border/70 shadow-sm hover:border-border",
@@ -820,28 +844,12 @@ function SectionCard({
             </DropdownMenu>
           </div>
 
-          {/* Tag/subtitle is a secondary concern - put away until asked for, so
+          {/* A subheading is a secondary concern - put away until asked for, so
               the common case is a heading and its points and nothing else. */}
-          {tagOpen ? (
-            <div className="flex flex-wrap items-start gap-4 pl-6">
-              <div className="w-[10rem] space-y-1">
-                <span className="label-eyebrow">Tag</span>
-                <div className={writeLineClass}>
-                  <Input
-                    value={section.tag}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      patchSection({ tag: value });
-                    }}
-                    placeholder="e.g. Allan"
-                    aria-label={`Section ${sectionIndex + 1} tag`}
-                    className={cn(fieldControlClass, writeInputClass, "h-9 sm:h-8 sm:text-xs")}
-                  />
-                </div>
-              </div>
-
-              <div className="w-[14rem] space-y-1">
-                <span className="label-eyebrow">Subtitle</span>
+          {subheadingOpen ? (
+            <div className="pl-6">
+              <div className="w-[18rem] max-w-full space-y-1">
+                <span className="label-eyebrow">Subheading</span>
                 <div className={writeLineClass}>
                   <Input
                     value={section.subtitle}
@@ -850,7 +858,7 @@ function SectionCard({
                       patchSection({ subtitle: value });
                     }}
                     placeholder="e.g. Wins, Challenges, Changes"
-                    aria-label={`Section ${sectionIndex + 1} subtitle`}
+                    aria-label={`Section ${sectionIndex + 1} subheading`}
                     className={cn(fieldControlClass, writeInputClass, "h-9 italic sm:h-8 sm:text-xs")}
                   />
                 </div>
@@ -859,14 +867,14 @@ function SectionCard({
           ) : (
             <button
               type="button"
-              onClick={onOpenTag}
+              onClick={onOpenSubheading}
               className={cn(
                 "ml-6 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-bold text-muted-foreground transition hover:text-brand-teal",
                 focusRingClass
               )}
             >
-              <Tag className="h-3.5 w-3.5" />
-              Tag / Subtitle
+              <TextQuote className="h-3.5 w-3.5" />
+              Subheading
             </button>
           )}
 
@@ -883,6 +891,16 @@ function SectionCard({
                     number={`${sectionIndex + 1}.${pointIndex + 1}`}
                     label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}`}
                     layout={section.layout}
+                    people={people}
+                    onChangeOwner={(owner) =>
+                      patchSection((item) => ({
+                        ...item,
+                        points: updatePoint(item.points, point.id, {
+                          ownerId: owner?.id ?? "",
+                          ownerName: owner?.name ?? "",
+                        }),
+                      }))
+                    }
                     onChangeText={(value) =>
                       patchSection((item) => ({
                         ...item,
@@ -930,6 +948,19 @@ function SectionCard({
                             number={`${sectionIndex + 1}.${pointIndex + 1}.${childIndex + 1}`}
                             label={`Section ${sectionIndex + 1}, point ${pointIndex + 1}, sub-point ${childIndex + 1}`}
                             layout={section.layout}
+                            people={people}
+                            onChangeOwner={(owner) =>
+                              patchSection((item) => ({
+                                ...item,
+                                points: updatePoint(item.points, point.id, (parent) => ({
+                                  ...parent,
+                                  children: updatePoint(parent.children, child.id, {
+                                    ownerId: owner?.id ?? "",
+                                    ownerName: owner?.name ?? "",
+                                  }),
+                                })),
+                              }))
+                            }
                             onChangeText={(value) =>
                               patchSection((item) => ({
                                 ...item,
@@ -986,9 +1017,6 @@ function SectionCard({
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-bold">
                 {section.heading.trim() || <span className="italic text-muted-foreground">Untitled section</span>}
-                {section.tag.trim() && (
-                  <span className="ml-2 font-normal text-muted-foreground">{section.tag.trim()}</span>
-                )}
               </span>
               {section.subtitle.trim() && (
                 <span className="mt-0.5 block truncate text-xs italic text-muted-foreground">
@@ -996,8 +1024,17 @@ function SectionCard({
                 </span>
               )}
             </span>
-            <span className="shrink-0 text-xs font-bold text-muted-foreground">
-              {option.label} · {pointCount === 0 ? "no points" : `${pointCount} point${pointCount === 1 ? "" : "s"}`}
+            <span
+              className="flex shrink-0 items-center gap-1.5 text-xs font-bold text-muted-foreground"
+              title={`${option.label} · ${option.hint}`}
+            >
+              <option.icon className="h-3.5 w-3.5" aria-hidden />
+              <span className="rounded-full border border-border/70 px-2 py-px tabular-nums">
+                {pointCount}
+              </span>
+              <span className="sr-only">
+                {option.label}, {pointCount === 0 ? "no points" : `${pointCount} point${pointCount === 1 ? "" : "s"}`}
+              </span>
             </span>
           </div>
 
@@ -1010,16 +1047,20 @@ function SectionCard({
                 .slice(0, 3)
                 .map((point, previewIndex) => (
                   <li key={point.id} className="flex gap-2">
-                    <span className="shrink-0 tabular-nums">
-                      {sectionIndex + 1}.{previewIndex + 1}
-                    </span>
+                    {section.layout !== "text" && (
+                      <span className="shrink-0 tabular-nums">
+                        {sectionIndex + 1}.{previewIndex + 1}
+                      </span>
+                    )}
                     <span className="truncate">{point.text.trim()}</span>
                     {section.layout === "dated" && point.date && (
                       <span className="ml-auto shrink-0 tabular-nums">{formatDate(point.date)}</span>
                     )}
                   </li>
                 ))}
-              {pointCount > 3 && <li>+{pointCount - 3} more</li>}
+              {pointCount > 3 && (
+                <li className="pt-0.5 font-bold text-muted-foreground/80">+{pointCount - 3} more</li>
+              )}
             </ul>
           )}
         </button>
@@ -1076,6 +1117,8 @@ type PointRowProps = {
   layout: AgendaSectionLayout;
   nested?: boolean;
   children?: ReactNode;
+  people: AgendaOwnerOption[];
+  onChangeOwner: (owner: AgendaOwnerOption | null) => void;
   onChangeText: (value: string) => void;
   onChangeDate?: (value: string) => void;
   onEnter: () => void;
@@ -1093,6 +1136,8 @@ function PointRow({
   layout,
   nested = false,
   children,
+  people,
+  onChangeOwner,
   onChangeText,
   onChangeDate,
   onEnter,
@@ -1109,7 +1154,7 @@ function PointRow({
   return (
     <div
       ref={sortable.setNodeRef}
-      style={{ transform: CSS.Transform.toString(sortable.transform), transition: sortable.transition }}
+      style={{ transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
       className={cn("group/point rounded-[var(--radius-control)]", sortable.isDragging && "relative z-10 bg-card shadow-md")}
     >
       <div className="flex items-center gap-1.5 rounded-[var(--radius-control)] px-1 transition-colors hover:bg-brand-teal/[0.04]">
@@ -1129,9 +1174,13 @@ function PointRow({
 
         {nested && <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-border" aria-hidden />}
 
-        <span className={cn("shrink-0 tabular-nums text-xs font-bold text-muted-foreground", nested ? "w-10" : "w-7")}>
-          {number}
-        </span>
+        {/* Text sections carry no numbering into the minutes, so showing one
+            here would promise a shape the saved minutes never take. */}
+        {layout !== "text" && (
+          <span className={cn("shrink-0 tabular-nums text-xs font-bold text-muted-foreground", nested ? "w-10" : "w-7")}>
+            {number}
+          </span>
+        )}
 
         <div className={writeLineClass}>
           <Input
@@ -1160,7 +1209,7 @@ function PointRow({
                 onBackspaceEmpty();
               }
             }}
-            placeholder={nested ? "Sub-point" : "Agenda point"}
+            placeholder={nested ? "Sub-point" : layout === "text" ? "Text" : "Agenda point"}
             aria-label={label}
             className={cn(fieldControlClass, writeInputClass, "h-10 sm:h-8 sm:text-sm")}
           />
@@ -1176,6 +1225,56 @@ function PointRow({
               className={cn(fieldControlClass, writeInputClass, "h-10 sm:h-8 sm:text-xs")}
             />
           </div>
+        )}
+
+        {/* An owner is a badge of initials once set, and an outline of a
+            person-shape until then - so a glance down the column reads as "who
+            has what" rather than a row of identical buttons. */}
+        {people.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={point.ownerName ? `${label} owner: ${point.ownerName}` : `Assign an owner to ${number}`}
+                title={point.ownerName || "Assign an owner"}
+                className={cn(
+                  // 44px on touch, compact once a pointer is driving - the same
+                  // floor every other control in this editor holds to.
+                  "h-11 w-11 shrink-0 rounded-full p-0 text-muted-foreground transition hover:text-brand-teal focus-visible:opacity-100 sm:h-7 sm:w-7",
+                  point.ownerName
+                    ? "bg-brand-teal/10 text-brand-teal-dark hover:bg-brand-teal/15"
+                    : "md:opacity-0 md:group-hover/point:opacity-100"
+                )}
+              >
+                {point.ownerName ? (
+                  <span className="text-[10px] font-extrabold tracking-wide">{getInitials(point.ownerName)}</span>
+                ) : (
+                  <UserPlus className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {people.map((person) => (
+                <DropdownMenuItem
+                  key={person.id}
+                  onSelect={() => onChangeOwner(person)}
+                  className={cn("gap-2", point.ownerId === person.id && "bg-brand-teal/8 text-brand-teal")}
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-extrabold">
+                    {getInitials(person.name)}
+                  </span>
+                  <span className="truncate text-xs font-semibold">{person.name}</span>
+                </DropdownMenuItem>
+              ))}
+              {point.ownerId || point.ownerName ? (
+                <DropdownMenuItem onSelect={() => onChangeOwner(null)} className="text-xs font-semibold">
+                  Clear owner
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
 
         {onAddSub && (

@@ -654,12 +654,17 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     color: hsl(var(--muted-foreground));
   }
 
+  /* A section heading owns the block under it, so it takes its air from above
+     - the gap over a heading is roughly triple the gap under it, which is what
+     makes a long minutes document scan as sections rather than as one column
+     of evenly spaced lines. */
   .minutes-section-heading {
-    margin-top: 0.75rem;
-    margin-bottom: 0.15rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.3rem;
+    font-size: 1.02em;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     color: hsl(var(--foreground));
   }
 
@@ -675,14 +680,37 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   }
 
   .minutes-agenda-point {
-    margin-top: 0.45rem;
+    margin-top: 0.7rem;
     margin-bottom: 0.1rem;
     font-weight: 700;
     color: hsl(var(--foreground));
   }
 
+  /* The number is an address, not the writing - it stays legible but steps back
+     so the eye lands on the point itself. Tabular figures keep the left edge of
+     the text true down a list of 10+ points. */
+  .minutes-point-number {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Who carries the point, as a quiet chip rather than bracketed text. */
+  .minutes-owner {
+    display: inline-block;
+    margin-left: 0.15rem;
+    padding: 0.05em 0.45em;
+    border-radius: var(--radius-pill);
+    background-color: hsl(var(--brand-teal) / 0.1);
+    font-size: 0.78em;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    vertical-align: 0.08em;
+    color: hsl(var(--brand-teal-dark));
+  }
+
   .minutes-agenda-subpoint {
-    margin-top: 0.35rem;
+    margin-top: 0.5rem;
     margin-bottom: 0.1rem;
     margin-left: 1.25rem;
     font-weight: 600;
@@ -712,6 +740,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
   .minutes-document .minutes-note-label + .minutes-note-label {
     margin-top: 0;
+  }
+
+  /* Writing that landed under a Notes:/Decisions: label reads as prose, not as
+     part of the label - the label stays muted scaffolding, the content doesn't. */
+  .minutes-note-text {
+    font-weight: 400;
+    color: hsl(var(--foreground));
   }
 
   .minutes-note-label-sub {
@@ -870,8 +905,22 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
   .actsix-print-sheet .minutes-note-label,
   .actsix-print-sheet .minutes-subtitle,
-  .actsix-print-sheet .minutes-section-tag {
+  .actsix-print-sheet .minutes-section-tag,
+  .actsix-print-sheet .minutes-point-number {
     color: #444;
+  }
+
+  .actsix-print-sheet .minutes-note-text {
+    color: #000;
+  }
+
+  /* A tinted chip prints as a grey box on most office printers - on paper the
+     owner is an outlined initial instead, which survives black-and-white. */
+  .actsix-print-sheet .minutes-owner {
+    background: none;
+    border: 0.3mm solid #666;
+    padding: 0 1mm;
+    color: #000;
   }
 
   .actsix-print-sheet .minutes-document div {

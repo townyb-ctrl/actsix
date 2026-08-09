@@ -72,9 +72,9 @@ describe("fromRecurringMeetingRow", () => {
       regular_agenda: [{ heading: "Budget", points: [{ text: "Q1 review" }] }],
     }).regularAgenda;
 
-    expect(section).toMatchObject({ heading: "Budget", tag: "", subtitle: "", layout: "list" });
+    expect(section).toMatchObject({ heading: "Budget", subtitle: "", layout: "list" });
     expect(section.id).toEqual(expect.any(String));
-    expect(section.points[0]).toMatchObject({ text: "Q1 review", date: "", children: [] });
+    expect(section.points[0]).toMatchObject({ text: "Q1 review", date: "", ownerId: "", ownerName: "", children: [] });
     expect(section.points[0].id).toEqual(expect.any(String));
   });
 });

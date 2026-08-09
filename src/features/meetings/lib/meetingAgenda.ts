@@ -3,13 +3,20 @@
 // minutes skeleton from an agenda. No React, no Supabase: safe to unit test
 // and safe to import from anywhere in the module.
 
-export type AgendaSectionLayout = "list" | "dated" | "boxed";
+import { getInitials } from "@/lib/utils";
+
+export type AgendaSectionLayout = "list" | "dated" | "boxed" | "text";
 
 export type AgendaPoint = {
   id: string;
   text: string;
   /** Only meaningful when the owning section's layout is "dated". */
   date: string;
+  /** Meeting person carrying this point, empty when unassigned. The name is
+   *  stored alongside the id so an agenda still reads correctly after that
+   *  person is removed from the meeting. */
+  ownerId: string;
+  ownerName: string;
   /** One level only - a child point's own `children` is always kept empty,
    *  enforced here in parsing and by the editor UI not offering the control. */
   children: AgendaPoint[];
@@ -18,9 +25,7 @@ export type AgendaPoint = {
 export type AgendaSection = {
   id: string;
   heading: string;
-  /** Short tag rendered beside the heading, e.g. "(Allan)". Empty when unused. */
-  tag: string;
-  /** Italic line rendered under the heading. Empty when unused. */
+  /** Italic subheading rendered under the heading. Empty when unused. */
   subtitle: string;
   /** Defaults to "list" - absent on every agenda stored before this field existed. */
   layout: AgendaSectionLayout;
@@ -63,13 +68,14 @@ export const makeAgendaPoint = (): AgendaPoint => ({
   id: crypto.randomUUID(),
   text: "",
   date: "",
+  ownerId: "",
+  ownerName: "",
   children: [],
 });
 
 export const makeAgendaSection = (): AgendaSection => ({
   id: crypto.randomUUID(),
   heading: "",
-  tag: "",
   subtitle: "",
   layout: "list",
   points: [makeAgendaPoint()],
@@ -82,16 +88,17 @@ export const cleanNameList = (items: string[]) =>
  *  or, on save, worth telling the user their empty section got pruned. */
 export const isSectionEmpty = (section: AgendaSection) =>
   !section.heading.trim() &&
-  !section.tag.trim() &&
   !section.subtitle.trim() &&
   section.points.every((point) => !point.text.trim() && point.children.every((child) => !child.text.trim()));
 
-const AGENDA_SECTION_LAYOUTS: AgendaSectionLayout[] = ["list", "dated", "boxed"];
+const AGENDA_SECTION_LAYOUTS: AgendaSectionLayout[] = ["list", "dated", "boxed", "text"];
 
 const parseAgendaChildPoint = (child: any): AgendaPoint => ({
   id: child?.id || crypto.randomUUID(),
   text: typeof child === "string" ? child : child?.text || "",
   date: typeof child?.date === "string" ? child.date : "",
+  ownerId: typeof child?.ownerId === "string" ? child.ownerId : "",
+  ownerName: typeof child?.ownerName === "string" ? child.ownerName : "",
   // A child's own children are always dropped - nesting is capped at one level.
   children: [],
 });
@@ -100,6 +107,8 @@ const parseAgendaPoint = (point: any): AgendaPoint => ({
   id: point?.id || crypto.randomUUID(),
   text: typeof point === "string" ? point : point?.text || "",
   date: typeof point?.date === "string" ? point.date : "",
+  ownerId: typeof point?.ownerId === "string" ? point.ownerId : "",
+  ownerName: typeof point?.ownerName === "string" ? point.ownerName : "",
   children:
     typeof point === "object" && Array.isArray(point?.children)
       ? point.children.map(parseAgendaChildPoint)
@@ -109,7 +118,6 @@ const parseAgendaPoint = (point: any): AgendaPoint => ({
 const parseAgendaSection = (section: any): AgendaSection => ({
   id: section.id || crypto.randomUUID(),
   heading: section.heading || "",
-  tag: typeof section.tag === "string" ? section.tag : "",
   subtitle: typeof section.subtitle === "string" ? section.subtitle : "",
   layout: AGENDA_SECTION_LAYOUTS.includes(section.layout) ? section.layout : "list",
   points:
@@ -164,11 +172,17 @@ export const parseAgendaPayload = (value?: string | null): AgendaPayload => {
       {
         id: crypto.randomUUID(),
         heading: "Agenda",
-        tag: "",
         subtitle: "",
         layout: "list",
         points: lines.length
-          ? lines.map((line) => ({ id: crypto.randomUUID(), text: line, date: "", children: [] }))
+          ? lines.map((line) => ({
+              id: crypto.randomUUID(),
+              text: line,
+              date: "",
+              ownerId: "",
+              ownerName: "",
+              children: [],
+            }))
           : [makeAgendaPoint()],
       },
     ],
@@ -186,17 +200,20 @@ export const serializeAgenda = (
     sections: sections.map((section) => ({
       id: section.id,
       heading: section.heading,
-      tag: section.tag,
       subtitle: section.subtitle,
       layout: section.layout,
       points: section.points.map((point) => ({
         id: point.id,
         text: point.text,
         date: point.date,
+        ownerId: point.ownerId,
+        ownerName: point.ownerName,
         children: point.children.map((child) => ({
           id: child.id,
           text: child.text,
           date: child.date,
+          ownerId: child.ownerId,
+          ownerName: child.ownerName,
           children: [],
         })),
       })),
@@ -227,12 +244,19 @@ export const formatDate = (date?: string | null) => {
   });
 };
 
+/** " [RG]" for an owned point, "" otherwise - square brackets rather than round
+ *  ones so it can't be mistaken for a trailing "(...)" the minutes renderer
+ *  looks for as a trailing "(...)". */
+const ownerSuffix = (point: Pick<AgendaPoint, "ownerName">) => {
+  const initials = getInitials(point.ownerName);
+  return initials ? ` [${initials}]` : "";
+};
+
 export const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
   const cleanSections = sections
     .map((section) => ({
       ...section,
       heading: section.heading.trim(),
-      tag: (section.tag || "").trim(),
       subtitle: (section.subtitle || "").trim(),
       points: section.points
         .map((point) => ({
@@ -252,18 +276,24 @@ export const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
     .map((section, sectionIndex) => {
       const sectionNumber = sectionIndex + 1;
       const title = (section.heading || "Untitled Section").toUpperCase();
-      const titleLine = `${sectionNumber}. ${title}${section.tag ? ` ${section.tag}` : ""}`;
+      const titleLine = `${sectionNumber}. ${title}`;
       const subtitleLine = section.subtitle ? `_${section.subtitle}_` : "";
 
       let pointsBlock = "";
 
-      if (section.layout === "dated" || section.layout === "boxed") {
+      if (section.layout === "text") {
+        // Plain prose under the heading: no bullet, no number, no date, no
+        // Notes/Decisions scaffolding - the one layout that isn't a list.
+        pointsBlock = section.points
+          .map((point) => [`${point.text}${ownerSuffix(point)}`, ...point.children.map((child) => child.text)].join("\n"))
+          .join("\n");
+      } else if (section.layout === "dated" || section.layout === "boxed") {
         const dated = section.layout === "dated";
         pointsBlock = section.points
           .map((point) =>
             [
-              `• ${point.text}${dated && point.date ? ` — ${formatDate(point.date)}` : ""}`,
-              ...point.children.map((child) => `  • ${child.text}`),
+              `• ${point.text}${dated && point.date ? ` — ${formatDate(point.date)}` : ""}${ownerSuffix(point)}`,
+              ...point.children.map((child) => `  • ${child.text}${ownerSuffix(child)}`),
             ].join("\n")
           )
           .join("\n");
@@ -271,11 +301,11 @@ export const generateMinutesFromAgenda = (sections: AgendaSection[]) => {
         pointsBlock = section.points
           .map((point, pointIndex) => {
             const pointNumber = pointIndex + 1;
-            const pointLine = `${sectionNumber}.${pointNumber} ${point.text}\nNotes:\nDecisions:`;
+            const pointLine = `${sectionNumber}.${pointNumber} ${point.text}${ownerSuffix(point)}\nNotes:\nDecisions:`;
             const childLines = point.children
               .map(
                 (child, childIndex) =>
-                  `${sectionNumber}.${pointNumber}.${childIndex + 1} ${child.text}\nNotes:\nDecisions:`
+                  `${sectionNumber}.${pointNumber}.${childIndex + 1} ${child.text}${ownerSuffix(child)}\nNotes:\nDecisions:`
               )
               .join("\n\n");
 
@@ -294,7 +324,6 @@ export const cleanAgendaSections = (sections: AgendaSection[]) => {
     .map((section) => ({
       ...section,
       heading: section.heading.trim(),
-      tag: section.tag.trim(),
       subtitle: section.subtitle.trim(),
       points: section.points
         .map((point) => ({
@@ -307,7 +336,7 @@ export const cleanAgendaSections = (sections: AgendaSection[]) => {
         .filter((point) => point.text || point.children.length),
     }))
     // Was `section.heading || section.points.length`, which silently dropped
-    // a section that had only a tag or subtitle typed in (no heading, no
+    // a section that had only a subheading typed in (no heading, no
     // points yet) - isSectionEmpty is the one true "nothing here" check,
     // shared with the confirm-before-delete logic in the editor itself.
     .filter((section) => !isSectionEmpty(section));

@@ -376,7 +376,7 @@ export function MeetingPeopleHeaderActions({
         <Button
           type="button"
           size="icon"
-          className="actsix-btn-primary h-7 w-7 rounded-lg"
+          className="actsix-btn-soft h-7 w-7 rounded-lg"
           onClick={() => setMenuOpen((open) => !open)}
           aria-label="People actions"
         >

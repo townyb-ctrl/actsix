@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MeetingAgendaCard } from "./MeetingAgendaCard";
-import { makeAgendaSection, type AgendaSection } from "@/features/meetings/lib/meetingAgenda";
+import { makeAgendaPoint, makeAgendaSection, type AgendaSection } from "@/features/meetings/lib/meetingAgenda";
 
 const section = (overrides: Partial<AgendaSection> = {}): AgendaSection => ({
   ...makeAgendaSection(),
@@ -10,7 +10,12 @@ const section = (overrides: Partial<AgendaSection> = {}): AgendaSection => ({
   ...overrides,
 });
 
-const point = (id: string, text: string, date = "") => ({ id, text, date, children: [] });
+const point = (id: string, text: string, date = "") => ({
+  ...makeAgendaPoint(),
+  id,
+  text,
+  date,
+});
 
 describe("MeetingAgendaCard", () => {
   it("lists section headings with their written-point count, points hidden until asked for", () => {
@@ -30,7 +35,7 @@ describe("MeetingAgendaCard", () => {
     const draft = [
       section({
         points: [
-          { id: "p1", text: "Sunday School", date: "", children: [point("c1", "Sound desk")] },
+          { ...point("p1", "Sunday School"), children: [point("c1", "Sound desk")] },
           point("p2", "Youth night"),
         ],
       }),

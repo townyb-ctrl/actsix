@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CalendarDays, Clock3, Copy, MapPin, MoreHorizontal, Pencil, Plus, Trash2, Video } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock3, Copy, MapPin, MoreHorizontal, Pencil, Plus, Trash2, Video } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { createNotificationForPerson } from "@/lib/notifications";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,7 +39,11 @@ import {
   serializeAgenda,
   type AgendaSection,
 } from "@/features/meetings/lib/meetingAgenda";
-import { hasMinutesContent } from "@/features/meetings/lib/meetingMinutes";
+import {
+  hasMinutesContent,
+  mergeGeneratedMinutes,
+  type GeneratedPointNote,
+} from "@/features/meetings/lib/meetingMinutes";
 import type {
   ActionPointProposal,
   FolderOption,
@@ -78,6 +83,7 @@ const MeetingDetailPage = () => {
   const [transcribing, setTranscribing] = useState(false);
   const [generatingMinutes, setGeneratingMinutes] = useState(false);
   const [generatedMinutes, setGeneratedMinutes] = useState("");
+  const [generatedPointNotes, setGeneratedPointNotes] = useState<GeneratedPointNote[]>([]);
   const [actionProposals, setActionProposals] = useState<ActionPointProposal[]>([]);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
@@ -95,6 +101,10 @@ const MeetingDetailPage = () => {
   ]);
   const [actionTitle, setActionTitle] = useState("");
   const [actionFormOpen, setActionFormOpen] = useState(false);
+  // Collapsed to start: the sidebar's job is the agenda while you write, and
+  // people/actions are reference you open when you need them.
+  const [peopleCollapsed, setPeopleCollapsed] = useState(true);
+  const [actionsCollapsed, setActionsCollapsed] = useState(true);
   const [assignee, setAssignee] = useState("");
   const [selectedActionPersonId, setSelectedActionPersonId] = useState("");
   const [due, setDue] = useState("");
@@ -285,7 +295,12 @@ const MeetingDetailPage = () => {
     setAgendaSeriesMeta(getAgendaSeriesMeta(meetingData.agenda));
 
     setMeeting(meetingData as Meeting);
-    setEditDraft(meetingData);
+    setEditDraft({
+      title: meetingData.title,
+      meeting_date: meetingData.meeting_date,
+      meeting_time: meetingData.meeting_time,
+      location: meetingData.location || "",
+    });
     setChairpersonId(meetingData.chairperson_id || "");
     setMinuteTakerId(meetingData.minute_taker_id || "");
     setGoogleMeetUrlDraft(meetingData.google_meet_url || "");
@@ -295,7 +310,7 @@ const MeetingDetailPage = () => {
     setApologies(agendaPayload.apologies ?? []);
     setAgendaSections(agendaPayload.sections);
     setActions((actionData ?? []) as MeetingAction[]);
-    setTranscriptText(meetingData.transcript || "");
+    setTranscriptText((meetingData as { transcript?: string | null }).transcript || "");
   };
 
   useEffect(() => {
@@ -469,11 +484,20 @@ const MeetingDetailPage = () => {
           transcript: transcriptText,
           meetingTitle: meeting?.title || "Meeting",
           people: meetingActionPeople.map((person) => ({ id: person.id, name: person.display_name })),
+          // The agenda skeleton minus its blank Notes:/Decisions: scaffolding -
+          // the numbered outline is what lets the model key its writing to the
+          // points it belongs under.
+          agenda: generateMinutesFromAgenda(agendaSections)
+            .split("\n")
+            .filter((line) => !/^(Notes|Decisions):/.test(line))
+            .join("\n")
+            .trim(),
         },
       });
       if (error) throw error;
 
       setGeneratedMinutes(data.minutes || "");
+      setGeneratedPointNotes(Array.isArray(data.pointNotes) ? data.pointNotes : []);
       setActionProposals(
         (data.actionPoints || []).map((point: Record<string, string>) => ({
           id: crypto.randomUUID(),
@@ -495,14 +519,15 @@ const MeetingDetailPage = () => {
   const copyGeneratedMinutesToMinutes = () => {
     if (!meeting || !generatedMinutes.trim()) return;
 
-    setMeeting({
-      ...meeting,
-      notes: meeting.notes?.trim()
-        ? `${meeting.notes.trim()}\n\n${generatedMinutes.trim()}`
-        : generatedMinutes.trim(),
-    });
+    const merged = mergeGeneratedMinutes(meeting.notes, generatedMinutes, generatedPointNotes);
+    setMeeting({ ...meeting, notes: merged });
+    void saveMinutes(merged);
 
-    toast.success("Generated minutes merged into meeting minutes");
+    toast.success(
+      generatedPointNotes.length
+        ? "Generated minutes filed under their agenda points"
+        : "Generated minutes merged into meeting minutes"
+    );
   };
 
   const updateActionProposal = (id: string, patch: Partial<ActionPointProposal>) => {
@@ -1186,7 +1211,21 @@ const MeetingDetailPage = () => {
 
             <Card className="actsix-panel overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-background/55 px-4 py-3">
-                <h2 className="pt-0.5 text-base font-extrabold tracking-tight">Meeting People</h2>
+                <button
+                  type="button"
+                  onClick={() => setPeopleCollapsed((collapsed) => !collapsed)}
+                  aria-expanded={!peopleCollapsed}
+                  className="-my-1 flex items-center gap-2 rounded-lg py-1 text-left transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <ChevronDown
+                    aria-hidden
+                    className={cn(
+                      "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150",
+                      peopleCollapsed ? "-rotate-90" : "rotate-0"
+                    )}
+                  />
+                  <h2 className="text-base font-extrabold tracking-tight">Meeting People</h2>
+                </button>
                 <MeetingPeopleHeaderActions
                   meetingPeopleCount={meetingPeople.length}
                   inviteRecipientsCount={inviteRecipients.length}
@@ -1196,6 +1235,7 @@ const MeetingDetailPage = () => {
                 />
               </div>
 
+              {!peopleCollapsed && (
               <MeetingPeopleSection
                 meetingPeople={meetingPeople}
                 currentUserMeetingPerson={currentUserMeetingPerson}
@@ -1216,11 +1256,26 @@ const MeetingDetailPage = () => {
                 expectedAttendees={expectedAttendees}
                 showHeaderActions={false}
               />
+              )}
             </Card>
 
             <Card className="actsix-panel overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-background/55 px-4 py-3">
-                <h2 className="text-base font-extrabold tracking-tight">Action Points</h2>
+                <button
+                  type="button"
+                  onClick={() => setActionsCollapsed((collapsed) => !collapsed)}
+                  aria-expanded={!actionsCollapsed}
+                  className="-my-1 flex items-center gap-2 rounded-lg py-1 text-left transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <ChevronDown
+                    aria-hidden
+                    className={cn(
+                      "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150",
+                      actionsCollapsed ? "-rotate-90" : "rotate-0"
+                    )}
+                  />
+                  <h2 className="text-base font-extrabold tracking-tight">Meeting Actions</h2>
+                </button>
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-semibold uppercase">
                     {actions.length} {actions.length === 1 ? "item" : "items"}
@@ -1229,14 +1284,18 @@ const MeetingDetailPage = () => {
                     type="button"
                     size="icon"
                     aria-label="Add action point"
-                    className="actsix-btn-primary h-7 w-7 rounded-lg"
-                    onClick={() => setActionFormOpen(true)}
+                    className="actsix-btn-soft h-7 w-7 rounded-lg"
+                    onClick={() => {
+                      setActionsCollapsed(false);
+                      setActionFormOpen(true);
+                    }}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
+              {!actionsCollapsed && (
               <MeetingActionsPanel
                 actions={actions}
                 meetingActionPeople={meetingActionPeople}
@@ -1255,6 +1314,7 @@ const MeetingDetailPage = () => {
                 onSubmit={addAction}
                 onRemoveAction={removeAction}
               />
+              )}
             </Card>
           </div>
         </div>
@@ -1349,6 +1409,7 @@ const MeetingDetailPage = () => {
         onChange={setAgendaDraft}
         onSave={saveAgenda}
         minutesAtRisk={hasMinutesContent(meeting?.notes)}
+        people={meetingActionPeople.map((person) => ({ id: person.id, name: person.display_name }))}
       />
 
       <ConfirmDialog

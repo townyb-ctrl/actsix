@@ -25,6 +25,8 @@ const json = (body: Record<string, unknown>, status = 200) =>
 
 type MeetingPersonInput = { id: string; name: string };
 
+type PointNote = { point: string; notes: string; decisions: string };
+
 type ActionPointProposal = {
   title: string;
   assignee_person_id: string;
@@ -32,7 +34,7 @@ type ActionPointProposal = {
   due: string;
 };
 
-const extractMinutesTool = (people: MeetingPersonInput[]) => {
+const extractMinutesTool = (people: MeetingPersonInput[], agenda: string) => {
   const personIdSchema =
     people.length > 0
       ? { type: "string", enum: [...people.map((person) => person.id), ""] }
@@ -50,7 +52,33 @@ const extractMinutesTool = (people: MeetingPersonInput[]) => {
           minutes: {
             type: "string",
             description:
-              "Minutes of meeting, formatted as numbered sections ('1. DISCUSSION') with numbered points under each ('1.1 ...'), matching what was actually discussed. Do not invent content that was not said.",
+              "Minutes of meeting, formatted as numbered sections ('1. DISCUSSION') with numbered points under each ('1.1 ...'), matching what was actually discussed. Record the content of what people said, speaker by speaker, in reported speech - not a description of the topic. Never write that something 'was discussed', 'was raised', 'was reviewed' or that 'the team talked about' it: write the actual statements, figures, names, dates, amounts, reasons, objections, questions and answers, in the order they came up, quoting a short phrase verbatim where the wording matters. Someone who was not in the room must be able to read the point and know what was said, not merely what it was about. Do not invent content that was not said.",
+          },
+          point_notes: {
+            type: "array",
+            description: agenda
+              ? "One entry per agenda point that was actually discussed, keyed to the exact point numbers in the agenda outline. Only include points the transcript covers."
+              : "Leave this empty when no agenda outline was provided.",
+            items: {
+              type: "object",
+              properties: {
+                point: {
+                  type: "string",
+                  description: "The agenda point number exactly as it appears in the outline, e.g. '2.1' or '2.1.3'.",
+                },
+                notes: {
+                  type: "string",
+                  description:
+                    "The content of what was said under this point, in reported speech, attributed to whoever said it: 'Sipho said the hall quote came back at R4,500 for the Saturday, up from R3,800 last year, and asked whether the youth budget could carry the difference. Thandi answered that it could not without cutting the camp deposit.' Follow the discussion through - claim, question, answer, objection, agreement - keeping every figure, date, name, amount and reason spoken. Quote a short phrase verbatim where the exact wording matters. Never write meta-descriptions of the discussion ('the venue hire was discussed', 'the team reviewed the budget') - those say nothing. Several sentences, and more where the transcript supports it. Plain prose, no numbering.",
+                },
+                decisions: {
+                  type: "string",
+                  description:
+                    "What was decided or agreed under this point, in the terms it was agreed: the actual resolution, who is doing it, by when, and any condition attached ('Approved at R4,500, with Thandi to confirm the date with the hall by Friday; if the hall cannot hold the Saturday, the meeting reverts to the church hall'). Empty string if nothing was decided.",
+                },
+              },
+              required: ["point", "notes", "decisions"],
+            },
           },
           action_points: {
             type: "array",
@@ -76,7 +104,7 @@ const extractMinutesTool = (people: MeetingPersonInput[]) => {
             },
           },
         },
-        required: ["minutes", "action_points"],
+        required: ["minutes", "point_notes", "action_points"],
       },
     },
   };
@@ -88,7 +116,8 @@ const summarizeTranscript = async (
   transcript: string,
   meetingTitle: string,
   people: MeetingPersonInput[],
-): Promise<{ minutes: string; actionPoints: ActionPointProposal[] }> => {
+  agenda: string,
+): Promise<{ minutes: string; pointNotes: PointNote[]; actionPoints: ActionPointProposal[] }> => {
   const apiKey = Deno.env.get("GROQ_API_KEY");
   if (!apiKey) throw new Error("AI minutes generation is not configured (missing GROQ_API_KEY).");
 
@@ -104,13 +133,31 @@ const summarizeTranscript = async (
     },
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
-      max_tokens: 4000,
-      tools: [extractMinutesTool(people)],
+      max_tokens: 8000,
+      tools: [extractMinutesTool(people, agenda)],
       tool_choice: { type: "function", function: { name: "extract_minutes" } },
       messages: [
         {
           role: "user",
-          content: `Meeting: "${meetingTitle}"\n\nKnown meeting people:\n${peopleList}\n\nTranscript:\n${transcript}`,
+          content: [
+            `Meeting: "${meetingTitle}"`,
+            `Known meeting people:\n${peopleList}`,
+            agenda
+              ? `Agenda outline - use these exact point numbers in point_notes, and follow this order in the minutes:\n${agenda}`
+              : "",
+            `Transcript:\n${transcript}`,
+            [
+              "Write minutes of record, not an executive summary, and not a table of contents.",
+              "The test every line must pass: does it tell the reader WHAT WAS SAID, or only what the topic was? Topic labels are useless.",
+              "",
+              'Not acceptable: "The venue hire for the conference was discussed and a decision was made."',
+              'Acceptable: "Sipho reported the hall quote came back at R4,500 for the Saturday, up from R3,800 last year. He asked whether the youth budget could carry the difference. Thandi said it could not without cutting the camp deposit, and suggested asking for the two-day rate instead. Sipho agreed to phone the hall on Thursday."',
+              "",
+              "Keep every number, date, name, amount, deadline, question, answer, objection and reason that was actually voiced, attributed to the person who said it. Quote a short phrase verbatim where the wording matters. Where the transcript is thin on a point, write the little that was said - never pad it, and never invent.",
+            ].join("\n"),
+          ]
+            .filter(Boolean)
+            .join("\n\n"),
         },
       ],
     }),
@@ -129,6 +176,7 @@ const summarizeTranscript = async (
 
   return {
     minutes: String(parsed.minutes || ""),
+    pointNotes: Array.isArray(parsed.point_notes) ? parsed.point_notes : [],
     actionPoints: Array.isArray(parsed.action_points) ? parsed.action_points : [],
   };
 };
@@ -239,6 +287,7 @@ Deno.serve(async (req) => {
       const transcript = String(body.transcript || "").trim();
       const meetingTitle = String(body.meetingTitle || "Meeting");
       const people: MeetingPersonInput[] = Array.isArray(body.people) ? body.people : [];
+      const agenda = String(body.agenda || "").trim();
       if (!meetingId || !transcript) return json({ error: "meetingId and transcript are required." }, 400);
 
       const { data: meeting, error: meetingError } = await userClient
@@ -248,8 +297,8 @@ Deno.serve(async (req) => {
         .single();
       if (meetingError || !meeting) return json({ error: "You do not have access to this meeting." }, 403);
 
-      const { minutes, actionPoints } = await summarizeTranscript(transcript, meetingTitle, people);
-      return json({ minutes, actionPoints });
+      const { minutes, pointNotes, actionPoints } = await summarizeTranscript(transcript, meetingTitle, people, agenda);
+      return json({ minutes, pointNotes, actionPoints });
     }
 
     return json({ error: `Unknown action "${action}".` }, 400);

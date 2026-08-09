@@ -1,4 +1,5 @@
 import { Users } from "lucide-react";
+import { getInitials } from "@/lib/utils";
 
 type PersonAvatarProps = {
   name?: string | null;
@@ -27,17 +28,6 @@ const iconSizeClasses = {
 const shapeClasses = {
   circle: "rounded-full",
   rounded: "rounded-xl",
-};
-
-const getInitials = (name?: string | null) => {
-  if (!name) return "";
-
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
 };
 
 export function PersonAvatar({

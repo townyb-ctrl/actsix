@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronDown, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { formatDate, type AgendaSection } from "@/features/meetings/lib/meetingAgenda";
 
 // Matches Button's own focus-visible treatment - the section rows below are
@@ -31,6 +31,9 @@ export function MeetingAgendaCard({ sections, onEdit }: MeetingAgendaCardProps) 
   // column is 340px wide, so opening everything would bury People and Action
   // Points below the fold. A single section opens on click.
   const [openSectionIds, setOpenSectionIds] = useState<Set<string>>(new Set());
+  // Open by default - the agenda is the reference you write the minutes
+  // against, unlike People and Action Points which start collapsed.
+  const [collapsed, setCollapsed] = useState(false);
 
   const toggle = (sectionId: string) =>
     setOpenSectionIds((ids) => {
@@ -47,20 +50,36 @@ export function MeetingAgendaCard({ sections, onEdit }: MeetingAgendaCardProps) 
   return (
     <Card className="actsix-panel overflow-hidden">
       <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-background/55 px-4 py-3">
-        <h2 className="pt-0.5 text-base font-extrabold tracking-tight">Agenda</h2>
+        <button
+          type="button"
+          onClick={() => setCollapsed((open) => !open)}
+          aria-expanded={!collapsed}
+          className={cn(
+            "-my-1 flex items-center gap-2 rounded-lg py-1 text-left transition hover:text-brand-teal",
+            focusRingClass
+          )}
+        >
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150",
+              collapsed ? "-rotate-90" : "rotate-0"
+            )}
+          />
+          <h2 className="text-base font-extrabold tracking-tight">Meeting Agenda</h2>
+        </button>
         <Button
           type="button"
-          variant="outline"
-          size="sm"
-          className="h-11 shrink-0 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8"
+          size="icon"
+          aria-label="Edit agenda"
+          className="actsix-btn-soft h-7 w-7 shrink-0 rounded-lg"
           onClick={onEdit}
         >
-          <Pencil className="mr-1.5 h-3.5 w-3.5" />
-          Edit
+          <Pencil className="h-3.5 w-3.5" />
         </Button>
       </div>
 
-      {written.length === 0 ? (
+      {collapsed ? null : written.length === 0 ? (
         <div className="p-4">
           <p className="actsix-empty-state">
             No agenda yet. Build one and the minutes fill in with an outline to write into.
@@ -99,8 +118,19 @@ export function MeetingAgendaCard({ sections, onEdit }: MeetingAgendaCardProps) 
                         <span className="italic text-muted-foreground">Untitled section</span>
                       )}
                     </span>
+                    {section.subtitle.trim() && (
+                      <span className="mt-0.5 block truncate text-xs italic text-muted-foreground">
+                        {section.subtitle.trim()}
+                      </span>
+                    )}
                   </span>
-                  <span className="shrink-0 pt-0.5 text-xs font-bold tabular-nums text-muted-foreground">
+                  {/* A bare figure beside a numbered row reads as a second
+                      number in the sequence - the pill says "count" before the
+                      digit is read at all. */}
+                  <span
+                    className="shrink-0 rounded-full border border-border/70 px-2 py-px text-[11px] font-bold tabular-nums text-muted-foreground"
+                    aria-label={`${points.length} point${points.length === 1 ? "" : "s"}`}
+                  >
                     {points.length}
                   </span>
                 </button>
@@ -110,10 +140,22 @@ export function MeetingAgendaCard({ sections, onEdit }: MeetingAgendaCardProps) 
                     {points.map((point, pointIndex) => (
                       <li key={point.id}>
                         <div className="flex gap-2 text-xs leading-snug">
-                          <span className="shrink-0 font-bold tabular-nums text-muted-foreground">
-                            {sectionIndex + 1}.{pointIndex + 1}
+                          {section.layout !== "text" && (
+                            <span className="shrink-0 font-bold tabular-nums text-muted-foreground">
+                              {sectionIndex + 1}.{pointIndex + 1}
+                            </span>
+                          )}
+                          <span className="min-w-0 flex-1">
+                            {point.text.trim()}
+                            {point.ownerName.trim() && (
+                              <span
+                                className="ml-1.5 rounded-full bg-brand-teal/10 px-1.5 py-px text-[10px] font-extrabold tracking-wide text-brand-teal-dark"
+                                title={point.ownerName.trim()}
+                              >
+                                {getInitials(point.ownerName)}
+                              </span>
+                            )}
                           </span>
-                          <span className="min-w-0 flex-1">{point.text.trim()}</span>
                           {section.layout === "dated" && point.date && (
                             <span className="shrink-0 tabular-nums text-muted-foreground">
                               {formatDate(point.date)}

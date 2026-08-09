@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Bold, Heading1, Heading2, Italic, Mic, Pilcrow, Printer } from "lucide-react";
+import { Bold, Heading1, Heading2, Italic, Mic, Pilcrow, Printer, Type } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { getMinutesDocumentHtml, renderMinutesHtml } from "@/features/meetings/lib/meetingMinutes";
 
 export type MeetingMinutesEditorProps = {
@@ -96,47 +97,69 @@ export function MeetingMinutesEditor({
   return (
     <Card className="actsix-panel overflow-hidden">
       <div className="border-b border-border/70 bg-background/55 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
+        {/* Title and actions share a row once there's width for it; below that
+            the actions drop to their own full-width row rather than squeezing
+            the heading into two words per line. */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <h2 className="text-xl font-extrabold tracking-tight">Meeting Minutes</h2>
-            {savedLabel && (
-              <p
-                className="mt-0.5 truncate text-xs font-semibold text-muted-foreground"
-                role="status"
-                aria-live="polite"
-              >
-                {savedLabel}
-              </p>
-            )}
+            <p
+              className="mt-0.5 flex min-h-[1.05rem] items-center gap-1.5 truncate text-xs font-semibold text-muted-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              {savedLabel && (
+                <>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "h-1.5 w-1.5 shrink-0 rounded-full",
+                      saving ? "bg-brand-teal" : unsaved ? "bg-brand-warning" : "bg-brand-success"
+                    )}
+                  />
+                  {savedLabel}
+                </>
+              )}
+            </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          {/* Three equal cells on a phone so the row has one rhythm; the
+              weight difference (quiet toggle, soft action, outline action)
+              carries the hierarchy instead of the widths. */}
+          <div className="grid shrink-0 grid-cols-3 gap-2 md:flex md:items-center">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-11 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8"
+              aria-pressed={toolbarOpen}
+              className={cn(
+                "h-11 w-full rounded-lg font-semibold text-muted-foreground hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8 md:w-auto",
+                toolbarOpen && "bg-brand-teal/10 text-brand-teal"
+              )}
               onClick={() => setToolbarOpen((open) => !open)}
             >
-              {toolbarOpen ? "Hide Format" : "Format"}
+              <Type className="mr-1.5 h-4 w-4" />
+              Format
             </Button>
             <Button
               type="button"
-              variant="outline"
               size="sm"
-              className="h-11 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8"
+              className="actsix-btn-soft h-11 w-full px-3 font-semibold sm:h-8 md:w-auto"
               onClick={onOpenTranscript}
             >
-              <Mic className="h-4 w-4 mr-1.5" />
-              Record &amp; Transcribe
+              <Mic className="h-4 w-4" />
+              {/* The full label doesn't fit a third of a phone screen without
+                  crowding its own icon - the short form still names the action. */}
+              <span className="md:hidden">Record</span>
+              <span className="hidden md:inline">Record &amp; Transcribe</span>
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-11 rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8"
+              className="h-11 w-full rounded-lg border-border/70 font-semibold hover:border-brand-teal/30 hover:bg-brand-teal/10 hover:text-brand-teal sm:h-8 md:w-auto"
               onClick={onPrint}
             >
-              <Printer className="h-4 w-4 mr-1.5" />
+              <Printer className="mr-1.5 h-4 w-4" />
               Export
             </Button>
           </div>

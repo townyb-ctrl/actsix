@@ -16,6 +16,15 @@ export const sanitizeMinutesHtml = (value: string) =>
     .replace(/\son\w+='[^']*'/gi, "")
     .replace(/javascript:/gi, "");
 
+/** The point number ("2.1", "2.1.3") leading a generated line, and the owner
+ *  initials trailing it, are structure rather than writing - they get their own
+ *  spans so the document can mute one and chip the other, leaving what someone
+ *  actually typed as the darkest thing on the page. */
+const decorateGeneratedLine = (escaped: string) =>
+  escaped
+    .replace(/^(\d+(?:\.\d+)+)(\s+)/, '<span class="minutes-point-number">$1</span>$2')
+    .replace(/\s\[([^[\]]{1,4})\]\s*$/, ' <span class="minutes-owner">$1</span>');
+
 export const renderMinutesHtml = (notes?: string | null) => {
   if (!notes) return "";
 
@@ -68,11 +77,17 @@ export const renderMinutesHtml = (notes?: string | null) => {
       }
 
       if (/^\d+\.\d+\.\d+\s+/.test(line)) {
-        return `<div class="minutes-agenda-subpoint">${escaped}</div>`;
+        return `<div class="minutes-agenda-subpoint">${decorateGeneratedLine(escaped)}</div>`;
       }
 
       if (/^\d+\.\d+\s+/.test(line)) {
-        return `<div class="minutes-agenda-point">${escaped}</div>`;
+        return `<div class="minutes-agenda-point">${decorateGeneratedLine(escaped)}</div>`;
+      }
+
+      // Bullet and plain-text sections carry owners too, and nothing else about
+      // their line is structural.
+      if (/\s\[[^[\]]{1,4}\]\s*$/.test(line)) {
+        return `<div>${decorateGeneratedLine(escaped)}</div>`;
       }
 
       if (line.trim() === "") {
@@ -98,6 +113,74 @@ export const hasMinutesContent = (notes?: string | null) =>
         .replace(/&nbsp;/gi, " ")
         .trim()
   );
+
+export type GeneratedPointNote = { point: string; notes?: string; decisions?: string };
+
+/**
+ * Merge AI-drafted minutes into the minutes document. When the model keyed its
+ * writing to agenda point numbers, each block lands under its own point's
+ * "Notes:" / "Decisions:" line rather than being dumped at the bottom, which is
+ * the only place it is any use when the minutes are read later. Anything typed
+ * under a label already wins - a person's own words are never overwritten - and
+ * anything that matches no point in the document is appended so it can't be
+ * silently lost.
+ */
+export const mergeGeneratedMinutes = (
+  existingNotes: string | null | undefined,
+  generatedMinutes: string,
+  pointNotes: GeneratedPointNote[] = []
+) => {
+  const base = renderMinutesHtml(existingNotes);
+  const generated = generatedMinutes.trim();
+
+  const usable = pointNotes.filter((entry) => entry.point?.trim() && (entry.notes?.trim() || entry.decisions?.trim()));
+  if (!base || !usable.length) {
+    return [base, renderMinutesHtml(generated)].filter(Boolean).join(`<div class="minutes-blank-line"><br /></div>`);
+  }
+
+  const doc = new DOMParser().parseFromString(`<body>${base}</body>`, "text/html");
+  const placed = new Set<string>();
+  let currentPoint = "";
+
+  for (const element of Array.from(doc.body.children)) {
+    const text = element.textContent || "";
+
+    const pointMatch = text.match(/^(\d+(?:\.\d+)+)\s/);
+    if (pointMatch) {
+      currentPoint = pointMatch[1];
+      continue;
+    }
+
+    const labelMatch = text.match(/^(Notes|Decisions):(.*)$/);
+    if (!labelMatch || !currentPoint) continue;
+    // Someone already wrote under this label - leave it alone.
+    if (labelMatch[2].trim()) continue;
+
+    const entry = usable.find((item) => item.point.trim() === currentPoint);
+    const value = (labelMatch[1] === "Notes" ? entry?.notes : entry?.decisions)?.trim();
+    if (!value) continue;
+
+    element.innerHTML = `${labelMatch[1]}: <span class="minutes-note-text">${escapeHtml(value)}</span>`;
+    placed.add(currentPoint);
+  }
+
+  const leftovers = usable
+    .filter((entry) => !placed.has(entry.point.trim()))
+    .map((entry) =>
+      [
+        `${entry.point.trim()} (from the recording)`,
+        entry.notes?.trim() ? `Notes: ${entry.notes.trim()}` : "",
+        entry.decisions?.trim() ? `Decisions: ${entry.decisions.trim()}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+    )
+    .join("\n\n");
+
+  return [doc.body.innerHTML, renderMinutesHtml(leftovers)]
+    .filter(Boolean)
+    .join(`<div class="minutes-blank-line"><br /></div>`);
+};
 
 export const getMinutesDocumentHtml = (element: HTMLDivElement | null) => {
   if (!element) return "";

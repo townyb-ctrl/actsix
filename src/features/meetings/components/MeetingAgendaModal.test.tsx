@@ -24,12 +24,12 @@ const openLayoutMenu = (sectionNumber = 1) =>
 describe("MeetingAgendaModal", () => {
   it("switching a section's layout to Dated calls onChange with that layout applied", () => {
     const onChange = vi.fn();
-    const draft = [baseSection({ points: [{ id: "p1", text: "Link Ladies", date: "", children: [] }] })];
+    const draft = [baseSection({ points: [{ id: "p1", text: "Link Ladies", date: "", ownerId: "", ownerName: "", children: [] }] })];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={onChange} onSave={() => {}} />);
 
     openLayoutMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: /^Dated/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Dates To Remember/ }));
 
     expect(onChange).toHaveBeenCalledTimes(1);
     const result = onChange.mock.calls[0][0](draft);
@@ -37,7 +37,7 @@ describe("MeetingAgendaModal", () => {
   });
 
   it("a Dated-layout section shows a date input per point and no sub-point control", () => {
-    const draft = [baseSection({ layout: "dated", points: [{ id: "p1", text: "Link Ladies", date: "", children: [] }] })];
+    const draft = [baseSection({ layout: "dated", points: [{ id: "p1", text: "Link Ladies", date: "", ownerId: "", ownerName: "", children: [] }] })];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
 
@@ -47,7 +47,7 @@ describe("MeetingAgendaModal", () => {
 
   it("adding a sub-point on a List-layout section nests a child under that point", () => {
     const onChange = vi.fn();
-    const draft = [baseSection({ points: [{ id: "p1", text: "Office Admin", date: "", children: [] }] })];
+    const draft = [baseSection({ points: [{ id: "p1", text: "Office Admin", date: "", ownerId: "", ownerName: "", children: [] }] })];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={onChange} onSave={() => {}} />);
 
@@ -57,40 +57,40 @@ describe("MeetingAgendaModal", () => {
     expect(result[0].points[0].children).toHaveLength(1);
   });
 
-  it("keeps tag/subtitle collapsed behind a toggle for a plain section", () => {
+  it("keeps the subheading collapsed behind a toggle for a plain section", () => {
     const draft = [baseSection()];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
 
-    expect(screen.queryByLabelText(/section 1 tag/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Tag \/ Subtitle/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/section 1 subheading/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Subheading/i })).toBeInTheDocument();
   });
 
-  it("opens tag/subtitle automatically when a section already has one set", () => {
-    const draft = [baseSection({ tag: "(Allan)" })];
+  it("opens the subheading automatically when a section already has one set", () => {
+    const draft = [baseSection({ subtitle: "Wins and challenges" })];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
 
-    expect(screen.getByLabelText(/section 1 tag/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/section 1 subheading/i)).toBeInTheDocument();
   });
 
-  it("typing a tag, after opening the toggle, calls onChange with the tag applied to that section", () => {
+  it("typing a subheading, after opening the toggle, calls onChange with it applied to that section", () => {
     const onChange = vi.fn();
     const draft = [baseSection()];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={onChange} onSave={() => {}} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Tag \/ Subtitle/i }));
-    fireEvent.change(screen.getByLabelText(/section 1 tag/i), { target: { value: "(Allan)" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Subheading/i }));
+    fireEvent.change(screen.getByLabelText(/section 1 subheading/i), { target: { value: "Wins and challenges" } });
 
     const result = onChange.mock.calls[0][0](draft);
-    expect(result[0].tag).toBe("(Allan)");
+    expect(result[0].subtitle).toBe("Wins and challenges");
   });
 
   it("rests every written section as a summary card and opens one on click", () => {
     const draft = [
-      baseSection({ id: "s1", heading: "Weekend Feedback", points: [{ id: "p1", text: "Sunday School", date: "", children: [] }] }),
-      baseSection({ id: "s2", heading: "Office Admin", points: [{ id: "p2", text: "Rosters", date: "", children: [] }] }),
+      baseSection({ id: "s1", heading: "Weekend Feedback", points: [{ id: "p1", text: "Sunday School", date: "", ownerId: "", ownerName: "", children: [] }] }),
+      baseSection({ id: "s2", heading: "Office Admin", points: [{ id: "p2", text: "Rosters", date: "", ownerId: "", ownerName: "", children: [] }] }),
     ];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
@@ -108,8 +108,8 @@ describe("MeetingAgendaModal", () => {
 
   it("opens the first empty section so a fresh one is ready to type into", () => {
     const draft = [
-      baseSection({ id: "s1", heading: "Weekend Feedback", points: [{ id: "p1", text: "Sunday School", date: "", children: [] }] }),
-      baseSection({ id: "s2", heading: "", points: [{ id: "p2", text: "", date: "", children: [] }] }),
+      baseSection({ id: "s1", heading: "Weekend Feedback", points: [{ id: "p1", text: "Sunday School", date: "", ownerId: "", ownerName: "", children: [] }] }),
+      baseSection({ id: "s2", heading: "", points: [{ id: "p2", text: "", date: "", ownerId: "", ownerName: "", children: [] }] }),
     ];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={() => {}} onSave={() => {}} />);
@@ -123,8 +123,8 @@ describe("MeetingAgendaModal", () => {
     const draft = [
       baseSection({
         points: [
-          { id: "p1", text: "First", date: "", children: [] },
-          { id: "p2", text: "Second", date: "", children: [] },
+          { id: "p1", text: "First", date: "", ownerId: "", ownerName: "", children: [] },
+          { id: "p2", text: "Second", date: "", ownerId: "", ownerName: "", children: [] },
         ],
       }),
     ];
@@ -142,8 +142,8 @@ describe("MeetingAgendaModal", () => {
     const draft = [
       baseSection({
         points: [
-          { id: "p1", text: "Office Admin", date: "", children: [] },
-          { id: "p2", text: "Rosters", date: "", children: [] },
+          { id: "p1", text: "Office Admin", date: "", ownerId: "", ownerName: "", children: [] },
+          { id: "p2", text: "Rosters", date: "", ownerId: "", ownerName: "", children: [] },
         ],
       }),
     ];
@@ -159,7 +159,7 @@ describe("MeetingAgendaModal", () => {
 
   it("leaves Tab alone on the first point - there's nothing above to nest under", () => {
     const onChange = vi.fn();
-    const draft = [baseSection({ points: [{ id: "p1", text: "Office Admin", date: "", children: [] }] })];
+    const draft = [baseSection({ points: [{ id: "p1", text: "Office Admin", date: "", ownerId: "", ownerName: "", children: [] }] })];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={onChange} onSave={() => {}} />);
 
@@ -168,9 +168,52 @@ describe("MeetingAgendaModal", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it("assigning a meeting person to a point stores their id and name, shown as initials", () => {
+    const onChange = vi.fn();
+    const draft = [baseSection({ points: [{ id: "p1", text: "Sound desk", date: "", ownerId: "", ownerName: "", children: [] }] })];
+
+    render(
+      <MeetingAgendaModal
+        open
+        draft={draft}
+        onOpenChange={() => {}}
+        onChange={onChange}
+        onSave={() => {}}
+        people={[{ id: "person-1", name: "Rencia Green" }]}
+      />
+    );
+
+    fireEvent.keyDown(screen.getByRole("button", { name: /assign an owner to 1\.1/i }), { key: "Enter" });
+    fireEvent.click(screen.getByText("Rencia Green"));
+
+    const result = onChange.mock.calls[0][0](draft);
+    expect(result[0].points[0]).toMatchObject({ ownerId: "person-1", ownerName: "Rencia Green" });
+  });
+
+  it("shows an assigned owner's initials on the point", () => {
+    const draft = [
+      baseSection({
+        points: [{ id: "p1", text: "Sound desk", date: "", ownerId: "person-1", ownerName: "Rencia Green", children: [] }],
+      }),
+    ];
+
+    render(
+      <MeetingAgendaModal
+        open
+        draft={draft}
+        onOpenChange={() => {}}
+        onChange={() => {}}
+        onSave={() => {}}
+        people={[{ id: "person-1", name: "Rencia Green" }]}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /owner: Rencia Green/i })).toHaveTextContent("RG");
+  });
+
   it("duplicating a section copies it below with fresh ids", () => {
     const onChange = vi.fn();
-    const draft = [baseSection({ points: [{ id: "p1", text: "Sunday School", date: "", children: [] }] })];
+    const draft = [baseSection({ points: [{ id: "p1", text: "Sunday School", date: "", ownerId: "", ownerName: "", children: [] }] })];
 
     render(<MeetingAgendaModal open draft={draft} onOpenChange={() => {}} onChange={onChange} onSave={() => {}} />);
 
@@ -189,8 +232,8 @@ describe("MeetingAgendaModal", () => {
     const draft = [
       baseSection({
         points: [
-          { id: "p1", text: "Keep this one", date: "", children: [] },
-          { id: "p2", text: "Delete me", date: "", children: [] },
+          { id: "p1", text: "Keep this one", date: "", ownerId: "", ownerName: "", children: [] },
+          { id: "p2", text: "Delete me", date: "", ownerId: "", ownerName: "", children: [] },
         ],
       }),
     ];
@@ -218,8 +261,8 @@ describe("MeetingAgendaModal", () => {
 
     openLayoutMenu();
 
-    expect(within(screen.getByRole("menuitem", { name: /^List/ })).getByText(/numbered points/i)).toBeInTheDocument();
-    expect(within(screen.getByRole("menuitem", { name: /^Boxed/ })).getByText(/plain bullet list/i)).toBeInTheDocument();
+    expect(within(screen.getByRole("menuitem", { name: /^Discussion Point/ })).getByText(/notes and decisions/i)).toBeInTheDocument();
+    expect(within(screen.getByRole("menuitem", { name: /^Boxed/ })).getByText(/plain bullets/i)).toBeInTheDocument();
   });
 
   it("gives each section a real heading so a screen reader can jump section-to-section", () => {
@@ -239,8 +282,8 @@ describe("MeetingAgendaModal", () => {
     const draft = [
       baseSection({
         points: [
-          { id: "p1", text: "Keep this one", date: "", children: [] },
-          { id: "p2", text: "", date: "", children: [] },
+          { id: "p1", text: "Keep this one", date: "", ownerId: "", ownerName: "", children: [] },
+          { id: "p2", text: "", date: "", ownerId: "", ownerName: "", children: [] },
         ],
       }),
     ];
