@@ -127,6 +127,13 @@ export default function VenueBookingModal({
     );
   }, [spaceId, startsAt, endsAt, bookings, booking?.id]);
 
+  const conflictIds = conflicts.map((conflict) => conflict.id).sort().join(",");
+
+  /** A tick only acknowledges the clash set it was ticked for - a changed set needs a fresh tick. */
+  useEffect(() => {
+    setOverrideConflict(false);
+  }, [conflictIds]);
+
   const save = async (event: FormEvent) => {
     event.preventDefault();
 
