@@ -1,11 +1,13 @@
 import {
   BookOpen,
   Bell,
+  Building2,
   CalendarClock,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
   Clock,
+  DoorOpen,
   FolderKanban,
   Home,
   Inbox,
@@ -151,6 +153,19 @@ const navSections: NavSection[] = [
       { title: "Services", url: "/service-planner", icon: CalendarDays },
       { title: "Teams", url: "/service-planner/teams", icon: Users },
       { title: "Repertoire", url: "/service-planner/repertoire", icon: Music },
+    ],
+  },
+  {
+    id: "venues",
+    title: "Venue Hire",
+    url: "/venues",
+    icon: Building2,
+    moduleKey: "venues",
+    matchPrefixes: ["/venues"],
+    group: "Planning",
+    items: [
+      { title: "Bookings", url: "/venues", icon: CalendarDays },
+      { title: "Spaces", url: "/venues/spaces", icon: DoorOpen },
     ],
   },
   {

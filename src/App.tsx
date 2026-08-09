@@ -17,6 +17,9 @@ import WeeklyReview from "./features/tasks/pages/WeeklyReviewPage";
 import Auth from "./pages/Auth";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound.tsx";
+import Venues from "./pages/Venues";
+import VenueSpaces from "./pages/VenueSpaces";
+import PublicVenueRequest from "./pages/PublicVenueRequest";
 
 // Everything outside the Tasks module (this app's priority surface) loads on
 // demand, so a Tasks visit never pays for Sermon Hub, Training Center, or
@@ -73,6 +76,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/workspace-setup" element={<WorkspaceSetup />} />
               <Route path="/register/:token" element={<PublicEventRegistration />} />
+              <Route path="/venue-request/:token" element={<PublicVenueRequest />} />
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
 
@@ -102,6 +106,8 @@ const App = () => (
                 <Route path="/service-planner/teams" element={<ServicePlannerTeams />} />
                 <Route path="/service-planner/teams/:teamId" element={<ServicePlannerTeamDetail />} />
                 <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
+                <Route path="/venues" element={<Venues />} />
+                <Route path="/venues/spaces" element={<VenueSpaces />} />
                 <Route path="/people" element={<People />} />
                 <Route path="/groups" element={<PeopleGroups />} />
                 <Route path="/groups/:groupId" element={<PeopleGroupDetail />} />
