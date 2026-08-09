@@ -1,4 +1,14 @@
-type MaybeError = { message?: string | null } | null | undefined;
+/** Anything a `catch` can hand us, plus the `{ error }` shape Supabase returns. */
+type MaybeError = unknown;
+
+const errorMessage = (error: MaybeError): string => {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const { message } = error as { message?: unknown };
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+};
 
 const KNOWN_PATTERNS: Array<{ test: RegExp; message: string }> = [
   { test: /duplicate key|already exists/i, message: "That name is already in use. Try a different one." },
@@ -16,6 +26,6 @@ export const friendlyErrorMessage = (
   error: MaybeError,
   fallback = "Something went wrong. Please try again."
 ): string => {
-  const raw = error?.message || "";
+  const raw = errorMessage(error);
   return KNOWN_PATTERNS.find((pattern) => pattern.test.test(raw))?.message || fallback;
 };

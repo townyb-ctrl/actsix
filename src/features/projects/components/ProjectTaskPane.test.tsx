@@ -22,8 +22,6 @@ const renderPane = (overrides: Partial<React.ComponentProps<typeof ProjectTaskPa
       filter="open"
       onFilterChange={() => {}}
       counts={counts}
-      search=""
-      onSearchChange={() => {}}
       tasks={[
         { id: "1", title: "Book sound equipment", minutes: 15 },
         { id: "2", title: "Finalize song list", minutes: 15 },
