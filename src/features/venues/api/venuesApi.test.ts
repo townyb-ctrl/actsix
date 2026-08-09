@@ -50,7 +50,9 @@ describe("upsertVenueSpace", () => {
       payload: { name: "Renamed Hall" },
     });
 
-    expect(builder.update).toHaveBeenCalledWith({ name: "Renamed Hall" });
+    expect(builder.update).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Renamed Hall" })
+    );
     expect(builder.eq).toHaveBeenCalledWith("id", "space-1");
     expect(builder.insert).not.toHaveBeenCalled();
   });
@@ -127,6 +129,38 @@ describe("upsertVenueBooking", () => {
         hirer_name: "Dana Robertson",
       })
     );
+  });
+
+  it("zeroes the money fields on an update to an internal booking", () => {
+    const builder = createQueryBuilder(okResult(null));
+    supabaseMock.from.mockReturnValue(builder);
+
+    upsertVenueBooking({
+      bookingId: "booking-1",
+      workspaceId: "workspace-1",
+      userId: "user-1",
+      payload: {
+        space_id: "space-1",
+        title: "Youth night",
+        booking_type: "internal",
+        starts_at: "2026-08-10T17:00:00.000Z",
+        ends_at: "2026-08-10T20:00:00.000Z",
+        status: "Confirmed",
+        quoted_fee: 900,
+        deposit_amount: 300,
+        payment_status: "Unpaid",
+      },
+    });
+
+    expect(builder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        booking_type: "internal",
+        quoted_fee: 0,
+        deposit_amount: 0,
+        payment_status: "Not applicable",
+      })
+    );
+    expect(builder.eq).toHaveBeenCalledWith("id", "booking-1");
   });
 });
 

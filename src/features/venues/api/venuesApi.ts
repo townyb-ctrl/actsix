@@ -55,7 +55,7 @@ export const upsertVenueSpace = ({
 }) => {
   const table = (supabase as any).from("venue_spaces");
 
-  if (spaceId) return table.update(payload).eq("id", spaceId);
+  if (spaceId) return table.update({ ...payload, updated_at: new Date().toISOString() }).eq("id", spaceId);
 
   return table.insert({ ...payload, workspace_id: workspaceId, user_id: userId });
 };
