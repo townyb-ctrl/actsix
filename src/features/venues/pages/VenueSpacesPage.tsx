@@ -7,7 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
-import { getVenueSpaces, setVenueSpaceActive } from "@/features/venues/api/venuesApi";
+import {
+  getVenueSpaces,
+  setVenueSpaceActive,
+  getVenueRequestToken,
+  setVenueRequestToken,
+} from "@/features/venues/api/venuesApi";
 import { formatCurrency, type VenueSpace } from "@/features/venues/lib/venueBookings";
 import VenueSpaceEditorModal from "@/features/venues/components/VenueSpaceEditorModal";
 
@@ -34,6 +39,32 @@ export default function VenueSpacesPage() {
   useEffect(() => {
     loadSpaces();
   }, [workspace?.id]);
+
+  const [requestToken, setRequestToken] = useState<string | null>(null);
+
+  const loadToken = async () => {
+    if (!workspace?.id) return;
+    const { data } = await getVenueRequestToken(workspace.id);
+    setRequestToken((data as { venue_request_token: string | null })?.venue_request_token ?? null);
+  };
+
+  useEffect(() => {
+    loadToken();
+  }, [workspace?.id]);
+
+  const requestUrl = requestToken ? `${window.location.origin}/venue-request/${requestToken}` : "";
+
+  const toggleRequestLink = async () => {
+    if (!workspace?.id) return;
+    const nextToken = requestToken ? null : crypto.randomUUID().replace(/-/g, "");
+    const { error } = await setVenueRequestToken(workspace.id, nextToken);
+    if (error) {
+      toast.error("Could not update the request link", { description: error.message });
+      return;
+    }
+    setRequestToken(nextToken);
+    toast.success(nextToken ? "Request link created" : "Request link revoked");
+  };
 
   const toggleActive = async (space: VenueSpace) => {
     const { error } = await setVenueSpaceActive(space.id, !space.is_active);
@@ -63,6 +94,38 @@ export default function VenueSpacesPage() {
           Add space
         </Button>
       </div>
+
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+          <div className="min-w-0">
+            <p className="font-medium">Public request link</p>
+            <p className="text-sm text-muted-foreground">
+              {requestToken
+                ? "Anyone with this link can send a hire request. Requests arrive as Pending."
+                : "Off. Turn it on to let outsiders request a space themselves."}
+            </p>
+            {requestToken && (
+              <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{requestUrl}</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {requestToken && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(requestUrl);
+                  toast.success("Link copied");
+                }}
+              >
+                Copy link
+              </Button>
+            )}
+            <Button variant={requestToken ? "ghost" : "default"} onClick={toggleRequestLink}>
+              {requestToken ? "Revoke link" : "Create link"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading spaces…</p>
