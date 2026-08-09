@@ -17,9 +17,6 @@ import WeeklyReview from "./features/tasks/pages/WeeklyReviewPage";
 import Auth from "./pages/Auth";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound.tsx";
-import Venues from "./pages/Venues";
-import VenueSpaces from "./pages/VenueSpaces";
-import PublicVenueRequest from "./pages/PublicVenueRequest";
 
 // Everything outside the Tasks module (this app's priority surface) loads on
 // demand, so a Tasks visit never pays for Sermon Hub, Training Center, or
@@ -48,6 +45,9 @@ const CalendarModule = lazy(() => import("./pages/CalendarModule"));
 const Reminders = lazy(() => import("./pages/Reminders"));
 const PublicEventRegistration = lazy(() => import("./pages/PublicEventRegistration"));
 const Meetups = lazy(() => import("./pages/Placeholder").then((module) => ({ default: module.Meetups })));
+const Venues = lazy(() => import("./pages/Venues"));
+const VenueSpaces = lazy(() => import("./pages/VenueSpaces"));
+const PublicVenueRequest = lazy(() => import("./pages/PublicVenueRequest"));
 
 const queryClient = new QueryClient();
 

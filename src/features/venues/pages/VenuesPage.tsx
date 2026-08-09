@@ -62,6 +62,11 @@ export default function VenuesPage() {
     [bookings, filter]
   );
 
+  const activeSpaceCount = useMemo(
+    () => spaces.filter((space) => space.is_active).length,
+    [spaces]
+  );
+
   const openNewBooking = () => {
     setEditingBooking(null);
     setModalOpen(true);
@@ -80,20 +85,20 @@ export default function VenuesPage() {
           <Button variant="outline" asChild>
             <Link to="/venues/spaces">Spaces</Link>
           </Button>
-          <Button onClick={openNewBooking} disabled={spaces.length === 0}>
+          <Button onClick={openNewBooking} disabled={activeSpaceCount === 0}>
             <Plus className="mr-2 h-4 w-4" />
             New booking
           </Button>
         </div>
       </div>
 
-      {spaces.length === 0 && !loading ? (
+      {activeSpaceCount === 0 && !loading ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <CalendarDays className="h-8 w-8 text-muted-foreground" />
             <p className="font-medium">Add a space first</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Nothing can be booked until the workspace has at least one bookable space.
+              Nothing can be booked until the workspace has at least one active bookable space.
             </p>
             <Button asChild>
               <Link to="/venues/spaces">Go to Spaces</Link>

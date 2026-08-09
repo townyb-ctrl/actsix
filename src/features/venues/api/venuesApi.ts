@@ -61,7 +61,10 @@ export const upsertVenueSpace = ({
 };
 
 export const setVenueSpaceActive = (spaceId: string, isActive: boolean) =>
-  (supabase as any).from("venue_spaces").update({ is_active: isActive }).eq("id", spaceId);
+  (supabase as any)
+    .from("venue_spaces")
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq("id", spaceId);
 
 export const getVenueBookings = ({
   workspaceId,
@@ -142,8 +145,17 @@ export const getVenueRequestToken = (workspaceId: string) =>
     .eq("id", workspaceId)
     .maybeSingle();
 
+/**
+ * `.select("id")` matters here: without it, PostgREST returns
+ * `{ data: null, error: null }` when RLS filters the UPDATE to zero rows -
+ * indistinguishable from success unless the caller checks the returned row.
+ */
 export const setVenueRequestToken = (workspaceId: string, token: string | null) =>
-  (supabase as any).from("workspaces").update({ venue_request_token: token }).eq("id", workspaceId);
+  (supabase as any)
+    .from("workspaces")
+    .update({ venue_request_token: token })
+    .eq("id", workspaceId)
+    .select("id");
 
 /** Promotes an approved public request's raw hirer details into the shared contact book. */
 export const createHirerContact = ({

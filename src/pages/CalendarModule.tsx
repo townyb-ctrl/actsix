@@ -352,6 +352,7 @@ export default function CalendarModule() {
     { value: "all", label: "All" },
     { value: "actsix", label: "ACTSIX" },
     { value: "task", label: "Tasks" },
+    { value: "venue", label: "Venue" },
     { value: "google", label: "Google" },
     { value: "outlook", label: "Outlook" },
     { value: "apple", label: "Apple" },

@@ -18,7 +18,7 @@ import VenueSpaceEditorModal from "@/features/venues/components/VenueSpaceEditor
 
 export default function VenueSpacesPage() {
   const { user } = useAuth();
-  const { workspace } = useCurrentWorkspace();
+  const { workspace, isAdmin } = useCurrentWorkspace();
 
   const [spaces, setSpaces] = useState<VenueSpace[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,9 +57,15 @@ export default function VenueSpacesPage() {
   const toggleRequestLink = async () => {
     if (!workspace?.id) return;
     const nextToken = requestToken ? null : crypto.randomUUID().replace(/-/g, "");
-    const { error } = await setVenueRequestToken(workspace.id, nextToken);
+    const { data, error } = await setVenueRequestToken(workspace.id, nextToken);
     if (error) {
       toast.error("Could not update the request link", { description: error.message });
+      return;
+    }
+    if (!data || (data as unknown[]).length === 0) {
+      toast.error("Could not update the request link", {
+        description: "You may not have permission to change this workspace's settings.",
+      });
       return;
     }
     setRequestToken(nextToken);
@@ -120,9 +126,11 @@ export default function VenueSpacesPage() {
                 Copy link
               </Button>
             )}
-            <Button variant={requestToken ? "ghost" : "default"} onClick={toggleRequestLink}>
-              {requestToken ? "Revoke link" : "Create link"}
-            </Button>
+            {isAdmin && (
+              <Button variant={requestToken ? "ghost" : "default"} onClick={toggleRequestLink}>
+                {requestToken ? "Revoke link" : "Create link"}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

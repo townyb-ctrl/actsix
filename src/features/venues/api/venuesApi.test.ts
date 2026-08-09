@@ -8,7 +8,13 @@ const { supabaseMock } = vi.hoisted(() => ({
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: supabaseMock }));
 
-import { getVenueBookings, upsertVenueBooking, upsertVenueSpace } from "./venuesApi";
+import {
+  getVenueBookings,
+  setVenueRequestToken,
+  setVenueSpaceActive,
+  upsertVenueBooking,
+  upsertVenueSpace,
+} from "./venuesApi";
 
 describe("upsertVenueSpace", () => {
   beforeEach(() => {
@@ -161,6 +167,42 @@ describe("upsertVenueBooking", () => {
       })
     );
     expect(builder.eq).toHaveBeenCalledWith("id", "booking-1");
+  });
+});
+
+describe("setVenueSpaceActive", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("stamps updated_at alongside the active flag", () => {
+    const builder = createQueryBuilder(okResult(null));
+    supabaseMock.from.mockReturnValue(builder);
+
+    setVenueSpaceActive("space-1", false);
+
+    expect(supabaseMock.from).toHaveBeenCalledWith("venue_spaces");
+    expect(builder.update).toHaveBeenCalledWith(
+      expect.objectContaining({ is_active: false, updated_at: expect.any(String) })
+    );
+    expect(builder.eq).toHaveBeenCalledWith("id", "space-1");
+  });
+});
+
+describe("setVenueRequestToken", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("selects the row back so a zero-row RLS no-op can be told apart from success", () => {
+    const builder = createQueryBuilder(okResult([{ id: "workspace-1" }]));
+    supabaseMock.from.mockReturnValue(builder);
+
+    setVenueRequestToken("workspace-1", "abc123");
+
+    expect(builder.update).toHaveBeenCalledWith({ venue_request_token: "abc123" });
+    expect(builder.eq).toHaveBeenCalledWith("id", "workspace-1");
+    expect(builder.select).toHaveBeenCalledWith("id");
   });
 });
 

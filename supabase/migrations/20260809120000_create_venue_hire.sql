@@ -35,7 +35,12 @@ create table if not exists public.venue_bookings (
   notes text not null default '',
   created_at timestamp with time zone not null default now(),
   updated_at timestamp with time zone not null default now(),
-  constraint venue_bookings_ends_after_starts check (ends_at > starts_at)
+  constraint venue_bookings_ends_after_starts check (ends_at > starts_at),
+  constraint venue_bookings_title_length check (char_length(title) <= 200),
+  constraint venue_bookings_hirer_name_length check (char_length(hirer_name) <= 200),
+  constraint venue_bookings_hirer_email_length check (char_length(hirer_email) <= 320),
+  constraint venue_bookings_hirer_phone_length check (char_length(hirer_phone) <= 50),
+  constraint venue_bookings_notes_length check (char_length(notes) <= 2000)
 );
 
 alter table public.workspaces
@@ -102,7 +107,7 @@ create or replace function public.get_venue_request_spaces(request_token text)
 returns table (id uuid, name text, description text, capacity integer)
 language sql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
   select s.id, s.name, s.description, s.capacity
   from public.venue_spaces s
@@ -127,7 +132,7 @@ create or replace function public.submit_venue_request(
 returns void
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   target_workspace_id uuid;
@@ -162,6 +167,15 @@ begin
      or length(trim(coalesce(hirer_name, ''))) = 0
      or length(trim(coalesce(hirer_email, ''))) = 0 then
     raise exception 'Please fill in the required fields.';
+  end if;
+
+  if (
+    select count(*) from public.venue_bookings b
+    where b.workspace_id = target_workspace_id
+      and b.source = 'public'
+      and b.created_at >= now() - interval '1 hour'
+  ) >= 20 then
+    raise exception 'Too many requests have come in recently. Please try again later.';
   end if;
 
   insert into public.venue_bookings (

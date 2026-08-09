@@ -1,6 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { createHirerContact, upsertVenueBooking } from "@/features/venues/api/venuesApi";
+import { createHirerContact, deleteVenueBooking, upsertVenueBooking } from "@/features/venues/api/venuesApi";
 import {
   findConflicts,
   formatBookingRange,
@@ -90,6 +100,8 @@ export default function VenueBookingModal({
   const [saveHirerAsContact, setSaveHirerAsContact] = useState(false);
   const [overrideConflict, setOverrideConflict] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -143,6 +155,10 @@ export default function VenueBookingModal({
     }
     if (!title.trim()) {
       toast.error("Give the booking a title");
+      return;
+    }
+    if (!startsAt || !endsAt) {
+      toast.error("Set both a start and end time");
       return;
     }
     if (new Date(fromLocalInput(endsAt)) <= new Date(fromLocalInput(startsAt))) {
@@ -212,7 +228,25 @@ export default function VenueBookingModal({
     onSaved();
   };
 
+  const confirmDelete = async () => {
+    if (!booking) return;
+
+    setDeleting(true);
+    const { error } = await deleteVenueBooking(booking.id);
+    setDeleting(false);
+
+    if (error) {
+      toast.error("Could not delete the booking", { description: error.message });
+      return;
+    }
+
+    setConfirmDeleteOpen(false);
+    onOpenChange(false);
+    onSaved();
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
@@ -415,6 +449,17 @@ export default function VenueBookingModal({
           </div>
 
           <DialogFooter>
+            {booking && (
+              <Button
+                type="button"
+                variant="outline"
+                className="mr-auto text-destructive"
+                onClick={() => setConfirmDeleteOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            )}
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -425,5 +470,27 @@ export default function VenueBookingModal({
         </form>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this booking?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently removes “{title}”. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={confirmDelete}
+            disabled={deleting}
+            className="bg-brand-danger text-white hover:bg-brand-danger/90"
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

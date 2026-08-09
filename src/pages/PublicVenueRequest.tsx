@@ -25,6 +25,7 @@ const SAFE_SUBMIT_ERRORS = new Set([
   "That space is not available for requests.",
   "The end time must be after the start time.",
   "Please fill in the required fields.",
+  "Too many requests have come in recently. Please try again later.",
 ]);
 
 export default function PublicVenueRequest() {
