@@ -16,6 +16,17 @@ type RequestSpace = {
 
 const LINK_DEAD = "This request link is no longer active.";
 
+const GENERIC_SUBMIT_ERROR = "We could not send your request. Please try again.";
+
+// Exactly the messages submit_venue_request raises (supabase/migrations/20260809120000_create_venue_hire.sql).
+// Any other RPC error text is discarded so raw Postgres internals never reach an anonymous visitor.
+const SAFE_SUBMIT_ERRORS = new Set([
+  LINK_DEAD,
+  "That space is not available for requests.",
+  "The end time must be after the start time.",
+  "Please fill in the required fields.",
+]);
+
 export default function PublicVenueRequest() {
   const { token } = useParams();
 
@@ -87,7 +98,7 @@ export default function PublicVenueRequest() {
     setSubmitting(false);
 
     if (rpcError) {
-      setError(rpcError.message || "We could not send your request. Please try again.");
+      setError(SAFE_SUBMIT_ERRORS.has(rpcError.message) ? rpcError.message : GENERIC_SUBMIT_ERROR);
       return;
     }
 
