@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -51,16 +51,27 @@ export default function VenuesPage() {
   const [editingBooking, setEditingBooking] = useState<VenueBooking | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Clicking "next month" repeatedly fires overlapping requests; nothing
+  // guarantees they resolve in the order they were sent. Each call stamps
+  // its own token and only paints state if it's still the most recent call
+  // by the time its response lands, so a slow month+1 response can't land
+  // after a fast month+3 response and paint the wrong bookings under the
+  // wrong month label.
+  const loadToken = useRef(0);
+
   const load = async () => {
     if (!workspace?.id) return;
     setLoading(true);
 
+    const token = ++loadToken.current;
     const { fromIso, toIso } = queryWindowFor(visibleMonth);
 
     const [spacesResult, bookingsResult] = await Promise.all([
       getVenueSpaces(workspace.id),
       getVenueBookings({ workspaceId: workspace.id, fromIso, toIso }),
     ]);
+
+    if (token !== loadToken.current) return; // a newer request has already superseded this one
 
     if (spacesResult.error || bookingsResult.error) {
       toast.error("Could not load venue bookings", {
@@ -132,17 +143,23 @@ export default function VenuesPage() {
         </Card>
       ) : (
         <>
-          <VenueCalendar
-            visibleMonth={visibleMonth}
-            bookings={visibleBookings}
-            spaces={spaces}
-            loading={loading}
-            onMonthChange={setVisibleMonth}
-            onSelectBooking={(booking) => {
-              setEditingBooking(booking);
-              setModalOpen(true);
-            }}
-          />
+          {filter === "Cancelled" ? (
+            <p className="text-sm text-muted-foreground">
+              Cancelled bookings never occupy the calendar — they're listed below.
+            </p>
+          ) : (
+            <VenueCalendar
+              visibleMonth={visibleMonth}
+              bookings={visibleBookings}
+              spaces={spaces}
+              loading={loading}
+              onMonthChange={setVisibleMonth}
+              onSelectBooking={(booking) => {
+                setEditingBooking(booking);
+                setModalOpen(true);
+              }}
+            />
+          )}
 
           <div className="flex flex-wrap gap-2">
             {FILTERS.map((option) => (
