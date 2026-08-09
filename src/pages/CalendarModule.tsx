@@ -36,8 +36,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { personalNextActionFilter } from "@/lib/taskVisibility";
 import { cn } from "@/lib/utils";
+import { getVenueBookings } from "@/features/venues/api/venuesApi";
+import type { VenueBooking } from "@/features/venues/lib/venueBookings";
 
-type CalendarSource = "actsix" | "task" | "google" | "outlook" | "apple";
+type CalendarSource = "actsix" | "task" | "venue" | "google" | "outlook" | "apple";
 type CalendarStatus = "Tentative" | "Confirmed" | "Cancelled";
 type SyncProvider = "google" | "outlook" | "apple";
 type SyncStatus = "Not Connected" | "Connected" | "Needs Attention";
@@ -45,7 +47,7 @@ type SyncStatus = "Not Connected" | "Connected" | "Needs Attention";
 type CalendarEvent = {
   id: string;
   entityId: string;
-  entityType: "event" | "task";
+  entityType: "event" | "task" | "venue";
   title: string;
   calendarName: string;
   source: CalendarSource;
@@ -88,6 +90,7 @@ type AppleSyncForm = {
 const sourceStyles: Record<CalendarSource, string> = {
   actsix: "border-brand-teal/25 bg-brand-teal/10 text-brand-teal",
   task: "border-brand-amber/25 bg-brand-amber/10 text-brand-amber",
+  venue: "border-amber-200 bg-amber-50 text-amber-900",
   google: "border-brand-sage/25 bg-brand-sage/10 text-brand-sage",
   outlook: "border-primary/20 bg-primary/10 text-primary",
   apple: "border-border/70 bg-muted text-muted-foreground",
@@ -201,7 +204,7 @@ export default function CalendarModule() {
     }
 
     setLoading(true);
-    const [eventResult, connectionResult, taskResult] = await Promise.all([
+    const [eventResult, connectionResult, taskResult, venueResult] = await Promise.all([
       (supabase as any)
         .from("calendar_events")
         .select("*")
@@ -219,6 +222,7 @@ export default function CalendarModule() {
         .eq("complete", false)
         .not("due", "is", null)
         .order("due", { ascending: true }),
+      getVenueBookings({ workspaceId: workspace.id }),
     ]);
     setLoading(false);
 
@@ -266,7 +270,31 @@ export default function CalendarModule() {
       };
     });
 
-    setEvents([...calendarEvents, ...taskEvents]);
+    if (venueResult.error && venueResult.error.code !== "42P01") {
+      toast.error(friendlyErrorMessage(venueResult.error));
+    }
+
+    // A cancelled hire is not occupying the building, so it never shows here.
+    // Pending requests map to Tentative - the calendar's existing word for
+    // "someone has asked, nobody has agreed".
+    const venueEvents = ((venueResult.data as VenueBooking[]) || [])
+      .filter((booking) => booking.status !== "Cancelled")
+      .map((booking) => ({
+        id: `venue-${booking.id}`,
+        entityId: booking.id,
+        entityType: "venue" as const,
+        title: booking.title,
+        calendarName: "Venue Hire",
+        source: "venue" as const,
+        startsAt: booking.starts_at,
+        endsAt: booking.ends_at,
+        allDay: false,
+        location: "",
+        description: booking.notes,
+        status: (booking.status === "Pending" ? "Tentative" : "Confirmed") as CalendarStatus,
+      }));
+
+    setEvents([...calendarEvents, ...taskEvents, ...venueEvents]);
 
     setConnections(
       (connectionResult.data || []).map((connection: any) => ({
@@ -336,6 +364,11 @@ export default function CalendarModule() {
   };
 
   const editEvent = (event: CalendarEvent) => {
+    if (event.entityType === "venue") {
+      navigate("/venues");
+      return;
+    }
+
     if (event.entityType === "task") {
       setEditingTask({ ...event.task });
       return;
