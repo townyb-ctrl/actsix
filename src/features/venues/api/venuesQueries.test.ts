@@ -12,7 +12,7 @@ const { supabaseMock } = vi.hoisted(() => ({
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: supabaseMock }));
 
-import { useVenueBookings, useVenueSpaces } from "./venuesQueries";
+import { useVenueBookings, useVenueRequestToken, useVenueSpaces } from "./venuesQueries";
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({
@@ -142,5 +142,31 @@ describe("useVenueBookings", () => {
     rerender({ fromIso: "2026-09-01" });
 
     await waitFor(() => expect(supabaseMock.from).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("useVenueRequestToken", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("returns null when no token has been issued", async () => {
+    const builder = createQueryBuilder(okResult({ venue_request_token: null }));
+    supabaseMock.from.mockReturnValue(builder);
+
+    const { result } = renderHook(() => useVenueRequestToken("workspace-1"), { wrapper });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.requestToken).toBeNull();
+  });
+
+  it("returns the stored token", async () => {
+    const builder = createQueryBuilder(okResult({ venue_request_token: "abc123" }));
+    supabaseMock.from.mockReturnValue(builder);
+
+    const { result } = renderHook(() => useVenueRequestToken("workspace-1"), { wrapper });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.requestToken).toBe("abc123");
   });
 });

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { getVenueBookings, getVenueSpaces } from "@/features/venues/api/venuesApi";
+import { getVenueBookings, getVenueRequestToken, getVenueSpaces } from "@/features/venues/api/venuesApi";
 import type { VenueBooking, VenueSpace } from "@/features/venues/lib/venueBookings";
 
 export const venueSpacesKey = (workspaceId?: string | null) => ["venue-spaces", workspaceId] as const;
@@ -52,5 +52,24 @@ export function useVenueBookings({
     bookings: query.data ?? [],
     loading: query.isPending && query.fetchStatus !== "idle",
     error: (query.error as { message: string } | null) ?? null,
+  };
+}
+
+export const venueRequestTokenKey = (workspaceId?: string | null) => ["venue-request-token", workspaceId] as const;
+
+export function useVenueRequestToken(workspaceId?: string | null) {
+  const query = useQuery({
+    queryKey: venueRequestTokenKey(workspaceId),
+    queryFn: async () => {
+      const { data } = await getVenueRequestToken(workspaceId as string);
+      return (data as { venue_request_token: string | null } | null)?.venue_request_token ?? null;
+    },
+    enabled: Boolean(workspaceId),
+    retry: false,
+  });
+
+  return {
+    requestToken: query.data ?? null,
+    loading: query.isPending && query.fetchStatus !== "idle",
   };
 }
