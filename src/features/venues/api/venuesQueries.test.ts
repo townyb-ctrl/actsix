@@ -14,12 +14,16 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: supabaseMock }));
 
 import { useVenueBookings, useVenueRequestToken, useVenueSpaces } from "./venuesQueries";
 
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({
+let queryClient: QueryClient;
+
+beforeEach(() => {
+  queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return React.createElement(QueryClientProvider, { client: queryClient }, children);
-};
+});
+
+const wrapper = ({ children }: { children: ReactNode }) =>
+  React.createElement(QueryClientProvider, { client: queryClient }, children);
 
 describe("useVenueSpaces", () => {
   beforeEach(() => {

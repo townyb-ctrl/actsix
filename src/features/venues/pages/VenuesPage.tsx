@@ -53,13 +53,13 @@ export default function VenuesPage() {
 
   const { fromIso, toIso } = queryWindowFor(visibleMonth);
 
-  const { spaces, error: spacesError } = useVenueSpaces(workspace?.id);
+  const { spaces, loading: spacesLoading, error: spacesError } = useVenueSpaces(workspace?.id);
   const { bookings, loading: bookingsLoading, error: bookingsError } = useVenueBookings({
     workspaceId: workspace?.id,
     fromIso,
     toIso,
   });
-  const loading = !workspace?.id || bookingsLoading;
+  const loading = !workspace?.id || spacesLoading || bookingsLoading;
 
   const toastedErrorRef = useRef(false);
 
