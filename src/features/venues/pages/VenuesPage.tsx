@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -54,16 +54,23 @@ export default function VenuesPage() {
   const { fromIso, toIso } = queryWindowFor(visibleMonth);
 
   const { spaces, error: spacesError } = useVenueSpaces(workspace?.id);
-  const { bookings, loading, error: bookingsError } = useVenueBookings({
+  const { bookings, loading: bookingsLoading, error: bookingsError } = useVenueBookings({
     workspaceId: workspace?.id,
     fromIso,
     toIso,
   });
+  const loading = !workspace?.id || bookingsLoading;
+
+  const toastedErrorRef = useRef(false);
 
   useEffect(() => {
     const error = spacesError || bookingsError;
-    if (error) {
+    if (error && !toastedErrorRef.current) {
+      toastedErrorRef.current = true;
       toast.error("Could not load venue bookings", { description: error.message });
+    }
+    if (!error) {
+      toastedErrorRef.current = false;
     }
   }, [spacesError, bookingsError]);
 
