@@ -71,7 +71,7 @@ export default function VenueCalendar({
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Booking calendar</p>
+          <p className="label-eyebrow">Booking calendar</p>
           <h2 className="text-sm font-semibold" aria-live="polite">
             {monthLabel}
             {loading && <span className="ml-2 font-normal text-muted-foreground">Loading…</span>}
@@ -152,7 +152,7 @@ export default function VenueCalendar({
                         key={booking.id}
                         type="button"
                         onClick={() => onSelectBooking(booking)}
-                        className="block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold text-white shadow-sm"
+                        className="block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold text-white shadow-sm transition-[filter,transform] duration-100 ease-out hover:brightness-95 active:scale-[0.96] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50 focus-visible:ring-offset-1"
                         style={{ backgroundColor: spaceColor(booking.space_id) }}
                         title={`${booking.title} · ${chipTime(booking.starts_at)}`}
                       >

@@ -13,10 +13,20 @@ export type VenueSpace = {
   hourly_rate: number;
   daily_rate: number;
   color: string;
+  features: string[];
+  photo_urls: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
 };
+
+/** Fixed checklist so space cards and filters stay consistent - no free-form tags. */
+export const VENUE_SPACE_FEATURES = [
+  "Projector",
+  "Kitchen",
+  "Air conditioning",
+  "Tables & chairs",
+] as const;
 
 export type VenueBooking = {
   id: string;
@@ -36,6 +46,11 @@ export type VenueBooking = {
   deposit_amount: number;
   payment_status: VenuePaymentStatus;
   source: VenueBookingSource;
+  requested_features: string[];
+  needs_technician: boolean;
+  technician_fee: number;
+  coffee_requested: boolean;
+  coffee_fee: number;
   notes: string;
   created_at: string;
   updated_at: string;

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Save, Trash2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -13,23 +13,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { CheckboxField, Field, FieldGroup, FieldRow, fieldControlClass } from "@/components/ui/field";
+import { FormDialog } from "@/components/ui/form-dialog";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { createHirerContact, deleteVenueBooking, upsertVenueBooking } from "@/features/venues/api/venuesApi";
 import {
   findConflicts,
   formatBookingRange,
+  VENUE_SPACE_FEATURES,
   type VenueBooking,
   type VenueBookingStatus,
   type VenueBookingType,
@@ -71,6 +63,20 @@ const defaultEnd = () => {
   return toLocalInput(end.toISOString());
 };
 
+const spaceFieldId = "venue-booking-space";
+const typeFieldId = "venue-booking-type";
+const titleFieldId = "venue-booking-title";
+const startFieldId = "venue-booking-start";
+const endFieldId = "venue-booking-end";
+const statusFieldId = "venue-booking-status";
+const hirerFieldId = "venue-booking-hirer";
+const emailFieldId = "venue-booking-email";
+const phoneFieldId = "venue-booking-phone";
+const feeFieldId = "venue-booking-fee";
+const depositFieldId = "venue-booking-deposit";
+const paymentFieldId = "venue-booking-payment";
+const notesFieldId = "venue-booking-notes";
+
 export default function VenueBookingModal({
   open,
   booking,
@@ -81,7 +87,6 @@ export default function VenueBookingModal({
   onOpenChange,
   onSaved,
 }: Props) {
-
   const activeSpaces = spaces.filter((space) => space.is_active || space.id === booking?.space_id);
 
   const [spaceId, setSpaceId] = useState("");
@@ -96,6 +101,11 @@ export default function VenueBookingModal({
   const [quotedFee, setQuotedFee] = useState("0");
   const [depositAmount, setDepositAmount] = useState("0");
   const [paymentStatus, setPaymentStatus] = useState<VenuePaymentStatus>("Unpaid");
+  const [requestedFeatures, setRequestedFeatures] = useState<string[]>([]);
+  const [paRequested, setPaRequested] = useState(false);
+  const [paFee, setPaFee] = useState("0");
+  const [coffeeRequested, setCoffeeRequested] = useState(false);
+  const [coffeeFee, setCoffeeFee] = useState("0");
   const [notes, setNotes] = useState("");
   const [saveHirerAsContact, setSaveHirerAsContact] = useState(false);
   const [overrideConflict, setOverrideConflict] = useState(false);
@@ -119,17 +129,41 @@ export default function VenueBookingModal({
     setPaymentStatus(booking?.payment_status && booking.payment_status !== "Not applicable"
       ? booking.payment_status
       : "Unpaid");
+    setRequestedFeatures(booking?.requested_features || []);
+    setPaRequested(booking?.needs_technician || false);
+    setPaFee(String(booking?.technician_fee ?? 0));
+    setCoffeeRequested(booking?.coffee_requested || false);
+    setCoffeeFee(String(booking?.coffee_fee ?? 0));
     setNotes(booking?.notes || "");
     setSaveHirerAsContact(false);
     setOverrideConflict(false);
   }, [open, booking]);
 
+  const toggleRequestedFeature = (feature: string, checked: boolean) => {
+    setRequestedFeatures((current) =>
+      checked ? [...current, feature] : current.filter((existing) => existing !== feature)
+    );
+  };
+
+  const selectedSpace = useMemo(
+    () => spaces.find((candidate) => candidate.id === spaceId),
+    [spaces, spaceId]
+  );
+
+  /** Only the features this space actually has (and the app still offers) can be requested. */
+  const requestableFeatures = useMemo(
+    () =>
+      (selectedSpace?.features || []).filter((feature): feature is (typeof VENUE_SPACE_FEATURES)[number] =>
+        (VENUE_SPACE_FEATURES as readonly string[]).includes(feature)
+      ),
+    [selectedSpace]
+  );
+
   /** Pre-fill the fee from the space's daily rate when creating an external hire. */
   useEffect(() => {
     if (booking || bookingType !== "external") return;
-    const space = spaces.find((candidate) => candidate.id === spaceId);
-    if (space) setQuotedFee(String(space.daily_rate || 0));
-  }, [spaceId, bookingType, booking, spaces]);
+    if (selectedSpace) setQuotedFee(String(selectedSpace.daily_rate || 0));
+  }, [spaceId, bookingType, booking, selectedSpace]);
 
   const conflicts = useMemo(() => {
     if (!spaceId || !startsAt || !endsAt) return [];
@@ -213,6 +247,11 @@ export default function VenueBookingModal({
         quoted_fee: Number(quotedFee) || 0,
         deposit_amount: Number(depositAmount) || 0,
         payment_status: paymentStatus,
+        requested_features: requestedFeatures,
+        needs_technician: paRequested,
+        technician_fee: paRequested ? Number(paFee) || 0 : 0,
+        coffee_requested: coffeeRequested,
+        coffee_fee: coffeeRequested ? Number(coffeeFee) || 0 : 0,
         notes: notes.trim(),
       },
     });
@@ -247,94 +286,133 @@ export default function VenueBookingModal({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{booking ? "Booking" : "New booking"}</DialogTitle>
-        </DialogHeader>
-
-        <form className="space-y-4" onSubmit={save}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="venue-booking-space">Space</Label>
-              <Select value={spaceId} onValueChange={setSpaceId}>
-                <SelectTrigger id="venue-booking-space">
-                  <SelectValue placeholder="Choose a space" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeSpaces.map((space) => (
-                    <SelectItem key={space.id} value={space.id}>
-                      {space.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="venue-booking-type">Type</Label>
-              <Select
-                value={bookingType}
-                onValueChange={(value) => setBookingType(value as VenueBookingType)}
+      <FormDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        eyebrow={booking ? "Edit Booking" : "New Booking"}
+        title={booking ? "Booking details" : "New booking"}
+        description="Book a space internally, or record an external hire with its fee and payment status."
+        size="lg"
+        footer={
+          <>
+            {booking ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mr-auto text-destructive hover:text-destructive"
+                onClick={() => setConfirmDeleteOpen(true)}
               >
-                <SelectTrigger id="venue-booking-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="internal">Internal (no charge)</SelectItem>
-                  <SelectItem value="external">External hire</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <Trash2 className="h-4 w-4" />
+                Delete booking
+              </Button>
+            ) : (
+              <div className="mr-auto" />
+            )}
 
-          <div className="space-y-2">
-            <Label htmlFor="venue-booking-title">Title</Label>
-            <Input
-              id="venue-booking-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder={bookingType === "external" ? "Robertson wedding" : "Youth night"}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="venue-booking-form"
+                disabled={saving}
+                className="actsix-btn-primary font-bold"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? "Saving…" : "Save booking"}
+              </Button>
+            </div>
+          </>
+        }
+      >
+        <form id="venue-booking-form" className="space-y-5" onSubmit={save}>
+          <FieldGroup title="Booking">
+            <FieldRow>
+              <Field label="Space" htmlFor={spaceFieldId}>
+                <select
+                  id={spaceFieldId}
+                  value={spaceId}
+                  onChange={(event) => setSpaceId(event.target.value)}
+                  className={cn(fieldControlClass)}
+                >
+                  <option value="" disabled>
+                    Choose a space
+                  </option>
+                  {activeSpaces.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="venue-booking-start">Starts</Label>
-              <Input
-                id="venue-booking-start"
-                type="datetime-local"
-                value={startsAt}
-                onChange={(event) => setStartsAt(event.target.value)}
+              <Field label="Type" htmlFor={typeFieldId}>
+                <select
+                  id={typeFieldId}
+                  value={bookingType}
+                  onChange={(event) => setBookingType(event.target.value as VenueBookingType)}
+                  className={cn(fieldControlClass)}
+                >
+                  <option value="internal">Internal (no charge)</option>
+                  <option value="external">External hire</option>
+                </select>
+              </Field>
+            </FieldRow>
+
+            <Field label="Title" htmlFor={titleFieldId}>
+              <input
+                id={titleFieldId}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder={bookingType === "external" ? "Robertson wedding" : "Youth night"}
+                className={cn(fieldControlClass)}
               />
+            </Field>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Starts" htmlFor={startFieldId}>
+                <input
+                  id={startFieldId}
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(event) => setStartsAt(event.target.value)}
+                  className={cn(fieldControlClass)}
+                />
+              </Field>
+
+              <Field label="Ends" htmlFor={endFieldId}>
+                <input
+                  id={endFieldId}
+                  type="datetime-local"
+                  value={endsAt}
+                  onChange={(event) => setEndsAt(event.target.value)}
+                  className={cn(fieldControlClass)}
+                />
+              </Field>
+
+              <Field label="Status" htmlFor={statusFieldId}>
+                <select
+                  id={statusFieldId}
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value as VenueBookingStatus)}
+                  className={cn(fieldControlClass)}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </Field>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="venue-booking-end">Ends</Label>
-              <Input
-                id="venue-booking-end"
-                type="datetime-local"
-                value={endsAt}
-                onChange={(event) => setEndsAt(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="venue-booking-status">Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as VenueBookingStatus)}>
-                <SelectTrigger id="venue-booking-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Confirmed">Confirmed</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          </FieldGroup>
 
           {conflicts.length > 0 && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Clashes with {conflicts.length === 1 ? "another booking" : `${conflicts.length} bookings`}</AlertTitle>
+              <AlertTitle>
+                Clashes with {conflicts.length === 1 ? "another booking" : `${conflicts.length} bookings`}
+              </AlertTitle>
               <AlertDescription className="space-y-2">
                 <ul className="list-disc pl-4 text-sm">
                   {conflicts.map((conflict) => (
@@ -344,153 +422,198 @@ export default function VenueBookingModal({
                     </li>
                   ))}
                 </ul>
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={overrideConflict}
-                    onCheckedChange={(checked) => setOverrideConflict(checked === true)}
-                  />
-                  Book anyway
-                </label>
+                <CheckboxField
+                  id="venue-booking-override-conflict"
+                  label="Book anyway"
+                  checked={overrideConflict}
+                  onCheckedChange={setOverrideConflict}
+                  className="text-sm font-normal"
+                />
               </AlertDescription>
             </Alert>
           )}
 
           {bookingType === "external" && (
-            <div className="space-y-4 rounded-lg border p-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="venue-booking-hirer">Hirer</Label>
-                  <Input
-                    id="venue-booking-hirer"
-                    value={hirerName}
-                    onChange={(event) => setHirerName(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="venue-booking-email">Email</Label>
-                  <Input
-                    id="venue-booking-email"
-                    type="email"
-                    value={hirerEmail}
-                    onChange={(event) => setHirerEmail(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="venue-booking-phone">Phone</Label>
-                  <Input
-                    id="venue-booking-phone"
-                    value={hirerPhone}
-                    onChange={(event) => setHirerPhone(event.target.value)}
-                  />
-                </div>
-              </div>
+            <>
+              <FieldGroup title="External hire">
+                <FieldRow className="sm:grid-cols-3">
+                  <Field label="Hirer" htmlFor={hirerFieldId}>
+                    <input
+                      id={hirerFieldId}
+                      value={hirerName}
+                      onChange={(event) => setHirerName(event.target.value)}
+                      className={cn(fieldControlClass)}
+                    />
+                  </Field>
 
-              {!booking?.hirer_contact_id && (
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
+                  <Field label="Email" htmlFor={emailFieldId}>
+                    <input
+                      id={emailFieldId}
+                      type="email"
+                      value={hirerEmail}
+                      onChange={(event) => setHirerEmail(event.target.value)}
+                      className={cn(fieldControlClass)}
+                    />
+                  </Field>
+
+                  <Field label="Phone" htmlFor={phoneFieldId}>
+                    <input
+                      id={phoneFieldId}
+                      value={hirerPhone}
+                      onChange={(event) => setHirerPhone(event.target.value)}
+                      className={cn(fieldControlClass)}
+                    />
+                  </Field>
+                </FieldRow>
+
+                {!booking?.hirer_contact_id && (
+                  <CheckboxField
+                    id="venue-booking-save-contact"
+                    label="Also save this hirer to Service Contacts"
                     checked={saveHirerAsContact}
-                    onCheckedChange={(checked) => setSaveHirerAsContact(checked === true)}
+                    onCheckedChange={setSaveHirerAsContact}
                   />
-                  Also save this hirer to Service Contacts
-                </label>
-              )}
+                )}
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="venue-booking-fee">Quoted fee</Label>
-                  <Input
-                    id="venue-booking-fee"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={quotedFee}
-                    onChange={(event) => setQuotedFee(event.target.value)}
-                  />
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="Quoted fee" htmlFor={feeFieldId}>
+                    <input
+                      id={feeFieldId}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={quotedFee}
+                      onChange={(event) => setQuotedFee(event.target.value)}
+                      className={cn(fieldControlClass)}
+                    />
+                  </Field>
+
+                  <Field label="Deposit" htmlFor={depositFieldId}>
+                    <input
+                      id={depositFieldId}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={depositAmount}
+                      onChange={(event) => setDepositAmount(event.target.value)}
+                      className={cn(fieldControlClass)}
+                    />
+                  </Field>
+
+                  <Field label="Payment" htmlFor={paymentFieldId}>
+                    <select
+                      id={paymentFieldId}
+                      value={paymentStatus}
+                      onChange={(event) => setPaymentStatus(event.target.value as VenuePaymentStatus)}
+                      className={cn(fieldControlClass)}
+                    >
+                      <option value="Unpaid">Unpaid</option>
+                      <option value="Deposit paid">Deposit paid</option>
+                      <option value="Paid">Paid</option>
+                    </select>
+                  </Field>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="venue-booking-deposit">Deposit</Label>
-                  <Input
-                    id="venue-booking-deposit"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={depositAmount}
-                    onChange={(event) => setDepositAmount(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="venue-booking-payment">Payment</Label>
-                  <Select
-                    value={paymentStatus}
-                    onValueChange={(value) => setPaymentStatus(value as VenuePaymentStatus)}
-                  >
-                    <SelectTrigger id="venue-booking-payment">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Unpaid">Unpaid</SelectItem>
-                      <SelectItem value="Deposit paid">Deposit paid</SelectItem>
-                      <SelectItem value="Paid">Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
+              </FieldGroup>
+
+              <FieldGroup title="Requested extras">
+                {requestableFeatures.length > 0 && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {requestableFeatures.map((feature) => (
+                      <CheckboxField
+                        key={feature}
+                        id={`venue-booking-feature-${feature}`}
+                        label={feature}
+                        checked={requestedFeatures.includes(feature)}
+                        onCheckedChange={(checked) => toggleRequestedFeature(feature, checked)}
+                        className="text-sm font-normal"
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <FieldRow>
+                  <div className="space-y-2">
+                    <CheckboxField
+                      id="venue-booking-pa"
+                      label="PA System"
+                      checked={paRequested}
+                      onCheckedChange={setPaRequested}
+                      className="text-sm font-normal"
+                    />
+                    {paRequested && (
+                      <Field label="PA fee" htmlFor="venue-booking-pa-fee">
+                        <input
+                          id="venue-booking-pa-fee"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={paFee}
+                          onChange={(event) => setPaFee(event.target.value)}
+                          className={cn(fieldControlClass)}
+                        />
+                      </Field>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <CheckboxField
+                      id="venue-booking-coffee"
+                      label="Tea & Coffee"
+                      checked={coffeeRequested}
+                      onCheckedChange={setCoffeeRequested}
+                      className="text-sm font-normal"
+                    />
+                    {coffeeRequested && (
+                      <Field label="Tea & coffee fee" htmlFor="venue-booking-coffee-fee">
+                        <input
+                          id="venue-booking-coffee-fee"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={coffeeFee}
+                          onChange={(event) => setCoffeeFee(event.target.value)}
+                          className={cn(fieldControlClass)}
+                        />
+                      </Field>
+                    )}
+                  </div>
+                </FieldRow>
+              </FieldGroup>
+            </>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="venue-booking-notes">Notes</Label>
-            <Textarea
-              id="venue-booking-notes"
+          <Field label="Notes" htmlFor={notesFieldId} className="border-t border-border/70 pt-5">
+            <textarea
+              id={notesFieldId}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              rows={3}
+              rows={2}
+              className={cn(fieldControlClass, "min-h-16 py-2")}
             />
-          </div>
-
-          <DialogFooter>
-            {booking && (
-              <Button
-                type="button"
-                variant="outline"
-                className="mr-auto text-destructive"
-                onClick={() => setConfirmDeleteOpen(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-            )}
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save booking"}
-            </Button>
-          </DialogFooter>
+          </Field>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormDialog>
 
-    <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete this booking?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This permanently removes “{title}”. This cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={confirmDelete}
-            disabled={deleting}
-            className="bg-brand-danger text-white hover:bg-brand-danger/90"
-          >
-            {deleting ? "Deleting…" : "Delete"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes “{title}”. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-brand-danger text-white hover:bg-brand-danger/90"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

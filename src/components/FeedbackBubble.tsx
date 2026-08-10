@@ -49,6 +49,26 @@ const clampPosition = (position: BubblePosition) => {
   };
 };
 
+/** Soft resistance past a boundary instead of a hard stop - the further past, the less it follows. */
+const rubberband = (overshoot: number, dimension: number, constant = 0.55) =>
+  (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
+
+const softClamp = (value: number, min: number, max: number, dimension: number) => {
+  if (value < min) return min + rubberband(value - min, dimension);
+  if (value > max) return max + rubberband(value - max, dimension);
+  return value;
+};
+
+/** Only used while actively dragging - lets the bubble stretch past the edge instead of freezing there. */
+const softClampPosition = (position: BubblePosition) => {
+  if (typeof window === "undefined") return position;
+
+  return {
+    x: softClamp(position.x, EDGE_GAP, window.innerWidth - BUBBLE_SIZE - EDGE_GAP, window.innerWidth),
+    y: softClamp(position.y, EDGE_GAP, window.innerHeight - BUBBLE_SIZE - EDGE_GAP, window.innerHeight),
+  };
+};
+
 const getInitialPosition = (): BubblePosition => {
   if (typeof window === "undefined") return { x: EDGE_GAP, y: EDGE_GAP };
 
@@ -75,6 +95,7 @@ export function FeedbackBubble() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [position, setPosition] = useState<BubblePosition>(getInitialPosition);
+  const [dragging, setDragging] = useState(false);
   const [promptIndex, setPromptIndex] = useState(() =>
     Math.floor(Math.random() * FEEDBACK_PROMPTS.length)
   );
@@ -180,7 +201,13 @@ export function FeedbackBubble() {
     };
   }, [introVisible, open]);
 
+  /** Mid-drag: soft-clamped, not persisted - the bubble can stretch past the edge and snap back on release. */
   const moveBubble = (nextPosition: BubblePosition) => {
+    setPosition(softClampPosition(nextPosition));
+  };
+
+  /** On release: hard-clamped and persisted - this is the resting position. */
+  const settleBubble = (nextPosition: BubblePosition) => {
     const clampedPosition = clampPosition(nextPosition);
     setPosition(clampedPosition);
     window.localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(clampedPosition));
@@ -189,6 +216,7 @@ export function FeedbackBubble() {
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     setPromptVisible(false);
     setIntroVisible(false);
+    setDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = {
       pointerId: event.pointerId,
@@ -226,8 +254,11 @@ export function FeedbackBubble() {
 
     dragRef.current = null;
     event.currentTarget.releasePointerCapture(event.pointerId);
+    setDragging(false);
 
-    if (!drag.moved) {
+    if (drag.moved) {
+      settleBubble(position);
+    } else {
       setOpen((currentOpen) => !currentOpen);
     }
   };
@@ -296,10 +327,15 @@ export function FeedbackBubble() {
 
   return (
     <div
-      className="fixed z-[var(--z-popover)]"
+      className="fixed left-0 top-0 z-[var(--z-popover)]"
       style={{
-        left: position.x,
-        top: position.y,
+        transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+        // ponytail: reads matchMedia once per render instead of a resize/change listener -
+        // a stale reduced-motion flag mid-session self-corrects on the next render.
+        transition:
+          dragging || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            ? "none"
+            : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
       {open && (

@@ -15,6 +15,8 @@ export type VenueSpacePayload = {
   hourly_rate?: number;
   daily_rate?: number;
   color?: string;
+  features?: string[];
+  photo_urls?: string[];
   is_active?: boolean;
 };
 
@@ -32,6 +34,11 @@ export type VenueBookingPayload = {
   quoted_fee?: number;
   deposit_amount?: number;
   payment_status?: VenuePaymentStatus;
+  requested_features?: string[];
+  needs_technician?: boolean;
+  technician_fee?: number;
+  coffee_requested?: boolean;
+  coffee_fee?: number;
   notes?: string;
 };
 

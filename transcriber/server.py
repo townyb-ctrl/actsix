@@ -97,6 +97,7 @@ Create useful, structured meeting notes.
 
 Rules:
 - Do not preserve filler words.
+- Include Summaries of the discusions.
 - Do not invent details.
 - Group discussion by topic.
 - Use clear headings.
@@ -403,11 +404,12 @@ You are helping process part of a noisy church staff meeting transcript.
 
 This is chunk {chunk_number} of {total_chunks}.
 
-Create a concise structured summary of this chunk.
+Create a structured summary of this chunk.
 
 Rules:
 - Do not invent details.
 - Remove filler words and repetition.
+- Include summary of the discussion had per topic
 - Capture topics discussed.
 - Capture clear decisions.
 - Capture possible action points.
@@ -432,6 +434,7 @@ Rules:
 - Do not invent details.
 - Merge duplicate points.
 - Group by topic.
+- Include summary of the discussion had per topic
 - Use clear headings.
 - Include decisions if clear.
 - End with a clear Action Points section.

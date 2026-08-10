@@ -14,10 +14,15 @@ type Props = {
   onEdit: (booking: VenueBooking) => void;
 };
 
-const statusVariant = (status: VenueBooking["status"]) => {
-  if (status === "Confirmed") return "default" as const;
-  if (status === "Pending") return "secondary" as const;
-  return "outline" as const;
+/**
+ * Booking status is a state, not a location or primary action - it borrows
+ * the semantic success/warning tokens rather than teal, so it doesn't
+ * compete with teal's one meaning ("act here") elsewhere on the page.
+ */
+const statusClass: Record<VenueBooking["status"], string> = {
+  Confirmed: "border-transparent bg-brand-success/12 text-brand-success",
+  Pending: "border-transparent bg-brand-warning/14 text-brand-warning",
+  Cancelled: "border-border/70 bg-transparent text-muted-foreground",
 };
 
 export default function VenueBookingList({ bookings, spaces, onEdit }: Props) {
@@ -42,7 +47,7 @@ export default function VenueBookingList({ bookings, spaces, onEdit }: Props) {
             <div className="min-w-0 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium">{booking.title}</p>
-                <Badge variant={statusVariant(booking.status)}>{booking.status}</Badge>
+                <Badge className={statusClass[booking.status]}>{booking.status}</Badge>
                 {booking.source === "public" && <Badge variant="outline">Request</Badge>}
               </div>
               <p className="text-sm text-muted-foreground">

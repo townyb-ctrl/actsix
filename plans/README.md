@@ -11,6 +11,7 @@ utility transitions + shadcn/Radix `data-state` animations only).
 | [003](003-task-row-press-feedback.md) | Add press feedback to task rows, buttons, and dock icons | MEDIUM | DONE | Soft dependency on 002 (see plan for detail) |
 | [004](004-mobile-nav-transition-token.md) | Consolidate MobileBottomNav's duplicated transition string | LOW | DONE | Must run after 001 |
 | [005](005-guided-tour-spotlight-transform.md) | GuidedTour spotlight: position via transform, not top/left | LOW | DONE | — |
+| [006](006-booking-modal-fee-field-reveal.md) | Wrap PA/coffee fee reveal in height+opacity transition | MEDIUM | TODO | — |
 
 ## Execution notes (2026-08-05)
 
@@ -56,3 +57,14 @@ the commit message) rather than force-split.
   not turned into a plan — the user selected all 5 corrective findings,
   not the additive one. Revisit with `improve-animations plan <description>`
   if wanted later.
+
+## Plan 006 (2026-08-10)
+
+Written via `improve-animations plan <description>` (single-plan mode, no
+full audit) against the Venues feature, at commit `0733ec77` — a different
+scope/commit than plans 001-005 above. Independent of them: touches
+`VenueBookingModal.tsx`, no shared files. Uses Tailwind's built-in
+`ease-out`/`duration-200` rather than this repo's `--transition-fast` /
+`--transition-normal` tokens, since those are full `transition` shorthands
+that don't compose with a `transition-[grid-template-rows]` utility — see
+the plan's Target section for the reasoning.

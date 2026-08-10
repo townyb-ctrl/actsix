@@ -23,6 +23,8 @@ const space: VenueSpace = {
   hourly_rate: 0,
   daily_rate: 0,
   color: "",
+  features: [],
+  photo_urls: [],
   is_active: true,
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
