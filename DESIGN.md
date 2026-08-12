@@ -2,9 +2,10 @@
 name: ACTSIX
 description: Ministry-operations platform — an instrument for people running a church week, not a document about one.
 colors:
-  studio-teal: "#0F766E"
-  studio-teal-hi: "#0B5C56"
-  studio-teal-dim: "#3D9D92"
+  studio-teal: "#123F3C"
+  studio-teal-hi: "#0C2B29"
+  studio-teal-dim: "#2C7169"
+  rail: "#123F3C"
   ground: "#F4F2ED"
   panel: "#FFFFFF"
   panel-hi: "#FAF8F4"
@@ -84,27 +85,30 @@ Tokens live on `:root` in `src/index.css` under the `--st-*` prefix. That is the
 
 **Adding a color means adding an `--st-*` token, not a literal.** A hex value in a component is a bug unless it is print-only.
 
+The pre-Studio parchment token block and the old `.dark` block were deleted in the same sweep — they were dead weight that made `index.css` look like it defined two palettes. Everything above the Studio block is now structural only: fonts, radii, spacing, transitions, z-index.
+
 A dark build is a sibling token block away — the token layer was structured for two themes from the start, and only the light build is currently defined.
 
 ## Colors
 
-- **Studio Teal** (`#0F766E`): the only "act here / you are here" color. Passes 4.5:1 on both panel and ground.
-- **Teal Hi** (`#0B5C56`): pressed/hover state for teal surfaces. Never a second accent.
-- **Teal Dim** (`#3D9D92`): meter fills and quiet accent edges only.
+- **Studio Teal** (`#123F3C`): the only "act here / you are here" color, and the same color as the sidebar rail. Roughly 11:1 on panel and ground.
+- **Teal Hi** (`#0C2B29`): pressed/hover state for teal surfaces. Never a second accent.
+- **Teal Dim** (`#2C7169`): meter fills and quiet accent edges only.
 - **Ground** (`#F4F2ED`): the page canvas. Warm, never white.
-- **Sidebar** (`#123F3C`): a deep desaturated teal — the accent hue taken almost to black. The one dark surface in the app, and deliberately branded rather than generic dark chrome. White pills mark position on it; shadows there are `rgba(0,0,0,0.16–0.18)`, since a paper shadow does nothing against a dark ground.
+- **Sidebar** (`#123F3C`): the same deep teal as the accent, painted flat across the one dark surface in the app. The rail is where the brand color is stated at full size; every button, link and active state elsewhere repeats it. White pills mark position on it; shadows there are `rgba(0,0,0,0.16–0.18)`, since a paper shadow does nothing against a dark ground.
 - **Panel** (`#FFFFFF`): raised surfaces. White signals elevation, not "default".
 - **Panel Hi** (`#FAF8F4`): row hover.
 - **Line / Line Soft / Line Strong** (`#DED9CF` / `#ECEAE3` / `#C6C0B3`): panel borders, row dividers, hover borders — in that order of strength.
 - **Ink / Ink-2 / Ink-3** (`#1A1A16` / `#55534B` / `#7E7C72`): primary text, secondary, muted.
 - **Amber** (`#9A6410`) / **Rose** (`#A8402F`) / **Green** (`#3F7A46`): due today, overdue/destructive, complete. Status meaning only — never decorative.
 
-**The Two-Teal Rule.** There are two teals and they are not interchangeable:
+**The One-Teal Rule.** Studio originally ran a lighter teal on paper and a deeper one on the rail. Two teals meant every element had to ask which surface it sat on, and half of them answered wrong. There is now one brand teal — `#123F3C`, the rail — used for buttons, links, active pills, focus rings, meters, everything on ground or panel.
 
-- **`--brand-teal` `#0F766E`** — teal *on paper*. Buttons, links, active pills, focus rings, anything sitting on the ground or on a white panel.
-- **`--brand-teal-bright` `#5EBFB2`** — teal *on the sidebar*. The rail is `#123F3C`; the paper teal disappears against it, and the bright teal is unreadable on white.
+The single exception is teal that sits *on* the rail itself, where the brand teal is invisible against its own background:
 
-Ask which surface the element sits on before picking. Every colour bug during the Studio rollout came from using one where the other belonged.
+- **`--brand-teal-bright` `#5EBFB2`** — teal on the dark rail (the online dot, tour highlights). Unreadable on white; never use it on paper.
+
+On the rail, position is marked by a white pill, not by teal.
 
 **The Three-Teal Rule.** If teal appears more than about three times on one screen, it has stopped meaning anything. Current location, the primary action, and today — that is the budget.
 

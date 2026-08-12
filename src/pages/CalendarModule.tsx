@@ -90,7 +90,7 @@ type AppleSyncForm = {
 const sourceStyles: Record<CalendarSource, string> = {
   actsix: "border-brand-teal/25 bg-brand-teal/10 text-brand-teal",
   task: "border-brand-amber/25 bg-brand-amber/10 text-brand-amber",
-  venue: "border-amber-200 bg-amber-50 text-amber-900",
+  venue: "border-brand-bronze/25 bg-brand-bronze/10 text-brand-bronze",
   google: "border-brand-sage/25 bg-brand-sage/10 text-brand-sage",
   outlook: "border-primary/20 bg-primary/10 text-primary",
   apple: "border-border/70 bg-muted text-muted-foreground",

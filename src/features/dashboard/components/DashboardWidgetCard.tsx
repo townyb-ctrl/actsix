@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
@@ -61,6 +61,32 @@ export function DashboardWidgetCard({
   dragHandleAttributes,
   dragHandleListeners,
 }: DashboardWidgetCardProps) {
+  // A widget body is a fixed grid cell, so a list taller than the cell gets sliced
+  // mid-row at the bottom border and reads as a rendering fault rather than as
+  // "there is more below". The flag drives a fade over the last few pixels, and it
+  // is only on while there is genuinely more to scroll to — a permanent fade would
+  // veil the final row of every widget that fits.
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+
+  const syncMoreBelow = useCallback(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 1);
+  }, []);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    syncMoreBelow();
+    const observer = new ResizeObserver(syncMoreBelow);
+    observer.observe(el);
+    for (const child of Array.from(el.children)) observer.observe(child);
+
+    return () => observer.disconnect();
+  }, [syncMoreBelow, children]);
+
   return (
     <Card
       className={cn(
@@ -191,7 +217,14 @@ export function DashboardWidgetCard({
 
       {/* No padding here — rows run edge to edge and carry their own. Widgets
           with non-row content wrap themselves in `.st-pad`. */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
+      <div
+        ref={bodyRef}
+        onScroll={syncMoreBelow}
+        data-more-below={moreBelow ? "true" : undefined}
+        className="st-widget-body flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
+        {children}
+      </div>
     </Card>
   );
 }

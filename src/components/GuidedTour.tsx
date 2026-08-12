@@ -371,7 +371,7 @@ export function GuidedTour({ onStepChange, onComplete }: GuidedTourProps) {
         style={{ top: overlayHole.top + overlayHole.height }}
       />
       <div
-        className="absolute left-0 top-0 border-2 border-brand-teal-bright bg-transparent shadow-[0_0_22px_rgba(15, 118, 110,0.35)] transition-[transform,width,height] duration-300"
+        className="absolute left-0 top-0 border-2 border-brand-teal-bright bg-transparent shadow-[0_0_22px_rgba(18,63,60,0.35)] transition-[transform,width,height] duration-300"
         style={{
           transform: `translate(${highlightStyle.left}px, ${highlightStyle.top}px)`,
           width: highlightStyle.width,

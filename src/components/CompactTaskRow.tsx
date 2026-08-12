@@ -216,8 +216,10 @@ const CompactTaskRow = ({
 
         {hasMeta && (
           <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] leading-none text-muted-foreground">
+            {/* Neutral, not teal: this chip repeats on every row, and an accent
+                that appears eight times down a list stops meaning "act here". */}
             {projectLabel && (
-              <span className="inline-flex max-w-[280px] items-center gap-1 truncate rounded-md border border-brand-teal/20 bg-brand-teal/5 px-1.5 py-0.5 font-semibold text-brand-teal">
+              <span className="inline-flex max-w-[280px] items-center gap-1 truncate rounded-md border border-border bg-muted/60 px-1.5 py-0.5 font-semibold text-muted-foreground">
                 <FolderKanban className="h-3 w-3 shrink-0" />
                 <span className="truncate">{projectLabel}</span>
               </span>

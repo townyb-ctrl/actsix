@@ -67,27 +67,27 @@ function getMeetingPersonStatus(status?: string | null) {
     case "unavailable":
       return {
         label: "Unavailable",
-        className: "bg-amber-50 text-amber-700 border-amber-200",
+        className: "bg-brand-amber/10 text-brand-amber border-brand-amber/25",
       };
     case "apology":
       return {
         label: "Apology",
-        className: "bg-amber-50 text-amber-700 border-amber-200",
+        className: "bg-brand-amber/10 text-brand-amber border-brand-amber/25",
       };
     case "absent":
       return {
         label: "Absent",
-        className: "bg-rose-50 text-rose-700 border-rose-200",
+        className: "bg-destructive/10 text-destructive border-destructive/25",
       };
     case "not_required":
       return {
         label: "Not Required",
-        className: "bg-slate-100 text-slate-700 border-slate-200",
+        className: "bg-muted text-muted-foreground border-border",
       };
     default:
       return {
         label: rawStatus.replace(/_/g, " "),
-        className: "bg-slate-100 text-slate-700 border-slate-200",
+        className: "bg-muted text-muted-foreground border-border",
       };
   }
 }
@@ -310,7 +310,7 @@ export function MeetingPeopleSection({
               </div>
 
               {inviteRecipients.some((recipient) => !recipient.email.trim()) && (
-                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="mt-4 rounded-xl border border-brand-amber/25 bg-brand-amber/10 p-3 text-sm text-brand-amber">
                   Some people are missing email addresses and cannot receive real invites yet. This workflow currently only marks invite status as sent.
                 </div>
               )}

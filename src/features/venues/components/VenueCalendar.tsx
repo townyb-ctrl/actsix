@@ -17,7 +17,7 @@ type Props = {
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MAX_CHIPS_PER_DAY = 3;
-const DEFAULT_SPACE_COLOR = "#64748b"; // slate-500 - unpainted spaces still read clearly
+const DEFAULT_SPACE_COLOR = "#7e7c72"; // Studio ink-3 - unpainted spaces still read clearly
 
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
 

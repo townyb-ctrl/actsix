@@ -222,8 +222,8 @@ export default function AppLayout() {
           <AppSidebar />
         </div>
 
-        <div className="relative z-20 flex min-h-screen min-w-0 flex-1 flex-col overscroll-none bg-[#fbfaf7] pb-[calc(7.6rem+env(safe-area-inset-bottom))] md:h-screen md:overflow-hidden md:rounded-tl-[2rem] md:pb-0">
-          <header className="sticky top-0 z-10 flex min-h-11 items-center gap-2 border-b border-border/45 bg-[#fbfaf7]/90 px-4 py-1.5 backdrop-blur-xl sm:px-4 xl:px-6">
+        <div className="relative z-20 flex min-h-screen min-w-0 flex-1 flex-col overscroll-none bg-background pb-[calc(7.6rem+env(safe-area-inset-bottom))] md:-ml-6 md:h-screen md:group-has-[[data-collapsible=icon]]/sidebar-wrapper:ml-0 md:overflow-hidden md:rounded-tl-[2rem] md:pb-0">
+          <header className="sticky top-0 z-10 flex min-h-11 items-center gap-2 border-b border-border/45 bg-background/90 px-4 py-1.5 backdrop-blur-xl sm:px-4 xl:px-6">
             
             {/* FULL TEXT LOGO IN HEADER (Mobile Only) */}
             <Link to="/" className="mr-1 flex shrink-0 items-center md:hidden">
@@ -346,7 +346,7 @@ export default function AppLayout() {
             </main>
           )}
 
-          <footer className="hidden min-h-12 items-center justify-center border-t border-border/45 bg-[#fbfaf7]/88 px-4 py-2 text-xs text-muted-foreground backdrop-blur md:flex sm:px-6 xl:px-8 2xl:px-10">
+          <footer className="hidden min-h-12 items-center justify-center border-t border-border/45 bg-background/88 px-4 py-2 text-xs text-muted-foreground backdrop-blur md:flex sm:px-6 xl:px-8 2xl:px-10">
             <div className="flex items-center justify-center gap-3 text-center">
               <img src={actsixLogo} alt="ACTSIX" className="h-8 w-auto object-contain brightness-0" />
             </div>

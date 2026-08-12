@@ -6,32 +6,6 @@
 
 @layer base {
   :root {
-    /* ACTSIX Design Tokens - from brand guideline */
-    --color-charcoal: #1E1E1B;
-    --color-warm-white: #F7F4EE;
-    --color-teal: #2D8C8C;
-    --color-teal-dark: #1F6868;
-    --color-teal-soft: #E3F0EF;
-    --color-sage: #7A8F7B;
-    --color-sage-soft: #E9EEE7;
-    --color-sand: #D8C7A6;
-    --color-bronze: #A67C52;
-    --color-success: #6F8B6B;
-    --color-warning: #C69245;
-    --color-danger: #B94A3A;
-
-    --bg-main: #F3EFE7;
-    --bg-card: #FFFFFF;
-    --bg-soft: #EDE8DD;
-    --bg-dark: #1E1E1B;
-
-    --text-primary: #1E1E1B;
-    --text-secondary: #4E514B;
-    --text-muted: #6F736A;
-    --text-inverse: #F7F4EE;
-
-    --border-light: #D8D0C1;
-    --border-medium: #C9BEAD;
 
     --font-heading: "Satoshi", "Inter Tight", "General Sans", "Manrope", ui-sans-serif, system-ui, sans-serif;
     --font-body: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -53,80 +27,14 @@
     --space-xl: 32px;
     --space-2xl: 48px;
 
-    --shadow-sm: 0 1px 3px rgba(30, 30, 27, 0.045);
-    --shadow-md: 0 6px 16px rgba(30, 30, 27, 0.065);
-    --shadow-lg: 0 12px 28px rgba(30, 30, 27, 0.09);
-
     --transition-fast: 120ms ease;
     --transition-normal: 160ms ease;
 
-    /* shadcn / Tailwind HSL tokens */
-    --background: 39 34% 93%;
-    --foreground: 60 5% 11%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 60 5% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 60 5% 11%;
-
-    --primary: 180 51% 36%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 42 28% 93%;
-    --secondary-foreground: 60 5% 11%;
-
-    --muted: 39 25% 90%;
-    --muted-foreground: 75 5% 35%;
-
-    --accent: 175 30% 92%;
-    --accent-foreground: 180 51% 36%;
-
-    --destructive: 8 52% 48%;
+    /* Colors, shadows and radii all live in the STUDIO block at the bottom of
+       this file — that is the single source of truth. Only the two tokens Studio
+       does not restate survive here. */
     --destructive-foreground: 0 0% 100%;
-
-    --border: 38 22% 79%;
-    --input: 38 22% 79%;
-    --ring: 180 51% 36%;
-
-    --radius: 0.875rem;
-
-    --brand-charcoal: 60 5% 11%;
-    --brand-warm-white: 40 36% 95%;
-    --brand-teal: 180 51% 36%;
-    --brand-teal-dark: 180 54% 26%;
-    --brand-teal-soft: 175 30% 92%;
-    --brand-sage: 123 9% 52%;
-    --brand-sage-soft: 103 17% 92%;
-    --brand-sand: 40 40% 75%;
-    --brand-bronze: 30 34% 49%;
-    --brand-success: 112 13% 48%;
-    --brand-warning: 36 53% 52%;
-    --brand-danger: 8 52% 48%;
-
-    /* Backwards-compatible aliases currently used in the app */
-    --brand-cream: 40 36% 95%;
-    --brand-ink: 60 5% 11%;
-    --brand-teal-bright: 180 51% 36%;
-    --brand-amber: 36 53% 52%;
-    --brand-coral: 8 52% 48%;
-
-    /* Dark slate-teal instead of neutral charcoal - same hue family as the
-       brand teal accent below, so the panel reads as "ours" rather than
-       generic dark-UI grey. */
-    --sidebar-background: 184 20% 11%;
-    --sidebar-foreground: 40 36% 95%;
-    --sidebar-primary: 180 51% 36%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 180 51% 36%;
-    --sidebar-accent-foreground: 40 36% 95%;
-    --sidebar-border: 184 18% 20%;
-    --sidebar-ring: 180 51% 36%;
-
-    --gradient-content: linear-gradient(135deg, #F3EFE7 0%, #EDE8DD 100%);
-    --gradient-sidebar: linear-gradient(160deg, #1B2C2D 0%, #0D1416 100%);
-    --shadow-card: 0 1px 0 rgba(207, 198, 181, 0.55), 0 4px 14px rgba(30, 30, 27, 0.045);
-    --shadow-soft: 0 1px 6px rgba(30, 30, 27, 0.035);
+    --brand-warm-white: 40 20% 93%;
 
     /* z-index scale: shadcn/Radix primitives (dialog, sheet, dropdown-menu, etc.)
        already own 40/50 via Tailwind's default scale - these tokens are only for
@@ -141,32 +49,9 @@
     --z-tour: 80;
   }
 
-  .dark {
-    --background: 60 5% 8%;
-    --foreground: 40 36% 95%;
-    --card: 60 5% 11%;
-    --card-foreground: 40 36% 95%;
-    --popover: 60 5% 11%;
-    --popover-foreground: 40 36% 95%;
-    --primary: 180 51% 36%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 60 5% 15%;
-    --secondary-foreground: 40 36% 95%;
-    --muted: 60 5% 15%;
-    --muted-foreground: 40 10% 70%;
-    --accent: 180 51% 18%;
-    --accent-foreground: 40 36% 95%;
-    --border: 60 5% 18%;
-    --input: 60 5% 18%;
-    --ring: 180 51% 36%;
-    --sidebar-background: 60 5% 8%;
-    --sidebar-foreground: 40 36% 95%;
-    --sidebar-primary: 180 51% 36%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 60 5% 15%;
-    --sidebar-accent-foreground: 40 36% 95%;
-    --sidebar-border: 60 5% 18%;
-  }
+  /* No dark build yet. The old parchment-era `.dark` token block was removed with
+     the Studio rollout — a dark theme is a sibling `--st-*` block, not a revival
+     of those values. Nothing in the app toggles the class today. */
 
   * {
     @apply border-border;
@@ -271,7 +156,9 @@
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   opacity: 0.65;
-  filter: invert(38%) sepia(24%) saturate(1114%) hue-rotate(129deg) brightness(94%) contrast(90%);
+  /* Tints the native glyph to the accent (#123f3c) — there is no color property
+     for it, so the filter chain is the only lever. */
+  filter: invert(19%) sepia(31%) saturate(1092%) hue-rotate(130deg) brightness(94%) contrast(92%);
   cursor: pointer;
 }
 
@@ -317,7 +204,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     background-color: hsl(var(--brand-teal));
     color: #ffffff;
     border: 1px solid hsl(var(--brand-teal));
-    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.08);
+    box-shadow: 0 4px 12px rgba(18, 63, 60, 0.10);
     transition: var(--transition-normal);
   }
 
@@ -335,7 +222,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
      h-6 filter pills. Height itself comes from a normal h-* utility. */
   .actsix-btn-primary-compact {
     gap: 4px;
-    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.06);
+    box-shadow: 0 2px 6px rgba(18, 63, 60, 0.08);
   }
 
   .actsix-btn-primary-compact:hover {
@@ -952,12 +839,18 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     --st-ink: #1a1a16;
     --st-ink-2: #55534b;
     --st-ink-3: #7e7c72;
-    --st-accent: #0f766e;
-    --st-accent-hi: #0b5c56;
-    --st-accent-dim: #3d9d92;
-    --st-accent-wash: rgba(15, 118, 110, 0.07);
-    --st-accent-edge: rgba(15, 118, 110, 0.24);
-    --st-accent-edge-hi: rgba(15, 118, 110, 0.34);
+    /* The accent IS the rail. Studio ran a lighter teal (#0f766e) on paper and a
+       deeper one (#123f3c) on the sidebar; two teals meant every element had to
+       ask which surface it sat on, and half of them guessed wrong. One color now:
+       the rail's #123f3c is the accent everywhere on paper — buttons, links,
+       active state, focus, meters. `-hi` is its pressed step, `-dim` the meter
+       fill. Teal *on* the dark rail is still --brand-teal-bright. */
+    --st-accent: #123f3c;
+    --st-accent-hi: #0c2b29;
+    --st-accent-dim: #2c7169;
+    --st-accent-wash: rgba(18, 63, 60, 0.07);
+    --st-accent-edge: rgba(18, 63, 60, 0.24);
+    --st-accent-edge-hi: rgba(18, 63, 60, 0.34);
     --st-on-accent: #ffffff;
     --st-track: #e7e3da;
     --st-amber: #9a6410;
@@ -980,21 +873,21 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
        portalled UI used to stay on the old palette. */
     --popover: 0 0% 100%;
     --popover-foreground: 60 8% 9%;
-    --primary: 175 77% 26%;
+    --primary: 176 56% 16%;
     --primary-foreground: 0 0% 100%;
     --secondary: 41 21% 88%;
     --secondary-foreground: 60 8% 9%;
     --muted: 41 21% 88%;
     --muted-foreground: 50 5% 47%;
-    --accent: 175 25% 93%;
-    --accent-foreground: 175 77% 26%;
+    --accent: 176 22% 92%;
+    --accent-foreground: 176 56% 16%;
     --destructive: 8 56% 42%;
     --border: 40 19% 84%;
     --input: 40 19% 84%;
-    --ring: 175 77% 26%;
-    --brand-teal: 175 77% 26%;
-    --brand-teal-dark: 175 79% 20%;
-    --brand-teal-soft: 175 25% 93%;
+    --ring: 176 56% 16%;
+    --brand-teal: 176 56% 16%;
+    --brand-teal-dark: 176 57% 11%;
+    --brand-teal-soft: 176 22% 92%;
     --brand-amber: 37 81% 33%;
     --brand-danger: 8 56% 42%;
 
@@ -1032,7 +925,9 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     --sidebar-border: 176 30% 26%;
     --sidebar-ring: 172 43% 56%;
 
-    --gradient-sidebar: linear-gradient(160deg, #164a46 0%, #0e3330 100%);
+    /* Flat, not a gradient: the rail and the accent are now the same color, and a
+       fade meant the bottom of the rail no longer matched the buttons beside it. */
+    --gradient-sidebar: linear-gradient(#123f3c, #123f3c);
     --gradient-content: linear-gradient(135deg, #f4f2ed 0%, #edeae2 100%);
 
     /* Shadows lose the parchment tint and drop to Studio's whisper. */
@@ -1252,6 +1147,15 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   }
 
   .st-rows > .st-row:first-child { border-top: 0; }
+
+  /* Fades the sliced last row of a scrolling widget instead of letting it end on
+     a hard cut at the panel border. `data-more-below` is set only while there is
+     more to scroll to, so a widget whose list fits keeps its last row at full
+     strength. Masking (not an overlay) so the fade lands on the rows themselves. */
+  .st-widget-body[data-more-below] {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+  }
   .st-row:hover { background: var(--st-panel-hi); }
 
   .st-row:focus-visible {

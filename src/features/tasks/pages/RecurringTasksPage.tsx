@@ -57,7 +57,7 @@ const emptyDraft = (): RecurringTemplateDraft => ({
 
 const statusClasses: Record<string, string> = {
   active: "border-brand-teal/20 bg-brand-teal/10 text-brand-teal",
-  paused: "border-amber-200 bg-amber-50 text-amber-700",
+  paused: "border-brand-amber/25 bg-brand-amber/10 text-brand-amber",
   ended: "border-border bg-muted text-muted-foreground",
 };
 

@@ -406,7 +406,7 @@ export function AppSidebar() {
           className={
             collapsed
               ? "flex h-24 flex-col items-center justify-center gap-2 px-0 py-2"
-              : "flex h-[4.75rem] items-center gap-2.5 px-3 py-2.5"
+              : "flex h-20 items-center gap-2.5 pl-3 pr-8 py-2.5"
           }
         >
           <NavLink
@@ -441,7 +441,7 @@ export function AppSidebar() {
       <SidebarContent className="bg-transparent">
         <SidebarGroup className={collapsed ? "p-0" : undefined}>
           <SidebarGroupContent data-tour="sidebar-primary-nav">
-            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 pl-3 pr-5"}>
+            <SidebarMenu className={collapsed ? "items-center gap-1.5 px-0" : "gap-1 pl-3 pr-10"}>
               {visibleSections.map((section, index) => {
                 const SectionIcon = section.icon;
                 const sectionActive = section.id === activeSection?.id;
@@ -473,10 +473,13 @@ export function AppSidebar() {
                         section.id === "settings" && !collapsed && "mt-2 border-t border-sidebar-border/70 pt-2.5"
                       )}
                     >
+                    {/* Marker sits inside the rail, not straddling its edge: the content
+                        column paints above the sidebar, so the half that used to bleed
+                        across was never visible — it just read as a sliced pill. */}
                     {collapsed && sectionActive && (
                       <span
                         aria-hidden="true"
-                        className="absolute right-0 top-1/2 h-[35.2px] w-4 -translate-y-1/2 translate-x-1/2 rounded-full bg-background shadow-card"
+                        className="absolute right-0 top-1/2 h-[35.2px] w-1.5 -translate-y-1/2 rounded-l-full bg-background"
                       />
                     )}
                     {collapsed ? (
@@ -495,7 +498,7 @@ export function AppSidebar() {
                         )}
                       >
                         <NavLink to={section.url} className="flex h-full w-full items-center justify-center">
-                          <SectionIcon className="h-[18px] w-[18px]" />
+                          <SectionIcon className="!h-5 !w-5" />
                         </NavLink>
                       </SidebarMenuButton>
                     ) : hasSubmenu ? (

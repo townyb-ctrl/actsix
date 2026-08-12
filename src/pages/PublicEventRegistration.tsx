@@ -153,7 +153,7 @@ export default function PublicEventRegistration() {
 
 function PublicShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-[#f7f4ee] px-4 py-8 text-foreground">
+    <main className="min-h-screen bg-background px-4 py-8 text-foreground">
       <div className="mx-auto max-w-3xl">{children}</div>
     </main>
   );

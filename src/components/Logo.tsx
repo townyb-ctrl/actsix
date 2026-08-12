@@ -30,13 +30,13 @@ export const Logo = ({
         <img
           src={onDark ? logoIconWhite : logoIconBlack}
           alt="ACTSIX"
-          className="h-6 w-6 shrink-0 object-contain 2xl:h-7 2xl:w-7"
+          className="h-8 w-8 shrink-0 object-contain 2xl:h-9 2xl:w-9"
         />
       ) : (
         <img
           src={logoFullWhite}
           alt="ACTSIX"
-          className={`h-12 w-auto max-w-[220px] object-contain ${
+          className={`h-14 w-auto max-w-[170px] object-contain ${
             onDark ? "" : "opacity-90 invert"
           }`}
         />
