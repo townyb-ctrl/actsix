@@ -3,7 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function NotesWidget({ widget, updateSettings }: DashboardWidgetRenderProps) {
   return (
-    <div className="flex flex-1 flex-col gap-2">
+    <div className="st-pad flex flex-1 flex-col gap-2">
       <Textarea
         value={widget.settings?.notes || ""}
         placeholder="Keep a quiet scratchpad for the day."

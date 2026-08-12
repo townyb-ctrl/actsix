@@ -388,7 +388,7 @@ export function AppSidebar() {
     if (!count) return null;
 
     return (
-      <span className="ml-auto rounded-full bg-brand-teal/15 px-1.5 py-0.5 text-[11px] font-extrabold tabular-nums text-sidebar-foreground">
+      <span className="ml-auto font-mono text-[10px] font-semibold tabular-nums text-sidebar-foreground/55">
         {count}
       </span>
     );
@@ -399,7 +399,7 @@ export function AppSidebar() {
       collapsible="icon"
       role="navigation"
       aria-label="Main"
-      className="!border-r-0 border-r-0 [&_[data-sidebar=sidebar]]:overflow-hidden [&_[data-sidebar=sidebar]]:!border-r-0 [&_[data-sidebar=sidebar]]:border-r-0 [&_[data-sidebar=sidebar]]:bg-gradient-sidebar"
+      className="[&_[data-sidebar=sidebar]]:overflow-hidden [&_[data-sidebar=sidebar]]:border-r [&_[data-sidebar=sidebar]]:border-sidebar-border [&_[data-sidebar=sidebar]]:bg-gradient-sidebar"
     >
       <SidebarHeader className="border-b border-sidebar-border/55 bg-transparent">
         <div
@@ -418,7 +418,7 @@ export function AppSidebar() {
             title="Home"
             aria-label="Go home"
           >
-            <Logo compact={collapsed} />
+            <Logo compact={collapsed} tone="onDark" />
           </NavLink>
 
           <button
@@ -458,7 +458,7 @@ export function AppSidebar() {
                       <li className="list-none">
                         <p
                           className={cn(
-                            "px-3 pb-1 pt-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-sidebar-foreground/50",
+                            "px-3 pb-1.5 pt-5 text-[9.5px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/45",
                             index === 0 && "pt-0"
                           )}
                         >
@@ -502,18 +502,18 @@ export function AppSidebar() {
                       <>
                         <div
                           className={cn(
-                            "flex h-11 w-full items-center overflow-hidden rounded-xl border transition-colors",
+                            "flex h-10 w-full items-center overflow-hidden rounded-lg border transition-colors",
                             sectionActive
-                              ? "border-brand-teal/30 bg-brand-teal/14 text-sidebar-foreground"
+                              ? "border-transparent bg-card text-brand-ink shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
                               : "border-transparent text-sidebar-foreground/74 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                           )}
                         >
                           <NavLink
                             to={section.url}
-                            className="flex h-full min-w-0 flex-1 items-center gap-2.5 rounded-l-xl px-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+                            className="flex h-full min-w-0 flex-1 items-center gap-2.5 rounded-l-lg px-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
                           >
                             <SectionIcon
-                              className={cn("h-4 w-4 shrink-0", sectionActive && "text-brand-teal-bright")}
+                              className={cn("h-4 w-4 shrink-0", sectionActive && "text-brand-teal")}
                             />
                             <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold">
                               {section.title}
@@ -523,9 +523,9 @@ export function AppSidebar() {
                           <button
                             type="button"
                             className={cn(
-                              "flex h-full w-11 shrink-0 items-center justify-center rounded-r-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                              "flex h-full w-11 shrink-0 items-center justify-center rounded-r-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                               sectionActive
-                                ? "text-brand-teal-bright/70 hover:bg-brand-teal/10 hover:text-brand-teal-bright"
+                                ? "text-brand-teal/70 hover:bg-brand-teal/10 hover:text-brand-teal"
                                 : "text-sidebar-foreground/45 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                             )}
                             onClick={() => toggleSection(section.id)}
@@ -542,7 +542,7 @@ export function AppSidebar() {
                         </div>
 
                         {sectionOpen && (
-                          <div className="ml-[1.45rem] mr-1.5 mt-1 space-y-0.5 border-l border-sidebar-border/70 pb-0.5 pl-2.5">
+                          <div className="ml-[1.45rem] mr-1.5 mt-1 space-y-px border-l border-sidebar-border pb-0.5 pl-2.5">
                             {primaryItems.map((item) => {
                               const ItemIcon = item.icon;
                               const itemActive = isItemActive(section, item);
@@ -554,14 +554,14 @@ export function AppSidebar() {
                                   className={cn(
                                     "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                                     itemActive
-                                      ? "bg-sidebar-foreground text-sidebar shadow-[0_4px_10px_hsl(var(--brand-charcoal)/0.18)]"
+                                      ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
                                       : "text-sidebar-foreground/62 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                                   )}
                                 >
                                   <ItemIcon
                                     className={cn(
                                       "h-3 w-3 shrink-0",
-                                      itemActive ? "text-sidebar/60" : "text-sidebar-foreground/45"
+                                      itemActive ? "text-sidebar-foreground" : "text-sidebar-foreground/45"
                                     )}
                                   />
                                   <span className="min-w-0 flex-1 truncate">{item.title}</span>
@@ -596,14 +596,14 @@ export function AppSidebar() {
                                         className={cn(
                                           "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                                           itemActive
-                                            ? "bg-sidebar-foreground text-sidebar shadow-[0_4px_10px_hsl(var(--brand-charcoal)/0.18)]"
+                                            ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
                                             : "text-sidebar-foreground/62 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                                         )}
                                       >
                                         <ItemIcon
                                           className={cn(
                                             "h-3 w-3 shrink-0",
-                                            itemActive ? "text-sidebar/60" : "text-sidebar-foreground/45"
+                                            itemActive ? "text-sidebar-foreground" : "text-sidebar-foreground/45"
                                           )}
                                         />
                                         <span className="min-w-0 flex-1 truncate">{item.title}</span>
@@ -632,7 +632,7 @@ export function AppSidebar() {
                                         className={cn(
                                           "block truncate rounded-lg px-2 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                                           seriesActive
-                                            ? "bg-sidebar-foreground text-sidebar"
+                                            ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
                                             : "text-sidebar-foreground/58 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                                         )}
                                       >
@@ -651,9 +651,9 @@ export function AppSidebar() {
                         to={section.url}
                         data-tour={section.id === "home" ? "module-menu" : undefined}
                         className={cn(
-                          "flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                          "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                           sectionActive
-                            ? "bg-sidebar-foreground text-sidebar shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_14px_28px_hsl(var(--brand-charcoal)/0.2)]"
+                            ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
                             : "text-sidebar-foreground/74 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                         )}
                       >

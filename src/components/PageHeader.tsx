@@ -11,7 +11,9 @@ export const PageHeader = ({
   subtitle?: string;
   actions?: ReactNode;
 }) => (
-  <div className="px-4 pb-3 pt-4 sm:px-6 sm:pb-4 xl:px-8 2xl:px-10">
+  // st-page-head draws the rule under the header and owns the spacing on both
+  // sides of it, so pages don't each re-invent that gap.
+  <div className="st-page-head px-4 pt-4 sm:px-6 xl:px-8 2xl:px-10">
     <div className="w-full">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
         <div className="min-w-0">

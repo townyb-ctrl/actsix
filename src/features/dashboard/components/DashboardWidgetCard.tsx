@@ -64,19 +64,27 @@ export function DashboardWidgetCard({
   return (
     <Card
       className={cn(
-        "group flex min-h-[220px] min-w-0 flex-col overflow-hidden rounded-[1.2rem] border border-border/60 bg-card/82 shadow-[0_1px_0_rgba(207,198,181,0.4)] transition duration-200 hover:border-brand-teal/22 hover:bg-card md:h-full md:min-h-0",
-        customizeMode && "border-brand-teal/28 bg-brand-teal/5 ring-1 ring-brand-teal/15"
+        "st-panel group flex min-h-[220px] min-w-0 flex-col md:h-full md:min-h-0",
+        customizeMode && "ring-1"
       )}
+      style={
+        customizeMode
+          ? {
+              borderColor: "var(--st-accent-edge)",
+              boxShadow: "0 0 0 1px var(--st-accent-edge)",
+            }
+          : undefined
+      }
     >
-      <div className="flex items-start justify-between gap-3 border-b border-border/45 px-4 py-3.5 sm:px-5">
-        <div className="flex min-w-0 items-start gap-2">
+      <div className="st-panel-head">
+        <div className="flex min-w-0 items-center gap-2">
           {customizeMode && (
             <button
               type="button"
-              className="-ml-1 mt-0.5 inline-flex h-7 w-7 shrink-0 cursor-grab items-center justify-center rounded-md bg-background/70 text-muted-foreground transition hover:bg-brand-teal/10 hover:text-brand-teal active:cursor-grabbing"
+              className="-ml-1 inline-flex h-7 w-7 shrink-0 cursor-grab items-center justify-center rounded-md active:cursor-grabbing"
+              style={{ color: "var(--st-ink-3)" }}
               title="Click and hold to drag"
               aria-label={`Drag ${widget.settings?.title || title} to reorder`}
-              style={{ touchAction: "none" }}
               {...dragHandleAttributes}
               {...dragHandleListeners}
             >
@@ -84,14 +92,10 @@ export function DashboardWidgetCard({
             </button>
           )}
           <div className="min-w-0">
-          <h2 className="truncate text-lg font-extrabold tracking-tight text-foreground">
-            {widget.settings?.title || title}
-          </h2>
-          {(widget.settings?.subtitle || subtitle) && (
-            <p className="mt-0.5 line-clamp-2 text-xs font-semibold text-muted-foreground">
-              {widget.settings?.subtitle || subtitle}
-            </p>
-          )}
+            <h2 className="st-panel-title truncate">{widget.settings?.title || title}</h2>
+            {(widget.settings?.subtitle || subtitle) && (
+              <p className="st-row-sub line-clamp-1">{widget.settings?.subtitle || subtitle}</p>
+            )}
           </div>
         </div>
 
@@ -146,8 +150,17 @@ export function DashboardWidgetCard({
       </div>
 
       {customizeMode && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-brand-teal/15 bg-background/60 px-4 py-2 sm:px-5">
-          <span className="rounded-full border border-border/70 bg-background/80 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">
+        <div
+          className="flex flex-wrap items-center gap-2 px-4 py-2"
+          style={{
+            borderBottom: "1px solid var(--st-line-soft)",
+            background: "var(--st-accent-wash)",
+          }}
+        >
+          <span
+            className="st-tally rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+            style={{ border: "1px solid var(--st-line)" }}
+          >
             {sizeLabels[widget.size]}
           </span>
           <Button
@@ -176,7 +189,9 @@ export function DashboardWidgetCard({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-5">{children}</div>
+      {/* No padding here — rows run edge to edge and carry their own. Widgets
+          with non-row content wrap themselves in `.st-pad`. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
     </Card>
   );
 }

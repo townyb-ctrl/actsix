@@ -454,7 +454,7 @@ const DockLink = ({ item, active }: { item: MobileDockLink; active: boolean }) =
         className={cn(
           "actsix-mobile-dock-icon",
           active
-            ? "bg-brand-teal/10 shadow-[inset_0_0_0_1px_rgba(45,140,140,0.08)]"
+            ? "bg-brand-teal/10 shadow-[inset_0_0_0_1px_rgba(15,118,110,0.08)]"
             : "group-hover:bg-brand-teal/5"
         )}
       >
@@ -492,9 +492,9 @@ const DockButton = ({
         className={cn(
           "actsix-mobile-dock-icon",
           emphasis
-            ? "bg-brand-teal text-white shadow-[0_8px_18px_rgba(45,140,140,0.2)] group-hover:bg-brand-teal-dark"
+            ? "bg-brand-teal text-white shadow-[0_8px_18px_rgba(15, 118, 110,0.2)] group-hover:bg-brand-teal-dark"
             : active
-              ? "bg-brand-teal/10 shadow-[inset_0_0_0_1px_rgba(45,140,140,0.08)]"
+              ? "bg-brand-teal/10 shadow-[inset_0_0_0_1px_rgba(15,118,110,0.08)]"
               : "group-hover:bg-brand-teal/5"
         )}
       >
@@ -569,7 +569,7 @@ export function MobileBottomNav() {
       <div className="relative mx-auto max-w-md">
         <div
           className={cn(
-            "pointer-events-none absolute left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-brand-teal shadow-[0_10px_24px_rgba(45,140,140,0.24)]",
+            "pointer-events-none absolute left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-brand-teal shadow-[0_10px_24px_rgba(15, 118, 110,0.24)]",
             DOCK_TRANSITION,
             switcherOpen
               ? "bottom-[5.1rem] scale-x-[2.6] scale-y-75 opacity-80"
@@ -579,7 +579,7 @@ export function MobileBottomNav() {
 
         <div
           className={cn(
-            "absolute left-1/2 bottom-[5.5rem] z-20 flex h-12 w-[min(90%,21rem)] origin-bottom -translate-x-1/2 items-center justify-between gap-1 overflow-hidden rounded-full border border-white/10 bg-brand-teal px-3 shadow-[0_16px_34px_rgba(45,140,140,0.26)] transition-[transform,opacity] duration-200 ease-out",
+            "absolute left-1/2 bottom-[5.5rem] z-20 flex h-12 w-[min(90%,21rem)] origin-bottom -translate-x-1/2 items-center justify-between gap-1 overflow-hidden rounded-full border border-white/10 bg-brand-teal px-3 shadow-[0_16px_34px_rgba(15, 118, 110,0.26)] transition-[transform,opacity] duration-200 ease-out",
             switcherOpen
               ? "pointer-events-auto translate-y-0 scale-x-100 opacity-100"
               : "pointer-events-none translate-y-7 scale-x-[0.18] opacity-0"
@@ -639,7 +639,7 @@ export function MobileBottomNav() {
                 className={cn(
                   "absolute left-1/2 top-[-3.15rem] flex h-[64px] w-[64px] -translate-x-1/2 items-center justify-center rounded-full border-[6px] border-white bg-white shadow-[0_10px_24px_rgba(30,30,27,0.13)] active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-teal/25",
                   DOCK_TRANSITION,
-                  switcherOpen && "shadow-[0_15px_30px_rgba(45,140,140,0.24)]"
+                  switcherOpen && "shadow-[0_15px_30px_rgba(15, 118, 110,0.24)]"
                 )}
                 aria-label="Switch ACTSIX module"
                 aria-expanded={switcherOpen}

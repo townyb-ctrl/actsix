@@ -115,7 +115,10 @@ const CompactTaskRow = ({
   const displayNotes = isSystemCaptureNote(task.notes) ? "" : task.notes;
   const context = task.context || "General";
   const priority = task.priority || "Medium";
-  const minutes = task.minutes || 15;
+  // 15 is the default the task editor writes when nobody sets an estimate, so
+  // it appears on nearly every row and carries no signal — same reason
+  // "General" context and "Medium" priority are suppressed below.
+  const minutes = task.minutes && task.minutes !== 15 ? task.minutes : 0;
   const isRecurringTask = Boolean(task.recurring_template_id);
   const recurringLabel = getRecurringLabel(task);
   const sectionName = getProjectSectionName(task);
@@ -231,7 +234,7 @@ const CompactTaskRow = ({
 
             {priorityLabel && <span className={priorityClass(priority)}>{priorityLabel}</span>}
 
-            <span className="font-mono">{minutes}m</span>
+            {minutes > 0 && <span className="font-mono">{minutes}m</span>}
 
             {showAssignee && assignedLabel && (
               <span

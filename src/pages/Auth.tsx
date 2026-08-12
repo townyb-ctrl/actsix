@@ -60,18 +60,18 @@ const Auth = () => {
 
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-[0.95fr_1.05fr]">
-      <div className="hidden flex-col justify-between overflow-hidden border-r border-border/70 bg-brand-ink p-12 text-sidebar-foreground lg:flex">
-        <Logo />
+      <div className="hidden flex-col justify-between overflow-hidden border-r border-border/70 bg-brand-ink p-12 text-brand-cream lg:flex">
+        <Logo tone="onDark" />
         <div>
           <p className="text-3xl font-extrabold leading-[1.08] tracking-tight text-balance">
             Organize the work.<br />
             <span className="text-brand-teal-bright">Serve</span> the word.
           </p>
-          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/50">
+          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-brand-cream/50">
             A calm command center for ministry work
           </p>
         </div>
-        <div className="text-xs text-sidebar-foreground/40">ACTSIX | 2026</div>
+        <div className="text-xs text-brand-cream/40">ACTSIX | 2026</div>
       </div>
 
       <div className="flex items-center justify-center p-5 sm:p-6">

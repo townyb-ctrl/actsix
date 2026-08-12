@@ -278,14 +278,14 @@ const TasksPage = () => {
   ];
 
   return (
-    <div>
+    <div className="min-h-[100dvh]">
       <PageHeader
         eyebrow="Workflow"
         title="Next Actions"
         subtitle="The next thing to do, in any context."
       />
 
-      <div className="actsix-page-body actsix-page-stack -mt-1">
+      <div className="actsix-page-body actsix-page-stack">
         {!loadingTasks && loadError && (
           <Card className="actsix-panel-soft flex flex-col items-center gap-3 p-8 text-center">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
@@ -452,10 +452,23 @@ const TasksPage = () => {
                 </div>
               </div>
 
-              <Card data-tour="tasks-list" className="actsix-panel space-y-1.5 p-2">
+              <Card data-tour="tasks-list" className="actsix-panel st-list">
                 {loadingTasks && (
-                  <div className="actsix-loading-state">
-                    Loading next actions...
+                  <div role="status" aria-label="Loading next actions">
+                    {[0, 1, 2, 3, 4, 5].map((row) => (
+                      <div
+                        key={row}
+                        className="flex items-center gap-3 px-4 py-3.5"
+                        style={{ borderTop: row === 0 ? "0" : "1px solid var(--st-line-soft)" }}
+                      >
+                        <span className="st-skeleton block h-4 w-4 shrink-0" />
+                        <span
+                          className="st-skeleton block h-3"
+                          style={{ width: `${68 - row * 7}%` }}
+                        />
+                        <span className="st-skeleton ml-auto block h-3 w-14 shrink-0" />
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -487,30 +500,23 @@ const TasksPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowCompleted((value) => !value)}
-                  className="mb-2 flex min-h-10 w-full items-center justify-between gap-2.5 rounded-lg border border-border/70 bg-background/70 px-3 py-2 text-left transition hover:border-brand-teal/30 hover:bg-brand-teal/5"
+                  className="st-toggle mb-2"
                 >
-                  <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-2">
                     {showCompleted ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      <ChevronDown className="h-4 w-4" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      <ChevronRight className="h-4 w-4" />
                     )}
-
-                    <h2 className="text-lg font-extrabold tracking-tight text-muted-foreground">
-                      Completed
-                      <span className="ml-2 rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs font-extrabold text-muted-foreground">
-                        {filteredDone.length}
-                      </span>
-                    </h2>
-                  </div>
-
-                  <span className="text-xs font-bold text-muted-foreground">
-                    {showCompleted ? "Collapse" : "Expand"}
+                    Completed
+                    <span className="st-tally">{filteredDone.length}</span>
                   </span>
+
+                  <span className="st-row-sub">{showCompleted ? "Collapse" : "Expand"}</span>
                 </button>
 
                 {showCompleted && (
-                  <Card className="actsix-panel-soft space-y-1.5 p-2 opacity-90">
+                  <Card className="actsix-panel-soft st-list">
                     {filteredDone.length === 0 && (
                       <div className="actsix-empty-state">
                         No completed actions match this view.

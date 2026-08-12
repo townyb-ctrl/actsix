@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
+  AlertTriangle,
   ArrowUpRight,
   ChevronRight,
   ListChecks,
@@ -104,6 +104,7 @@ type CalendarItem = {
   time?: string | null;
   to: string;
   icon: LucideIcon;
+  kind: "meeting" | "task" | "service";
 };
 
 type CalendarDay = {
@@ -113,6 +114,11 @@ type CalendarDay = {
   items: CalendarItem[];
   inMonth: boolean;
 };
+
+// How many items a calendar cell shows before it collapses the rest behind a
+// "+N more" control. Previously the overflow just scrolled inside a 144px box,
+// which hid items with no affordance that they existed.
+const DAY_ITEM_LIMIT = 2;
 
 const startOfToday = () => {
   const date = new Date();
@@ -141,16 +147,6 @@ const addDays = (date: Date, days: number) => {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
-};
-
-const formatDate = (value?: string | null) => {
-  if (!value) return "No date";
-
-  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
 };
 
 const formatShortDate = (value?: string | null) => {
@@ -185,54 +181,6 @@ const formatTime = (value?: string | null) => {
   });
 };
 
-const EmptyState = ({ children }: { children: string }) => (
-  <div className="actsix-empty-state">
-    {children}
-  </div>
-);
-
-const SectionHeader = ({
-  eyebrow,
-  title,
-  action,
-}: {
-  eyebrow: string;
-  title: string;
-  action?: ReactNode;
-}) => (
-  <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3.5 sm:px-5">
-    <div className="min-w-0">
-      <p className="label-eyebrow">{eyebrow}</p>
-      <h2 className="mt-0.5 truncate text-lg font-extrabold tracking-tight text-foreground sm:text-xl">
-        {title}
-      </h2>
-    </div>
-    {action && <div className="shrink-0">{action}</div>}
-  </div>
-);
-
-const HomePanel = ({
-  eyebrow,
-  title,
-  children,
-  className = "",
-}: {
-  eyebrow: string;
-  title: string;
-  children: ReactNode;
-  className?: string;
-}) => (
-  <Card className={`actsix-panel min-w-0 overflow-hidden ${className}`}>
-    <div className="border-b border-border/60 px-4 py-3.5 sm:px-5">
-      <p className="label-eyebrow">{eyebrow}</p>
-      <h2 className="mt-0.5 text-lg font-extrabold tracking-tight text-foreground">
-        {title}
-      </h2>
-    </div>
-    <div className="p-4 sm:p-5">{children}</div>
-  </Card>
-);
-
 // The clock owns its own ticking state so the 30s update repaints two chips
 // instead of re-rendering the dashboard's widget tree and calendar grid.
 const HeaderClock = () => {
@@ -245,12 +193,9 @@ const HeaderClock = () => {
 
   return (
     <>
-      <span className="rounded-full border border-border/55 bg-white px-3 py-1">
-        {now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-      </span>
-      <span className="rounded-full border border-border/55 bg-white px-3 py-1">
-        {now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-      </span>
+      {now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+      {" · "}
+      {now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
     </>
   );
 };
@@ -259,27 +204,56 @@ const AgendaItemRow = ({ item }: { item: CalendarItem }) => {
   const Icon = item.icon;
 
   return (
-    <Link
-      to={item.to}
-      className="group flex min-h-[50px] items-center gap-2.5 rounded-lg border border-border/80 bg-background/70 px-3 py-2 transition hover:border-brand-teal/35 hover:bg-brand-teal/5"
-    >
-      <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] font-extrabold text-foreground group-hover:text-brand-teal">
-          {item.title}
-        </div>
-        <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs font-semibold text-muted-foreground">
-          <span>{formatAgendaDate(item.date)}</span>
-          {formatTime(item.time) && <span>{formatTime(item.time)}</span>}
-          <span>{item.label}</span>
-        </div>
-      </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+    <Link to={item.to} className="st-row">
+      <Icon className="h-4 w-4" style={{ color: "var(--st-accent)" }} aria-hidden="true" />
+      <span>
+        <span className="st-row-title">{item.title}</span>
+        <span className="st-row-sub">
+          {formatAgendaDate(item.date)}
+          {formatTime(item.time) ? ` · ${formatTime(item.time)}` : ""} · {item.label}
+        </span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--st-ink-3)" }} />
     </Link>
   );
 };
+
+// Skeleton mirrors the real grid's shape so the page doesn't reflow when data
+// lands — the old loading state was a single line of text that the full
+// dashboard then shoved out of the way.
+const DashboardSkeleton = () => (
+  <div className="flex flex-col gap-4" role="status" aria-label="Loading your dashboard">
+    <div className="st-panel">
+      <div className="st-panel-head">
+        <span className="st-skeleton block h-3 w-24" />
+        <span className="st-skeleton block h-3 w-16" />
+      </div>
+      <div className="flex flex-col gap-3 p-4">
+        {[0, 1, 2, 3, 4].map((row) => (
+          <div key={row} className="flex items-center gap-3">
+            <span className="st-skeleton block h-3.5 w-3.5 shrink-0" />
+            <span className="st-skeleton block h-3 flex-1" style={{ maxWidth: `${72 - row * 6}%` }} />
+            <span className="st-skeleton block h-3 w-12 shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="grid gap-4 xl:grid-cols-2">
+      {[0, 1].map((panel) => (
+        <div key={panel} className="st-panel">
+          <div className="st-panel-head">
+            <span className="st-skeleton block h-3 w-20" />
+          </div>
+          <div className="flex flex-col gap-3 p-4">
+            {[0, 1, 2].map((row) => (
+              <span key={row} className="st-skeleton block h-3" style={{ width: `${86 - row * 14}%` }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -294,7 +268,9 @@ const Dashboard = () => {
   const [serviceOrderItems, setServiceOrderItems] = useState<ServiceOrderItem[]>([]);
   const [serviceTeamAssignments, setServiceTeamAssignments] = useState<ServiceTeamAssignment[]>([]);
   const [calendarView, setCalendarView] = useState<"month" | "week">("week");
+  const [expandedDays, setExpandedDays] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [customizeMode, setCustomizeMode] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -316,6 +292,7 @@ const Dashboard = () => {
 
     (async () => {
       setLoading(true);
+      setLoadError(null);
       const today = toDateKey(startOfToday());
       const monthStart = toDateKey(startOfMonth(startOfToday()));
       const monthEndDate = endOfMonth(startOfToday());
@@ -365,6 +342,23 @@ const Dashboard = () => {
           .limit(1),
       ]);
 
+      // A failed query used to fall through as an empty array, so a network
+      // outage rendered as "you have nothing to do" — the most dangerous thing
+      // this page can say to someone running a Sunday.
+      const failed = [
+        taskResult.error,
+        projectTaskResult.error,
+        projectResult.error,
+        meetingResult.error,
+        serviceResult.error,
+      ].filter(Boolean);
+
+      if (failed.length > 0) {
+        setLoadError(failed[0]?.message ?? "Something went wrong loading your dashboard.");
+        setLoading(false);
+        return;
+      }
+
       const service = (serviceResult.data?.[0] as ServiceInstance | undefined) ?? null;
       setTasks((taskResult.data ?? []) as Task[]);
       setProjectTasks((projectTaskResult.data ?? []) as Task[]);
@@ -410,6 +404,7 @@ const Dashboard = () => {
       time: meeting.meeting_time,
       to: `/meetings/${meeting.id}`,
       icon: UsersRound,
+      kind: "meeting" as const,
     }));
 
     const taskItems = tasks
@@ -422,6 +417,7 @@ const Dashboard = () => {
         time: null,
         to: "/tasks/next",
         icon: ListChecks,
+        kind: "task" as const,
       }));
 
     const serviceItem = nextService
@@ -434,6 +430,7 @@ const Dashboard = () => {
             time: nextService.start_time,
             to: `/service-planner/services/${nextService.id}`,
             icon: Music,
+            kind: "service" as const,
           },
         ]
       : [];
@@ -516,7 +513,7 @@ const Dashboard = () => {
     const end = new Date(currentWeek);
     end.setDate(currentWeek.getDate() + 6);
 
-    return `${formatShortDate(toDateKey(currentWeek))} - ${formatShortDate(toDateKey(end))}`;
+    return `${formatShortDate(toDateKey(currentWeek))} – ${formatShortDate(toDateKey(end))}`;
   }, [currentWeek]);
 
   const visibleCalendarDays = calendarView === "week" ? weekDays : calendarDays;
@@ -548,36 +545,18 @@ const Dashboard = () => {
     ? widgetDefinitions.find((definition) => definition.id === settingsWidget.definitionId)
     : undefined;
 
-  const renderHomeWidget = (
-    definitionId: string,
-    settings: UserDashboardWidget["settings"] = {}
-  ) => {
-    const definition = widgetDefinitions.find((item) => item.id === definitionId);
-    if (!definition) return null;
-
-    const WidgetComponent = definition.component;
-    const widget: UserDashboardWidget = {
-      id: `home-${definitionId}`,
-      definitionId,
-      size: definition.defaultSize,
-      settings,
-    };
-
-    return (
-      <WidgetComponent
-        widget={widget}
-        data={widgetData}
-        updateSettings={() => undefined}
-      />
-    );
-  };
-
   const mobileAgendaItems = useMemo(() => {
     const endKey = toDateKey(addDays(startOfToday(), 6));
     return calendarItems
       .filter((item) => item.date && item.date >= todayKey && item.date <= endKey)
       .slice(0, 8);
   }, [calendarItems, todayKey]);
+
+  const openCount = tasks.length;
+  const lateCount = useMemo(
+    () => tasks.filter((task) => task.due && task.due < todayKey).length,
+    [tasks, todayKey]
+  );
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -621,62 +600,73 @@ const Dashboard = () => {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="overflow-x-hidden">
-        <div className="actsix-page-body flex flex-col gap-4 pt-4">
-          <section className="actsix-panel p-4 sm:p-5">
-            <div className="actsix-loading-state" role="status">
-              Loading your home overview...
-            </div>
-          </section>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="overflow-x-hidden">
-      <div
-        data-tour="home-overview"
-        className="actsix-page-body flex flex-col gap-4 pt-4"
-      >
-        <section className="actsix-panel p-4 sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <p className="label-eyebrow text-brand-teal">Home</p>
-              <h1 className="mt-1 text-balance text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl">
-                {greeting}, {firstName}
-              </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-extrabold text-muted-foreground sm:text-sm">
-                <HeaderClock />
-                {workspace?.name && (
-                  <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-brand-teal">
-                    {workspace.name}
-                  </span>
-                )}
-              </div>
-            </div>
-            <Button
-              variant={customizeMode ? "default" : "outline"}
-              className={customizeMode ? "actsix-btn-primary h-10 shrink-0 px-3 text-xs" : "actsix-btn-outline h-10 shrink-0 px-3 text-xs"}
+    <div className="min-h-[100dvh] overflow-x-hidden">
+      <div data-tour="home-overview" className="actsix-page-body flex flex-col gap-5 pt-6">
+        <header className="st-topline">
+          <div className="min-w-0">
+            <h1 className="st-h1">
+              {greeting}, {firstName}
+            </h1>
+            <p className="st-topline-meta">
+              <HeaderClock />
+              {workspace?.name ? ` · ${workspace.name}` : ""}
+              {!loading && !loadError ? (
+                <>
+                  {" · "}
+                  <span className="st-mono">{openCount}</span> open
+                  {lateCount > 0 && (
+                    <>
+                      {" · "}
+                      <span className="st-mono" style={{ color: "var(--st-rose)", fontWeight: 700 }}>
+                        {lateCount} late
+                      </span>
+                    </>
+                  )}
+                </>
+              ) : null}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              className={`st-btn${customizeMode ? " st-btn-primary" : ""}`}
               onClick={() => setCustomizeMode((active) => !active)}
             >
               <Settings2 className="h-4 w-4" />
-              {customizeMode ? "Finish Editing" : "Edit Layout"}
-            </Button>
+              {customizeMode ? "Done editing" : "Edit layout"}
+            </button>
           </div>
-        </section>
+        </header>
 
-        {customizeMode ? (
+        {loadError && (
+          <div className="st-panel" role="alert">
+            <div className="st-error">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                Your dashboard didn&rsquo;t load. {loadError} Check your connection and reload —
+                nothing here reflects your real workload right now.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <DashboardSkeleton />
+        ) : (
           <>
-            <DashboardCustomizeBar
-              savedState={savedState}
-              onAddWidget={() => setLibraryOpen(true)}
-              onResetLayout={() => setResetConfirmOpen(true)}
-              onDone={() => setCustomizeMode(false)}
-            />
+            {customizeMode && (
+              <DashboardCustomizeBar
+                savedState={savedState}
+                onAddWidget={() => setLibraryOpen(true)}
+                onResetLayout={() => setResetConfirmOpen(true)}
+                onDone={() => setCustomizeMode(false)}
+              />
+            )}
 
+            {/* One rendering path. The previous build showed the saved layout
+                only while customizing and a hardcoded panel set otherwise, so
+                every layout edit silently vanished on "Finish Editing". */}
             <DashboardGrid
               widgets={layout.widgets}
               definitions={widgetDefinitions}
@@ -690,153 +680,133 @@ const Dashboard = () => {
               onUpdateWidgetSettings={updateWidgetSettings}
             />
           </>
-        ) : (
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(23rem,0.88fr)]">
-            <div className="space-y-4">
-              <HomePanel eyebrow="Today" title="Next Actions">
-                {renderHomeWidget("todays-tasks", { itemLimit: 6 })}
-              </HomePanel>
-
-              <HomePanel eyebrow="Momentum" title="Active Projects">
-                {renderHomeWidget("my-projects", { itemLimit: 4 })}
-              </HomePanel>
-            </div>
-
-            <div className="space-y-4">
-              <HomePanel eyebrow="Upcoming" title="Next Service">
-                {renderHomeWidget("upcoming-services", { itemLimit: 3 })}
-              </HomePanel>
-
-              <HomePanel eyebrow="Follow-up" title="People to Check In On">
-                {renderHomeWidget("people-followups", { itemLimit: 4 })}
-              </HomePanel>
-
-              <HomePanel eyebrow="Start" title="Quick Actions">
-                {renderHomeWidget("quick-actions")}
-              </HomePanel>
-            </div>
-          </section>
         )}
 
-        <Card className="actsix-panel mt-4 min-w-0 overflow-hidden md:hidden">
-          <SectionHeader
-            eyebrow="Calendar"
-            title="Upcoming Agenda"
-            action={
-              <Button asChild variant="outline" size="sm" className="actsix-btn-outline min-h-10 h-9 px-3 text-xs">
-                <Link to="/meetings">
-                  Meetings
-                  <ArrowUpRight className="h-3.5 w-3.5" />
+        {!loading && (
+          <>
+            <section className="st-panel md:hidden">
+              <div className="st-panel-head">
+                <h2 className="st-panel-title">Next 7 days</h2>
+                <Link to="/meetings" className="st-tally" style={{ color: "var(--st-accent)" }}>
+                  Meetings <ArrowUpRight className="inline h-3 w-3" />
                 </Link>
-              </Button>
-            }
-          />
-          <div className="space-y-3 p-4 sm:p-5">
-            {mobileAgendaItems.length === 0 && <EmptyState>No dated items in the next 7 days.</EmptyState>}
-            {mobileAgendaItems.map((item) => (
-              <AgendaItemRow key={item.id} item={item} />
-            ))}
-          </div>
-        </Card>
-
-        <Card className="actsix-panel hidden min-w-0 overflow-hidden md:mt-4 md:block">
-          <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="label-eyebrow">Calendar</p>
-              <h2 className="mt-0.5 text-lg font-extrabold tracking-tight">
-                {calendarView === "week" ? currentWeekLabel : currentMonthLabel}
-              </h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="actsix-segmented">
-                {(["month", "week"] as const).map((view) => (
-                  <button
-                    key={view}
-                    type="button"
-                    onClick={() => setCalendarView(view)}
-                    data-state={calendarView === view ? "active" : "inactive"}
-                    className="actsix-segmented-item h-8 px-3 text-xs font-extrabold capitalize"
-                  >
-                    {view}
-                  </button>
-                ))}
               </div>
-              <Button asChild variant="outline" size="sm" className="actsix-btn-outline min-h-10 h-9 px-3">
-                <Link to="/meetings">
-                  Meetings
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </div>
-          </div>
+              <div className="st-rows">
+                {mobileAgendaItems.length === 0 ? (
+                  <p className="st-empty">Nothing dated in the next 7 days.</p>
+                ) : (
+                  mobileAgendaItems.map((item) => <AgendaItemRow key={item.id} item={item} />)
+                )}
+              </div>
+            </section>
 
-          <div className="w-full overflow-x-auto p-5">
-            <div className="mb-2 grid min-w-[720px] grid-cols-7 gap-2 px-1">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((weekday) => (
-                <div
-                  key={weekday}
-                  className="text-[10px] font-black uppercase tracking-wide text-muted-foreground"
-                >
-                  {weekday}
+            <section className="st-panel hidden md:block">
+              <div className="st-panel-head">
+                <h2 className="st-panel-title">
+                  {calendarView === "week" ? "This week" : "This month"}
+                </h2>
+                <div className="flex items-center gap-3">
+                  <span className="st-tally">
+                    {calendarView === "week" ? currentWeekLabel : currentMonthLabel}
+                  </span>
+                  <div className="actsix-segmented">
+                    {(["month", "week"] as const).map((view) => (
+                      <button
+                        key={view}
+                        type="button"
+                        onClick={() => setCalendarView(view)}
+                        data-state={calendarView === view ? "active" : "inactive"}
+                        className="actsix-segmented-item h-8 px-3 text-xs font-extrabold capitalize"
+                      >
+                        {view}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="grid min-w-[720px] grid-cols-7 gap-2">
-              {visibleCalendarDays.map((day) => (
+              <div className="st-week">
                 <div
-                  key={day.key}
-                  className={`h-36 rounded-xl border px-2.5 py-2 ${
-                    !day.inMonth
-                      ? "border-border/40 bg-background/20"
-                      : day.key === todayKey
-                        ? "border-brand-teal/45 bg-brand-teal/10"
-                        : "border-border/70 bg-background/45"
-                  }`}
+                  className="mb-2 grid gap-2 px-1"
+                  style={{ gridTemplateColumns: "repeat(7, minmax(96px, 1fr))", minWidth: "660px" }}
                 >
-                  {day.inMonth && (
-                    <>
-                      <div className="mb-2 flex items-start justify-between gap-2">
-                        <span className="text-sm font-extrabold">{day.day}</span>
-                        {day.key === todayKey && (
-                          <span className="rounded-full bg-brand-teal px-2 py-0.5 text-[10px] font-semibold text-white">
-                            Today
-                          </span>
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((weekday) => (
+                    <div
+                      key={weekday}
+                      className="text-[10px] font-bold uppercase tracking-[0.14em]"
+                      style={{ color: "var(--st-ink-3)" }}
+                    >
+                      {weekday}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="st-week-grid">
+                  {visibleCalendarDays.map((day) => {
+                    const expanded = expandedDays.includes(day.key);
+                    const shown = expanded ? day.items : day.items.slice(0, DAY_ITEM_LIMIT);
+                    const hidden = day.items.length - shown.length;
+
+                    return (
+                      <div
+                        key={day.key}
+                        className={`st-day${day.key === todayKey ? " st-day-today" : ""}`}
+                        style={!day.inMonth ? { opacity: 0.4 } : undefined}
+                      >
+                        {day.inMonth && (
+                          <>
+                            <div className="st-day-num">
+                              <span>{day.day}</span>
+                              {day.key === todayKey && <span>Today</span>}
+                            </div>
+
+                            {shown.map((item) => (
+                              <Link
+                                key={item.id}
+                                to={item.to}
+                                className={`st-chip${item.kind === "meeting" ? " st-chip-meeting" : ""}`}
+                              >
+                                {item.title}
+                                {item.time && (
+                                  <>
+                                    <br />
+                                    <span className="st-mono">{formatTime(item.time)}</span>
+                                  </>
+                                )}
+                              </Link>
+                            ))}
+
+                            {hidden > 0 && (
+                              <button
+                                type="button"
+                                className="st-more"
+                                onClick={() => setExpandedDays((keys) => [...keys, day.key])}
+                              >
+                                +{hidden} more
+                              </button>
+                            )}
+
+                            {expanded && day.items.length > DAY_ITEM_LIMIT && (
+                              <button
+                                type="button"
+                                className="st-more"
+                                onClick={() =>
+                                  setExpandedDays((keys) => keys.filter((key) => key !== day.key))
+                                }
+                              >
+                                Show less
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
-
-                      {day.items.length > 0 && (
-                        <div className="max-h-[calc(100%-2.25rem)] overflow-y-auto border-t border-border/60 pr-1">
-                          <div className="divide-y divide-border/60">
-                            {day.items.map((item) => {
-                              const ItemIcon = item.icon;
-                              return (
-                                <Link
-                                  key={item.id}
-                                  to={item.to}
-                                  className="group block py-1.5 text-xs transition hover:text-brand-teal"
-                                >
-                                  <div className="flex min-w-0 items-center gap-1.5">
-                                    <ItemIcon className="h-3 w-3 shrink-0 text-brand-teal" />
-                                    <span className="truncate font-semibold">{item.title}</span>
-                                  </div>
-                                  <div className="mt-0.5 truncate pl-[18px] text-[10px] text-muted-foreground group-hover:text-brand-teal/80">
-                                    {item.time ? `${formatTime(item.time)} / ${item.label}` : item.label}
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-
+              </div>
+            </section>
+          </>
+        )}
 
         <WidgetLibraryModal
           open={libraryOpen}

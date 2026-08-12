@@ -250,7 +250,7 @@ const InboxPage = () => {
   };
 
   return (
-    <div>
+    <div className="min-h-[100dvh]">
       <PageHeader
         eyebrow="Workflow"
         title="Inbox"
@@ -277,15 +277,24 @@ const InboxPage = () => {
           </form>
         </Card>
 
-        <Card className="actsix-panel space-y-2 overflow-hidden p-2">
+        <Card className="actsix-panel st-list">
           {loadingItems && (
-            <div className="actsix-loading-state" role="status">
-              Loading inbox...
+            <div role="status" aria-label="Loading inbox">
+              {[0, 1, 2, 3].map((row) => (
+                <div
+                  key={row}
+                  className="flex items-center gap-3 px-4 py-3.5"
+                  style={{ borderTop: row === 0 ? "0" : "1px solid var(--st-line-soft)" }}
+                >
+                  <span className="st-skeleton block h-1.5 w-1.5 shrink-0 rounded-full" />
+                  <span className="st-skeleton block h-3" style={{ width: `${64 - row * 8}%` }} />
+                </div>
+              ))}
             </div>
           )}
 
           {!loadingItems && items.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border/70 bg-background/50 px-4 py-3 text-center text-sm font-semibold text-muted-foreground">
+            <div className="actsix-empty-state">
               Inbox clear. Capture something when it has your attention.
             </div>
           )}

@@ -234,7 +234,7 @@
     }
 
     body {
-      background: var(--bg-main);
+      background: var(--st-ground);
     }
 
     button,
@@ -317,7 +317,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     background-color: hsl(var(--brand-teal));
     color: #ffffff;
     border: 1px solid hsl(var(--brand-teal));
-    box-shadow: 0 4px 12px rgba(45, 140, 140, 0.08);
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.08);
     transition: var(--transition-normal);
   }
 
@@ -335,7 +335,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
      h-6 filter pills. Height itself comes from a normal h-* utility. */
   .actsix-btn-primary-compact {
     gap: 4px;
-    box-shadow: 0 2px 6px rgba(45, 140, 140, 0.06);
+    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.06);
   }
 
   .actsix-btn-primary-compact:hover {
@@ -395,8 +395,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   }
 
   .actsix-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
+    background: var(--st-panel);
+    border: 1px solid var(--st-line);
     border-radius: var(--radius-panel);
     box-shadow: var(--shadow-sm);
   }
@@ -929,5 +929,639 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
   .actsix-print-sheet .minutes-blank-line {
     height: 2mm;
+  }
+}
+
+/* ===========================================================================
+   STUDIO — the ACTSIX design system.
+   Promoted from a Dashboard-scoped pilot to the app-wide system: tokens live on
+   :root, so every page, every shadcn primitive and every Radix portal (dialogs,
+   dropdowns, toasts) inherits them. The `--st-*` tokens are the source of truth;
+   the app's older HSL tokens below are re-pointed at them so existing markup
+   adopts the palette without being rewritten. A dark build is a sibling token
+   block away — the second theme is a variable swap, not a rewrite.
+   =========================================================================== */
+@layer base {
+  :root {
+    --st-ground: #f4f2ed;
+    --st-panel: #ffffff;
+    --st-panel-hi: #faf8f4;
+    --st-line: #ded9cf;
+    --st-line-soft: #eceae3;
+    --st-line-strong: #c6c0b3;
+    --st-ink: #1a1a16;
+    --st-ink-2: #55534b;
+    --st-ink-3: #7e7c72;
+    --st-accent: #0f766e;
+    --st-accent-hi: #0b5c56;
+    --st-accent-dim: #3d9d92;
+    --st-accent-wash: rgba(15, 118, 110, 0.07);
+    --st-accent-edge: rgba(15, 118, 110, 0.24);
+    --st-accent-edge-hi: rgba(15, 118, 110, 0.34);
+    --st-on-accent: #ffffff;
+    --st-track: #e7e3da;
+    --st-amber: #9a6410;
+    --st-amber-wash: rgba(154, 100, 16, 0.12);
+    --st-rose: #a8402f;
+    --st-rose-wash: rgba(168, 64, 47, 0.12);
+    --st-green: #3f7a46;
+
+    --st-r-ctl: 8px;
+    --st-r-panel: 14px;
+
+    /* The app's older HSL tokens, re-pointed at Studio values. This is what
+       makes every shadcn primitive and `.actsix-*` class adopt the palette
+       without touching their markup. */
+    --background: 43 24% 94%;
+    --foreground: 60 8% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 60 8% 9%;
+    /* Dialogs, dropdowns and popovers read from these — they're the reason
+       portalled UI used to stay on the old palette. */
+    --popover: 0 0% 100%;
+    --popover-foreground: 60 8% 9%;
+    --primary: 175 77% 26%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 41 21% 88%;
+    --secondary-foreground: 60 8% 9%;
+    --muted: 41 21% 88%;
+    --muted-foreground: 50 5% 47%;
+    --accent: 175 25% 93%;
+    --accent-foreground: 175 77% 26%;
+    --destructive: 8 56% 42%;
+    --border: 40 19% 84%;
+    --input: 40 19% 84%;
+    --ring: 175 77% 26%;
+    --brand-teal: 175 77% 26%;
+    --brand-teal-dark: 175 79% 20%;
+    --brand-teal-soft: 175 25% 93%;
+    --brand-amber: 37 81% 33%;
+    --brand-danger: 8 56% 42%;
+
+    /* Categorical set (sage is used ~66 times for tags and statuses) pulled
+       into Studio's range: same roles, desaturated to sit under the accent
+       rather than compete with it. */
+    --brand-sage: 88 11% 43%;
+    --brand-sage-soft: 88 14% 92%;
+    --brand-sand: 40 32% 64%;
+    --brand-bronze: 30 41% 41%;
+    --brand-success: 127 32% 36%;
+    --brand-warning: 37 81% 33%;
+
+    /* Studio's accent teal is tuned for contrast on paper, so it goes nearly
+       invisible washed over the dark sidebar. `--brand-teal-bright` is the
+       sidebar's teal — same hue family, lifted until it clears 4.5:1 on the
+       near-black surface. Use it for anything teal that sits on dark. */
+    --brand-teal-bright: 172 43% 56%;
+    --brand-charcoal: 60 8% 9%;
+    --brand-ink: 60 8% 9%;
+    --brand-cream: 40 20% 92%;
+    --brand-coral: 8 56% 42%;
+
+    /* Sidebar: a deep desaturated teal — the accent hue taken almost to black,
+       so the one dark surface in the app reads as branded rather than as
+       generic dark chrome. White pills sit on it at full contrast. Anything
+       teal *on* this surface uses --brand-teal-bright, not the paper teal,
+       which disappears at this depth. */
+    --sidebar-background: 176 56% 16%;
+    --sidebar-foreground: 40 20% 93%;
+    --sidebar-primary: 172 43% 56%;
+    --sidebar-primary-foreground: 176 56% 16%;
+    --sidebar-accent: 172 43% 56%;
+    --sidebar-accent-foreground: 40 20% 93%;
+    --sidebar-border: 176 30% 26%;
+    --sidebar-ring: 172 43% 56%;
+
+    --gradient-sidebar: linear-gradient(160deg, #164a46 0%, #0e3330 100%);
+    --gradient-content: linear-gradient(135deg, #f4f2ed 0%, #edeae2 100%);
+
+    /* Shadows lose the parchment tint and drop to Studio's whisper. */
+    --shadow-card: 0 1px 2px rgba(26, 26, 22, 0.04);
+    --shadow-soft: 0 1px 2px rgba(26, 26, 22, 0.03);
+    --shadow-sm: 0 1px 2px rgba(26, 26, 22, 0.04);
+    --shadow-md: 0 4px 12px rgba(26, 26, 22, 0.06);
+    --shadow-lg: 0 12px 28px rgba(26, 26, 22, 0.10);
+
+    /* Radii: Studio's tighter control/panel scale, applied app-wide. */
+    --radius: 0.75rem;
+    --radius-control: 8px;
+    --radius-panel: 14px;
+  }
+
+  /* Numbers line up in columns or they aren't worth printing. */
+  .st-mono {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Page shell -------------------------------------------------------- */
+  .st-topline {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--st-line);
+  }
+
+  .st-h1 {
+    margin: 0;
+    font-size: 1.6875rem;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+    text-wrap: balance;
+    color: var(--st-ink);
+  }
+
+  .st-topline-meta {
+    margin-top: 7px;
+    font-size: 0.8125rem;
+    color: var(--st-ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Buttons ----------------------------------------------------------- */
+  .st-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    border: 1px solid var(--st-line);
+    background: var(--st-panel);
+    color: var(--st-ink);
+    font-size: 0.78125rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: var(--st-r-ctl);
+    cursor: pointer;
+    transition: border-color 140ms ease, background 140ms ease;
+  }
+
+  @media (min-width: 640px) {
+    .st-btn { min-height: 36px; }
+  }
+
+  .st-btn:hover {
+    background: var(--st-panel-hi);
+    border-color: var(--st-line-strong);
+  }
+
+  .st-btn:focus-visible {
+    outline: 2px solid var(--st-accent);
+    outline-offset: 2px;
+  }
+
+  .st-btn-primary {
+    background: var(--st-accent);
+    border-color: var(--st-accent);
+    color: var(--st-on-accent);
+  }
+
+  .st-btn-primary:hover {
+    background: var(--st-accent-hi);
+    border-color: var(--st-accent-hi);
+  }
+
+  /* ---- Panels ------------------------------------------------------------ */
+  .st-panel {
+    background: var(--st-panel);
+    border: 1px solid var(--st-line);
+    border-radius: var(--st-r-panel);
+    overflow: hidden;
+    /* A white panel on warm paper needs a lift a border alone can't give.
+       The dark build drops this entirely. */
+    box-shadow: 0 1px 2px rgba(26, 26, 22, 0.04);
+  }
+
+  .st-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--st-line-soft);
+  }
+
+  .st-panel-title {
+    margin: 0;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: var(--st-ink-3);
+  }
+
+  .st-tally {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    color: var(--st-ink-2);
+    white-space: nowrap;
+  }
+
+  .st-panel-body,
+  .st-pad { padding: 16px; }
+
+  /* ---- Project meter row ------------------------------------------------- */
+  .st-proj {
+    display: block;
+    padding: 13px 16px;
+    border-top: 1px solid var(--st-line-soft);
+    text-decoration: none;
+    color: inherit;
+    transition: background 130ms ease;
+  }
+
+  .st-projs > .st-proj:first-child { border-top: 0; }
+  .st-proj:hover { background: var(--st-panel-hi); }
+
+  .st-proj-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .st-proj-name {
+    font-size: 0.84375rem;
+    font-weight: 600;
+    color: var(--st-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .st-proj-pct {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.71875rem;
+    color: var(--st-ink-2);
+    white-space: nowrap;
+  }
+
+  .st-proj-sub {
+    margin-top: 7px;
+    font-size: 0.71875rem;
+    color: var(--st-ink-3);
+  }
+
+  /* ---- Quick actions ----------------------------------------------------- */
+  .st-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .st-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    border: 1px solid var(--st-line);
+    border-radius: var(--st-r-ctl);
+    background: transparent;
+    color: var(--st-ink-2);
+    font-size: 0.78125rem;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-decoration: none;
+    transition: color 130ms ease, border-color 130ms ease, background 130ms ease;
+  }
+
+  .st-action:hover {
+    color: var(--st-ink);
+    background: var(--st-panel-hi);
+    border-color: var(--st-line-strong);
+  }
+
+  /* ---- Rows -------------------------------------------------------------- */
+  .st-row {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 11px;
+    min-height: 44px;
+    padding: 11px 16px;
+    border-top: 1px solid var(--st-line-soft);
+    color: inherit;
+    text-decoration: none;
+    transition: background 130ms ease;
+  }
+
+  .st-rows > .st-row:first-child { border-top: 0; }
+  .st-row:hover { background: var(--st-panel-hi); }
+
+  .st-row:focus-visible {
+    outline: 2px solid var(--st-accent);
+    outline-offset: -2px;
+  }
+
+  .st-tick {
+    width: 13px;
+    height: 13px;
+    border-radius: 4px;
+    border: 1.5px solid var(--st-ink-3);
+  }
+
+  .st-row-due .st-tick {
+    border-color: var(--st-amber);
+    background: var(--st-amber-wash);
+  }
+
+  .st-row-late .st-tick {
+    border-color: var(--st-rose);
+    background: var(--st-rose-wash);
+  }
+
+  .st-row-title {
+    display: block;
+    font-size: 0.84375rem;
+    font-weight: 550;
+    letter-spacing: -0.005em;
+    color: var(--st-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .st-row-sub {
+    display: block;
+    font-size: 0.71875rem;
+    color: var(--st-ink-3);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .st-when {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.71875rem;
+    color: var(--st-ink-3);
+    white-space: nowrap;
+  }
+
+  .st-when-due { color: var(--st-amber); font-weight: 700; }
+  .st-when-late { color: var(--st-rose); font-weight: 700; }
+
+  /* ---- Meters ------------------------------------------------------------ */
+  .st-meter {
+    height: 3px;
+    margin-top: 9px;
+    background: var(--st-track);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .st-meter > i {
+    display: block;
+    height: 100%;
+    background: var(--st-accent-dim);
+    border-radius: 999px;
+  }
+
+  /* ---- States ------------------------------------------------------------ */
+  .st-empty {
+    padding: 22px 16px;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--st-ink-3);
+  }
+
+  .st-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--st-rose-wash);
+    border-left: 3px solid var(--st-rose);
+    font-size: 0.8125rem;
+    color: #7d2f22;
+  }
+
+  .st-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--st-track) 0%,
+      var(--st-panel-hi) 50%,
+      var(--st-track) 100%
+    );
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: st-shimmer 1400ms ease-in-out infinite;
+  }
+
+  @keyframes st-shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .st-skeleton { animation: none; }
+  }
+
+  /* ---- Week strip -------------------------------------------------------- */
+  .st-week { padding: 14px 16px 18px; overflow-x: auto; }
+
+  .st-week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(96px, 1fr));
+    gap: 8px;
+    min-width: 660px;
+  }
+
+  .st-day {
+    border: 1px solid var(--st-line-soft);
+    border-radius: 10px;
+    padding: 9px;
+    min-height: 118px;
+  }
+
+  .st-day-today {
+    border-color: var(--st-accent-edge-hi);
+    background: var(--st-accent-wash);
+  }
+
+  .st-day-num {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.6875rem;
+    color: var(--st-ink-3);
+  }
+
+  .st-day-today .st-day-num { color: var(--st-accent); font-weight: 700; }
+
+  .st-chip {
+    display: block;
+    margin-top: 7px;
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: var(--st-ink-2);
+    border-left: 2px solid var(--st-accent-dim);
+    padding-left: 7px;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .st-chip:hover { color: var(--st-accent); }
+  .st-chip-meeting { border-left-color: var(--st-amber); }
+
+  .st-more {
+    display: block;
+    margin-top: 7px;
+    font-size: 0.65625rem;
+    font-weight: 700;
+    color: var(--st-accent);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .st-more:hover { text-decoration: underline; }
+}
+
+/* ---------------------------------------------------------------------------
+   STUDIO — treatments for the app's shared classes. These reshape structure
+   (borders, radii, density); color arrives on its own via the token remap above.
+   --------------------------------------------------------------------------- */
+@layer components {
+  /* Panels lose the parchment card shadow and take the Studio border+lift. */
+  .actsix-panel,
+  .actsix-panel-soft {
+    background: var(--st-panel);
+    border: 1px solid var(--st-line);
+    border-radius: var(--st-r-panel);
+    box-shadow: 0 1px 2px rgba(26, 26, 22, 0.04);
+  }
+
+  /* Page header sits on the ground, not on a card, and drops the eyebrow's
+     wide tracking down to Studio's label scale. */
+  /* Applied by PageHeader itself, so every page gets the same rule and the same
+     space on both sides of it. */
+  .st-page-head {
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--st-line);
+    margin-bottom: 22px;
+  }
+
+  .st-page-head h1 {
+    font-size: 1.6875rem;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+    color: var(--st-ink);
+  }
+
+  /* Filter pills: square-ish, quiet, and the count is mono so a row of them
+     doesn't jitter as numbers change width. */
+  .actsix-filter-pill {
+    border-radius: var(--st-r-ctl);
+    border: 1px solid var(--st-line);
+    background: transparent;
+    color: var(--st-ink-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: background 130ms ease, border-color 130ms ease, color 130ms ease;
+  }
+
+  .actsix-filter-pill:hover {
+    border-color: var(--st-line-strong);
+    color: var(--st-ink);
+  }
+
+  .actsix-filter-pill-active {
+    background: var(--st-accent-wash);
+    border-color: var(--st-accent-edge);
+    color: var(--st-accent);
+  }
+
+  .actsix-filter-pill-count {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    border-radius: 999px;
+  }
+
+  /* `.actsix-search-field` is a positioning shell only — the visible control is
+     the input inside it. Styling the shell drew a second box around the input,
+     and both lit up on focus. Style the input itself. */
+  .actsix-search-input {
+    border-radius: var(--st-r-ctl);
+    border: 1px solid var(--st-line);
+    background: var(--st-panel);
+  }
+
+  .actsix-search-input:focus-visible {
+    border-color: var(--st-accent);
+    /* The input already carries a Tailwind focus ring, which the token remap
+       has recolored — no second ring here. */
+    outline: none;
+  }
+
+  .actsix-empty-state,
+  .actsix-loading-state {
+    border: 0;
+    background: none;
+    padding: 22px 16px;
+    text-align: center;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--st-ink-3);
+  }
+
+  /* Task rows: flush, divided, full-width — the same row language the
+     dashboard uses, so a task reads identically on both pages. */
+  .action-row {
+    border-radius: 0;
+    border: 0;
+    border-top: 1px solid var(--st-line-soft);
+    background: transparent;
+    padding: 10px 16px;
+    min-height: 44px;
+    transition: background 130ms ease;
+  }
+
+  .actsix-panel > .action-row:first-of-type { border-top: 0; }
+  .action-row:hover { background: var(--st-panel-hi); }
+
+  /* The list card holds rows directly, so its own padding has to go or every
+     row inherits a gutter the divider lines don't span. */
+  .st-list {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .st-list > * + * { margin-top: 0; }
+
+  .st-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid var(--st-line);
+    border-radius: var(--st-r-ctl);
+    background: transparent;
+    color: var(--st-ink-2);
+    font-size: 0.78125rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background 130ms ease, border-color 130ms ease;
+  }
+
+  .st-toggle:hover {
+    background: var(--st-panel-hi);
+    border-color: var(--st-line-strong);
   }
 }

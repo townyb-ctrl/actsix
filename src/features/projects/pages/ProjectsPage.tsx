@@ -725,7 +725,7 @@ const ProjectsPage = () => {
   ];
 
   return (
-    <div className="min-w-0">
+    <div className="min-h-[100dvh] min-w-0">
       <PageHeader
         eyebrow="Tasks"
         title="Projects"
@@ -812,12 +812,23 @@ const ProjectsPage = () => {
           </div>
         </div>
 
+        {/* Skeleton mirrors the project card grid so the page doesn't reflow
+            when data lands. */}
         {loading && (
-          <Card className="p-4">
-            <div className="actsix-loading-state" role="status">
-              Loading projects...
-            </div>
-          </Card>
+          <div
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            role="status"
+            aria-label="Loading projects"
+          >
+            {[0, 1, 2, 3, 4, 5].map((card) => (
+              <Card key={card} className="actsix-panel p-4">
+                <span className="st-skeleton block h-3.5 w-2/3" />
+                <span className="st-skeleton mt-3 block h-2.5 w-full" />
+                <span className="st-skeleton mt-4 block h-1.5 w-full" />
+                <span className="st-skeleton mt-3 block h-2.5 w-1/3" />
+              </Card>
+            ))}
+          </div>
         )}
 
         {!loading && filteredProjects.length === 0 && (

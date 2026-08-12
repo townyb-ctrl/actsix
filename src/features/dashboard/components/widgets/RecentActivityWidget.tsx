@@ -52,7 +52,7 @@ export function RecentActivityWidget({ widget, data }: DashboardWidgetRenderProp
   if (items.length === 0) return <WidgetEmptyState>No recent activity yet.</WidgetEmptyState>;
 
   return (
-    <div className="space-y-3">
+    <div className="st-rows">
       {items.map((item) => (
         <WidgetLinkRow
           key={item.id}

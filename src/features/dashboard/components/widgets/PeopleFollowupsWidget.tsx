@@ -14,7 +14,7 @@ export function PeopleFollowupsWidget({ widget, data }: DashboardWidgetRenderPro
   if (followups.length === 0) return <WidgetEmptyState>No follow-ups waiting.</WidgetEmptyState>;
 
   return (
-    <div className="space-y-3">
+    <div className="st-rows">
       {followups.map((task) => (
         <WidgetLinkRow
           key={task.id}

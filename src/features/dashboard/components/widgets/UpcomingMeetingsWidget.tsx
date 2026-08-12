@@ -15,7 +15,7 @@ export function UpcomingMeetingsWidget({ widget, data }: DashboardWidgetRenderPr
   }
 
   return (
-    <div className="space-y-3">
+    <div className="st-rows">
       {meetings.map((meeting) => (
         <WidgetLinkRow
           key={meeting.id}

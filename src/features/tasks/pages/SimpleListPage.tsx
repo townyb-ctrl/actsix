@@ -199,7 +199,7 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
   };
 
   return (
-    <div>
+    <div className="min-h-[100dvh]">
       <PageHeader eyebrow={cfg.eyebrow} title={cfg.title} subtitle={cfg.subtitle} />
 
       <div className="actsix-page-body actsix-page-stack">
@@ -240,10 +240,18 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
           </form>
         </Card>
 
-        <Card className="actsix-panel divide-y divide-border/70 overflow-hidden">
+        <Card className="actsix-panel st-list">
           {loading && (
-            <div className="actsix-loading-state min-h-[10rem]">
-              Loading {cfg.title.toLowerCase()}...
+            <div role="status" aria-label={`Loading ${cfg.title.toLowerCase()}`}>
+              {[0, 1, 2, 3].map((row) => (
+                <div
+                  key={row}
+                  className="flex items-center gap-3 px-4 py-3.5"
+                  style={{ borderTop: row === 0 ? "0" : "1px solid var(--st-line-soft)" }}
+                >
+                  <span className="st-skeleton block h-3" style={{ width: `${62 - row * 8}%` }} />
+                </div>
+              ))}
             </div>
           )}
 
@@ -264,15 +272,13 @@ export const SimpleListPage = ({ cfg }: { cfg: Cfg }) => {
           )}
 
           {!loading && !loadError && items.length === 0 && (
-            <div className="actsix-empty-state m-3 min-h-[9rem] text-left">
-              Nothing here yet.
-            </div>
+            <div className="actsix-empty-state">Nothing here yet.</div>
           )}
 
           {!loading && !loadError && items.map((it) => (
             <div
               key={it.id}
-              className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
+              className="action-row group flex items-center gap-3 px-4 py-3 transition-colors"
             >
               <div className="h-1.5 w-1.5 rounded-full bg-brand-teal" />
 

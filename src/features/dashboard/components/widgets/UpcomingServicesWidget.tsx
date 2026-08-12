@@ -1,6 +1,4 @@
-import { CalendarDays, Clock3, Music } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import type { DashboardWidgetRenderProps } from "@/features/dashboard/types/dashboardTypes";
 import { formatDate, formatTime } from "@/features/dashboard/utils/dashboardLayoutUtils";
 import { WidgetEmptyState } from "./widgetPrimitives";
@@ -11,49 +9,58 @@ export function UpcomingServicesWidget({ data }: DashboardWidgetRenderProps) {
   if (!service) return <WidgetEmptyState>No upcoming services yet.</WidgetEmptyState>;
 
   const title = service.title || service.service_types?.name || "Upcoming service";
+  const assignments = data.serviceTeamAssignments ?? [];
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-xl border border-brand-teal/15 bg-white p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-            <Music className="h-4 w-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-extrabold text-foreground">{title}</h3>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5 text-brand-teal" />
-                {formatDate(service.service_date)}
-              </span>
-              {formatTime(service.start_time) && (
-                <span className="inline-flex items-center gap-1">
-                  <Clock3 className="h-3.5 w-3.5 text-brand-teal" />
-                  {formatTime(service.start_time)}
-                </span>
-              )}
-            </div>
-          </div>
+    <>
+      <div className="st-pad" style={{ display: "grid", gap: "12px" }}>
+        <div
+          className="st-mono"
+          style={{
+            fontSize: "0.75rem",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            color: "var(--st-accent)",
+          }}
+        >
+          {formatDate(service.service_date)}
+          {formatTime(service.start_time) ? ` · ${formatTime(service.start_time)}` : ""}
         </div>
+
+        <h3
+          style={{
+            margin: 0,
+            fontSize: "1.125rem",
+            fontWeight: 700,
+            letterSpacing: "-0.015em",
+            color: "var(--st-ink)",
+          }}
+        >
+          {title}
+        </h3>
+
+        {service.location && <p className="st-row-sub">{service.location}</p>}
       </div>
 
-      <div className="space-y-1.5">
+      <div className="st-rows">
         {data.serviceOrderItems.slice(0, 3).map((item) => (
-          <div
-            key={item.id}
-            className="flex min-h-[42px] items-center justify-between gap-2 rounded-xl border border-border/65 bg-white px-3 py-2"
-          >
-            <span className="min-w-0 truncate text-sm font-bold">{item.title}</span>
-            <span className="shrink-0 rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-extrabold capitalize text-brand-teal">
+          <div key={item.id} className="st-row" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}>
+            <span className="st-row-title">{item.title}</span>
+            <span className="st-when">
               {item.duration_minutes ? `${item.duration_minutes}m` : item.item_type}
             </span>
           </div>
         ))}
       </div>
 
-      <Button asChild className="actsix-btn-primary min-h-10 h-9 w-full text-xs sm:w-auto">
-        <Link to={`/service-planner/services/${service.id}`}>Open Service</Link>
-      </Button>
-    </div>
+      <div className="st-pad" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <Link to={`/service-planner/services/${service.id}`} className="st-btn st-btn-primary">
+          Open service
+        </Link>
+        {assignments.length > 0 && (
+          <span className="st-tally">{assignments.length} on the team</span>
+        )}
+      </div>
+    </>
   );
 }

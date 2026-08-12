@@ -12,17 +12,13 @@ const actions = [
 
 export function QuickActionsWidget(_: DashboardWidgetRenderProps) {
   return (
-    <div className="grid grid-cols-1 gap-2">
+    <div className="st-actions">
       {actions.map((action) => {
         const Icon = action.icon;
 
         return (
-          <Link
-            key={action.to}
-            to={action.to}
-            className="group flex min-h-[42px] items-center gap-2 rounded-lg border border-border/80 bg-background/70 px-3 py-2 text-sm font-extrabold transition hover:border-brand-teal/35 hover:bg-brand-teal/5 hover:text-brand-teal"
-          >
-            <Icon className="h-4 w-4 text-brand-teal" />
+          <Link key={action.to} to={action.to} className="st-action">
+            <Icon className="h-4 w-4 shrink-0" style={{ color: "var(--st-accent)" }} />
             {action.label}
           </Link>
         );

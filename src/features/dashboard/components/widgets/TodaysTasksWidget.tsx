@@ -24,7 +24,7 @@ export function TodaysTasksWidget({ widget, data }: DashboardWidgetRenderProps) 
   if (tasks.length === 0) return <WidgetEmptyState>No next actions need attention.</WidgetEmptyState>;
 
   return (
-    <div className="space-y-3">
+    <div className="st-rows">
       {tasks.map((task) => (
         <WidgetTaskRow key={task.id} task={task} />
       ))}

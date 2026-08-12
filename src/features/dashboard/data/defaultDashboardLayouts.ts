@@ -31,9 +31,12 @@ export const defaultDashboardLayout: UserDashboardLayout = createDashboardLayout
     definitionId: "quick-actions",
     size: "small",
   },
+  // People follow-ups was previously visible only in the hardcoded home panels,
+  // which the saved layout never rendered. Now that the layout is the single
+  // rendering path, it has to be in the default or it disappears for everyone.
   {
-    id: "recent-activity-default",
-    definitionId: "recent-activity",
+    id: "people-followups-default",
+    definitionId: "people-followups",
     size: "medium",
   },
 ]);
