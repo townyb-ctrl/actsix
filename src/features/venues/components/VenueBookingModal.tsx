@@ -17,29 +17,20 @@ import { CheckboxField, Field, FieldGroup, FieldRow, fieldControlClass } from "@
 import { FormDialog } from "@/components/ui/form-dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { createHirerContact, deleteVenueBooking, upsertVenueBooking } from "@/features/venues/api/venuesApi";
+import { deleteVenueBooking, upsertVenueBooking } from "@/features/venues/api/venuesApi";
 import {
   findConflicts,
   formatBookingRange,
   type VenueBooking,
   type VenueBookingStatus,
-  type VenueBookingType,
-  type VenuePaymentStatus,
   type VenueSpace,
 } from "@/features/venues/lib/venueBookings";
-import {
-  resourcesForSpace,
-  type VenueResource,
-  type VenueSpaceResource,
-} from "@/features/venues/lib/venueResources";
 
 type Props = {
   open: boolean;
   booking: VenueBooking | null;
   spaces: VenueSpace[];
   bookings: VenueBooking[];
-  resources: VenueResource[];
-  spaceResources: VenueSpaceResource[];
   /** Set when the booking is being created inside a hire, so it attaches to it. */
   hireId?: string | null;
   workspaceId: string;
@@ -90,8 +81,6 @@ export default function VenueBookingModal({
   booking,
   spaces,
   bookings,
-  resources,
-  spaceResources,
   hireId,
   workspaceId,
   userId,
@@ -102,23 +91,10 @@ export default function VenueBookingModal({
 
   const [spaceId, setSpaceId] = useState("");
   const [title, setTitle] = useState("");
-  const [bookingType, setBookingType] = useState<VenueBookingType>("internal");
   const [startsAt, setStartsAt] = useState(defaultStart);
   const [endsAt, setEndsAt] = useState(defaultEnd);
   const [status, setStatus] = useState<VenueBookingStatus>("Confirmed");
-  const [hirerName, setHirerName] = useState("");
-  const [hirerEmail, setHirerEmail] = useState("");
-  const [hirerPhone, setHirerPhone] = useState("");
-  const [quotedFee, setQuotedFee] = useState("0");
-  const [depositAmount, setDepositAmount] = useState("0");
-  const [paymentStatus, setPaymentStatus] = useState<VenuePaymentStatus>("Unpaid");
-  const [requestedFeatures, setRequestedFeatures] = useState<string[]>([]);
-  const [paRequested, setPaRequested] = useState(false);
-  const [paFee, setPaFee] = useState("0");
-  const [coffeeRequested, setCoffeeRequested] = useState(false);
-  const [coffeeFee, setCoffeeFee] = useState("0");
   const [notes, setNotes] = useState("");
-  const [saveHirerAsContact, setSaveHirerAsContact] = useState(false);
   const [overrideConflict, setOverrideConflict] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -128,54 +104,12 @@ export default function VenueBookingModal({
     if (!open) return;
     setSpaceId(booking?.space_id || activeSpaces[0]?.id || "");
     setTitle(booking?.title || "");
-    setBookingType(booking?.booking_type || "internal");
     setStartsAt(booking ? toLocalInput(booking.starts_at) : defaultStart());
     setEndsAt(booking ? toLocalInput(booking.ends_at) : defaultEnd());
     setStatus(booking?.status || "Confirmed");
-    setHirerName(booking?.hirer_name || "");
-    setHirerEmail(booking?.hirer_email || "");
-    setHirerPhone(booking?.hirer_phone || "");
-    setQuotedFee(String(booking?.quoted_fee ?? 0));
-    setDepositAmount(String(booking?.deposit_amount ?? 0));
-    setPaymentStatus(booking?.payment_status && booking.payment_status !== "Not applicable"
-      ? booking.payment_status
-      : "Unpaid");
-    setRequestedFeatures(booking?.requested_features || []);
-    setPaRequested(booking?.needs_technician || false);
-    setPaFee(String(booking?.technician_fee ?? 0));
-    setCoffeeRequested(booking?.coffee_requested || false);
-    setCoffeeFee(String(booking?.coffee_fee ?? 0));
     setNotes(booking?.notes || "");
-    setSaveHirerAsContact(false);
     setOverrideConflict(false);
   }, [open, booking]);
-
-  const toggleRequestedFeature = (feature: string, checked: boolean) => {
-    setRequestedFeatures((current) =>
-      checked ? [...current, feature] : current.filter((existing) => existing !== feature)
-    );
-  };
-
-  const selectedSpace = useMemo(
-    () => spaces.find((candidate) => candidate.id === spaceId),
-    [spaces, spaceId]
-  );
-
-  /**
-   * Only what this space actually has can be requested. Stored on the booking
-   * by name, so a resource later renamed or retired still reads correctly on
-   * an old booking.
-   */
-  const requestableFeatures = useMemo(
-    () => resourcesForSpace(spaceId, spaceResources, resources).map((entry) => entry.resource.name),
-    [spaceId, spaceResources, resources]
-  );
-
-  /** Pre-fill the fee from the space's daily rate when creating an external hire. */
-  useEffect(() => {
-    if (booking || bookingType !== "external") return;
-    if (selectedSpace) setQuotedFee(String(selectedSpace.daily_rate || 0));
-  }, [spaceId, bookingType, booking, selectedSpace]);
 
   const conflicts = useMemo(() => {
     if (!spaceId || !startsAt || !endsAt) return [];
@@ -211,10 +145,6 @@ export default function VenueBookingModal({
       toast.error("The end time must be after the start time");
       return;
     }
-    if (bookingType === "external" && !hirerName.trim()) {
-      toast.error("Name the hirer");
-      return;
-    }
     if (conflicts.length > 0 && !overrideConflict) {
       toast.error("This clashes with another booking", {
         description: "Tick “Book anyway” to keep both.",
@@ -224,23 +154,13 @@ export default function VenueBookingModal({
 
     setSaving(true);
 
-    let hirerContactId = booking?.hirer_contact_id ?? null;
-
-    if (saveHirerAsContact && bookingType === "external" && hirerName.trim()) {
-      const { data, error } = await createHirerContact({
-        workspaceId,
-        userId,
-        name: hirerName.trim(),
-        email: hirerEmail.trim(),
-        phone: hirerPhone.trim(),
-      });
-      if (error) {
-        toast.error("Could not save the hirer as a contact", { description: error.message });
-      } else {
-        hirerContactId = (data as { id: string })?.id ?? null;
-      }
-    }
-
+    /*
+     * Money lives on the hire, not here: a booking is in-house use of a space.
+     * An existing booking keeps whatever type and fees it was already saved
+     * with, so editing an older external booking through this form can never
+     * silently zero its price. A new one is external when it belongs to a hire
+     * and internal when it stands alone.
+     */
     const { error } = await upsertVenueBooking({
       bookingId: booking?.id,
       workspaceId,
@@ -249,22 +169,22 @@ export default function VenueBookingModal({
         space_id: spaceId,
         hire_id: booking ? booking.hire_id : hireId ?? null,
         title: title.trim(),
-        booking_type: bookingType,
-        hirer_contact_id: hirerContactId,
-        hirer_name: hirerName.trim(),
-        hirer_email: hirerEmail.trim(),
-        hirer_phone: hirerPhone.trim(),
+        booking_type: booking ? booking.booking_type : hireId ? "external" : "internal",
+        hirer_contact_id: booking?.hirer_contact_id ?? null,
+        hirer_name: booking?.hirer_name ?? "",
+        hirer_email: booking?.hirer_email ?? "",
+        hirer_phone: booking?.hirer_phone ?? "",
         starts_at: fromLocalInput(startsAt),
         ends_at: fromLocalInput(endsAt),
         status,
-        quoted_fee: Number(quotedFee) || 0,
-        deposit_amount: Number(depositAmount) || 0,
-        payment_status: paymentStatus,
-        requested_features: requestedFeatures,
-        needs_technician: paRequested,
-        technician_fee: paRequested ? Number(paFee) || 0 : 0,
-        coffee_requested: coffeeRequested,
-        coffee_fee: coffeeRequested ? Number(coffeeFee) || 0 : 0,
+        quoted_fee: booking?.quoted_fee ?? 0,
+        deposit_amount: booking?.deposit_amount ?? 0,
+        payment_status: booking?.payment_status ?? "Not applicable",
+        requested_features: booking?.requested_features ?? [],
+        needs_technician: booking?.needs_technician ?? false,
+        technician_fee: booking?.technician_fee ?? 0,
+        coffee_requested: booking?.coffee_requested ?? false,
+        coffee_fee: booking?.coffee_fee ?? 0,
         notes: notes.trim(),
       },
     });
@@ -342,8 +262,7 @@ export default function VenueBookingModal({
       >
         <form id="venue-booking-form" className="space-y-5" onSubmit={save}>
           <FieldGroup title="Booking">
-            <FieldRow>
-              <Field label="Space" htmlFor={spaceFieldId}>
+            <Field label="Space" htmlFor={spaceFieldId}>
                 <select
                   id={spaceFieldId}
                   value={spaceId}
@@ -358,28 +277,15 @@ export default function VenueBookingModal({
                       {space.name}
                     </option>
                   ))}
-                </select>
-              </Field>
-
-              <Field label="Type" htmlFor={typeFieldId}>
-                <select
-                  id={typeFieldId}
-                  value={bookingType}
-                  onChange={(event) => setBookingType(event.target.value as VenueBookingType)}
-                  className={cn(fieldControlClass)}
-                >
-                  <option value="internal">Internal (no charge)</option>
-                  <option value="external">External hire</option>
-                </select>
-              </Field>
-            </FieldRow>
+              </select>
+            </Field>
 
             <Field label="Title" htmlFor={titleFieldId}>
               <input
                 id={titleFieldId}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder={bookingType === "external" ? "Robertson wedding" : "Youth night"}
+                placeholder="Youth night"
                 className={cn(fieldControlClass)}
               />
             </Field>
@@ -444,155 +350,6 @@ export default function VenueBookingModal({
                 />
               </AlertDescription>
             </Alert>
-          )}
-
-          {bookingType === "external" && (
-            <>
-              <FieldGroup title="External hire">
-                <FieldRow className="sm:grid-cols-3">
-                  <Field label="Hirer" htmlFor={hirerFieldId}>
-                    <input
-                      id={hirerFieldId}
-                      value={hirerName}
-                      onChange={(event) => setHirerName(event.target.value)}
-                      className={cn(fieldControlClass)}
-                    />
-                  </Field>
-
-                  <Field label="Email" htmlFor={emailFieldId}>
-                    <input
-                      id={emailFieldId}
-                      type="email"
-                      value={hirerEmail}
-                      onChange={(event) => setHirerEmail(event.target.value)}
-                      className={cn(fieldControlClass)}
-                    />
-                  </Field>
-
-                  <Field label="Phone" htmlFor={phoneFieldId}>
-                    <input
-                      id={phoneFieldId}
-                      value={hirerPhone}
-                      onChange={(event) => setHirerPhone(event.target.value)}
-                      className={cn(fieldControlClass)}
-                    />
-                  </Field>
-                </FieldRow>
-
-                {!booking?.hirer_contact_id && (
-                  <CheckboxField
-                    id="venue-booking-save-contact"
-                    label="Also save this hirer to Service Contacts"
-                    checked={saveHirerAsContact}
-                    onCheckedChange={setSaveHirerAsContact}
-                  />
-                )}
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <Field label="Quoted fee" htmlFor={feeFieldId}>
-                    <input
-                      id={feeFieldId}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={quotedFee}
-                      onChange={(event) => setQuotedFee(event.target.value)}
-                      className={cn(fieldControlClass)}
-                    />
-                  </Field>
-
-                  <Field label="Deposit" htmlFor={depositFieldId}>
-                    <input
-                      id={depositFieldId}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={depositAmount}
-                      onChange={(event) => setDepositAmount(event.target.value)}
-                      className={cn(fieldControlClass)}
-                    />
-                  </Field>
-
-                  <Field label="Payment" htmlFor={paymentFieldId}>
-                    <select
-                      id={paymentFieldId}
-                      value={paymentStatus}
-                      onChange={(event) => setPaymentStatus(event.target.value as VenuePaymentStatus)}
-                      className={cn(fieldControlClass)}
-                    >
-                      <option value="Unpaid">Unpaid</option>
-                      <option value="Deposit paid">Deposit paid</option>
-                      <option value="Paid">Paid</option>
-                    </select>
-                  </Field>
-                </div>
-              </FieldGroup>
-
-              <FieldGroup title="Requested extras">
-                {requestableFeatures.length > 0 && (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {requestableFeatures.map((feature) => (
-                      <CheckboxField
-                        key={feature}
-                        id={`venue-booking-feature-${feature}`}
-                        label={feature}
-                        checked={requestedFeatures.includes(feature)}
-                        onCheckedChange={(checked) => toggleRequestedFeature(feature, checked)}
-                        className="text-sm font-normal"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                <FieldRow>
-                  <div className="space-y-2">
-                    <CheckboxField
-                      id="venue-booking-pa"
-                      label="PA System"
-                      checked={paRequested}
-                      onCheckedChange={setPaRequested}
-                      className="text-sm font-normal"
-                    />
-                    {paRequested && (
-                      <Field label="PA fee" htmlFor="venue-booking-pa-fee">
-                        <input
-                          id="venue-booking-pa-fee"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={paFee}
-                          onChange={(event) => setPaFee(event.target.value)}
-                          className={cn(fieldControlClass)}
-                        />
-                      </Field>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <CheckboxField
-                      id="venue-booking-coffee"
-                      label="Tea & Coffee"
-                      checked={coffeeRequested}
-                      onCheckedChange={setCoffeeRequested}
-                      className="text-sm font-normal"
-                    />
-                    {coffeeRequested && (
-                      <Field label="Tea & coffee fee" htmlFor="venue-booking-coffee-fee">
-                        <input
-                          id="venue-booking-coffee-fee"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={coffeeFee}
-                          onChange={(event) => setCoffeeFee(event.target.value)}
-                          className={cn(fieldControlClass)}
-                        />
-                      </Field>
-                    )}
-                  </div>
-                </FieldRow>
-              </FieldGroup>
-            </>
           )}
 
           <Field label="Notes" htmlFor={notesFieldId} className="border-t border-border/70 pt-5">

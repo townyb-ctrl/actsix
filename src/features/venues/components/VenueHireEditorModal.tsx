@@ -50,6 +50,7 @@ export default function VenueHireEditorModal({
   const [hirerPhone, setHirerPhone] = useState("");
   const [onsiteName, setOnsiteName] = useState("");
   const [onsitePhone, setOnsitePhone] = useState("");
+  const [paymentTerms, setPaymentTerms] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -63,6 +64,7 @@ export default function VenueHireEditorModal({
     setHirerPhone(hire?.hirer_phone || "");
     setOnsiteName(hire?.onsite_contact_name || "");
     setOnsitePhone(hire?.onsite_contact_phone || "");
+    setPaymentTerms(hire?.payment_terms || "");
     setNotes(hire?.notes || "");
   }, [open, hire]);
 
@@ -92,6 +94,7 @@ export default function VenueHireEditorModal({
         hirer_phone: hirerPhone.trim(),
         onsite_contact_name: onsiteName.trim(),
         onsite_contact_phone: onsitePhone.trim(),
+        payment_terms: paymentTerms.trim(),
         notes: notes.trim(),
       },
     });
@@ -237,6 +240,16 @@ export default function VenueHireEditorModal({
             Who our staff phone on the day. Often not the person who booked.
           </p>
         </FieldGroup>
+
+        <Field label="Payment terms" htmlFor="venue-hire-terms">
+          <input
+            id="venue-hire-terms"
+            value={paymentTerms}
+            onChange={(event) => setPaymentTerms(event.target.value)}
+            placeholder="50% on signature, balance 7 days before"
+            className={cn(fieldControlClass)}
+          />
+        </Field>
 
         <Field label="Notes" htmlFor="venue-hire-notes" className="border-t border-border/70 pt-5">
           <textarea

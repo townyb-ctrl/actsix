@@ -1,4 +1,5 @@
 import type { VenueBooking } from "@/features/venues/lib/venueBookings";
+import type { VenueQuoteStatus } from "@/features/venues/lib/venueQuotes";
 
 export type VenueHireStatus = "Draft" | "Confirmed" | "Completed" | "Cancelled";
 
@@ -16,6 +17,9 @@ export type VenueHire = {
   onsite_contact_name: string;
   onsite_contact_phone: string;
   status: VenueHireStatus;
+  quote_status: VenueQuoteStatus;
+  quote_sent_at: string | null;
+  payment_terms: string;
   enquiry_id: string | null;
   notes: string;
   created_at: string;

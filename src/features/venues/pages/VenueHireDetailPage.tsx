@@ -10,16 +10,20 @@ import { PageHeader } from "@/components/PageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { useHireBookings, useVenueHire } from "@/features/venues/api/venueHiresQueries";
+import { useQuoteLines } from "@/features/venues/api/venueQuotesQueries";
+import { setQuoteStatus } from "@/features/venues/api/venueQuotesApi";
 import { useVenueBookings, useVenueSpaces } from "@/features/venues/api/venuesQueries";
-import {
-  useVenueResources,
-  useVenueSpaceResources,
-} from "@/features/venues/api/venueResourcesQueries";
-import { formatCurrency, type VenueBooking } from "@/features/venues/lib/venueBookings";
+import { useVenueResources } from "@/features/venues/api/venueResourcesQueries";
+import { toast } from "sonner";
+import type { VenueBooking } from "@/features/venues/lib/venueBookings";
+import type { VenueQuoteLine, VenueQuoteStatus } from "@/features/venues/lib/venueQuotes";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
 import VenueBookingModal from "@/features/venues/components/VenueBookingModal";
+import VenueQuotePanel from "@/features/venues/components/VenueQuotePanel";
+import VenueQuoteLineModal from "@/features/venues/components/VenueQuoteLineModal";
+import VenueQuotePrintSheet from "@/features/venues/components/VenueQuotePrintSheet";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -33,12 +37,14 @@ export default function VenueHireDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [editingBooking, setEditingBooking] = useState<VenueBooking | null>(null);
+  const [quoteLineModalOpen, setQuoteLineModalOpen] = useState(false);
+  const [editingLine, setEditingLine] = useState<VenueQuoteLine | null>(null);
 
   const { hire, loading } = useVenueHire(hireId);
   const { bookings: hireBookings } = useHireBookings(hireId);
+  const { lines } = useQuoteLines(hireId);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
-  const { spaceResources } = useVenueSpaceResources(workspace?.id);
   // Every booking in the workspace, so the clash check inside the booking modal
   // sees bookings outside this hire too.
   const { bookings: allBookings } = useVenueBookings({ workspaceId: workspace?.id });
@@ -48,6 +54,17 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-hires"] });
     queryClient.invalidateQueries({ queryKey: ["venue-hire-bookings"] });
     queryClient.invalidateQueries({ queryKey: ["venue-bookings"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-quote-lines"] });
+  };
+
+  const changeQuoteStatus = async (status: VenueQuoteStatus) => {
+    if (!hireId) return;
+    const { error } = await setQuoteStatus(hireId, status);
+    if (error) {
+      toast.error("Could not update the quote", { description: error.message });
+      return;
+    }
+    refresh();
   };
 
   if (loading) {
@@ -73,13 +90,9 @@ export default function VenueHireDetailPage() {
   }
 
   const span = hireSpan(hireBookings);
-  const quotedTotal = hireBookings
-    .filter((booking) => booking.status !== "Cancelled")
-    .reduce(
-      (total, booking) =>
-        total + booking.quoted_fee + booking.technician_fee + booking.coffee_fee,
-      0
-    );
+  const spanLabel = span
+    ? `${formatDate(span.startsAt)} – ${formatDate(span.endsAt)}`
+    : "";
 
   return (
     <div>
@@ -123,6 +136,24 @@ export default function VenueHireDetailPage() {
           }}
         />
 
+        <div className="lg:col-start-1 lg:row-start-2">
+          <VenueQuotePanel
+            lines={lines}
+            quoteStatus={hire.quote_status}
+            quoteSentAt={hire.quote_sent_at}
+            onAddLine={() => {
+              setEditingLine(null);
+              setQuoteLineModalOpen(true);
+            }}
+            onEditLine={(line) => {
+              setEditingLine(line);
+              setQuoteLineModalOpen(true);
+            }}
+            onStatusChange={changeQuoteStatus}
+            onPrint={() => window.print()}
+          />
+        </div>
+
         <div className="space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
@@ -139,12 +170,9 @@ export default function VenueHireDetailPage() {
                 </div>
               )}
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Quoted so far</span>
-                <span>{formatCurrency(quotedTotal)}</span>
+                <span className="text-muted-foreground">Bookings</span>
+                <span>{hireBookings.length}</span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Added up from the bookings on this hire. Proper quote lines come later.
-              </p>
             </CardContent>
           </Card>
 
@@ -203,14 +231,34 @@ export default function VenueHireDetailPage() {
         booking={editingBooking}
         spaces={spaces}
         bookings={allBookings}
-        resources={resources}
-        spaceResources={spaceResources}
         hireId={hire.id}
         workspaceId={workspace?.id || ""}
         userId={user?.id || ""}
         onOpenChange={setBookingModalOpen}
         onSaved={refresh}
       />
+
+      <VenueQuoteLineModal
+        open={quoteLineModalOpen}
+        line={editingLine}
+        resources={resources}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        onOpenChange={setQuoteLineModalOpen}
+        onSaved={refresh}
+      />
+
+      {lines.length > 0 && (
+        <VenueQuotePrintSheet
+          workspaceName={workspace?.name || ""}
+          logoUrl={workspace?.logo_url}
+          hire={hire}
+          lines={lines}
+          dates={spanLabel}
+          paymentTerms={hire.payment_terms}
+        />
+      )}
     </div>
   );
 }

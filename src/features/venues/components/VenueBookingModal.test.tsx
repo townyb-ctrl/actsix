@@ -45,8 +45,6 @@ describe("VenueBookingModal save validation", () => {
         booking={null}
         spaces={[space]}
         bookings={[]}
-        resources={[]}
-        spaceResources={[]}
         workspaceId="workspace-1"
         userId="user-1"
         onOpenChange={() => {}}
