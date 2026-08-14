@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { setVenueSpaceActive, setVenueRequestToken } from "@/features/venues/api/venuesApi";
+import { setWorkspaceContractClauses } from "@/features/venues/api/venuePaymentsApi";
+import { useWorkspaceContractClauses } from "@/features/venues/api/venuePaymentsQueries";
 import { useVenueRequestToken, useVenueSpaces } from "@/features/venues/api/venuesQueries";
 import {
   useVenueResources,
@@ -26,11 +28,15 @@ export default function VenueSpacesPage() {
 
   const [editingSpace, setEditingSpace] = useState<VenueSpace | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [clauses, setClauses] = useState("");
+  const [clausesTouched, setClausesTouched] = useState(false);
+  const [savingClauses, setSavingClauses] = useState(false);
 
   const { spaces, loading: spacesLoading, error: spacesError } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
   const { spaceResources } = useVenueSpaceResources(workspace?.id);
   const { requestToken } = useVenueRequestToken(workspace?.id);
+  const { clauses: savedClauses } = useWorkspaceContractClauses(workspace?.id);
   const loading = !workspace?.id || spacesLoading;
 
   const toastedErrorRef = useRef(false);
@@ -44,6 +50,35 @@ export default function VenueSpacesPage() {
       toastedErrorRef.current = false;
     }
   }, [spacesError]);
+
+  // Seeded from the saved value until the user types, so a slow query cannot
+  // overwrite what they have already started writing.
+  useEffect(() => {
+    if (!clausesTouched) setClauses(savedClauses);
+  }, [savedClauses, clausesTouched]);
+
+  const saveClauses = async () => {
+    if (!workspace?.id) return;
+
+    setSavingClauses(true);
+    const { data, error } = await setWorkspaceContractClauses(workspace.id, clauses);
+    setSavingClauses(false);
+
+    if (error) {
+      toast.error("Could not save the standard wording", { description: error.message });
+      return;
+    }
+    if (!data || (data as unknown[]).length === 0) {
+      toast.error("Could not save the standard wording", {
+        description: "You may not have permission to change this workspace's settings.",
+      });
+      return;
+    }
+
+    setClausesTouched(false);
+    queryClient.invalidateQueries({ queryKey: ["venue-contract-clauses"] });
+    toast.success("Standard wording saved");
+  };
 
   const refreshSpaces = () => {
     queryClient.invalidateQueries({ queryKey: ["venue-spaces"] });
@@ -131,6 +166,34 @@ export default function VenueSpacesPage() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Standard hire terms</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Written once and copied onto every new hire's contract, where it can be adjusted for
+              that hire.
+            </p>
+            <textarea
+              value={clauses}
+              onChange={(event) => {
+                setClausesTouched(true);
+                setClauses(event.target.value);
+              }}
+              rows={5}
+              aria-label="Standard hire terms"
+              placeholder="No food in the auditorium. Upstairs is closed to guests. Damage is charged against the bond."
+              className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={saveClauses} disabled={savingClauses}>
+                {savingClauses ? "Saving…" : "Save standard terms"}
+              </Button>
+            )}
           </CardContent>
         </Card>
 

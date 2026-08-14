@@ -20,6 +20,10 @@ export type VenueHire = {
   quote_status: VenueQuoteStatus;
   quote_sent_at: string | null;
   payment_terms: string;
+  /** Copied from the workspace's standard clauses, then editable per hire. */
+  contract_clauses: string;
+  contract_signed_on: string | null;
+  contract_signed_by: string;
   enquiry_id: string | null;
   /** What to do differently next time, carried into a repeat hire. */
   lessons_learned: string;

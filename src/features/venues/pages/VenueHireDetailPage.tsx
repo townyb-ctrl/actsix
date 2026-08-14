@@ -22,11 +22,16 @@ import {
   usePositions,
 } from "@/features/venues/api/venuePositionsQueries";
 import { unassignPosition } from "@/features/venues/api/venuePositionsApi";
+import {
+  usePayments,
+  useWorkspaceContractClauses,
+} from "@/features/venues/api/venuePaymentsQueries";
 import { toast } from "sonner";
 import type { VenueBooking } from "@/features/venues/lib/venueBookings";
 import type { VenueQuoteLine, VenueQuoteStatus } from "@/features/venues/lib/venueQuotes";
 import type { VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
 import type { VenuePosition, VenuePositionAssignment } from "@/features/venues/lib/venuePositions";
+import type { VenuePayment } from "@/features/venues/lib/venuePayments";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
@@ -40,6 +45,10 @@ import VenueRunSheetPrintSheet from "@/features/venues/components/VenueRunSheetP
 import VenuePositionBoard from "@/features/venues/components/VenuePositionBoard";
 import VenuePositionEditorModal from "@/features/venues/components/VenuePositionEditorModal";
 import VenuePositionAssignModal from "@/features/venues/components/VenuePositionAssignModal";
+import VenuePaymentsPanel from "@/features/venues/components/VenuePaymentsPanel";
+import VenuePaymentModal from "@/features/venues/components/VenuePaymentModal";
+import VenueContractPanel from "@/features/venues/components/VenueContractPanel";
+import VenueContractPrintSheet from "@/features/venues/components/VenueContractPrintSheet";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -63,7 +72,9 @@ export default function VenueHireDetailPage() {
    * them at once would print both - only the requested one is mounted, and the
    * print dialog is opened once React has actually put it there.
    */
-  const [printing, setPrinting] = useState<"quote" | "run-sheet" | null>(null);
+  const [printing, setPrinting] = useState<"quote" | "run-sheet" | "contract" | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<VenuePayment | null>(null);
   const [positionModalOpen, setPositionModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<VenuePosition | null>(null);
   const [positionSeedIso, setPositionSeedIso] = useState<string | null>(null);
@@ -77,6 +88,8 @@ export default function VenueHireDetailPage() {
   const { positions } = usePositions(hireId);
   const { assignments } = usePositionAssignments(positions.map((position) => position.id));
   const { people } = usePositionPeople(workspace?.id);
+  const { payments } = usePayments(hireId);
+  const { clauses: workspaceClauses } = useWorkspaceContractClauses(workspace?.id);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
   // Every booking in the workspace, so the clash check inside the booking modal
@@ -92,6 +105,7 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-run-sheet"] });
     queryClient.invalidateQueries({ queryKey: ["venue-positions"] });
     queryClient.invalidateQueries({ queryKey: ["venue-position-assignments"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-payments"] });
   };
 
   const removeAssignment = async (assignment: VenuePositionAssignment) => {
@@ -245,6 +259,28 @@ export default function VenueHireDetailPage() {
           />
         </div>
 
+        <div className="space-y-4 lg:col-start-2 lg:row-start-2">
+          <VenuePaymentsPanel
+            lines={lines}
+            payments={payments}
+            onAddPayment={() => {
+              setEditingPayment(null);
+              setPaymentModalOpen(true);
+            }}
+            onEditPayment={(payment) => {
+              setEditingPayment(payment);
+              setPaymentModalOpen(true);
+            }}
+          />
+
+          <VenueContractPanel
+            hire={hire}
+            workspaceClauses={workspaceClauses}
+            onPrint={() => setPrinting("contract")}
+            onSaved={refresh}
+          />
+        </div>
+
         <div className="space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
@@ -376,6 +412,33 @@ export default function VenueHireDetailPage() {
           userId={user?.id || ""}
           onOpenChange={(open) => !open && setAssigningPosition(null)}
           onSaved={refresh}
+        />
+      )}
+
+      <VenuePaymentModal
+        open={paymentModalOpen}
+        payment={editingPayment}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        onOpenChange={setPaymentModalOpen}
+        onSaved={refresh}
+      />
+
+      {printing === "contract" && (
+        <VenueContractPrintSheet
+          workspaceName={workspace?.name || ""}
+          logoUrl={workspace?.logo_url}
+          hire={hire}
+          lines={lines}
+          dates={spanLabel}
+          spaceNames={[
+            ...new Set(
+              hireBookings
+                .map((booking) => spaces.find((space) => space.id === booking.space_id)?.name)
+                .filter((name): name is string => Boolean(name))
+            ),
+          ]}
         />
       )}
 
