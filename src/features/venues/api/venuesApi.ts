@@ -149,9 +149,20 @@ export const upsertVenueBooking = ({
 
   const table = (supabase as any).from("venue_bookings");
 
-  if (bookingId) return table.update({ ...row, updated_at: new Date().toISOString() }).eq("id", bookingId);
+  // Both branches return the row so a caller creating a booking from an enquiry
+  // has an id to link back to.
+  if (bookingId) {
+    return table
+      .update({ ...row, updated_at: new Date().toISOString() })
+      .eq("id", bookingId)
+      .select("id")
+      .single();
+  }
 
-  return table.insert({ ...row, workspace_id: workspaceId, user_id: userId });
+  return table
+    .insert({ ...row, workspace_id: workspaceId, user_id: userId })
+    .select("id")
+    .single();
 };
 
 export const updateVenueBookingStatus = (bookingId: string, status: VenueBookingStatus) =>

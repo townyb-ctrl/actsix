@@ -3,7 +3,9 @@ import { useParams } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,15 +20,34 @@ const LINK_DEAD = "This request link is no longer active.";
 
 const GENERIC_SUBMIT_ERROR = "We could not send your request. Please try again.";
 
-// Exactly the messages submit_venue_request raises (supabase/migrations/20260809120000_create_venue_hire.sql).
-// Any other RPC error text is discarded so raw Postgres internals never reach an anonymous visitor.
+// Exactly the messages submit_venue_enquiry raises
+// (supabase/migrations/20260814130000_create_venue_enquiries.sql). Any other RPC
+// error text is discarded so raw Postgres internals never reach an anonymous visitor.
 const SAFE_SUBMIT_ERRORS = new Set([
   LINK_DEAD,
-  "That space is not available for requests.",
-  "The end time must be after the start time.",
   "Please fill in the required fields.",
+  "The end time must be after the start time.",
   "Too many requests have come in recently. Please try again later.",
+  "One of your answers is too long. Please shorten it.",
+  "Some of your answers could not be read. Please check the dates and numbers.",
 ]);
+
+const EVENT_TYPES = [
+  "Wedding",
+  "Funeral",
+  "Conference",
+  "Concert",
+  "Community event",
+  "Film shoot",
+  "Party",
+  "Other",
+];
+
+const INSURANCE_OPTIONS = [
+  { value: "Unknown", label: "Not sure yet" },
+  { value: "Has cover", label: "We have our own cover" },
+  { value: "Needs cover", label: "We need cover arranged" },
+] as const;
 
 export default function PublicVenueRequest() {
   const { token } = useParams();
@@ -37,14 +58,25 @@ export default function PublicVenueRequest() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  const [spaceId, setSpaceId] = useState("");
-  const [title, setTitle] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [startsAt, setStartsAt] = useState("");
-  const [endsAt, setEndsAt] = useState("");
-  const [notes, setNotes] = useState("");
+  const [eventName, setEventName] = useState("");
+  const [eventType, setEventType] = useState("");
+  const [organisation, setOrganisation] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [isForProfit, setIsForProfit] = useState(false);
+  const [isTicketed, setIsTicketed] = useState(false);
+  const [expectedAttendance, setExpectedAttendance] = useState("");
+  const [preferredStart, setPreferredStart] = useState("");
+  const [preferredEnd, setPreferredEnd] = useState("");
+  const [alternateDates, setAlternateDates] = useState("");
+  const [setupNotes, setSetupNotes] = useState("");
+  const [spaceIds, setSpaceIds] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
+  const [avNeeds, setAvNeeds] = useState("");
+  const [cateringPlan, setCateringPlan] = useState("");
+  const [insuranceStatus, setInsuranceStatus] = useState<string>("Unknown");
+  const [heardAbout, setHeardAbout] = useState("");
 
   useEffect(() => {
     const loadSpaces = async () => {
@@ -60,7 +92,6 @@ export default function PublicVenueRequest() {
         setSpaces([]);
       } else {
         setSpaces(data as RequestSpace[]);
-        setSpaceId((data as RequestSpace[])[0].id);
       }
 
       setLoading(false);
@@ -69,31 +100,50 @@ export default function PublicVenueRequest() {
     loadSpaces();
   }, [token]);
 
+  const toggleSpace = (spaceId: string, checked: boolean) => {
+    setSpaceIds((current) =>
+      checked ? [...current, spaceId] : current.filter((existing) => existing !== spaceId)
+    );
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
-    if (!spaceId || !title.trim() || !name.trim() || !email.trim() || !startsAt || !endsAt) {
+    if (!eventName.trim() || !contactName.trim() || !contactEmail.trim()) {
       setError("Please fill in the required fields.");
       return;
     }
-    if (new Date(endsAt) <= new Date(startsAt)) {
+    if (preferredStart && preferredEnd && new Date(preferredEnd) <= new Date(preferredStart)) {
       setError("The end time must be after the start time.");
       return;
     }
 
     setSubmitting(true);
 
-    const { error: rpcError } = await (supabase as any).rpc("submit_venue_request", {
+    const { error: rpcError } = await (supabase as any).rpc("submit_venue_enquiry", {
       request_token: token || "",
-      target_space_id: spaceId,
-      booking_title: title.trim(),
-      hirer_name: name.trim(),
-      hirer_email: email.trim(),
-      hirer_phone: phone.trim(),
-      starts_at: new Date(startsAt).toISOString(),
-      ends_at: new Date(endsAt).toISOString(),
-      request_notes: notes.trim(),
+      payload: {
+        event_name: eventName.trim(),
+        event_type: eventType,
+        organisation: organisation.trim(),
+        contact_name: contactName.trim(),
+        contact_email: contactEmail.trim(),
+        contact_phone: contactPhone.trim(),
+        is_for_profit: isForProfit,
+        is_ticketed: isTicketed,
+        expected_attendance: expectedAttendance.trim(),
+        preferred_start: preferredStart ? new Date(preferredStart).toISOString() : null,
+        preferred_end: preferredEnd ? new Date(preferredEnd).toISOString() : null,
+        alternate_dates: alternateDates.trim(),
+        setup_notes: setupNotes.trim(),
+        space_ids: spaceIds,
+        description: description.trim(),
+        av_needs: avNeeds.trim(),
+        catering_plan: cateringPlan.trim(),
+        insurance_status: insuranceStatus,
+        heard_about: heardAbout.trim(),
+      },
     });
 
     setSubmitting(false);
@@ -126,117 +176,275 @@ export default function PublicVenueRequest() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
         <CheckCircle2 className="h-10 w-10 text-primary" />
-        <h1 className="text-xl font-semibold">Request sent</h1>
+        <h1 className="text-xl font-semibold">Enquiry sent</h1>
         <p className="max-w-sm text-sm text-muted-foreground">
-          Thank you. Someone will be in touch to confirm availability and cost.
+          Thank you. Someone will read through it and come back to you about availability and cost.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6 p-6">
+    <div className="mx-auto max-w-2xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Request a venue</h1>
+        <h1 className="text-2xl font-semibold">Enquire about hiring a space</h1>
         <p className="text-sm text-muted-foreground">
-          Send your details and we will confirm availability and cost.
+          Tell us what you are planning. The more you can share, the faster we can come back with
+          availability and a cost.
         </p>
       </div>
 
-      <form className="space-y-4" onSubmit={submit}>
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="request-space">
-            Space
-          </label>
-          <select
-            id="request-space"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={spaceId}
-            onChange={(event) => setSpaceId(event.target.value)}
-          >
+      <form className="space-y-8" onSubmit={submit}>
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Your event
+          </h2>
+
+          <div className="space-y-2">
+            <Label htmlFor="enquiry-event-name">Event name</Label>
+            <Input
+              id="enquiry-event-name"
+              value={eventName}
+              onChange={(event) => setEventName(event.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-event-type">Event type</Label>
+              <select
+                id="enquiry-event-type"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={eventType}
+                onChange={(event) => setEventType(event.target.value)}
+              >
+                <option value="">Choose one</option>
+                {EVENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-attendance">Expected attendance</Label>
+              <Input
+                id="enquiry-attendance"
+                type="number"
+                min="0"
+                value={expectedAttendance}
+                onChange={(event) => setExpectedAttendance(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="enquiry-description">What do you want to run?</Label>
+            <Textarea
+              id="enquiry-description"
+              rows={4}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="enquiry-for-profit"
+                checked={isForProfit}
+                onCheckedChange={(checked) => setIsForProfit(checked === true)}
+              />
+              <Label htmlFor="enquiry-for-profit" className="font-normal">
+                This is a for-profit event
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="enquiry-ticketed"
+                checked={isTicketed}
+                onCheckedChange={(checked) => setIsTicketed(checked === true)}
+              />
+              <Label htmlFor="enquiry-ticketed" className="font-normal">
+                We are selling tickets
+              </Label>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            When
+          </h2>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-start">Preferred start</Label>
+              <Input
+                id="enquiry-start"
+                type="datetime-local"
+                value={preferredStart}
+                onChange={(event) => setPreferredStart(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-end">Preferred end</Label>
+              <Input
+                id="enquiry-end"
+                type="datetime-local"
+                value={preferredEnd}
+                onChange={(event) => setPreferredEnd(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="enquiry-alternates">Alternative dates that would also work</Label>
+            <Input
+              id="enquiry-alternates"
+              value={alternateDates}
+              onChange={(event) => setAlternateDates(event.target.value)}
+              placeholder="The following Saturday, or any evening that week"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="enquiry-setup">Setup and pack-down time you need</Label>
+            <Input
+              id="enquiry-setup"
+              value={setupNotes}
+              onChange={(event) => setSetupNotes(event.target.value)}
+              placeholder="Two hours before, an hour after"
+            />
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Spaces you are interested in
+          </h2>
+
+          <div className="space-y-2">
             {spaces.map((space) => (
-              <option key={space.id} value={space.id}>
-                {space.name}
-                {space.capacity ? ` (seats ${space.capacity})` : ""}
-              </option>
+              <div key={space.id} className="flex items-start gap-2">
+                <Checkbox
+                  id={`enquiry-space-${space.id}`}
+                  checked={spaceIds.includes(space.id)}
+                  onCheckedChange={(checked) => toggleSpace(space.id, checked === true)}
+                />
+                <Label htmlFor={`enquiry-space-${space.id}`} className="font-normal">
+                  {space.name}
+                  {space.capacity ? ` (seats ${space.capacity})` : ""}
+                  {space.description && (
+                    <span className="block text-xs text-muted-foreground">{space.description}</span>
+                  )}
+                </Label>
+              </div>
             ))}
-          </select>
-        </div>
+          </div>
+        </section>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="request-title">
-            What is it for?
-          </label>
-          <Input id="request-title" value={title} onChange={(event) => setTitle(event.target.value)} />
-        </div>
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            What you need from us
+          </h2>
 
-        <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="request-start">
-              From
-            </label>
-            <Input
-              id="request-start"
-              type="datetime-local"
-              value={startsAt}
-              onChange={(event) => setStartsAt(event.target.value)}
+            <Label htmlFor="enquiry-av">Sound, screens, lighting, live feed</Label>
+            <Textarea
+              id="enquiry-av"
+              rows={2}
+              value={avNeeds}
+              onChange={(event) => setAvNeeds(event.target.value)}
             />
           </div>
+
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="request-end">
-              Until
-            </label>
-            <Input
-              id="request-end"
-              type="datetime-local"
-              value={endsAt}
-              onChange={(event) => setEndsAt(event.target.value)}
+            <Label htmlFor="enquiry-catering">Catering plan</Label>
+            <Textarea
+              id="enquiry-catering"
+              rows={2}
+              value={cateringPlan}
+              onChange={(event) => setCateringPlan(event.target.value)}
+              placeholder="Own caterer, food trucks, or guests eating on site"
             />
           </div>
-        </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="request-name">
-              Your name
-            </label>
-            <Input id="request-name" value={name} onChange={(event) => setName(event.target.value)} />
+            <Label htmlFor="enquiry-insurance">Insurance</Label>
+            <select
+              id="enquiry-insurance"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={insuranceStatus}
+              onChange={(event) => setInsuranceStatus(event.target.value)}
+            >
+              {INSURANCE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="request-email">
-              Email
-            </label>
-            <Input
-              id="request-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="request-phone">
-              Phone
-            </label>
-            <Input id="request-phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
-          </div>
-        </div>
+        </section>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="request-notes">
-            Anything we should know?
-          </label>
-          <Textarea
-            id="request-notes"
-            rows={3}
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-          />
-        </div>
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            About you
+          </h2>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-contact-name">Your name</Label>
+              <Input
+                id="enquiry-contact-name"
+                value={contactName}
+                onChange={(event) => setContactName(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-contact-email">Email</Label>
+              <Input
+                id="enquiry-contact-email"
+                type="email"
+                value={contactEmail}
+                onChange={(event) => setContactEmail(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-contact-phone">Phone</Label>
+              <Input
+                id="enquiry-contact-phone"
+                value={contactPhone}
+                onChange={(event) => setContactPhone(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-organisation">Organisation (if any)</Label>
+              <Input
+                id="enquiry-organisation"
+                value={organisation}
+                onChange={(event) => setOrganisation(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enquiry-heard-about">How did you hear about us?</Label>
+              <Input
+                id="enquiry-heard-about"
+                value={heardAbout}
+                onChange={(event) => setHeardAbout(event.target.value)}
+              />
+            </div>
+          </div>
+        </section>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Sending…" : "Send request"}
+          {submitting ? "Sending…" : "Send enquiry"}
         </Button>
       </form>
     </div>

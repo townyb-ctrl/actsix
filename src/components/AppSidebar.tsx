@@ -165,6 +165,7 @@ const navSections: NavSection[] = [
     matchPrefixes: ["/venues"],
     group: "Planning",
     items: [
+      { title: "Enquiries", url: "/venues/enquiries", icon: Inbox },
       { title: "Bookings", url: "/venues", icon: CalendarDays },
       { title: "Spaces", url: "/venues/spaces", icon: DoorOpen },
       { title: "Resources", url: "/venues/resources", icon: Boxes },
