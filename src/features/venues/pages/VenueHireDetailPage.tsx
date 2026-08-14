@@ -51,6 +51,8 @@ import VenuePaymentModal from "@/features/venues/components/VenuePaymentModal";
 import VenueContractPanel from "@/features/venues/components/VenueContractPanel";
 import VenueContractPrintSheet from "@/features/venues/components/VenueContractPrintSheet";
 import VenueClashPanel from "@/features/venues/components/VenueClashPanel";
+import VenueDebriefPanel from "@/features/venues/components/VenueDebriefPanel";
+import VenueCloneHireModal from "@/features/venues/components/VenueCloneHireModal";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -77,6 +79,7 @@ export default function VenueHireDetailPage() {
   const [printing, setPrinting] = useState<"quote" | "run-sheet" | "contract" | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<VenuePayment | null>(null);
+  const [cloneOpen, setCloneOpen] = useState(false);
   const [positionModalOpen, setPositionModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<VenuePosition | null>(null);
   const [positionSeedIso, setPositionSeedIso] = useState<string | null>(null);
@@ -290,6 +293,14 @@ export default function VenueHireDetailPage() {
             onPrint={() => setPrinting("contract")}
             onSaved={refresh}
           />
+
+          <VenueDebriefPanel
+            hire={hire}
+            lines={lines}
+            payments={payments}
+            onClone={() => setCloneOpen(true)}
+            onSaved={refresh}
+          />
         </div>
 
         <div className="space-y-4">
@@ -442,6 +453,20 @@ export default function VenueHireDetailPage() {
         userId={user?.id || ""}
         onOpenChange={setPaymentModalOpen}
         onSaved={refresh}
+      />
+
+      <VenueCloneHireModal
+        open={cloneOpen}
+        hire={hire}
+        source={{
+          bookings: hireBookings,
+          lines,
+          runSheetItems,
+          positions,
+        }}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        onOpenChange={setCloneOpen}
       />
 
       {printing === "contract" && (

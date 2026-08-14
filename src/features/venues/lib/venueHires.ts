@@ -27,6 +27,14 @@ export type VenueHire = {
   enquiry_id: string | null;
   /** What to do differently next time, carried into a repeat hire. */
   lessons_learned: string;
+  debrief_notes: string;
+  debrief_completed_on: string | null;
+  /** 1-5, null until somebody judges it. */
+  hirer_rating: number | null;
+  /** Null until somebody answers. */
+  would_host_again: boolean | null;
+  damage_found: string;
+  damage_cost: number;
   notes: string;
   created_at: string;
   updated_at: string;
