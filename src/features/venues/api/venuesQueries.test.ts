@@ -99,6 +99,7 @@ describe("useVenueBookings", () => {
       workspace_id: "workspace-1",
       user_id: "user-1",
       space_id: "space-1",
+      hire_id: null,
       title: "Youth night",
       booking_type: "internal",
       hirer_contact_id: null,

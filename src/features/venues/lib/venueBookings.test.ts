@@ -6,6 +6,7 @@ const booking = (overrides: Partial<VenueBooking> & { id: string }): VenueBookin
   workspace_id: "workspace-1",
   user_id: "user-1",
   space_id: "hall",
+  hire_id: null,
   title: "Existing booking",
   booking_type: "internal",
   hirer_contact_id: null,

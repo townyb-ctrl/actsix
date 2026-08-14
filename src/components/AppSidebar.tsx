@@ -16,6 +16,7 @@ import {
   ListChecks,
   MoreHorizontal,
   Music,
+  PartyPopper,
   PanelLeftClose,
   PanelLeftOpen,
   Phone,
@@ -166,6 +167,7 @@ const navSections: NavSection[] = [
     group: "Planning",
     items: [
       { title: "Enquiries", url: "/venues/enquiries", icon: Inbox },
+      { title: "Hires", url: "/venues/hires", icon: PartyPopper },
       { title: "Bookings", url: "/venues", icon: CalendarDays },
       { title: "Spaces", url: "/venues/spaces", icon: DoorOpen },
       { title: "Resources", url: "/venues/resources", icon: Boxes },

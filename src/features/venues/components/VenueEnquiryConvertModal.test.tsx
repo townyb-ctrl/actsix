@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import VenueEnquiryConvertModal from "./VenueEnquiryConvertModal";
 import { linkEnquiryToBooking } from "@/features/venues/api/venueEnquiriesApi";
+import { upsertVenueHire } from "@/features/venues/api/venueHiresApi";
 import { upsertVenueBooking } from "@/features/venues/api/venuesApi";
 import type { VenueSpace } from "@/features/venues/lib/venueBookings";
 import type { VenueEnquiry } from "@/features/venues/lib/venueEnquiries";
@@ -11,6 +12,7 @@ vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), err
 
 vi.mock("@/features/venues/api/venuesApi", () => ({ upsertVenueBooking: vi.fn() }));
 vi.mock("@/features/venues/api/venueEnquiriesApi", () => ({ linkEnquiryToBooking: vi.fn() }));
+vi.mock("@/features/venues/api/venueHiresApi", () => ({ upsertVenueHire: vi.fn() }));
 
 const space = (id: string, name: string): VenueSpace => ({
   id,
@@ -97,6 +99,7 @@ beforeEach(() => {
     error: null,
   } as never);
   vi.mocked(linkEnquiryToBooking).mockResolvedValue({ error: null } as never);
+  vi.mocked(upsertVenueHire).mockResolvedValue({ data: { id: "hire-1" }, error: null } as never);
 });
 
 describe("VenueEnquiryConvertModal", () => {
@@ -106,10 +109,38 @@ describe("VenueEnquiryConvertModal", () => {
     expect(screen.getByLabelText("Space")).toHaveValue("space-foyer");
   });
 
+  it("creates the hire first, carrying the enquiry it came from", async () => {
+    renderModal();
+
+    fireEvent.click(screen.getByRole("button", { name: /create hire/i }));
+
+    await waitFor(() => expect(upsertVenueHire).toHaveBeenCalled());
+
+    expect(vi.mocked(upsertVenueHire).mock.calls[0][0].payload).toEqual(
+      expect.objectContaining({
+        name: "Robertson wedding",
+        event_type: "Wedding",
+        status: "Draft",
+        enquiry_id: "enquiry-1",
+        hirer_name: "Dana Robertson",
+      })
+    );
+  });
+
+  it("attaches the new booking to the hire it just created", async () => {
+    renderModal();
+
+    fireEvent.click(screen.getByRole("button", { name: /create hire/i }));
+
+    await waitFor(() => expect(upsertVenueBooking).toHaveBeenCalled());
+
+    expect(vi.mocked(upsertVenueBooking).mock.calls[0][0].payload.hire_id).toBe("hire-1");
+  });
+
   it("creates an external pending booking carrying the hirer's details", async () => {
     renderModal();
 
-    fireEvent.click(screen.getByRole("button", { name: /create booking/i }));
+    fireEvent.click(screen.getByRole("button", { name: /create hire/i }));
 
     await waitFor(() => expect(upsertVenueBooking).toHaveBeenCalled());
 
@@ -129,7 +160,7 @@ describe("VenueEnquiryConvertModal", () => {
   it("links the new booking back to the enquiry", async () => {
     renderModal();
 
-    fireEvent.click(screen.getByRole("button", { name: /create booking/i }));
+    fireEvent.click(screen.getByRole("button", { name: /create hire/i }));
 
     await waitFor(() =>
       expect(linkEnquiryToBooking).toHaveBeenCalledWith("enquiry-1", "booking-1")
@@ -140,7 +171,7 @@ describe("VenueEnquiryConvertModal", () => {
     renderModal();
 
     fireEvent.change(screen.getByLabelText("Starts"), { target: { value: "" } });
-    fireEvent.click(screen.getByRole("button", { name: /create booking/i }));
+    fireEvent.click(screen.getByRole("button", { name: /create hire/i }));
 
     await waitFor(() => expect(upsertVenueBooking).not.toHaveBeenCalled());
     expect(linkEnquiryToBooking).not.toHaveBeenCalled();

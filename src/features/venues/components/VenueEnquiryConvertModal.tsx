@@ -8,6 +8,7 @@ import { FormDialog } from "@/components/ui/form-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { linkEnquiryToBooking } from "@/features/venues/api/venueEnquiriesApi";
+import { upsertVenueHire } from "@/features/venues/api/venueHiresApi";
 import { upsertVenueBooking } from "@/features/venues/api/venuesApi";
 import type { VenueEnquiry } from "@/features/venues/lib/venueEnquiries";
 import { findConflicts, formatBookingRange, type VenueBooking, type VenueSpace } from "@/features/venues/lib/venueBookings";
@@ -84,11 +85,38 @@ export default function VenueEnquiryConvertModal({
 
     setSaving(true);
 
+    // The hire comes first so the booking can be attached to it. An accepted
+    // enquiry is always one event, even when it only needs one space today -
+    // the other spaces and days get added on the hire page.
+    const { data: hireData, error: hireError } = await upsertVenueHire({
+      workspaceId,
+      userId,
+      payload: {
+        name: enquiry.event_name,
+        event_type: enquiry.event_type,
+        status: "Draft",
+        hirer_name: enquiry.contact_name,
+        hirer_email: enquiry.contact_email,
+        hirer_phone: enquiry.contact_phone,
+        enquiry_id: enquiry.id,
+        notes: enquiry.description,
+      },
+    });
+
+    if (hireError) {
+      setSaving(false);
+      toast.error("Could not create the hire", { description: hireError.message });
+      return;
+    }
+
+    const hireId = (hireData as { id: string } | null)?.id ?? null;
+
     const { data, error } = await upsertVenueBooking({
       workspaceId,
       userId,
       payload: {
         space_id: spaceId,
+        hire_id: hireId,
         title: enquiry.event_name,
         booking_type: "external",
         hirer_name: enquiry.contact_name,
@@ -122,7 +150,7 @@ export default function VenueEnquiryConvertModal({
         description: linkError.message,
       });
     } else {
-      toast.success("Booking created from this enquiry");
+      toast.success("Hire created from this enquiry");
     }
 
     onOpenChange(false);
@@ -134,8 +162,8 @@ export default function VenueEnquiryConvertModal({
       open={open}
       onOpenChange={onOpenChange}
       eyebrow="Accept Enquiry"
-      title="Turn this enquiry into a booking"
-      description="Creates a pending booking against one space. Add the other spaces they asked for as separate bookings."
+      title="Turn this enquiry into a hire"
+      description="Creates a hire with its first booking. Add the other spaces and days on the hire page."
       footer={
         <>
           <div />
@@ -150,7 +178,7 @@ export default function VenueEnquiryConvertModal({
               className="actsix-btn-primary font-bold"
             >
               <CalendarCheck className="h-4 w-4" />
-              {saving ? "Creating…" : "Create booking"}
+              {saving ? "Creating…" : "Create hire"}
             </Button>
           </div>
         </>
@@ -214,8 +242,8 @@ export default function VenueEnquiryConvertModal({
         )}
 
         <p className="text-xs text-muted-foreground">
-          The booking starts as Pending with the hirer's details and a zero fee. Price it on the
-          booking itself.
+          The hire starts as a Draft and its first booking as Pending, both carrying the hirer's
+          details. Add the remaining spaces and days on the hire page.
         </p>
       </form>
     </FormDialog>

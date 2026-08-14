@@ -40,6 +40,8 @@ type Props = {
   bookings: VenueBooking[];
   resources: VenueResource[];
   spaceResources: VenueSpaceResource[];
+  /** Set when the booking is being created inside a hire, so it attaches to it. */
+  hireId?: string | null;
   workspaceId: string;
   userId: string;
   onOpenChange: (open: boolean) => void;
@@ -90,6 +92,7 @@ export default function VenueBookingModal({
   bookings,
   resources,
   spaceResources,
+  hireId,
   workspaceId,
   userId,
   onOpenChange,
@@ -244,6 +247,7 @@ export default function VenueBookingModal({
       userId,
       payload: {
         space_id: spaceId,
+        hire_id: booking ? booking.hire_id : hireId ?? null,
         title: title.trim(),
         booking_type: bookingType,
         hirer_contact_id: hirerContactId,

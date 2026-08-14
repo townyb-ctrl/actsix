@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,6 +51,14 @@ export default function VenueBookingList({ bookings, spaces, onEdit }: Props) {
                 <p className="font-medium">{booking.title}</p>
                 <Badge className={statusClass[booking.status]}>{booking.status}</Badge>
                 {booking.source === "public" && <Badge variant="outline">Request</Badge>}
+                {booking.hire_id && (
+                  <Link
+                    to={`/venues/hires/${booking.hire_id}`}
+                    className="text-xs font-medium text-brand-teal underline underline-offset-2"
+                  >
+                    Part of a hire
+                  </Link>
+                )}
               </div>
               <p className="text-sm text-muted-foreground">
                 {spaceName(booking.space_id)} · {formatBookingRange(booking.starts_at, booking.ends_at)}
