@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,9 +14,11 @@ import { useQuoteLines } from "@/features/venues/api/venueQuotesQueries";
 import { setQuoteStatus } from "@/features/venues/api/venueQuotesApi";
 import { useVenueBookings, useVenueSpaces } from "@/features/venues/api/venuesQueries";
 import { useVenueResources } from "@/features/venues/api/venueResourcesQueries";
+import { useRunSheet } from "@/features/venues/api/venueRunSheetQueries";
 import { toast } from "sonner";
 import type { VenueBooking } from "@/features/venues/lib/venueBookings";
 import type { VenueQuoteLine, VenueQuoteStatus } from "@/features/venues/lib/venueQuotes";
+import type { VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
@@ -24,6 +26,9 @@ import VenueBookingModal from "@/features/venues/components/VenueBookingModal";
 import VenueQuotePanel from "@/features/venues/components/VenueQuotePanel";
 import VenueQuoteLineModal from "@/features/venues/components/VenueQuoteLineModal";
 import VenueQuotePrintSheet from "@/features/venues/components/VenueQuotePrintSheet";
+import VenueRunSheetPanel from "@/features/venues/components/VenueRunSheetPanel";
+import VenueRunSheetItemModal from "@/features/venues/components/VenueRunSheetItemModal";
+import VenueRunSheetPrintSheet from "@/features/venues/components/VenueRunSheetPrintSheet";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -39,10 +44,20 @@ export default function VenueHireDetailPage() {
   const [editingBooking, setEditingBooking] = useState<VenueBooking | null>(null);
   const [quoteLineModalOpen, setQuoteLineModalOpen] = useState(false);
   const [editingLine, setEditingLine] = useState<VenueQuoteLine | null>(null);
+  const [runSheetModalOpen, setRunSheetModalOpen] = useState(false);
+  const [editingRunSheetItem, setEditingRunSheetItem] = useState<VenueRunSheetItem | null>(null);
+  const [runSheetSeedIso, setRunSheetSeedIso] = useState<string | null>(null);
+  /**
+   * Which document to print. Both sheets live on document.body, so rendering
+   * them at once would print both - only the requested one is mounted, and the
+   * print dialog is opened once React has actually put it there.
+   */
+  const [printing, setPrinting] = useState<"quote" | "run-sheet" | null>(null);
 
   const { hire, loading } = useVenueHire(hireId);
   const { bookings: hireBookings } = useHireBookings(hireId);
   const { lines } = useQuoteLines(hireId);
+  const { items: runSheetItems } = useRunSheet(hireId);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
   // Every booking in the workspace, so the clash check inside the booking modal
@@ -55,6 +70,7 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-hire-bookings"] });
     queryClient.invalidateQueries({ queryKey: ["venue-bookings"] });
     queryClient.invalidateQueries({ queryKey: ["venue-quote-lines"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-run-sheet"] });
   };
 
   const changeQuoteStatus = async (status: VenueQuoteStatus) => {
@@ -66,6 +82,12 @@ export default function VenueHireDetailPage() {
     }
     refresh();
   };
+
+  useEffect(() => {
+    if (!printing) return;
+    window.print();
+    setPrinting(null);
+  }, [printing]);
 
   if (loading) {
     return (
@@ -150,7 +172,25 @@ export default function VenueHireDetailPage() {
               setQuoteLineModalOpen(true);
             }}
             onStatusChange={changeQuoteStatus}
-            onPrint={() => window.print()}
+            onPrint={() => setPrinting("quote")}
+          />
+        </div>
+
+        <div className="lg:col-start-1 lg:row-start-3">
+          <VenueRunSheetPanel
+            items={runSheetItems}
+            spaces={spaces}
+            onAddItem={(dayIso) => {
+              setEditingRunSheetItem(null);
+              setRunSheetSeedIso(dayIso ?? span?.startsAt ?? null);
+              setRunSheetModalOpen(true);
+            }}
+            onEditItem={(item) => {
+              setEditingRunSheetItem(item);
+              setRunSheetSeedIso(null);
+              setRunSheetModalOpen(true);
+            }}
+            onPrint={() => setPrinting("run-sheet")}
           />
         </div>
 
@@ -249,7 +289,29 @@ export default function VenueHireDetailPage() {
         onSaved={refresh}
       />
 
-      {lines.length > 0 && (
+      <VenueRunSheetItemModal
+        open={runSheetModalOpen}
+        item={editingRunSheetItem}
+        spaces={spaces}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        defaultStartIso={runSheetSeedIso}
+        onOpenChange={setRunSheetModalOpen}
+        onSaved={refresh}
+      />
+
+      {printing === "run-sheet" && (
+        <VenueRunSheetPrintSheet
+          workspaceName={workspace?.name || ""}
+          logoUrl={workspace?.logo_url}
+          hire={hire}
+          items={runSheetItems}
+          spaces={spaces}
+        />
+      )}
+
+      {printing === "quote" && (
         <VenueQuotePrintSheet
           workspaceName={workspace?.name || ""}
           logoUrl={workspace?.logo_url}

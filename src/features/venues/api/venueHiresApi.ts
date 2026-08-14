@@ -16,6 +16,7 @@ export type VenueHirePayload = {
   status?: VenueHireStatus;
   payment_terms?: string;
   enquiry_id?: string | null;
+  lessons_learned?: string;
   notes?: string;
 };
 

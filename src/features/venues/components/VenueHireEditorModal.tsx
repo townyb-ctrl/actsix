@@ -51,6 +51,7 @@ export default function VenueHireEditorModal({
   const [onsiteName, setOnsiteName] = useState("");
   const [onsitePhone, setOnsitePhone] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
+  const [lessons, setLessons] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -65,6 +66,7 @@ export default function VenueHireEditorModal({
     setOnsiteName(hire?.onsite_contact_name || "");
     setOnsitePhone(hire?.onsite_contact_phone || "");
     setPaymentTerms(hire?.payment_terms || "");
+    setLessons(hire?.lessons_learned || "");
     setNotes(hire?.notes || "");
   }, [open, hire]);
 
@@ -95,6 +97,7 @@ export default function VenueHireEditorModal({
         onsite_contact_name: onsiteName.trim(),
         onsite_contact_phone: onsitePhone.trim(),
         payment_terms: paymentTerms.trim(),
+        lessons_learned: lessons.trim(),
         notes: notes.trim(),
       },
     });
@@ -259,6 +262,20 @@ export default function VenueHireEditorModal({
             rows={3}
             className={cn(fieldControlClass, "min-h-20 py-2")}
           />
+        </Field>
+
+        <Field label="Next time" htmlFor="venue-hire-lessons">
+          <textarea
+            id="venue-hire-lessons"
+            value={lessons}
+            onChange={(event) => setLessons(event.target.value)}
+            rows={3}
+            placeholder="Do it during the school day. Be here Friday night."
+            className={cn(fieldControlClass, "min-h-20 py-2")}
+          />
+          <p className="text-xs text-muted-foreground">
+            Carried forward when this hire runs again, so the lesson is not relearned.
+          </p>
         </Field>
       </form>
     </FormDialog>

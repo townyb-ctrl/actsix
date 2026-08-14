@@ -21,6 +21,8 @@ export type VenueHire = {
   quote_sent_at: string | null;
   payment_terms: string;
   enquiry_id: string | null;
+  /** What to do differently next time, carried into a repeat hire. */
+  lessons_learned: string;
   notes: string;
   created_at: string;
   updated_at: string;
