@@ -106,10 +106,15 @@ begin
 end $$;
 
 -- Seed one resource per distinct feature string already recorded on a space.
--- min(user_id) keeps the row attributable when several spaces in a workspace
+-- Postgres has no min() for uuid, so the oldest space's creator is picked with
+-- array_agg - it keeps the row attributable when several spaces in a workspace
 -- were created by different people.
 insert into public.venue_resources (workspace_id, user_id, name, category)
-select s.workspace_id, min(s.user_id), f.feature, 'Space feature'
+select
+  s.workspace_id,
+  (array_agg(s.user_id order by s.created_at, s.id))[1],
+  f.feature,
+  'Space feature'
 from public.venue_spaces s
 cross join lateral unnest(s.features) as f(feature)
 where not exists (
