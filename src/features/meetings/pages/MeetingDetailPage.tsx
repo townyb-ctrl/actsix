@@ -56,7 +56,10 @@ import type {
   PersonOption,
 } from "@/features/meetings/lib/meetingTypes";
 import { toast } from "sonner";
-import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { edgeFunctionError, friendlyErrorMessage } from "@/lib/friendlyError";
+
+/** Groq's Whisper endpoint rejects uploads over 25MB with a 413. */
+const WHISPER_MAX_BYTES = 25 * 1_000_000;
 
 const EMPTY_MEETING: MeetingEditDraft = {
   title: "",
@@ -403,7 +406,15 @@ const MeetingDetailPage = () => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      // Whisper rejects anything over 25MB. MediaRecorder defaults to ~128kbps,
+      // which blows that at ~25 minutes; 24kbps Opus is plenty for speech and
+      // buys roughly two hours of meeting. Safari has no webm - let it default.
+      const recorder = new MediaRecorder(
+        stream,
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? { mimeType: "audio/webm;codecs=opus", audioBitsPerSecond: 24000 }
+          : { audioBitsPerSecond: 24000 }
+      );
       recordedChunksRef.current = [];
 
       recorder.ondataavailable = (event) => {
@@ -445,6 +456,13 @@ const MeetingDetailPage = () => {
       return;
     }
 
+    if (audioSource.size > WHISPER_MAX_BYTES) {
+      toast.error(
+        `That audio is ${Math.round(audioSource.size / 1_000_000)}MB - transcription tops out at 25MB. Convert it to a lower-bitrate audio-only file (or split it) and try again.`
+      );
+      return;
+    }
+
     setTranscribing(true);
 
     try {
@@ -453,7 +471,7 @@ const MeetingDetailPage = () => {
       formData.append("file", audioSource, transcriptFile?.name || `recording-${Date.now()}.webm`);
 
       const { data, error } = await supabase.functions.invoke("meeting-ai", { body: formData });
-      if (error) throw error;
+      if (error) throw await edgeFunctionError(error);
 
       setTranscriptText(data.transcript || "");
       setMeeting((prev) =>
@@ -494,7 +512,7 @@ const MeetingDetailPage = () => {
             .trim(),
         },
       });
-      if (error) throw error;
+      if (error) throw await edgeFunctionError(error);
 
       setGeneratedMinutes(data.minutes || "");
       setGeneratedPointNotes(Array.isArray(data.pointNotes) ? data.pointNotes : []);

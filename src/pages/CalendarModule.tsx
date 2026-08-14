@@ -14,7 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { friendlyErrorMessage } from "@/lib/friendlyError";
+import { edgeFunctionError, friendlyErrorMessage } from "@/lib/friendlyError";
 import TaskEditorModal from "@/components/TaskEditorModal";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -556,7 +556,7 @@ export default function CalendarModule() {
     setSyncingApple(false);
 
     if (error) {
-      toast.error(friendlyErrorMessage(error, "Apple Calendar sync failed."));
+      toast.error(friendlyErrorMessage(await edgeFunctionError(error), "Apple Calendar sync failed."));
       return;
     }
 
