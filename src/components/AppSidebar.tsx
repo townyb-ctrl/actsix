@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Bell,
+  Boxes,
   Building2,
   CalendarClock,
   CalendarDays,
@@ -166,6 +167,7 @@ const navSections: NavSection[] = [
     items: [
       { title: "Bookings", url: "/venues", icon: CalendarDays },
       { title: "Spaces", url: "/venues/spaces", icon: DoorOpen },
+      { title: "Resources", url: "/venues/resources", icon: Boxes },
     ],
   },
   {

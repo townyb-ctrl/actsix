@@ -7,12 +7,16 @@ import { FormDialog } from "@/components/ui/form-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { upsertVenueSpace } from "@/features/venues/api/venuesApi";
+import { removeSpaceResource, setSpaceResource } from "@/features/venues/api/venueResourcesApi";
 import { uploadVenueSpacePhoto } from "@/features/venues/lib/uploadVenueSpacePhoto";
-import { VENUE_SPACE_FEATURES, type VenueSpace } from "@/features/venues/lib/venueBookings";
+import { type VenueSpace } from "@/features/venues/lib/venueBookings";
+import type { VenueResource, VenueSpaceResource } from "@/features/venues/lib/venueResources";
 
 type Props = {
   open: boolean;
   space: VenueSpace | null;
+  resources: VenueResource[];
+  spaceResources: VenueSpaceResource[];
   workspaceId: string;
   userId: string;
   onOpenChange: (open: boolean) => void;
@@ -34,12 +38,18 @@ const SPACE_COLOR_PALETTE = [
 const nameFieldId = "venue-space-name";
 const descriptionFieldId = "venue-space-description";
 const capacityFieldId = "venue-space-capacity";
+const seatedFieldId = "venue-space-seated";
+const standingFieldId = "venue-space-standing";
 const hourlyFieldId = "venue-space-hourly";
 const dailyFieldId = "venue-space-daily";
+const setupFieldId = "venue-space-setup";
+const packdownFieldId = "venue-space-packdown";
 
 export default function VenueSpaceEditorModal({
   open,
   space,
+  resources,
+  spaceResources,
   workspaceId,
   userId,
   onOpenChange,
@@ -48,31 +58,84 @@ export default function VenueSpaceEditorModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [seatedCapacity, setSeatedCapacity] = useState("");
+  const [standingCapacity, setStandingCapacity] = useState("");
   const [hourlyRate, setHourlyRate] = useState("0");
   const [dailyRate, setDailyRate] = useState("0");
+  const [setupMinutes, setSetupMinutes] = useState("0");
+  const [packdownMinutes, setPackdownMinutes] = useState("0");
+  const [hireableStandalone, setHireableStandalone] = useState(true);
+  const [foodAllowed, setFoodAllowed] = useState(true);
+  const [isRestrictedZone, setIsRestrictedZone] = useState(false);
   const [color, setColor] = useState("");
-  const [features, setFeatures] = useState<string[]>([]);
+  /** resource id -> how many of it this space comes with. */
+  const [resourceQuantities, setResourceQuantities] = useState<Record<string, number>>({});
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const photoFileRef = useRef<HTMLInputElement | null>(null);
+
+  const activeResources = resources.filter((resource) => resource.is_active);
 
   useEffect(() => {
     if (!open) return;
     setName(space?.name || "");
     setDescription(space?.description || "");
     setCapacity(space?.capacity != null ? String(space.capacity) : "");
+    setSeatedCapacity(space?.seated_capacity != null ? String(space.seated_capacity) : "");
+    setStandingCapacity(space?.standing_capacity != null ? String(space.standing_capacity) : "");
     setHourlyRate(String(space?.hourly_rate ?? 0));
     setDailyRate(String(space?.daily_rate ?? 0));
+    setSetupMinutes(String(space?.setup_minutes ?? 0));
+    setPackdownMinutes(String(space?.packdown_minutes ?? 0));
+    setHireableStandalone(space?.hireable_standalone ?? true);
+    setFoodAllowed(space?.food_allowed ?? true);
+    setIsRestrictedZone(space?.is_restricted_zone ?? false);
     setColor(space?.color || "");
-    setFeatures(space?.features || []);
     setPhotoUrls(space?.photo_urls || []);
-  }, [open, space]);
-
-  const toggleFeature = (feature: string, checked: boolean) => {
-    setFeatures((current) =>
-      checked ? [...current, feature] : current.filter((existing) => existing !== feature)
+    setResourceQuantities(
+      Object.fromEntries(
+        spaceResources
+          .filter((link) => link.space_id === space?.id)
+          .map((link) => [link.resource_id, link.quantity])
+      )
     );
+  }, [open, space, spaceResources]);
+
+  const toggleResource = (resourceId: string, checked: boolean) => {
+    setResourceQuantities((current) => {
+      if (!checked) {
+        const { [resourceId]: _removed, ...rest } = current;
+        return rest;
+      }
+      return { ...current, [resourceId]: current[resourceId] ?? 1 };
+    });
+  };
+
+  const setResourceQuantity = (resourceId: string, value: string) => {
+    setResourceQuantities((current) => ({
+      ...current,
+      [resourceId]: Math.max(0, Number(value) || 0),
+    }));
+  };
+
+  /**
+   * Links are reconciled against what the space had when the modal opened:
+   * everything ticked is upserted, everything unticked since is deleted.
+   */
+  const saveResourceLinks = async (savedSpaceId: string) => {
+    const previous = spaceResources.filter((link) => link.space_id === savedSpaceId);
+
+    const removals = previous
+      .filter((link) => !(link.resource_id in resourceQuantities))
+      .map((link) => removeSpaceResource({ spaceId: savedSpaceId, resourceId: link.resource_id }));
+
+    const upserts = Object.entries(resourceQuantities).map(([resourceId, quantity]) =>
+      setSpaceResource({ workspaceId, spaceId: savedSpaceId, resourceId, quantity })
+    );
+
+    const results = await Promise.all([...removals, ...upserts]);
+    return results.find((result) => result?.error)?.error ?? null;
   };
 
   const addPhoto = async (file: File | undefined) => {
@@ -105,7 +168,7 @@ export default function VenueSpaceEditorModal({
     }
 
     setSaving(true);
-    const { error } = await upsertVenueSpace({
+    const { data, error } = await upsertVenueSpace({
       spaceId: space?.id,
       workspaceId,
       userId,
@@ -113,18 +176,37 @@ export default function VenueSpaceEditorModal({
         name: name.trim(),
         description: description.trim(),
         capacity: capacity.trim() ? Number(capacity) : null,
+        seated_capacity: seatedCapacity.trim() ? Number(seatedCapacity) : null,
+        standing_capacity: standingCapacity.trim() ? Number(standingCapacity) : null,
         hourly_rate: Number(hourlyRate) || 0,
         daily_rate: Number(dailyRate) || 0,
+        setup_minutes: Math.max(0, Number(setupMinutes) || 0),
+        packdown_minutes: Math.max(0, Number(packdownMinutes) || 0),
+        hireable_standalone: hireableStandalone,
+        food_allowed: foodAllowed,
+        is_restricted_zone: isRestrictedZone,
         color,
-        features,
         photo_urls: photoUrls,
       },
     });
-    setSaving(false);
 
     if (error) {
+      setSaving(false);
       toast.error("Could not save the space", { description: error.message });
       return;
+    }
+
+    const savedSpaceId = space?.id ?? (data as { id: string } | null)?.id;
+
+    // The space itself is saved by this point, so a link failure is reported
+    // without discarding that - the user reopens and retries the resources.
+    const linkError = savedSpaceId ? await saveResourceLinks(savedSpaceId) : null;
+    setSaving(false);
+
+    if (linkError) {
+      toast.error("Saved the space, but its resources did not update", {
+        description: (linkError as { message: string }).message,
+      });
     }
 
     onOpenChange(false);
@@ -236,6 +318,30 @@ export default function VenueSpaceEditorModal({
               />
             </Field>
 
+            <Field label="Seated" htmlFor={seatedFieldId}>
+              <input
+                id={seatedFieldId}
+                type="number"
+                min="0"
+                value={seatedCapacity}
+                onChange={(event) => setSeatedCapacity(event.target.value)}
+                className={cn(fieldControlClass)}
+              />
+            </Field>
+
+            <Field label="Standing" htmlFor={standingFieldId}>
+              <input
+                id={standingFieldId}
+                type="number"
+                min="0"
+                value={standingCapacity}
+                onChange={(event) => setStandingCapacity(event.target.value)}
+                className={cn(fieldControlClass)}
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Hourly hire" htmlFor={hourlyFieldId}>
               <input
                 id={hourlyFieldId}
@@ -267,19 +373,91 @@ export default function VenueSpaceEditorModal({
           </p>
         </FieldGroup>
 
-        <FieldGroup title="Features">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {VENUE_SPACE_FEATURES.map((feature) => (
-              <CheckboxField
-                key={feature}
-                id={`venue-space-feature-${feature}`}
-                label={feature}
-                checked={features.includes(feature)}
-                onCheckedChange={(checked) => toggleFeature(feature, checked)}
-                className="text-sm font-normal"
+        <FieldGroup title="Turnaround & rules">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Setup (minutes)" htmlFor={setupFieldId}>
+              <input
+                id={setupFieldId}
+                type="number"
+                min="0"
+                value={setupMinutes}
+                onChange={(event) => setSetupMinutes(event.target.value)}
+                className={cn(fieldControlClass)}
               />
-            ))}
+            </Field>
+
+            <Field label="Pack-down (minutes)" htmlFor={packdownFieldId}>
+              <input
+                id={packdownFieldId}
+                type="number"
+                min="0"
+                value={packdownMinutes}
+                onChange={(event) => setPackdownMinutes(event.target.value)}
+                className={cn(fieldControlClass)}
+              />
+            </Field>
           </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <CheckboxField
+              id="venue-space-standalone"
+              label="Can be hired on its own"
+              checked={hireableStandalone}
+              onCheckedChange={setHireableStandalone}
+              className="text-sm font-normal"
+            />
+            <CheckboxField
+              id="venue-space-food"
+              label="Food allowed"
+              checked={foodAllowed}
+              onCheckedChange={setFoodAllowed}
+              className="text-sm font-normal"
+            />
+            <CheckboxField
+              id="venue-space-restricted"
+              label="Staff-only zone during hires"
+              checked={isRestrictedZone}
+              onCheckedChange={setIsRestrictedZone}
+              className="text-sm font-normal"
+            />
+          </div>
+        </FieldGroup>
+
+        <FieldGroup title="Resources in this space">
+          {activeResources.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No resources yet. Add tables, chairs, and AV kit under Venue Hire → Resources, then
+              tick the ones that live in this space.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {activeResources.map((resource) => {
+                const checked = resource.id in resourceQuantities;
+
+                return (
+                  <div key={resource.id} className="flex items-center justify-between gap-3">
+                    <CheckboxField
+                      id={`venue-space-resource-${resource.id}`}
+                      label={resource.name}
+                      checked={checked}
+                      onCheckedChange={(next) => toggleResource(resource.id, next)}
+                      className="text-sm font-normal"
+                    />
+                    {checked && (
+                      <input
+                        type="number"
+                        min="0"
+                        aria-label={`How many ${resource.name} in this space`}
+                        value={resourceQuantities[resource.id]}
+                        onChange={(event) => setResourceQuantity(resource.id, event.target.value)}
+                        className={cn(fieldControlClass, "h-9 w-24")}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </FieldGroup>
 
         <FieldGroup title="Calendar colour">

@@ -47,6 +47,7 @@ const PublicEventRegistration = lazy(() => import("./pages/PublicEventRegistrati
 const Meetups = lazy(() => import("./pages/Placeholder").then((module) => ({ default: module.Meetups })));
 const Venues = lazy(() => import("./pages/Venues"));
 const VenueSpaces = lazy(() => import("./pages/VenueSpaces"));
+const VenueResources = lazy(() => import("./pages/VenueResources"));
 const PublicVenueRequest = lazy(() => import("./pages/PublicVenueRequest"));
 
 const queryClient = new QueryClient();
@@ -108,6 +109,7 @@ const App = () => (
                 <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
                 <Route path="/venues" element={<Venues />} />
                 <Route path="/venues/spaces" element={<VenueSpaces />} />
+                <Route path="/venues/resources" element={<VenueResources />} />
                 <Route path="/people" element={<People />} />
                 <Route path="/groups" element={<PeopleGroups />} />
                 <Route path="/groups/:groupId" element={<PeopleGroupDetail />} />

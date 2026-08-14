@@ -11,6 +11,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { useVenueBookings, useVenueSpaces } from "@/features/venues/api/venuesQueries";
+import {
+  useVenueResources,
+  useVenueSpaceResources,
+} from "@/features/venues/api/venueResourcesQueries";
 import type { VenueBooking } from "@/features/venues/lib/venueBookings";
 import VenueBookingList from "@/features/venues/components/VenueBookingList";
 import VenueBookingModal from "@/features/venues/components/VenueBookingModal";
@@ -54,6 +58,8 @@ export default function VenuesPage() {
   const { fromIso, toIso } = queryWindowFor(visibleMonth);
 
   const { spaces, loading: spacesLoading, error: spacesError } = useVenueSpaces(workspace?.id);
+  const { resources } = useVenueResources(workspace?.id);
+  const { spaceResources } = useVenueSpaceResources(workspace?.id);
   const { bookings, loading: bookingsLoading, error: bookingsError } = useVenueBookings({
     workspaceId: workspace?.id,
     fromIso,
@@ -194,6 +200,8 @@ export default function VenuesPage() {
         booking={editingBooking}
         spaces={spaces}
         bookings={bookings}
+        resources={resources}
+        spaceResources={spaceResources}
         workspaceId={workspace?.id || ""}
         userId={user?.id || ""}
         onOpenChange={setModalOpen}

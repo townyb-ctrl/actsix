@@ -15,8 +15,15 @@ export type VenueSpacePayload = {
   hourly_rate?: number;
   daily_rate?: number;
   color?: string;
-  features?: string[];
   photo_urls?: string[];
+  standing_capacity?: number | null;
+  seated_capacity?: number | null;
+  floor_plan_url?: string | null;
+  hireable_standalone?: boolean;
+  setup_minutes?: number;
+  packdown_minutes?: number;
+  food_allowed?: boolean;
+  is_restricted_zone?: boolean;
   is_active?: boolean;
 };
 
@@ -62,9 +69,20 @@ export const upsertVenueSpace = ({
 }) => {
   const table = (supabase as any).from("venue_spaces");
 
-  if (spaceId) return table.update({ ...payload, updated_at: new Date().toISOString() }).eq("id", spaceId);
+  // Both branches return the row so the caller has an id to attach resources to,
+  // including on create where the id does not exist until the insert lands.
+  if (spaceId) {
+    return table
+      .update({ ...payload, updated_at: new Date().toISOString() })
+      .eq("id", spaceId)
+      .select("id")
+      .single();
+  }
 
-  return table.insert({ ...payload, workspace_id: workspaceId, user_id: userId });
+  return table
+    .insert({ ...payload, workspace_id: workspaceId, user_id: userId })
+    .select("id")
+    .single();
 };
 
 export const setVenueSpaceActive = (spaceId: string, isActive: boolean) =>

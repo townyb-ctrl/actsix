@@ -13,20 +13,21 @@ export type VenueSpace = {
   hourly_rate: number;
   daily_rate: number;
   color: string;
-  features: string[];
   photo_urls: string[];
+  standing_capacity: number | null;
+  seated_capacity: number | null;
+  floor_plan_url: string | null;
+  /** False for a space that only makes sense hired alongside another. */
+  hireable_standalone: boolean;
+  setup_minutes: number;
+  packdown_minutes: number;
+  food_allowed: boolean;
+  /** Staff-only areas that get closed off during a hire rather than hired out. */
+  is_restricted_zone: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 };
-
-/** Fixed checklist so space cards and filters stay consistent - no free-form tags. */
-export const VENUE_SPACE_FEATURES = [
-  "Projector",
-  "Kitchen",
-  "Air conditioning",
-  "Tables & chairs",
-] as const;
 
 export type VenueBooking = {
   id: string;

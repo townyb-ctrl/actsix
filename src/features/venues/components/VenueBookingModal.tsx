@@ -21,19 +21,25 @@ import { createHirerContact, deleteVenueBooking, upsertVenueBooking } from "@/fe
 import {
   findConflicts,
   formatBookingRange,
-  VENUE_SPACE_FEATURES,
   type VenueBooking,
   type VenueBookingStatus,
   type VenueBookingType,
   type VenuePaymentStatus,
   type VenueSpace,
 } from "@/features/venues/lib/venueBookings";
+import {
+  resourcesForSpace,
+  type VenueResource,
+  type VenueSpaceResource,
+} from "@/features/venues/lib/venueResources";
 
 type Props = {
   open: boolean;
   booking: VenueBooking | null;
   spaces: VenueSpace[];
   bookings: VenueBooking[];
+  resources: VenueResource[];
+  spaceResources: VenueSpaceResource[];
   workspaceId: string;
   userId: string;
   onOpenChange: (open: boolean) => void;
@@ -82,6 +88,8 @@ export default function VenueBookingModal({
   booking,
   spaces,
   bookings,
+  resources,
+  spaceResources,
   workspaceId,
   userId,
   onOpenChange,
@@ -150,13 +158,14 @@ export default function VenueBookingModal({
     [spaces, spaceId]
   );
 
-  /** Only the features this space actually has (and the app still offers) can be requested. */
+  /**
+   * Only what this space actually has can be requested. Stored on the booking
+   * by name, so a resource later renamed or retired still reads correctly on
+   * an old booking.
+   */
   const requestableFeatures = useMemo(
-    () =>
-      (selectedSpace?.features || []).filter((feature): feature is (typeof VENUE_SPACE_FEATURES)[number] =>
-        (VENUE_SPACE_FEATURES as readonly string[]).includes(feature)
-      ),
-    [selectedSpace]
+    () => resourcesForSpace(spaceId, spaceResources, resources).map((entry) => entry.resource.name),
+    [spaceId, spaceResources, resources]
   );
 
   /** Pre-fill the fee from the space's daily rate when creating an external hire. */

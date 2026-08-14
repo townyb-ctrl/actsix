@@ -23,8 +23,15 @@ const space: VenueSpace = {
   hourly_rate: 0,
   daily_rate: 0,
   color: "",
-  features: [],
   photo_urls: [],
+  standing_capacity: null,
+  seated_capacity: null,
+  floor_plan_url: null,
+  hireable_standalone: true,
+  setup_minutes: 0,
+  packdown_minutes: 0,
+  food_allowed: true,
+  is_restricted_zone: false,
   is_active: true,
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
@@ -38,6 +45,8 @@ describe("VenueBookingModal save validation", () => {
         booking={null}
         spaces={[space]}
         bookings={[]}
+        resources={[]}
+        spaceResources={[]}
         workspaceId="workspace-1"
         userId="user-1"
         onOpenChange={() => {}}

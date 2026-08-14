@@ -11,7 +11,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { setVenueSpaceActive, setVenueRequestToken } from "@/features/venues/api/venuesApi";
 import { useVenueRequestToken, useVenueSpaces } from "@/features/venues/api/venuesQueries";
+import {
+  useVenueResources,
+  useVenueSpaceResources,
+} from "@/features/venues/api/venueResourcesQueries";
 import { formatCurrency, type VenueSpace } from "@/features/venues/lib/venueBookings";
+import { resourcesForSpace } from "@/features/venues/lib/venueResources";
 import VenueSpaceEditorModal from "@/features/venues/components/VenueSpaceEditorModal";
 
 export default function VenueSpacesPage() {
@@ -23,6 +28,8 @@ export default function VenueSpacesPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const { spaces, loading: spacesLoading, error: spacesError } = useVenueSpaces(workspace?.id);
+  const { resources } = useVenueResources(workspace?.id);
+  const { spaceResources } = useVenueSpaceResources(workspace?.id);
   const { requestToken } = useVenueRequestToken(workspace?.id);
   const loading = !workspace?.id || spacesLoading;
 
@@ -40,6 +47,7 @@ export default function VenueSpacesPage() {
 
   const refreshSpaces = () => {
     queryClient.invalidateQueries({ queryKey: ["venue-spaces"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-space-resources"] });
   };
 
   const requestUrl = requestToken ? `${window.location.origin}/venue-request/${requestToken}` : "";
@@ -181,15 +189,21 @@ export default function VenueSpacesPage() {
                       <dd>{formatCurrency(space.daily_rate)}</dd>
                     </div>
                   </dl>
-                  {space.features?.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {space.features.map((feature) => (
-                        <Badge key={feature} variant="outline" className="font-normal">
-                          {feature}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                  {(() => {
+                    const spaceResourceList = resourcesForSpace(space.id, spaceResources, resources);
+                    if (spaceResourceList.length === 0) return null;
+
+                    return (
+                      <div className="flex flex-wrap gap-1">
+                        {spaceResourceList.map(({ resource, quantity }) => (
+                          <Badge key={resource.id} variant="outline" className="font-normal">
+                            {resource.name}
+                            {quantity > 1 ? ` ×${quantity}` : ""}
+                          </Badge>
+                        ))}
+                      </div>
+                    );
+                  })()}
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
@@ -215,6 +229,8 @@ export default function VenueSpacesPage() {
       <VenueSpaceEditorModal
         open={modalOpen}
         space={editingSpace}
+        resources={resources}
+        spaceResources={spaceResources}
         workspaceId={workspace?.id || ""}
         userId={user?.id || ""}
         onOpenChange={setModalOpen}
