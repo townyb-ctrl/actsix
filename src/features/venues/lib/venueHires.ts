@@ -1,0 +1,103 @@
+import type { VenueBooking } from "@/features/venues/lib/venueBookings";
+
+export type VenueHireStatus = "Draft" | "Confirmed" | "Completed" | "Cancelled";
+
+export type VenueHire = {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  name: string;
+  event_type: string;
+  hirer_contact_id: string | null;
+  hirer_name: string;
+  hirer_email: string;
+  hirer_phone: string;
+  /** Whoever is on site on the day, often not the person who booked. */
+  onsite_contact_name: string;
+  onsite_contact_phone: string;
+  status: VenueHireStatus;
+  enquiry_id: string | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export const VENUE_HIRE_STATUSES: VenueHireStatus[] = [
+  "Draft",
+  "Confirmed",
+  "Completed",
+  "Cancelled",
+];
+
+export type HireSpan = {
+  startsAt: string;
+  endsAt: string;
+  /** Calendar days touched, including any gap day nothing is booked on. */
+  dayCount: number;
+};
+
+const startOfDay = (iso: string) => {
+  const date = new Date(iso);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * When a hire runs, derived from its bookings rather than stored on the hire.
+ * Storing it would need updating on every booking edit and would drift the
+ * first time one was missed.
+ *
+ * Cancelled bookings are excluded - they no longer occupy the building, so a
+ * cancelled Sunday must not stretch the hire across the weekend.
+ */
+export const hireSpan = (bookings: VenueBooking[]): HireSpan | null => {
+  const active = bookings.filter((booking) => booking.status !== "Cancelled");
+  if (active.length === 0) return null;
+
+  const startsAt = active.reduce(
+    (earliest, booking) => (booking.starts_at < earliest ? booking.starts_at : earliest),
+    active[0].starts_at
+  );
+  const endsAt = active.reduce(
+    (latest, booking) => (booking.ends_at > latest ? booking.ends_at : latest),
+    active[0].ends_at
+  );
+
+  // Counted in local calendar days so a hire reads the way a coordinator counts
+  // it: Wednesday to Saturday is four days, however many hours that spans.
+  const dayCount = Math.round((startOfDay(endsAt) - startOfDay(startsAt)) / DAY_MS) + 1;
+
+  return { startsAt, endsAt, dayCount };
+};
+
+export type HireDay = {
+  /** Local calendar day, as YYYY-MM-DD. */
+  day: string;
+  bookings: VenueBooking[];
+};
+
+const localDayKey = (iso: string) => {
+  const date = new Date(iso);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+/**
+ * Bookings grouped under the day they start, chronologically. Cancelled ones
+ * are kept: the coordinator needs to see that Saturday was called off, not
+ * find Saturday silently missing.
+ */
+export const bookingsByDay = (bookings: VenueBooking[]): HireDay[] => {
+  const days = new Map<string, VenueBooking[]>();
+
+  for (const booking of [...bookings].sort((a, b) => a.starts_at.localeCompare(b.starts_at))) {
+    const key = localDayKey(booking.starts_at);
+    days.set(key, [...(days.get(key) ?? []), booking]);
+  }
+
+  return [...days.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, dayBookings]) => ({ day, bookings: dayBookings }));
+};

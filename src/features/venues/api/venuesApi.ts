@@ -29,6 +29,7 @@ export type VenueSpacePayload = {
 
 export type VenueBookingPayload = {
   space_id: string;
+  hire_id?: string | null;
   title: string;
   booking_type: VenueBookingType;
   hirer_contact_id?: string | null;
@@ -132,6 +133,7 @@ export const upsertVenueBooking = ({
 
   const row = {
     space_id: payload.space_id,
+    hire_id: payload.hire_id ?? null,
     title: payload.title,
     booking_type: payload.booking_type,
     starts_at: payload.starts_at,

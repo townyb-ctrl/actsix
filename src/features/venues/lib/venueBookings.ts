@@ -34,6 +34,8 @@ export type VenueBooking = {
   workspace_id: string;
   user_id: string;
   space_id: string;
+  /** Null for a standalone booking that is not part of a wider hire. */
+  hire_id: string | null;
   title: string;
   booking_type: VenueBookingType;
   hirer_contact_id: string | null;
