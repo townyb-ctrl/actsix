@@ -40,8 +40,7 @@ export type VenuePositionAssignment = {
 /** The little a position board needs to know about a person. */
 export type PositionPerson = {
   id: string;
-  first_name: string;
-  last_name: string | null;
+  display_name: string;
 };
 
 /** How many people this position is still short of. Never negative: over-filling a slot is allowed. */
@@ -93,7 +92,7 @@ export const assignmentLabel = (
 ): string => {
   if (assignment.person_id) {
     const person = people.find((candidate) => candidate.id === assignment.person_id);
-    if (person) return [person.first_name, person.last_name].filter(Boolean).join(" ");
+    if (person) return person.display_name;
   }
 
   return assignment.display_name.trim() || "Unknown";

@@ -15,10 +15,18 @@ import { setQuoteStatus } from "@/features/venues/api/venueQuotesApi";
 import { useVenueBookings, useVenueSpaces } from "@/features/venues/api/venuesQueries";
 import { useVenueResources } from "@/features/venues/api/venueResourcesQueries";
 import { useRunSheet } from "@/features/venues/api/venueRunSheetQueries";
+import {
+  usePositionAssignments,
+  usePositionPeople,
+  usePositionRoles,
+  usePositions,
+} from "@/features/venues/api/venuePositionsQueries";
+import { unassignPosition } from "@/features/venues/api/venuePositionsApi";
 import { toast } from "sonner";
 import type { VenueBooking } from "@/features/venues/lib/venueBookings";
 import type { VenueQuoteLine, VenueQuoteStatus } from "@/features/venues/lib/venueQuotes";
 import type { VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
+import type { VenuePosition, VenuePositionAssignment } from "@/features/venues/lib/venuePositions";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
@@ -29,6 +37,9 @@ import VenueQuotePrintSheet from "@/features/venues/components/VenueQuotePrintSh
 import VenueRunSheetPanel from "@/features/venues/components/VenueRunSheetPanel";
 import VenueRunSheetItemModal from "@/features/venues/components/VenueRunSheetItemModal";
 import VenueRunSheetPrintSheet from "@/features/venues/components/VenueRunSheetPrintSheet";
+import VenuePositionBoard from "@/features/venues/components/VenuePositionBoard";
+import VenuePositionEditorModal from "@/features/venues/components/VenuePositionEditorModal";
+import VenuePositionAssignModal from "@/features/venues/components/VenuePositionAssignModal";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -53,11 +64,19 @@ export default function VenueHireDetailPage() {
    * print dialog is opened once React has actually put it there.
    */
   const [printing, setPrinting] = useState<"quote" | "run-sheet" | null>(null);
+  const [positionModalOpen, setPositionModalOpen] = useState(false);
+  const [editingPosition, setEditingPosition] = useState<VenuePosition | null>(null);
+  const [positionSeedIso, setPositionSeedIso] = useState<string | null>(null);
+  const [assigningPosition, setAssigningPosition] = useState<VenuePosition | null>(null);
 
   const { hire, loading } = useVenueHire(hireId);
   const { bookings: hireBookings } = useHireBookings(hireId);
   const { lines } = useQuoteLines(hireId);
   const { items: runSheetItems } = useRunSheet(hireId);
+  const { roles: positionRoles } = usePositionRoles(workspace?.id);
+  const { positions } = usePositions(hireId);
+  const { assignments } = usePositionAssignments(positions.map((position) => position.id));
+  const { people } = usePositionPeople(workspace?.id);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
   // Every booking in the workspace, so the clash check inside the booking modal
@@ -71,6 +90,17 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-bookings"] });
     queryClient.invalidateQueries({ queryKey: ["venue-quote-lines"] });
     queryClient.invalidateQueries({ queryKey: ["venue-run-sheet"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-positions"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-position-assignments"] });
+  };
+
+  const removeAssignment = async (assignment: VenuePositionAssignment) => {
+    const { error } = await unassignPosition(assignment.id);
+    if (error) {
+      toast.error("Could not remove them from the position", { description: error.message });
+      return;
+    }
+    refresh();
   };
 
   const changeQuoteStatus = async (status: VenueQuoteStatus) => {
@@ -194,6 +224,27 @@ export default function VenueHireDetailPage() {
           />
         </div>
 
+        <div className="lg:col-start-1 lg:row-start-4">
+          <VenuePositionBoard
+            positions={positions}
+            assignments={assignments}
+            roles={positionRoles}
+            people={people}
+            onAddPosition={(dayIso) => {
+              setEditingPosition(null);
+              setPositionSeedIso(dayIso ?? span?.startsAt ?? null);
+              setPositionModalOpen(true);
+            }}
+            onEditPosition={(position) => {
+              setEditingPosition(position);
+              setPositionSeedIso(null);
+              setPositionModalOpen(true);
+            }}
+            onAssign={setAssigningPosition}
+            onUnassign={removeAssignment}
+          />
+        </div>
+
         <div className="space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
@@ -301,6 +352,33 @@ export default function VenueHireDetailPage() {
         onSaved={refresh}
       />
 
+      <VenuePositionEditorModal
+        open={positionModalOpen}
+        position={editingPosition}
+        roles={positionRoles}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        defaultStartIso={positionSeedIso}
+        onOpenChange={setPositionModalOpen}
+        onSaved={refresh}
+      />
+
+      {assigningPosition && (
+        <VenuePositionAssignModal
+          open
+          positionId={assigningPosition.id}
+          roleName={
+            positionRoles.find((role) => role.id === assigningPosition.role_id)?.name || "this role"
+          }
+          people={people}
+          workspaceId={workspace?.id || ""}
+          userId={user?.id || ""}
+          onOpenChange={(open) => !open && setAssigningPosition(null)}
+          onSaved={refresh}
+        />
+      )}
+
       {printing === "run-sheet" && (
         <VenueRunSheetPrintSheet
           workspaceName={workspace?.name || ""}
@@ -308,6 +386,10 @@ export default function VenueHireDetailPage() {
           hire={hire}
           items={runSheetItems}
           spaces={spaces}
+          positions={positions}
+          assignments={assignments}
+          roles={positionRoles}
+          people={people}
         />
       )}
 

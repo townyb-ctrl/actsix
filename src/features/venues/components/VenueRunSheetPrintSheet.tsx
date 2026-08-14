@@ -3,6 +3,14 @@ import { createPortal } from "react-dom";
 import type { VenueSpace } from "@/features/venues/lib/venueBookings";
 import type { VenueHire } from "@/features/venues/lib/venueHires";
 import { runSheetByDay, type VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
+import {
+  assignmentLabel,
+  positionsByDay,
+  type PositionPerson,
+  type VenuePosition,
+  type VenuePositionAssignment,
+  type VenuePositionRole,
+} from "@/features/venues/lib/venuePositions";
 
 type Props = {
   workspaceName: string;
@@ -10,6 +18,10 @@ type Props = {
   hire: VenueHire;
   items: VenueRunSheetItem[];
   spaces: VenueSpace[];
+  positions: VenuePosition[];
+  assignments: VenuePositionAssignment[];
+  roles: VenuePositionRole[];
+  people: PositionPerson[];
 };
 
 const formatDayHeading = (day: string) => {
@@ -39,10 +51,22 @@ export default function VenueRunSheetPrintSheet({
   hire,
   items,
   spaces,
+  positions,
+  assignments,
+  roles,
+  people,
 }: Props) {
   const days = runSheetByDay(items);
   const spaceName = (spaceId: string | null) =>
     spaceId ? spaces.find((space) => space.id === spaceId)?.name || "Unknown space" : "Whole venue";
+
+  // Who is on that day, so the sheet left at a position also says who is
+  // standing at the others.
+  const staffByDay = new Map(
+    positionsByDay(positions).map(({ day, positions: dayPositions }) => [day, dayPositions])
+  );
+  const roleName = (roleId: string) =>
+    roles.find((role) => role.id === roleId)?.name || "Unknown role";
 
   return createPortal(
     <article className="actsix-print-sheet" aria-hidden>
@@ -122,6 +146,23 @@ export default function VenueRunSheetPrintSheet({
                 ))}
               </tbody>
             </table>
+
+            {(staffByDay.get(day) ?? []).length > 0 && (
+              <p style={{ margin: "6px 0 0", fontSize: "10pt" }}>
+                <strong>On today: </strong>
+                {(staffByDay.get(day) ?? [])
+                  .map((position) => {
+                    const names = assignments
+                      .filter((entry) => entry.position_id === position.id)
+                      .map((entry) => assignmentLabel(entry, people));
+
+                    return `${roleName(position.role_id)} — ${
+                      names.length > 0 ? names.join(", ") : "unfilled"
+                    }`;
+                  })
+                  .join(" · ")}
+              </p>
+            )}
           </section>
         ))}
 

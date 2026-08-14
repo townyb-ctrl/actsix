@@ -96,7 +96,7 @@ describe("positionsByDay", () => {
 });
 
 describe("assignmentLabel", () => {
-  const people = [{ id: "person-1", first_name: "Hannah", last_name: "Meyer" }];
+  const people = [{ id: "person-1", display_name: "Hannah Meyer" }];
 
   it("uses the directory name when the assignment points at a person", () => {
     const entry = assignment({ id: "a1", position_id: "p1", person_id: "person-1", display_name: "" });
@@ -119,14 +119,6 @@ describe("assignmentLabel", () => {
     });
 
     expect(assignmentLabel(entry, people)).toBe("Andre");
-  });
-
-  it("handles a person with no surname", () => {
-    const entry = assignment({ id: "a1", position_id: "p1", person_id: "person-2", display_name: "" });
-
-    expect(assignmentLabel(entry, [{ id: "person-2", first_name: "Gianna", last_name: null }])).toBe(
-      "Gianna"
-    );
   });
 
   it("says so rather than rendering blank when nothing identifies them", () => {
