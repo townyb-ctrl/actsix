@@ -17,6 +17,10 @@ import { useVenueResources } from "@/features/venues/api/venueResourcesQueries";
 import { useRunSheet } from "@/features/venues/api/venueRunSheetQueries";
 import { useChurchEvents } from "@/features/venues/api/venueClashesQueries";
 import {
+  useTurnaroundTasks,
+  useWalkthroughs,
+} from "@/features/venues/api/venueTurnaroundQueries";
+import {
   usePositionAssignments,
   usePositionPeople,
   usePositionRoles,
@@ -33,6 +37,7 @@ import type { VenueQuoteLine, VenueQuoteStatus } from "@/features/venues/lib/ven
 import type { VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
 import type { VenuePosition, VenuePositionAssignment } from "@/features/venues/lib/venuePositions";
 import type { VenuePayment } from "@/features/venues/lib/venuePayments";
+import type { VenueTurnaroundTask } from "@/features/venues/lib/venueTurnaround";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
@@ -53,6 +58,9 @@ import VenueContractPrintSheet from "@/features/venues/components/VenueContractP
 import VenueClashPanel from "@/features/venues/components/VenueClashPanel";
 import VenueDebriefPanel from "@/features/venues/components/VenueDebriefPanel";
 import VenueCloneHireModal from "@/features/venues/components/VenueCloneHireModal";
+import VenueTurnaroundPanel from "@/features/venues/components/VenueTurnaroundPanel";
+import VenueTurnaroundTaskModal from "@/features/venues/components/VenueTurnaroundTaskModal";
+import VenueWalkthroughPanel from "@/features/venues/components/VenueWalkthroughPanel";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -80,6 +88,10 @@ export default function VenueHireDetailPage() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<VenuePayment | null>(null);
   const [cloneOpen, setCloneOpen] = useState(false);
+  const [turnaroundModalOpen, setTurnaroundModalOpen] = useState(false);
+  const [editingTurnaroundTask, setEditingTurnaroundTask] = useState<VenueTurnaroundTask | null>(
+    null
+  );
   const [positionModalOpen, setPositionModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<VenuePosition | null>(null);
   const [positionSeedIso, setPositionSeedIso] = useState<string | null>(null);
@@ -94,6 +106,8 @@ export default function VenueHireDetailPage() {
   const { assignments } = usePositionAssignments(positions.map((position) => position.id));
   const { people } = usePositionPeople(workspace?.id);
   const { payments } = usePayments(hireId);
+  const { tasks: turnaroundTasks } = useTurnaroundTasks(hireId);
+  const { walkthroughs } = useWalkthroughs(hireId);
   const { clauses: workspaceClauses } = useWorkspaceContractClauses(workspace?.id);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
@@ -120,6 +134,8 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-positions"] });
     queryClient.invalidateQueries({ queryKey: ["venue-position-assignments"] });
     queryClient.invalidateQueries({ queryKey: ["venue-payments"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-turnaround"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-walkthroughs"] });
   };
 
   const removeAssignment = async (assignment: VenuePositionAssignment) => {
@@ -301,6 +317,32 @@ export default function VenueHireDetailPage() {
             onClone={() => setCloneOpen(true)}
             onSaved={refresh}
           />
+
+          <VenueWalkthroughPanel
+            walkthroughs={walkthroughs}
+            spaces={spaces}
+            hireId={hire.id}
+            workspaceId={workspace?.id || ""}
+            userId={user?.id || ""}
+            walkedBy={user?.email || ""}
+            onChanged={refresh}
+          />
+
+          <VenueTurnaroundPanel
+            tasks={turnaroundTasks}
+            bookings={allBookings}
+            spaces={spaces}
+            doneBy={user?.email || ""}
+            onAddTask={() => {
+              setEditingTurnaroundTask(null);
+              setTurnaroundModalOpen(true);
+            }}
+            onEditTask={(task) => {
+              setEditingTurnaroundTask(task);
+              setTurnaroundModalOpen(true);
+            }}
+            onChanged={refresh}
+          />
         </div>
 
         <div className="space-y-4">
@@ -452,6 +494,18 @@ export default function VenueHireDetailPage() {
         workspaceId={workspace?.id || ""}
         userId={user?.id || ""}
         onOpenChange={setPaymentModalOpen}
+        onSaved={refresh}
+      />
+
+      <VenueTurnaroundTaskModal
+        open={turnaroundModalOpen}
+        task={editingTurnaroundTask}
+        spaces={spaces}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        defaultStartIso={span?.endsAt}
+        onOpenChange={setTurnaroundModalOpen}
         onSaved={refresh}
       />
 
