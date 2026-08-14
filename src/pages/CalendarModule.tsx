@@ -37,6 +37,7 @@ import { syncProjectStatsForIds } from "@/lib/syncProjectStats";
 import { personalNextActionFilter } from "@/lib/taskVisibility";
 import { cn } from "@/lib/utils";
 import { getVenueBookings } from "@/features/venues/api/venuesApi";
+import { useVenueSpaces } from "@/features/venues/api/venuesQueries";
 import type { VenueBooking } from "@/features/venues/lib/venueBookings";
 
 type CalendarSource = "actsix" | "task" | "venue" | "google" | "outlook" | "apple";
@@ -55,6 +56,7 @@ type CalendarEvent = {
   endsAt: string;
   allDay: boolean;
   location: string;
+  spaceId?: string | null;
   description: string;
   status: CalendarStatus;
   task?: any;
@@ -75,6 +77,7 @@ type EventForm = {
   endsAt: string;
   allDay: boolean;
   location: string;
+  spaceId: string;
   calendarName: string;
   status: CalendarStatus;
   description: string;
@@ -127,6 +130,7 @@ const emptyForm = (): EventForm => ({
   endsAt: oneHourLater(),
   allDay: false,
   location: "",
+  spaceId: "",
   calendarName: "ACTSIX",
   status: "Confirmed",
   description: "",
@@ -193,6 +197,7 @@ export default function CalendarModule() {
   const [saving, setSaving] = useState(false);
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [savingTask, setSavingTask] = useState(false);
+  const { spaces } = useVenueSpaces(workspace?.id);
   const [syncingApple, setSyncingApple] = useState(false);
 
   const loadCalendar = async () => {
@@ -246,6 +251,7 @@ export default function CalendarModule() {
       endsAt: event.ends_at,
       allDay: event.all_day,
       location: event.location,
+      spaceId: event.space_id || "",
       description: event.description,
       status: event.status,
     }));
@@ -382,6 +388,7 @@ export default function CalendarModule() {
       endsAt: toInputDateTime(event.endsAt),
       allDay: event.allDay,
       location: event.location,
+      spaceId: event.spaceId || "",
       calendarName: event.calendarName,
       status: event.status,
       description: event.description,
@@ -405,6 +412,9 @@ export default function CalendarModule() {
       ends_at: new Date(form.endsAt).toISOString(),
       all_day: form.allDay,
       location: form.location.trim(),
+      // Null, not "", so the foreign key holds and the venue clash check can
+      // tell "no space" from "a space that no longer exists".
+      space_id: form.spaceId || null,
       description: form.description.trim(),
       status: form.status,
       updated_at: new Date().toISOString(),
@@ -854,6 +864,16 @@ export default function CalendarModule() {
           <label className="space-y-1 md:col-span-2">
             <span className="text-xs font-bold text-muted-foreground">Location</span>
             <Input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs" />
+          </label>
+          <label className="space-y-1 md:col-span-2">
+            <span className="text-xs font-bold text-muted-foreground">Venue space</span>
+            <select value={form.spaceId} onChange={(event) => setForm((current) => ({ ...current, spaceId: event.target.value }))} className="w-full font-semibold h-8 rounded-[var(--radius-control)] border border-border/70 bg-background px-2.5 text-base shadow-none outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/15 sm:text-xs">
+              <option value="">No particular space</option>
+              {spaces.map((space) => (
+                <option key={space.id} value={space.id}>{space.name}</option>
+              ))}
+            </select>
+            <span className="block text-xs text-muted-foreground">Naming a space lets Venue Hire warn about a clash before a hire is quoted.</span>
           </label>
           <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-background px-3 py-2 text-sm font-semibold">
             <input type="checkbox" checked={form.allDay} onChange={(event) => setForm((current) => ({ ...current, allDay: event.target.checked }))} />

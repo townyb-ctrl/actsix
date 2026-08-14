@@ -15,6 +15,7 @@ import { setQuoteStatus } from "@/features/venues/api/venueQuotesApi";
 import { useVenueBookings, useVenueSpaces } from "@/features/venues/api/venuesQueries";
 import { useVenueResources } from "@/features/venues/api/venueResourcesQueries";
 import { useRunSheet } from "@/features/venues/api/venueRunSheetQueries";
+import { useChurchEvents } from "@/features/venues/api/venueClashesQueries";
 import {
   usePositionAssignments,
   usePositionPeople,
@@ -49,6 +50,7 @@ import VenuePaymentsPanel from "@/features/venues/components/VenuePaymentsPanel"
 import VenuePaymentModal from "@/features/venues/components/VenuePaymentModal";
 import VenueContractPanel from "@/features/venues/components/VenueContractPanel";
 import VenueContractPrintSheet from "@/features/venues/components/VenueContractPrintSheet";
+import VenueClashPanel from "@/features/venues/components/VenueClashPanel";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -95,6 +97,15 @@ export default function VenueHireDetailPage() {
   // Every booking in the workspace, so the clash check inside the booking modal
   // sees bookings outside this hire too.
   const { bookings: allBookings } = useVenueBookings({ workspaceId: workspace?.id });
+
+  // Only the church diary across this hire's own dates - there is no point
+  // fetching a year of events to check one weekend.
+  const bookedSpan = hireSpan(hireBookings);
+  const { events: churchEvents, loading: churchEventsLoading } = useChurchEvents({
+    workspaceId: workspace?.id,
+    startsAt: bookedSpan?.startsAt,
+    endsAt: bookedSpan?.endsAt,
+  });
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["venue-hire"] });
@@ -155,7 +166,7 @@ export default function VenueHireDetailPage() {
     );
   }
 
-  const span = hireSpan(hireBookings);
+  const span = bookedSpan;
   const spanLabel = span
     ? `${formatDate(span.startsAt)} – ${formatDate(span.endsAt)}`
     : "";
@@ -282,6 +293,14 @@ export default function VenueHireDetailPage() {
         </div>
 
         <div className="space-y-4">
+          <VenueClashPanel
+            bookings={hireBookings}
+            events={churchEvents}
+            spaces={spaces}
+            loading={churchEventsLoading}
+            hasSpan={Boolean(span)}
+          />
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
               <CardTitle className="text-base">Hire</CardTitle>
