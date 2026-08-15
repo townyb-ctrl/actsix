@@ -14,13 +14,16 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Inbox from "./pages/Inbox";
 import { Waiting, Someday } from "./pages/SimpleList";
 import WeeklyReview from "./features/tasks/pages/WeeklyReviewPage";
-import Auth from "./pages/Auth";
-import WorkspaceSetup from "./pages/WorkspaceSetup";
-import NotFound from "./pages/NotFound.tsx";
 
 // Everything outside the Tasks module (this app's priority surface) loads on
 // demand, so a Tasks visit never pays for Sermon Hub, Training Center, or
 // Service Planner's code. Tasks itself stays eager above.
+// Sign-in and workspace setup are hit once and never again by a signed-in user,
+// so they stay out of the bundle every other visit pays for.
+const Auth = lazy(() => import("./pages/Auth"));
+const WorkspaceSetup = lazy(() => import("./pages/WorkspaceSetup"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+
 const Meetings = lazy(() => import("./pages/Meetings"));
 const ServicePlanner = lazy(() => import("./pages/ServicePlanner"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
