@@ -1,3 +1,5 @@
+import { createElement, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,6 +15,19 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 
 import { useCurrentPerson } from "./useCurrentPerson";
 
+/** The hook shares its result through React Query, so each test needs a fresh
+ *  provider — otherwise one test's cache would answer the next test's render. */
+const renderPersonHook = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+
+  return renderHook(() => useCurrentPerson(), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children),
+  });
+};
+
 describe("useCurrentPerson", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -20,7 +35,7 @@ describe("useCurrentPerson", () => {
   });
 
   it("clears person and stops loading when there's no user", async () => {
-    const { result } = renderHook(() => useCurrentPerson());
+    const { result } = renderPersonHook();
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -32,7 +47,7 @@ describe("useCurrentPerson", () => {
     authMock.user = { id: "user-1", email: "jane.doe@example.com" };
     supabaseMock.rpc.mockResolvedValue({ data: null, error: null });
 
-    const { result } = renderHook(() => useCurrentPerson());
+    const { result } = renderPersonHook();
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.displayName).toBe("Jane Doe");
@@ -45,7 +60,7 @@ describe("useCurrentPerson", () => {
       error: null,
     });
 
-    const { result } = renderHook(() => useCurrentPerson());
+    const { result } = renderPersonHook();
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -58,7 +73,7 @@ describe("useCurrentPerson", () => {
     authMock.user = { id: "user-1", email: "jane.doe@example.com" };
     supabaseMock.rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
 
-    const { result } = renderHook(() => useCurrentPerson());
+    const { result } = renderPersonHook();
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 

@@ -83,9 +83,13 @@ export function NotificationBell({
 
     loadNotifications();
 
+    // The realtime channel below is what actually keeps this current. This poll
+    // is only a safety net for a dropped subscription, so it runs slowly and
+    // skips background tabs instead of querying every 5 seconds forever.
     const intervalId = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
       loadNotifications();
-    }, 5000);
+    }, 60_000);
 
     const channel = supabase
       .channel(`${channelNameRef.current}:${user.id}`)

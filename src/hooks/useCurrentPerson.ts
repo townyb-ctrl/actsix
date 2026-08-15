@@ -1,4 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,52 +36,34 @@ const titleCaseEmailName = (email?: string | null) => {
 
 export function useCurrentPerson() {
   const { user } = useAuth();
-  const [person, setPerson] = useState<CurrentPerson | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const fallbackName = useMemo(() => titleCaseEmailName(user?.email), [user?.email]);
 
-  useEffect(() => {
-    if (!user) {
-      setPerson(null);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    const ensureCurrentPerson = async () => {
-      setLoading(true);
-
+  // Shared through React Query so the layout, the sidebar and the page each read
+  // one cached result instead of each firing its own ensure RPC.
+  const query = useQuery({
+    queryKey: ["current-person", user?.id],
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
       const { data, error } = await (supabase as any).rpc(
         "ensure_current_workspace_person"
       );
 
       if (error) {
         toast.error(error.message);
-        if (!cancelled) {
-          setPerson(null);
-          setLoading(false);
-        }
-        return;
+        return null;
       }
 
-      if (!cancelled) {
-        setPerson(data || null);
-        setLoading(false);
-      }
-    };
+      return (data as CurrentPerson) || null;
+    },
+  });
 
-    ensureCurrentPerson();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
+  const person = query.data ?? null;
 
   return {
     person,
-    loading,
+    loading: query.isLoading,
     displayName: person?.display_name || fallbackName,
   };
 }

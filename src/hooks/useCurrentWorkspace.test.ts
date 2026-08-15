@@ -1,3 +1,5 @@
+import { createElement, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -37,6 +39,19 @@ const workspaceRow = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+/** The hook shares its result through React Query, so each test needs a fresh
+ *  provider — otherwise one test's cache would answer the next test's render. */
+const renderWorkspaceHook = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+
+  return renderHook(() => useCurrentWorkspace(), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children),
+  });
+};
+
 describe("useCurrentWorkspace", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -44,7 +59,7 @@ describe("useCurrentWorkspace", () => {
   });
 
   it("clears workspace/membership and stops loading when there's no user", async () => {
-    const { result } = renderHook(() => useCurrentWorkspace());
+    const { result } = renderWorkspaceHook();
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -56,12 +71,12 @@ describe("useCurrentWorkspace", () => {
   it("loads the workspace and membership, deriving role flags", async () => {
     authMock.user = { id: "user-1" };
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === "workspace_members") return createQueryBuilder(okResult(membershipRow({ role: "admin" })));
-      if (table === "workspaces") return createQueryBuilder(okResult(workspaceRow()));
+      if (table === "workspace_members")
+        return createQueryBuilder(okResult(membershipRow({ role: "admin", workspaces: workspaceRow() })));
       throw new Error(`Unexpected table ${table}`);
     });
 
-    const { result } = renderHook(() => useCurrentWorkspace());
+    const { result } = renderWorkspaceHook();
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -75,12 +90,12 @@ describe("useCurrentWorkspace", () => {
   it("derives editor-level permissions correctly", async () => {
     authMock.user = { id: "user-1" };
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === "workspace_members") return createQueryBuilder(okResult(membershipRow({ role: "editor" })));
-      if (table === "workspaces") return createQueryBuilder(okResult(workspaceRow()));
+      if (table === "workspace_members")
+        return createQueryBuilder(okResult(membershipRow({ role: "editor", workspaces: workspaceRow() })));
       throw new Error(`Unexpected table ${table}`);
     });
 
-    const { result } = renderHook(() => useCurrentWorkspace());
+    const { result } = renderWorkspaceHook();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.isAdmin).toBe(false);
@@ -93,7 +108,7 @@ describe("useCurrentWorkspace", () => {
     authMock.user = { id: "user-1" };
     supabaseMock.from.mockReturnValue(createQueryBuilder(okResult(null)));
 
-    const { result } = renderHook(() => useCurrentWorkspace());
+    const { result } = renderWorkspaceHook();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.workspace).toBeNull();
@@ -106,7 +121,7 @@ describe("useCurrentWorkspace", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     supabaseMock.from.mockReturnValue(createQueryBuilder({ data: null, error: { message: "boom" } }));
 
-    const { result } = renderHook(() => useCurrentWorkspace());
+    const { result } = renderWorkspaceHook();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.workspace).toBeNull();
@@ -118,7 +133,7 @@ describe("useCurrentWorkspace", () => {
     supabaseMock.from.mockReturnValue(createQueryBuilder(okResult(null)));
     supabaseMock.rpc.mockResolvedValue({ error: null });
 
-    const { result } = renderHook(() => useCurrentWorkspace());
+    const { result } = renderWorkspaceHook();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -137,7 +152,7 @@ describe("useCurrentWorkspace", () => {
     authMock.user = { id: "user-1" };
     supabaseMock.from.mockReturnValue(createQueryBuilder(okResult(null)));
 
-    const { result } = renderHook(() => useCurrentWorkspace());
+    const { result } = renderWorkspaceHook();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     let response: { error: unknown };

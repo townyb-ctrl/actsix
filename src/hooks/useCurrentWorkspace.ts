@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -29,64 +29,56 @@ export type WorkspaceMember = {
   updated_at: string;
 };
 
+const EMPTY = { workspace: null, membership: null } as {
+  workspace: Workspace | null;
+  membership: WorkspaceMember | null;
+};
+
 export function useCurrentWorkspace() {
   const { user } = useAuth();
 
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [membership, setMembership] = useState<WorkspaceMember | null>(null);
-  const [loading, setLoading] = useState(true);
+  // AppLayout, AppSidebar and the page itself all mount this hook, so it is
+  // shared through React Query rather than a per-component useState/useEffect:
+  // one request feeds every caller instead of one request each.
+  const query = useQuery({
+    queryKey: ["current-workspace", user?.id],
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      // The workspace row is embedded through workspace_members_workspace_id_fkey
+      // so membership and workspace arrive in one round trip, not two.
+      const { data, error } = await (supabase as any)
+        .from("workspace_members")
+        .select("*, workspaces(*)")
+        .eq("auth_user_id", user!.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
+      if (error) {
+        console.error("Workspace membership load error:", error.message);
+        return EMPTY;
+      }
+
+      if (!data?.workspace_id) return EMPTY;
+
+      const { workspaces, ...membershipRow } = data;
+
+      return {
+        workspace: (workspaces as Workspace) || null,
+        membership: membershipRow as WorkspaceMember,
+      };
+    },
+  });
+
+  const workspace = query.data?.workspace ?? null;
+  const membership = query.data?.membership ?? null;
+
+  // Refetching the single shared observer writes straight to the cache, so every
+  // other mounted copy of this hook updates without firing its own request.
   const loadWorkspace = async () => {
-    if (!user) {
-      setWorkspace(null);
-      setMembership(null);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-
-    const { data: existingMembership, error: membershipError } = await (supabase as any)
-      .from("workspace_members")
-      .select("*")
-      .eq("auth_user_id", user.id)
-      .eq("status", "active")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (membershipError) {
-      console.error("Workspace membership load error:", membershipError.message);
-      setWorkspace(null);
-      setMembership(null);
-      setLoading(false);
-      return;
-    }
-
-    if (!existingMembership?.workspace_id) {
-      setWorkspace(null);
-      setMembership(null);
-      setLoading(false);
-      return;
-    }
-
-    const { data: existingWorkspace, error: workspaceError } = await (supabase as any)
-      .from("workspaces")
-      .select("*")
-      .eq("id", existingMembership.workspace_id)
-      .maybeSingle();
-
-    if (workspaceError) {
-      console.error("Workspace load error:", workspaceError.message);
-      setWorkspace(null);
-      setMembership(existingMembership || null);
-      setLoading(false);
-      return;
-    }
-
-    setWorkspace(existingWorkspace || null);
-    setMembership(existingMembership || null);
-    setLoading(false);
+    await query.refetch();
   };
 
   const createWorkspace = async ({
@@ -147,16 +139,12 @@ export function useCurrentWorkspace() {
     return { error: null };
   };
 
-  useEffect(() => {
-    loadWorkspace();
-  }, [user?.id]);
-
   const role = membership?.role || null;
 
   return {
     workspace,
     membership,
-    loading,
+    loading: query.isLoading,
     reloadWorkspace: loadWorkspace,
     createWorkspace,
     joinWorkspace,
