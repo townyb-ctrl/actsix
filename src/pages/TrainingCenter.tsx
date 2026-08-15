@@ -41,6 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
+import { useConfirm } from "@/hooks/useConfirm";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { supabase } from "@/integrations/supabase/client";
@@ -343,6 +344,7 @@ const TrainingCenter = () => {
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
   const { workspace, role } = useCurrentWorkspace();
+  const { confirmAction, confirmDialog } = useConfirm();
   const [courses, setCourses] = useState<TrainingCourse[]>([]);
   const [sections, setSections] = useState<TrainingSection[]>([]);
   const [assignments, setAssignments] = useState<TrainingAssignment[]>([]);
@@ -1050,7 +1052,7 @@ const TrainingCenter = () => {
 
   const archiveCourse = async (course: TrainingCourse) => {
     if (!workspace?.id || !canManageTraining) return;
-    const confirmed = window.confirm(`Archive ${course.title}? Existing assignments will be kept.`);
+    const confirmed = await confirmAction(`Archive ${course.title}? Existing assignments will be kept.`);
     if (!confirmed) return;
 
     const { error } = await (supabase as any)
@@ -3077,6 +3079,7 @@ const TrainingCenter = () => {
             </div>
           )}
       </ResponsiveModal>
+      {confirmDialog}
     </div>
   );
 };

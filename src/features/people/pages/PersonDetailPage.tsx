@@ -34,6 +34,7 @@ import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { Link, useParams } from "react-router-dom";
 import { PersonAvatar } from "@/components/people/PersonAvatar";
+import { useConfirm } from "@/hooks/useConfirm";
 import { createNotificationForPerson } from "@/lib/notifications";
 import { formatPhoneForDisplay, getWhatsappHref, isMessageablePhone, normalizePhoneForStorage } from "@/lib/phone";
 
@@ -187,6 +188,7 @@ const PersonDetailPage = () => {
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
   const { role, canEditPeopleDirectory } = useCurrentWorkspace();
+  const { confirmAction, confirmDialog } = useConfirm();
 
   const [person, setPerson] = useState<Person | null>(null);
   const [memberships, setMemberships] = useState<TeamMembership[]>([]);
@@ -678,7 +680,7 @@ const PersonDetailPage = () => {
   const removeAvatar = async () => {
     if (!user || !person || !canEditProfile) return;
 
-    const confirmed = window.confirm("Remove this profile picture?");
+    const confirmed = await confirmAction("Remove this profile picture? This action cannot be undone.");
     if (!confirmed) return;
 
     const { error } = await (supabase as any)
@@ -1651,6 +1653,7 @@ const PersonDetailPage = () => {
             </form>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </div>
   );
 };
