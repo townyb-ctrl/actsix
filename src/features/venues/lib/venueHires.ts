@@ -45,6 +45,8 @@ export type VenueHire = {
   car_guards_required: boolean;
   car_guard_count: number;
   access_plan: string;
+  av_preset_id: string | null;
+  walkie_channels: string;
   notes: string;
   created_at: string;
   updated_at: string;

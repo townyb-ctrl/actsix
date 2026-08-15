@@ -52,6 +52,7 @@ const VenueHires = lazy(() => import("./pages/VenueHires"));
 const VenueHireDetail = lazy(() => import("./pages/VenueHireDetail"));
 const VenueEnquiries = lazy(() => import("./pages/VenueEnquiries"));
 const VenueReports = lazy(() => import("./pages/VenueReports"));
+const VenueSignage = lazy(() => import("./pages/VenueSignage"));
 const VenueEnquiryDetail = lazy(() => import("./pages/VenueEnquiryDetail"));
 const PublicVenueRequest = lazy(() => import("./pages/PublicVenueRequest"));
 const PublicVenueHire = lazy(() => import("./pages/PublicVenueHire"));
@@ -120,6 +121,7 @@ const App = () => (
                 <Route path="/venues/hires" element={<VenueHires />} />
                 <Route path="/venues/hires/:hireId" element={<VenueHireDetail />} />
                 <Route path="/venues/reports" element={<VenueReports />} />
+                <Route path="/venues/signage" element={<VenueSignage />} />
                 <Route path="/venues/enquiries" element={<VenueEnquiries />} />
                 <Route path="/venues/enquiries/:enquiryId" element={<VenueEnquiryDetail />} />
                 <Route path="/people" element={<People />} />

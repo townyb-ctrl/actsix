@@ -22,6 +22,13 @@ import {
 } from "@/features/venues/api/venueTurnaroundQueries";
 import { useHireContacts, useIncidents } from "@/features/venues/api/venueSafetyQueries";
 import {
+  useAvPresets,
+  useHireSigns,
+  useResourceCheckouts,
+  useVenueSigns,
+} from "@/features/venues/api/venueSignageQueries";
+import { signPlan } from "@/features/venues/lib/venueSignage";
+import {
   usePositionAssignments,
   usePositionPeople,
   usePositionRoles,
@@ -66,6 +73,8 @@ import VenueTurnaroundTaskModal from "@/features/venues/components/VenueTurnarou
 import VenueWalkthroughPanel from "@/features/venues/components/VenueWalkthroughPanel";
 import VenueSafetyPanel from "@/features/venues/components/VenueSafetyPanel";
 import VenueIncidentModal from "@/features/venues/components/VenueIncidentModal";
+import VenueSignagePanel from "@/features/venues/components/VenueSignagePanel";
+import VenueSignPrintSheet from "@/features/venues/components/VenueSignPrintSheet";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -89,7 +98,9 @@ export default function VenueHireDetailPage() {
    * them at once would print both - only the requested one is mounted, and the
    * print dialog is opened once React has actually put it there.
    */
-  const [printing, setPrinting] = useState<"quote" | "run-sheet" | "contract" | null>(null);
+  const [printing, setPrinting] = useState<
+    "quote" | "run-sheet" | "contract" | "signs" | null
+  >(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<VenuePayment | null>(null);
   const [cloneOpen, setCloneOpen] = useState(false);
@@ -117,6 +128,10 @@ export default function VenueHireDetailPage() {
   const { walkthroughs } = useWalkthroughs(hireId);
   const { incidents } = useIncidents(hireId);
   const { contacts: hireContacts } = useHireContacts(hireId);
+  const { signs } = useVenueSigns(workspace?.id);
+  const { links: hireSignLinks } = useHireSigns(hireId);
+  const { presets: avPresets } = useAvPresets(workspace?.id);
+  const { checkouts } = useResourceCheckouts(hireId);
   const { clauses: workspaceClauses } = useWorkspaceContractClauses(workspace?.id);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
@@ -147,6 +162,10 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-walkthroughs"] });
     queryClient.invalidateQueries({ queryKey: ["venue-incidents"] });
     queryClient.invalidateQueries({ queryKey: ["venue-hire-contacts"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-signs"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-hire-signs"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-av-presets"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-checkouts"] });
   };
 
   const removeAssignment = async (assignment: VenuePositionAssignment) => {
@@ -341,6 +360,21 @@ export default function VenueHireDetailPage() {
             onChanged={refresh}
           />
 
+          <VenueSignagePanel
+            hire={hire}
+            signs={signs}
+            links={hireSignLinks}
+            presets={avPresets}
+            resources={resources}
+            checkouts={checkouts}
+            spaceIds={hireBookings.map((booking) => booking.space_id)}
+            workspaceId={workspace?.id || ""}
+            userId={user?.id || ""}
+            takenBy={user?.email || ""}
+            onPrintSigns={() => setPrinting("signs")}
+            onChanged={refresh}
+          />
+
           <VenueSafetyPanel
             hire={hire}
             incidents={incidents}
@@ -526,6 +560,14 @@ export default function VenueHireDetailPage() {
         onOpenChange={setPaymentModalOpen}
         onSaved={refresh}
       />
+
+      {printing === "signs" && (
+        <VenueSignPrintSheet
+          workspaceName={workspace?.name || ""}
+          hireName={hire.name}
+          entries={signPlan(hireSignLinks, signs)}
+        />
+      )}
 
       <VenueIncidentModal
         open={incidentModalOpen}
