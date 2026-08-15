@@ -332,7 +332,7 @@ export default function VenueEventDayPage() {
 
       {selected && (
         <>
-          <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur">
+          <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
             <Button
               className="min-h-12 w-full"
               variant="destructive"

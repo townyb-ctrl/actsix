@@ -293,7 +293,7 @@ export default function VenueSignagePanel({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="min-h-9 transition active:scale-[0.98]"
+                      className="min-h-9 transition active:scale-[0.98] motion-reduce:active:scale-100"
                       onClick={() => {
                         setReturningId(entry.id);
                         setReturnNote("");
@@ -330,7 +330,7 @@ export default function VenueSignagePanel({
                   <div className="mt-2 flex gap-2">
                     <Button
                       size="sm"
-                      className="actsix-btn-primary transition active:scale-[0.98]"
+                      className="actsix-btn-primary transition active:scale-[0.98] motion-reduce:active:scale-100"
                       onClick={async () => {
                         await guard(
                           returnResource(returningId, returnNote.trim()),

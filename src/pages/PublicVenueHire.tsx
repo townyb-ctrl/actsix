@@ -274,7 +274,7 @@ export default function PublicVenueHire() {
             <div className="flex flex-wrap gap-2">
               <Button
                 type="submit"
-                className="actsix-btn-primary min-h-12 flex-1 transition active:scale-[0.98]"
+                className="actsix-btn-primary min-h-12 flex-1 transition active:scale-[0.98] motion-reduce:active:scale-100"
                 disabled={submitting}
               >
                 {submitting ? "Sending…" : "Accept"}
@@ -285,7 +285,7 @@ export default function PublicVenueHire() {
                   <Button
                     type="button"
                     variant="destructive"
-                    className="min-h-12 transition active:scale-[0.98]"
+                    className="min-h-12 transition active:scale-[0.98] motion-reduce:active:scale-100"
                     disabled={submitting}
                     onClick={(event) => respond(event, "Declined")}
                   >
@@ -304,7 +304,7 @@ export default function PublicVenueHire() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="min-h-12 transition active:scale-[0.98]"
+                  className="min-h-12 transition active:scale-[0.98] motion-reduce:active:scale-100"
                   disabled={submitting}
                   onClick={() => setConfirmingDecline(true)}
                 >
@@ -338,10 +338,10 @@ export default function PublicVenueHire() {
         Hidden once the form is on screen, so it never covers what it points at.
       */}
       {canAnswer && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/85 p-3 backdrop-blur-lg sm:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/85 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-lg sm:hidden">
           <a
             href="#answer"
-            className="actsix-btn-primary flex min-h-12 items-center justify-center rounded-[var(--radius-control)] font-bold transition active:scale-[0.98]"
+            className="actsix-btn-primary flex min-h-12 items-center justify-center rounded-[var(--radius-control)] font-bold transition active:scale-[0.98] motion-reduce:active:scale-100"
           >
             Answer this quote
           </a>

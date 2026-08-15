@@ -111,7 +111,7 @@ export default function VenueTurnaroundPanel({
                   <button
                     type="button"
                     onClick={() => onEditTask(task)}
-                    className="min-h-11 flex-1 rounded px-1 py-1 text-left text-sm transition hover:bg-muted/40 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                    className="min-h-11 flex-1 rounded px-1 py-1 text-left text-sm transition hover:bg-muted/40 active:scale-[0.995] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                   >
                     <span className={cn("font-medium", task.done && "text-muted-foreground line-through")}>
                       {task.title}

@@ -144,7 +144,14 @@ export default function VenueReportsPage() {
               {funnel.total === 0 ? (
                 <p className="text-sm text-muted-foreground">No enquiries in this period.</p>
               ) : (
-                <ChartContainer config={chartConfig} className="h-56 w-full">
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-56 w-full"
+                  role="img"
+                  aria-label={`Enquiries by stage: ${funnel.stages
+                    .map((stage) => `${stage.status} ${stage.count}`)
+                    .join(", ")}`}
+                >
                   <BarChart data={funnel.stages} margin={{ left: -20 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="status" tickLine={false} axisLine={false} fontSize={11} />
@@ -165,10 +172,22 @@ export default function VenueReportsPage() {
               {utilisation.every((entry) => entry.hours === 0) ? (
                 <p className="text-sm text-muted-foreground">Nothing booked in this period.</p>
               ) : (
-                <ChartContainer config={chartConfig} className="h-56 w-full">
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-56 w-full"
+                  role="img"
+                  aria-label={`Hours booked per space: ${utilisation
+                    .map((entry) => `${entry.name} ${entry.hours} hours`)
+                    .join(", ")}`}
+                >
                   <BarChart data={utilisation} layout="vertical" margin={{ left: 8 }}>
                     <CartesianGrid horizontal={false} />
-                    <XAxis type="number" tickLine={false} axisLine={false} />
+                    <XAxis
+                      type="number"
+                      tickLine={false}
+                      axisLine={false}
+                      unit="h"
+                    />
                     <YAxis
                       type="category"
                       dataKey="name"
@@ -198,16 +217,16 @@ export default function VenueReportsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-left text-muted-foreground">
-                      <th className="pb-2 font-medium">Event type</th>
-                      <th className="pb-2 text-right font-medium">Hires</th>
-                      <th className="pb-2 text-right font-medium">Quoted</th>
-                      <th className="pb-2 text-right font-medium">Received</th>
+                      <th scope="col" className="pb-2 font-medium">Event type</th>
+                      <th scope="col" className="pb-2 text-right font-medium">Hires</th>
+                      <th scope="col" className="pb-2 text-right font-medium">Quoted</th>
+                      <th scope="col" className="pb-2 text-right font-medium">Received</th>
                     </tr>
                   </thead>
                   <tbody>
                     {revenue.map((entry) => (
                       <tr key={entry.eventType} className="border-b last:border-0">
-                        <td className="py-2">{entry.eventType}</td>
+                        <th scope="row" className="py-2 text-left font-normal">{entry.eventType}</th>
                         <td className="py-2 text-right tabular-nums">{entry.hires}</td>
                         <td className="py-2 text-right tabular-nums">
                           {formatCurrency(entry.quoted)}
