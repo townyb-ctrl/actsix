@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, Navigate, useLocation, useNavigate, Link } from "react-router-dom"; // <-- Added Link
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
@@ -87,6 +87,16 @@ const ModuleActivationPrompt = ({
       </Button>
     </Card>
   </main>
+);
+
+/** Shown in the content column while a lazy module chunk downloads. The sidebar
+ *  and header stay put behind it, so a module switch never blanks the screen. */
+const ModuleFallback = () => (
+  <div className="actsix-page-body pt-8">
+    <div className="actsix-loading-state" role="status">
+      Loading...
+    </div>
+  </div>
 );
 
 export default function AppLayout() {
@@ -342,7 +352,13 @@ export default function AppLayout() {
             />
           ) : (
             <main id="main-content" className="flex-1 overflow-y-auto overscroll-contain md:px-4 xl:px-6 2xl:px-8">
-              <Outlet />
+              {/* The boundary lives here, not around <Routes>. Above the layout
+                  it would swap the whole shell — sidebar and header included —
+                  for the fallback while a lazy module chunk loads, which reads
+                  as the screen flashing white on every module switch. */}
+              <Suspense fallback={<ModuleFallback />}>
+                <Outlet />
+              </Suspense>
             </main>
           )}
 
