@@ -38,6 +38,13 @@ export type VenueHire = {
   /** Bearer token for the hirer's page. Null until a link is created. */
   portal_token: string | null;
   portal_enabled: boolean;
+  security_required: boolean;
+  security_provider: string;
+  security_from: string | null;
+  security_to: string | null;
+  car_guards_required: boolean;
+  car_guard_count: number;
+  access_plan: string;
   notes: string;
   created_at: string;
   updated_at: string;

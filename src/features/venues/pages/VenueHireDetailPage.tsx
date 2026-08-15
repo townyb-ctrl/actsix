@@ -20,6 +20,7 @@ import {
   useTurnaroundTasks,
   useWalkthroughs,
 } from "@/features/venues/api/venueTurnaroundQueries";
+import { useHireContacts, useIncidents } from "@/features/venues/api/venueSafetyQueries";
 import {
   usePositionAssignments,
   usePositionPeople,
@@ -38,6 +39,7 @@ import type { VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
 import type { VenuePosition, VenuePositionAssignment } from "@/features/venues/lib/venuePositions";
 import type { VenuePayment } from "@/features/venues/lib/venuePayments";
 import type { VenueTurnaroundTask } from "@/features/venues/lib/venueTurnaround";
+import type { VenueIncident } from "@/features/venues/lib/venueSafety";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
@@ -62,6 +64,8 @@ import VenueCloneHireModal from "@/features/venues/components/VenueCloneHireModa
 import VenueTurnaroundPanel from "@/features/venues/components/VenueTurnaroundPanel";
 import VenueTurnaroundTaskModal from "@/features/venues/components/VenueTurnaroundTaskModal";
 import VenueWalkthroughPanel from "@/features/venues/components/VenueWalkthroughPanel";
+import VenueSafetyPanel from "@/features/venues/components/VenueSafetyPanel";
+import VenueIncidentModal from "@/features/venues/components/VenueIncidentModal";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -93,6 +97,8 @@ export default function VenueHireDetailPage() {
   const [editingTurnaroundTask, setEditingTurnaroundTask] = useState<VenueTurnaroundTask | null>(
     null
   );
+  const [incidentModalOpen, setIncidentModalOpen] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<VenueIncident | null>(null);
   const [positionModalOpen, setPositionModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<VenuePosition | null>(null);
   const [positionSeedIso, setPositionSeedIso] = useState<string | null>(null);
@@ -109,6 +115,8 @@ export default function VenueHireDetailPage() {
   const { payments } = usePayments(hireId);
   const { tasks: turnaroundTasks } = useTurnaroundTasks(hireId);
   const { walkthroughs } = useWalkthroughs(hireId);
+  const { incidents } = useIncidents(hireId);
+  const { contacts: hireContacts } = useHireContacts(hireId);
   const { clauses: workspaceClauses } = useWorkspaceContractClauses(workspace?.id);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
@@ -137,6 +145,8 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-payments"] });
     queryClient.invalidateQueries({ queryKey: ["venue-turnaround"] });
     queryClient.invalidateQueries({ queryKey: ["venue-walkthroughs"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-incidents"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-hire-contacts"] });
   };
 
   const removeAssignment = async (assignment: VenuePositionAssignment) => {
@@ -331,6 +341,23 @@ export default function VenueHireDetailPage() {
             onChanged={refresh}
           />
 
+          <VenueSafetyPanel
+            hire={hire}
+            incidents={incidents}
+            contacts={hireContacts}
+            workspaceId={workspace?.id || ""}
+            userId={user?.id || ""}
+            onAddIncident={() => {
+              setEditingIncident(null);
+              setIncidentModalOpen(true);
+            }}
+            onEditIncident={(incident) => {
+              setEditingIncident(incident);
+              setIncidentModalOpen(true);
+            }}
+            onChanged={refresh}
+          />
+
           <VenueTurnaroundPanel
             tasks={turnaroundTasks}
             bookings={allBookings}
@@ -497,6 +524,18 @@ export default function VenueHireDetailPage() {
         workspaceId={workspace?.id || ""}
         userId={user?.id || ""}
         onOpenChange={setPaymentModalOpen}
+        onSaved={refresh}
+      />
+
+      <VenueIncidentModal
+        open={incidentModalOpen}
+        incident={editingIncident}
+        spaces={spaces}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        reportedBy={user?.email || ""}
+        onOpenChange={setIncidentModalOpen}
         onSaved={refresh}
       />
 
