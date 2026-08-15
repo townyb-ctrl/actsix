@@ -54,6 +54,7 @@ const VenueEnquiries = lazy(() => import("./pages/VenueEnquiries"));
 const VenueReports = lazy(() => import("./pages/VenueReports"));
 const VenueEnquiryDetail = lazy(() => import("./pages/VenueEnquiryDetail"));
 const PublicVenueRequest = lazy(() => import("./pages/PublicVenueRequest"));
+const PublicVenueHire = lazy(() => import("./pages/PublicVenueHire"));
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/workspace-setup" element={<WorkspaceSetup />} />
               <Route path="/register/:token" element={<PublicEventRegistration />} />
               <Route path="/venue-request/:token" element={<PublicVenueRequest />} />
+              <Route path="/venue-hire/:token" element={<PublicVenueHire />} />
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
 

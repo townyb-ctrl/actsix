@@ -57,6 +57,7 @@ import VenueContractPanel from "@/features/venues/components/VenueContractPanel"
 import VenueContractPrintSheet from "@/features/venues/components/VenueContractPrintSheet";
 import VenueClashPanel from "@/features/venues/components/VenueClashPanel";
 import VenueDebriefPanel from "@/features/venues/components/VenueDebriefPanel";
+import VenuePortalPanel from "@/features/venues/components/VenuePortalPanel";
 import VenueCloneHireModal from "@/features/venues/components/VenueCloneHireModal";
 import VenueTurnaroundPanel from "@/features/venues/components/VenueTurnaroundPanel";
 import VenueTurnaroundTaskModal from "@/features/venues/components/VenueTurnaroundTaskModal";
@@ -309,6 +310,8 @@ export default function VenueHireDetailPage() {
             onPrint={() => setPrinting("contract")}
             onSaved={refresh}
           />
+
+          <VenuePortalPanel hire={hire} onChanged={refresh} />
 
           <VenueDebriefPanel
             hire={hire}

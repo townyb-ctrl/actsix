@@ -35,6 +35,9 @@ export type VenueHire = {
   would_host_again: boolean | null;
   damage_found: string;
   damage_cost: number;
+  /** Bearer token for the hirer's page. Null until a link is created. */
+  portal_token: string | null;
+  portal_enabled: boolean;
   notes: string;
   created_at: string;
   updated_at: string;
