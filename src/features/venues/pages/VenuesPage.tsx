@@ -3,7 +3,6 @@ import { CalendarDays, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/PageHeader";
@@ -165,21 +164,22 @@ export default function VenuesPage() {
               />
             )}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="actsix-filter-pills">
               {FILTERS.map((option) => (
-                <Button
+                <button
                   key={option}
-                  size="sm"
-                  variant={filter === option ? "default" : "outline"}
+                  type="button"
+                  aria-pressed={filter === option}
+                  className={`actsix-filter-pill ${
+                    filter === option ? "actsix-filter-pill-active" : "actsix-filter-pill-idle"
+                  }`}
                   onClick={() => setFilter(option)}
                 >
                   {option}
                   {option === "Pending" && pendingCount > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {pendingCount}
-                    </Badge>
+                    <span className="actsix-filter-pill-count bg-muted">{pendingCount}</span>
                   )}
-                </Button>
+                </button>
               ))}
             </div>
 

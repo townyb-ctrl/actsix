@@ -87,21 +87,22 @@ export default function VenueEnquiriesPage() {
       />
 
       <div className="actsix-page-body actsix-page-stack">
-        <div className="flex flex-wrap gap-2">
+        <div className="actsix-filter-pills">
           {FILTERS.map((option) => (
-            <Button
+            <button
               key={option}
-              size="sm"
-              variant={filter === option ? "default" : "outline"}
+              type="button"
+              aria-pressed={filter === option}
+              className={`actsix-filter-pill ${
+                filter === option ? "actsix-filter-pill-active" : "actsix-filter-pill-idle"
+              }`}
               onClick={() => setFilter(option)}
             >
               {option}
               {option === "Open" && openCount > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {openCount}
-                </Badge>
+                <span className="actsix-filter-pill-count bg-muted">{openCount}</span>
               )}
-            </Button>
+            </button>
           ))}
         </div>
 

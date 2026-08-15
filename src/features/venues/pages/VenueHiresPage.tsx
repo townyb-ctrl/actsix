@@ -85,16 +85,19 @@ export default function VenueHiresPage() {
       />
 
       <div className="actsix-page-body actsix-page-stack">
-        <div className="flex flex-wrap gap-2">
+        <div className="actsix-filter-pills">
           {FILTERS.map((option) => (
-            <Button
+            <button
               key={option}
-              size="sm"
-              variant={filter === option ? "default" : "outline"}
+              type="button"
+              aria-pressed={filter === option}
+              className={`actsix-filter-pill ${
+                filter === option ? "actsix-filter-pill-active" : "actsix-filter-pill-idle"
+              }`}
               onClick={() => setFilter(option)}
             >
               {option}
-            </Button>
+            </button>
           ))}
         </div>
 
