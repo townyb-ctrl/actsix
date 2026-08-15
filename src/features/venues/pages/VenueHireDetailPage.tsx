@@ -231,7 +231,7 @@ export default function VenueHireDetailPage() {
 
         {/* The real geometry, so nothing jumps when the hire lands. */}
         <div className="space-y-1">
-          {[0, 1, 2, 3, 4].map((row) => (
+          {[0, 1, 2, 3, 4, 5].map((row) => (
             <span key={row} className="st-skeleton block h-[42px] w-full" />
           ))}
         </div>
