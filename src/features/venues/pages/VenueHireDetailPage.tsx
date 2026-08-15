@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Pencil } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,11 @@ import {
   useVenueSigns,
 } from "@/features/venues/api/venueSignageQueries";
 import { signPlan } from "@/features/venues/lib/venueSignage";
+import { findClashes } from "@/features/venues/lib/venueClashes";
+import { paymentSummary } from "@/features/venues/lib/venuePayments";
+import { unfilledCount } from "@/features/venues/lib/venuePositions";
+import { incidentSummary } from "@/features/venues/lib/venueSafety";
+import { turnaroundProgress } from "@/features/venues/lib/venueTurnaround";
 import {
   usePositionAssignments,
   usePositionPeople,
@@ -71,6 +76,9 @@ import VenueCloneHireModal from "@/features/venues/components/VenueCloneHireModa
 import VenueTurnaroundPanel from "@/features/venues/components/VenueTurnaroundPanel";
 import VenueTurnaroundTaskModal from "@/features/venues/components/VenueTurnaroundTaskModal";
 import VenueWalkthroughPanel from "@/features/venues/components/VenueWalkthroughPanel";
+import VenueHireSectionRail, {
+  type VenueHireSectionId,
+} from "@/features/venues/components/VenueHireSectionRail";
 import VenueSafetyPanel from "@/features/venues/components/VenueSafetyPanel";
 import VenueIncidentModal from "@/features/venues/components/VenueIncidentModal";
 import VenueSignagePanel from "@/features/venues/components/VenueSignagePanel";
@@ -114,6 +122,23 @@ export default function VenueHireDetailPage() {
   const [editingPosition, setEditingPosition] = useState<VenuePosition | null>(null);
   const [positionSeedIso, setPositionSeedIso] = useState<string | null>(null);
   const [assigningPosition, setAssigningPosition] = useState<VenuePosition | null>(null);
+
+  /**
+   * Which section the rail is showing, kept in the URL so a refresh, the back
+   * button and a pasted link all land in the same place. A detail page that
+   * silently resets to the top has to be re-navigated every single time.
+   */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeSection = (searchParams.get("section") as VenueHireSectionId) || "dates";
+  const selectSection = (id: VenueHireSectionId) =>
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("section", id);
+        return next;
+      },
+      { replace: true }
+    );
 
   const { hire, loading } = useVenueHire(hireId);
   const { bookings: hireBookings } = useHireBookings(hireId);
@@ -216,6 +241,39 @@ export default function VenueHireDetailPage() {
   }
 
   const span = bookedSpan;
+
+  /**
+   * Rail badges count what somebody still has to do, never what merely exists.
+   * A badge that is always lit stops being read.
+   */
+  const turnaround = turnaroundProgress(turnaroundTasks);
+  const railSections = [
+    {
+      id: "dates" as const,
+      name: "Dates",
+      attention: findClashes(hireBookings, churchEvents).clashes.length,
+    },
+    {
+      id: "money" as const,
+      name: "Money",
+      // Only once they have agreed to pay - an unaccepted quote is not a debt.
+      attention:
+        hire.quote_status === "Accepted" && paymentSummary(lines, payments).outstanding > 0
+          ? 1
+          : 0,
+    },
+    {
+      id: "plan" as const,
+      name: "Plan",
+      attention: positions.reduce(
+        (short, position) => short + unfilledCount(position, assignments),
+        0
+      ),
+    },
+    { id: "day" as const, name: "On the day", attention: incidentSummary(incidents).open },
+    { id: "after" as const, name: "Afterwards", attention: turnaround.total - turnaround.done },
+  ];
+
   const spanLabel = span
     ? `${formatDate(span.startsAt)} – ${formatDate(span.endsAt)}`
     : "";
@@ -248,8 +306,16 @@ export default function VenueHireDetailPage() {
         }
       />
 
-      <div className="actsix-page-body grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <VenueHireDaysPanel
+      <div className="actsix-page-body grid min-w-0 gap-3 lg:grid-cols-[12rem_minmax(0,1fr)_18rem]">
+        <VenueHireSectionRail
+          sections={railSections}
+          activeId={activeSection}
+          onSelect={selectSection}
+        />
+
+        <div className="min-w-0 space-y-4">
+          {activeSection === "dates" && (
+            <VenueHireDaysPanel
           bookings={hireBookings}
           spaces={spaces}
           onAddBooking={() => {
@@ -260,10 +326,12 @@ export default function VenueHireDetailPage() {
             setEditingBooking(booking);
             setBookingModalOpen(true);
           }}
-        />
+            />
+          )}
 
-        <div className="lg:col-start-1 lg:row-start-2">
-          <VenueQuotePanel
+          {activeSection === "money" && (
+            <>
+              <VenueQuotePanel
             lines={lines}
             quoteStatus={hire.quote_status}
             quoteSentAt={hire.quote_sent_at}
@@ -275,141 +343,154 @@ export default function VenueHireDetailPage() {
               setEditingLine(line);
               setQuoteLineModalOpen(true);
             }}
-            onStatusChange={changeQuoteStatus}
-            onPrint={() => setPrinting("quote")}
-          />
+                onStatusChange={changeQuoteStatus}
+                onPrint={() => setPrinting("quote")}
+              />
+
+              <VenuePaymentsPanel
+                lines={lines}
+                payments={payments}
+                onAddPayment={() => {
+                  setEditingPayment(null);
+                  setPaymentModalOpen(true);
+                }}
+                onEditPayment={(payment) => {
+                  setEditingPayment(payment);
+                  setPaymentModalOpen(true);
+                }}
+              />
+
+              <VenueContractPanel
+                hire={hire}
+                workspaceClauses={workspaceClauses}
+                onPrint={() => setPrinting("contract")}
+                onSaved={refresh}
+              />
+
+              <VenuePortalPanel hire={hire} onChanged={refresh} />
+            </>
+          )}
+
+          {activeSection === "plan" && (
+            <>
+              <VenueRunSheetPanel
+                items={runSheetItems}
+                spaces={spaces}
+                onAddItem={(dayIso) => {
+                  setEditingRunSheetItem(null);
+                  setRunSheetSeedIso(dayIso ?? span?.startsAt ?? null);
+                  setRunSheetModalOpen(true);
+                }}
+                onEditItem={(item) => {
+                  setEditingRunSheetItem(item);
+                  setRunSheetSeedIso(null);
+                  setRunSheetModalOpen(true);
+                }}
+                onPrint={() => setPrinting("run-sheet")}
+              />
+
+              <VenuePositionBoard
+                positions={positions}
+                assignments={assignments}
+                roles={positionRoles}
+                people={people}
+                onAddPosition={(dayIso) => {
+                  setEditingPosition(null);
+                  setPositionSeedIso(dayIso ?? span?.startsAt ?? null);
+                  setPositionModalOpen(true);
+                }}
+                onEditPosition={(position) => {
+                  setEditingPosition(position);
+                  setPositionSeedIso(null);
+                  setPositionModalOpen(true);
+                }}
+                onAssign={setAssigningPosition}
+                onUnassign={removeAssignment}
+              />
+            </>
+          )}
+
+          {activeSection === "day" && (
+            <>
+              <VenueSafetyPanel
+                hire={hire}
+                incidents={incidents}
+                contacts={hireContacts}
+                workspaceId={workspace?.id || ""}
+                userId={user?.id || ""}
+                onAddIncident={() => {
+                  setEditingIncident(null);
+                  setIncidentModalOpen(true);
+                }}
+                onEditIncident={(incident) => {
+                  setEditingIncident(incident);
+                  setIncidentModalOpen(true);
+                }}
+                onChanged={refresh}
+              />
+
+              <VenueSignagePanel
+                hire={hire}
+                signs={signs}
+                links={hireSignLinks}
+                presets={avPresets}
+                resources={resources}
+                checkouts={checkouts}
+                spaceIds={hireBookings.map((booking) => booking.space_id)}
+                workspaceId={workspace?.id || ""}
+                userId={user?.id || ""}
+                takenBy={user?.email || ""}
+                onPrintSigns={() => setPrinting("signs")}
+                onChanged={refresh}
+              />
+            </>
+          )}
+
+          {activeSection === "after" && (
+            <>
+              <VenueWalkthroughPanel
+                walkthroughs={walkthroughs}
+                spaces={spaces}
+                hireId={hire.id}
+                workspaceId={workspace?.id || ""}
+                userId={user?.id || ""}
+                walkedBy={user?.email || ""}
+                onChanged={refresh}
+              />
+
+              <VenueTurnaroundPanel
+                tasks={turnaroundTasks}
+                bookings={allBookings}
+                spaces={spaces}
+                doneBy={user?.email || ""}
+                onAddTask={() => {
+                  setEditingTurnaroundTask(null);
+                  setTurnaroundModalOpen(true);
+                }}
+                onEditTask={(task) => {
+                  setEditingTurnaroundTask(task);
+                  setTurnaroundModalOpen(true);
+                }}
+                onChanged={refresh}
+              />
+
+              <VenueDebriefPanel
+                hire={hire}
+                lines={lines}
+                payments={payments}
+                onClone={() => setCloneOpen(true)}
+                onSaved={refresh}
+              />
+            </>
+          )}
         </div>
 
-        <div className="lg:col-start-1 lg:row-start-3">
-          <VenueRunSheetPanel
-            items={runSheetItems}
-            spaces={spaces}
-            onAddItem={(dayIso) => {
-              setEditingRunSheetItem(null);
-              setRunSheetSeedIso(dayIso ?? span?.startsAt ?? null);
-              setRunSheetModalOpen(true);
-            }}
-            onEditItem={(item) => {
-              setEditingRunSheetItem(item);
-              setRunSheetSeedIso(null);
-              setRunSheetModalOpen(true);
-            }}
-            onPrint={() => setPrinting("run-sheet")}
-          />
-        </div>
-
-        <div className="lg:col-start-1 lg:row-start-4">
-          <VenuePositionBoard
-            positions={positions}
-            assignments={assignments}
-            roles={positionRoles}
-            people={people}
-            onAddPosition={(dayIso) => {
-              setEditingPosition(null);
-              setPositionSeedIso(dayIso ?? span?.startsAt ?? null);
-              setPositionModalOpen(true);
-            }}
-            onEditPosition={(position) => {
-              setEditingPosition(position);
-              setPositionSeedIso(null);
-              setPositionModalOpen(true);
-            }}
-            onAssign={setAssigningPosition}
-            onUnassign={removeAssignment}
-          />
-        </div>
-
-        <div className="space-y-4 lg:col-start-2 lg:row-start-2">
-          <VenuePaymentsPanel
-            lines={lines}
-            payments={payments}
-            onAddPayment={() => {
-              setEditingPayment(null);
-              setPaymentModalOpen(true);
-            }}
-            onEditPayment={(payment) => {
-              setEditingPayment(payment);
-              setPaymentModalOpen(true);
-            }}
-          />
-
-          <VenueContractPanel
-            hire={hire}
-            workspaceClauses={workspaceClauses}
-            onPrint={() => setPrinting("contract")}
-            onSaved={refresh}
-          />
-
-          <VenuePortalPanel hire={hire} onChanged={refresh} />
-
-          <VenueDebriefPanel
-            hire={hire}
-            lines={lines}
-            payments={payments}
-            onClone={() => setCloneOpen(true)}
-            onSaved={refresh}
-          />
-
-          <VenueWalkthroughPanel
-            walkthroughs={walkthroughs}
-            spaces={spaces}
-            hireId={hire.id}
-            workspaceId={workspace?.id || ""}
-            userId={user?.id || ""}
-            walkedBy={user?.email || ""}
-            onChanged={refresh}
-          />
-
-          <VenueSignagePanel
-            hire={hire}
-            signs={signs}
-            links={hireSignLinks}
-            presets={avPresets}
-            resources={resources}
-            checkouts={checkouts}
-            spaceIds={hireBookings.map((booking) => booking.space_id)}
-            workspaceId={workspace?.id || ""}
-            userId={user?.id || ""}
-            takenBy={user?.email || ""}
-            onPrintSigns={() => setPrinting("signs")}
-            onChanged={refresh}
-          />
-
-          <VenueSafetyPanel
-            hire={hire}
-            incidents={incidents}
-            contacts={hireContacts}
-            workspaceId={workspace?.id || ""}
-            userId={user?.id || ""}
-            onAddIncident={() => {
-              setEditingIncident(null);
-              setIncidentModalOpen(true);
-            }}
-            onEditIncident={(incident) => {
-              setEditingIncident(incident);
-              setIncidentModalOpen(true);
-            }}
-            onChanged={refresh}
-          />
-
-          <VenueTurnaroundPanel
-            tasks={turnaroundTasks}
-            bookings={allBookings}
-            spaces={spaces}
-            doneBy={user?.email || ""}
-            onAddTask={() => {
-              setEditingTurnaroundTask(null);
-              setTurnaroundModalOpen(true);
-            }}
-            onEditTask={(task) => {
-              setEditingTurnaroundTask(task);
-              setTurnaroundModalOpen(true);
-            }}
-            onChanged={refresh}
-          />
-        </div>
-
-        <div className="space-y-4">
+        {/*
+          Always on screen, whichever section is open: a clash, the status and
+          who to phone are the things somebody needs while looking at anything
+          else. Below lg this stacks under the pane rather than competing with it.
+        */}
+        <aside className="space-y-4">
           <VenueClashPanel
             bookings={hireBookings}
             events={churchEvents}
@@ -477,7 +558,7 @@ export default function VenueHireDetailPage() {
               </CardContent>
             </Card>
           )}
-        </div>
+        </aside>
       </div>
 
       <VenueHireEditorModal
