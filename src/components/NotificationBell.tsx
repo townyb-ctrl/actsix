@@ -389,6 +389,7 @@ export function NotificationBell({
                   onClick={markAllAsRead}
                   disabled={unreadCount === 0}
                   title="Mark all as read"
+                  aria-label="Mark all as read"
                 >
                   <CheckCheck className="h-4 w-4" />
                 </Button>
@@ -407,6 +408,8 @@ export function NotificationBell({
       {!isMobile && open && createPortal(
         <div
           ref={panelRef}
+          role="dialog"
+          aria-label="Notifications"
           className="actsix-overlay-surface fixed z-[var(--z-popover)] flex max-h-[21rem] w-[min(21.25rem,calc(100vw-1.5rem))] flex-col overflow-hidden text-foreground"
           style={{
             left: panelPosition.left,
@@ -431,6 +434,7 @@ export function NotificationBell({
               onClick={markAllAsRead}
               disabled={unreadCount === 0}
               title="Mark all as read"
+              aria-label="Mark all as read"
             >
               <CheckCheck className="h-4 w-4" />
             </Button>
