@@ -101,8 +101,13 @@ export default function PublicVenueHire() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-16">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <main className="mx-auto max-w-2xl space-y-6 px-4 py-10" aria-busy="true" aria-live="polite">
+        <span className="sr-only">Loading your hire…</span>
+        <span className="st-skeleton block h-3 w-24" />
+        <span className="st-skeleton block h-7 w-2/3" />
+        <span className="st-skeleton block h-24 w-full rounded-lg" />
+        <span className="st-skeleton block h-3 w-1/3" />
+        <span className="st-skeleton block h-16 w-full" />
       </main>
     );
   }

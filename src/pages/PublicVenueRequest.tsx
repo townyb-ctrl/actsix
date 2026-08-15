@@ -158,15 +158,23 @@ export default function PublicVenueRequest() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div className="mx-auto max-w-2xl space-y-6 p-6" aria-busy="true" aria-live="polite">
+        <span className="sr-only">Loading the form…</span>
+        <span className="st-skeleton block h-7 w-3/5" />
+        <span className="st-skeleton block h-3 w-full" />
+        {[0, 1, 2, 3].map((field) => (
+          <div key={field} className="space-y-2">
+            <span className="st-skeleton block h-3 w-24" />
+            <span className="st-skeleton block h-10 w-full" />
+          </div>
+        ))}
       </div>
     );
   }
 
   if (spaces.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
+      <div className="flex min-h-[100dvh] items-center justify-center p-6">
         <p className="max-w-sm text-center text-sm text-muted-foreground">{LINK_DEAD}</p>
       </div>
     );
@@ -174,7 +182,7 @@ export default function PublicVenueRequest() {
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 p-6 text-center">
         <CheckCircle2 className="h-10 w-10 text-primary" />
         <h1 className="text-xl font-semibold">Enquiry sent</h1>
         <p className="max-w-sm text-sm text-muted-foreground">
@@ -194,7 +202,10 @@ export default function PublicVenueRequest() {
         </p>
       </div>
 
-      <form className="space-y-8" onSubmit={submit}>
+      <form
+        className="space-y-8 [&_input]:min-h-11 [&_select]:min-h-11 [&_textarea]:min-h-24"
+        onSubmit={submit}
+      >
         <section className="space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Your event
@@ -441,9 +452,17 @@ export default function PublicVenueRequest() {
           </div>
         </section>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
 
-        <Button type="submit" disabled={submitting} className="w-full">
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="min-h-12 w-full transition active:scale-[0.99] motion-reduce:active:scale-100"
+        >
           {submitting ? "Sending…" : "Send enquiry"}
         </Button>
       </form>
