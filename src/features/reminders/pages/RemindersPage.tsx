@@ -145,6 +145,108 @@ const upsertReminderCalendarEvent = async ({
         .single();
 };
 
+// Hoisted out of RemindersPage: defined inline it got a fresh component
+// identity every render, remounting every card and losing focus mid-interaction.
+const ReminderCard = ({
+  reminder,
+  onUpdateStatus,
+  onEdit,
+  onDelete,
+}: {
+  reminder: Reminder;
+  onUpdateStatus: (reminder: Reminder, status: ReminderStatus) => void;
+  onEdit: (reminder: Reminder) => void;
+  onDelete: (reminder: Reminder) => void;
+}) => {
+  const isDone = reminder.status !== "pending";
+
+  return (
+    <Card
+      className={cn(
+        "actsix-panel p-3 transition",
+        isDone && "bg-muted/20 opacity-75"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-0.5 text-[10px] font-extrabold text-brand-teal">
+              {reminder.category || "General"}
+            </span>
+            {reminder.show_on_calendar && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                <CalendarDays className="h-3 w-3" />
+                Calendar
+              </span>
+            )}
+          </div>
+
+          <h2 className="mt-2 text-base font-extrabold tracking-tight">
+            {reminder.title}
+          </h2>
+
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Clock3 className="h-3.5 w-3.5 text-brand-amber" />
+              {formatDay(reminder.remind_at)} · {formatTime(reminder.remind_at, reminder.all_day)}
+            </span>
+            {reminder.location && (
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5 text-brand-teal" />
+                {reminder.location}
+              </span>
+            )}
+          </div>
+
+          {reminder.notes && (
+            <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+              {reminder.notes}
+            </p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          {reminder.status === "pending" && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-brand-sage"
+              title="Mark done"
+              aria-label="Mark reminder done"
+              onClick={() => onUpdateStatus(reminder, "done")}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            title="Edit reminder"
+            aria-label="Edit reminder"
+            onClick={() => onEdit(reminder)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
+            title="Delete reminder"
+            aria-label="Delete reminder"
+            onClick={() => onDelete(reminder)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 export default function RemindersPage() {
   const { user } = useAuth();
   const { workspace } = useCurrentWorkspace();
@@ -386,96 +488,6 @@ export default function RemindersPage() {
     toast.success("Reminder deleted");
   };
 
-  const ReminderCard = ({ reminder }: { reminder: Reminder }) => {
-    const isDone = reminder.status !== "pending";
-
-    return (
-      <Card
-        className={cn(
-          "actsix-panel p-3 transition",
-          isDone && "bg-muted/20 opacity-75"
-        )}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2 py-0.5 text-[10px] font-extrabold text-brand-teal">
-                {reminder.category || "General"}
-              </span>
-              {reminder.show_on_calendar && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                  <CalendarDays className="h-3 w-3" />
-                  Calendar
-                </span>
-              )}
-            </div>
-
-            <h2 className="mt-2 text-base font-extrabold tracking-tight">
-              {reminder.title}
-            </h2>
-
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <Clock3 className="h-3.5 w-3.5 text-brand-amber" />
-                {formatDay(reminder.remind_at)} · {formatTime(reminder.remind_at, reminder.all_day)}
-              </span>
-              {reminder.location && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-brand-teal" />
-                  {reminder.location}
-                </span>
-              )}
-            </div>
-
-            {reminder.notes && (
-              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                {reminder.notes}
-              </p>
-            )}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1">
-            {reminder.status === "pending" && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full text-brand-sage"
-                title="Mark done"
-                aria-label="Mark reminder done"
-                onClick={() => updateStatus(reminder, "done")}
-              >
-                <CheckCircle2 className="h-4 w-4" />
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              title="Edit reminder"
-              aria-label="Edit reminder"
-              onClick={() => openEditReminder(reminder)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
-              title="Delete reminder"
-              aria-label="Delete reminder"
-              onClick={() => deleteReminder(reminder)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </Card>
-    );
-  };
-
   return (
     <div>
       <PageHeader
@@ -563,7 +575,13 @@ export default function RemindersPage() {
           )}
 
           {upcomingReminders.map((reminder) => (
-            <ReminderCard key={reminder.id} reminder={reminder} />
+            <ReminderCard
+                key={reminder.id}
+                reminder={reminder}
+                onUpdateStatus={updateStatus}
+                onEdit={openEditReminder}
+                onDelete={deleteReminder}
+              />
           ))}
         </section>
 
@@ -571,7 +589,13 @@ export default function RemindersPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-extrabold">Done or Cancelled</h2>
             {completedReminders.map((reminder) => (
-              <ReminderCard key={reminder.id} reminder={reminder} />
+              <ReminderCard
+                key={reminder.id}
+                reminder={reminder}
+                onUpdateStatus={updateStatus}
+                onEdit={openEditReminder}
+                onDelete={deleteReminder}
+              />
             ))}
           </section>
         )}
