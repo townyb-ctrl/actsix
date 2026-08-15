@@ -15,6 +15,19 @@ import { setQuoteStatus } from "@/features/venues/api/venueQuotesApi";
 import { useVenueBookings, useVenueSpaces } from "@/features/venues/api/venuesQueries";
 import { useVenueResources } from "@/features/venues/api/venueResourcesQueries";
 import { useRunSheet } from "@/features/venues/api/venueRunSheetQueries";
+import { useChurchEvents } from "@/features/venues/api/venueClashesQueries";
+import {
+  useTurnaroundTasks,
+  useWalkthroughs,
+} from "@/features/venues/api/venueTurnaroundQueries";
+import { useHireContacts, useIncidents } from "@/features/venues/api/venueSafetyQueries";
+import {
+  useAvPresets,
+  useHireSigns,
+  useResourceCheckouts,
+  useVenueSigns,
+} from "@/features/venues/api/venueSignageQueries";
+import { signPlan } from "@/features/venues/lib/venueSignage";
 import {
   usePositionAssignments,
   usePositionPeople,
@@ -32,6 +45,8 @@ import type { VenueQuoteLine, VenueQuoteStatus } from "@/features/venues/lib/ven
 import type { VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
 import type { VenuePosition, VenuePositionAssignment } from "@/features/venues/lib/venuePositions";
 import type { VenuePayment } from "@/features/venues/lib/venuePayments";
+import type { VenueTurnaroundTask } from "@/features/venues/lib/venueTurnaround";
+import type { VenueIncident } from "@/features/venues/lib/venueSafety";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
@@ -49,6 +64,17 @@ import VenuePaymentsPanel from "@/features/venues/components/VenuePaymentsPanel"
 import VenuePaymentModal from "@/features/venues/components/VenuePaymentModal";
 import VenueContractPanel from "@/features/venues/components/VenueContractPanel";
 import VenueContractPrintSheet from "@/features/venues/components/VenueContractPrintSheet";
+import VenueClashPanel from "@/features/venues/components/VenueClashPanel";
+import VenueDebriefPanel from "@/features/venues/components/VenueDebriefPanel";
+import VenuePortalPanel from "@/features/venues/components/VenuePortalPanel";
+import VenueCloneHireModal from "@/features/venues/components/VenueCloneHireModal";
+import VenueTurnaroundPanel from "@/features/venues/components/VenueTurnaroundPanel";
+import VenueTurnaroundTaskModal from "@/features/venues/components/VenueTurnaroundTaskModal";
+import VenueWalkthroughPanel from "@/features/venues/components/VenueWalkthroughPanel";
+import VenueSafetyPanel from "@/features/venues/components/VenueSafetyPanel";
+import VenueIncidentModal from "@/features/venues/components/VenueIncidentModal";
+import VenueSignagePanel from "@/features/venues/components/VenueSignagePanel";
+import VenueSignPrintSheet from "@/features/venues/components/VenueSignPrintSheet";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -72,9 +98,18 @@ export default function VenueHireDetailPage() {
    * them at once would print both - only the requested one is mounted, and the
    * print dialog is opened once React has actually put it there.
    */
-  const [printing, setPrinting] = useState<"quote" | "run-sheet" | "contract" | null>(null);
+  const [printing, setPrinting] = useState<
+    "quote" | "run-sheet" | "contract" | "signs" | null
+  >(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<VenuePayment | null>(null);
+  const [cloneOpen, setCloneOpen] = useState(false);
+  const [turnaroundModalOpen, setTurnaroundModalOpen] = useState(false);
+  const [editingTurnaroundTask, setEditingTurnaroundTask] = useState<VenueTurnaroundTask | null>(
+    null
+  );
+  const [incidentModalOpen, setIncidentModalOpen] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<VenueIncident | null>(null);
   const [positionModalOpen, setPositionModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<VenuePosition | null>(null);
   const [positionSeedIso, setPositionSeedIso] = useState<string | null>(null);
@@ -89,12 +124,29 @@ export default function VenueHireDetailPage() {
   const { assignments } = usePositionAssignments(positions.map((position) => position.id));
   const { people } = usePositionPeople(workspace?.id);
   const { payments } = usePayments(hireId);
+  const { tasks: turnaroundTasks } = useTurnaroundTasks(hireId);
+  const { walkthroughs } = useWalkthroughs(hireId);
+  const { incidents } = useIncidents(hireId);
+  const { contacts: hireContacts } = useHireContacts(hireId);
+  const { signs } = useVenueSigns(workspace?.id);
+  const { links: hireSignLinks } = useHireSigns(hireId);
+  const { presets: avPresets } = useAvPresets(workspace?.id);
+  const { checkouts } = useResourceCheckouts(hireId);
   const { clauses: workspaceClauses } = useWorkspaceContractClauses(workspace?.id);
   const { spaces } = useVenueSpaces(workspace?.id);
   const { resources } = useVenueResources(workspace?.id);
   // Every booking in the workspace, so the clash check inside the booking modal
   // sees bookings outside this hire too.
   const { bookings: allBookings } = useVenueBookings({ workspaceId: workspace?.id });
+
+  // Only the church diary across this hire's own dates - there is no point
+  // fetching a year of events to check one weekend.
+  const bookedSpan = hireSpan(hireBookings);
+  const { events: churchEvents, loading: churchEventsLoading } = useChurchEvents({
+    workspaceId: workspace?.id,
+    startsAt: bookedSpan?.startsAt,
+    endsAt: bookedSpan?.endsAt,
+  });
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["venue-hire"] });
@@ -106,6 +158,14 @@ export default function VenueHireDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["venue-positions"] });
     queryClient.invalidateQueries({ queryKey: ["venue-position-assignments"] });
     queryClient.invalidateQueries({ queryKey: ["venue-payments"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-turnaround"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-walkthroughs"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-incidents"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-hire-contacts"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-signs"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-hire-signs"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-av-presets"] });
+    queryClient.invalidateQueries({ queryKey: ["venue-checkouts"] });
   };
 
   const removeAssignment = async (assignment: VenuePositionAssignment) => {
@@ -155,7 +215,7 @@ export default function VenueHireDetailPage() {
     );
   }
 
-  const span = hireSpan(hireBookings);
+  const span = bookedSpan;
   const spanLabel = span
     ? `${formatDate(span.startsAt)} – ${formatDate(span.endsAt)}`
     : "";
@@ -279,9 +339,85 @@ export default function VenueHireDetailPage() {
             onPrint={() => setPrinting("contract")}
             onSaved={refresh}
           />
+
+          <VenuePortalPanel hire={hire} onChanged={refresh} />
+
+          <VenueDebriefPanel
+            hire={hire}
+            lines={lines}
+            payments={payments}
+            onClone={() => setCloneOpen(true)}
+            onSaved={refresh}
+          />
+
+          <VenueWalkthroughPanel
+            walkthroughs={walkthroughs}
+            spaces={spaces}
+            hireId={hire.id}
+            workspaceId={workspace?.id || ""}
+            userId={user?.id || ""}
+            walkedBy={user?.email || ""}
+            onChanged={refresh}
+          />
+
+          <VenueSignagePanel
+            hire={hire}
+            signs={signs}
+            links={hireSignLinks}
+            presets={avPresets}
+            resources={resources}
+            checkouts={checkouts}
+            spaceIds={hireBookings.map((booking) => booking.space_id)}
+            workspaceId={workspace?.id || ""}
+            userId={user?.id || ""}
+            takenBy={user?.email || ""}
+            onPrintSigns={() => setPrinting("signs")}
+            onChanged={refresh}
+          />
+
+          <VenueSafetyPanel
+            hire={hire}
+            incidents={incidents}
+            contacts={hireContacts}
+            workspaceId={workspace?.id || ""}
+            userId={user?.id || ""}
+            onAddIncident={() => {
+              setEditingIncident(null);
+              setIncidentModalOpen(true);
+            }}
+            onEditIncident={(incident) => {
+              setEditingIncident(incident);
+              setIncidentModalOpen(true);
+            }}
+            onChanged={refresh}
+          />
+
+          <VenueTurnaroundPanel
+            tasks={turnaroundTasks}
+            bookings={allBookings}
+            spaces={spaces}
+            doneBy={user?.email || ""}
+            onAddTask={() => {
+              setEditingTurnaroundTask(null);
+              setTurnaroundModalOpen(true);
+            }}
+            onEditTask={(task) => {
+              setEditingTurnaroundTask(task);
+              setTurnaroundModalOpen(true);
+            }}
+            onChanged={refresh}
+          />
         </div>
 
         <div className="space-y-4">
+          <VenueClashPanel
+            bookings={hireBookings}
+            events={churchEvents}
+            spaces={spaces}
+            loading={churchEventsLoading}
+            hasSpan={Boolean(span)}
+          />
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
               <CardTitle className="text-base">Hire</CardTitle>
@@ -423,6 +559,52 @@ export default function VenueHireDetailPage() {
         userId={user?.id || ""}
         onOpenChange={setPaymentModalOpen}
         onSaved={refresh}
+      />
+
+      {printing === "signs" && (
+        <VenueSignPrintSheet
+          workspaceName={workspace?.name || ""}
+          hireName={hire.name}
+          entries={signPlan(hireSignLinks, signs)}
+        />
+      )}
+
+      <VenueIncidentModal
+        open={incidentModalOpen}
+        incident={editingIncident}
+        spaces={spaces}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        reportedBy={user?.email || ""}
+        onOpenChange={setIncidentModalOpen}
+        onSaved={refresh}
+      />
+
+      <VenueTurnaroundTaskModal
+        open={turnaroundModalOpen}
+        task={editingTurnaroundTask}
+        spaces={spaces}
+        hireId={hire.id}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        defaultStartIso={span?.endsAt}
+        onOpenChange={setTurnaroundModalOpen}
+        onSaved={refresh}
+      />
+
+      <VenueCloneHireModal
+        open={cloneOpen}
+        hire={hire}
+        source={{
+          bookings: hireBookings,
+          lines,
+          runSheetItems,
+          positions,
+        }}
+        workspaceId={workspace?.id || ""}
+        userId={user?.id || ""}
+        onOpenChange={setCloneOpen}
       />
 
       {printing === "contract" && (

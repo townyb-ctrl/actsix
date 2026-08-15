@@ -51,8 +51,12 @@ const VenueResources = lazy(() => import("./pages/VenueResources"));
 const VenueHires = lazy(() => import("./pages/VenueHires"));
 const VenueHireDetail = lazy(() => import("./pages/VenueHireDetail"));
 const VenueEnquiries = lazy(() => import("./pages/VenueEnquiries"));
+const VenueReports = lazy(() => import("./pages/VenueReports"));
+const VenueSignage = lazy(() => import("./pages/VenueSignage"));
+const VenueEventDay = lazy(() => import("./pages/VenueEventDay"));
 const VenueEnquiryDetail = lazy(() => import("./pages/VenueEnquiryDetail"));
 const PublicVenueRequest = lazy(() => import("./pages/PublicVenueRequest"));
+const PublicVenueHire = lazy(() => import("./pages/PublicVenueHire"));
 
 const queryClient = new QueryClient();
 
@@ -82,6 +86,7 @@ const App = () => (
               <Route path="/workspace-setup" element={<WorkspaceSetup />} />
               <Route path="/register/:token" element={<PublicEventRegistration />} />
               <Route path="/venue-request/:token" element={<PublicVenueRequest />} />
+              <Route path="/venue-hire/:token" element={<PublicVenueHire />} />
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
 
@@ -116,6 +121,9 @@ const App = () => (
                 <Route path="/venues/resources" element={<VenueResources />} />
                 <Route path="/venues/hires" element={<VenueHires />} />
                 <Route path="/venues/hires/:hireId" element={<VenueHireDetail />} />
+                <Route path="/venues/reports" element={<VenueReports />} />
+                <Route path="/venues/signage" element={<VenueSignage />} />
+                <Route path="/venues/today" element={<VenueEventDay />} />
                 <Route path="/venues/enquiries" element={<VenueEnquiries />} />
                 <Route path="/venues/enquiries/:enquiryId" element={<VenueEnquiryDetail />} />
                 <Route path="/people" element={<People />} />

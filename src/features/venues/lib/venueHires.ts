@@ -27,6 +27,26 @@ export type VenueHire = {
   enquiry_id: string | null;
   /** What to do differently next time, carried into a repeat hire. */
   lessons_learned: string;
+  debrief_notes: string;
+  debrief_completed_on: string | null;
+  /** 1-5, null until somebody judges it. */
+  hirer_rating: number | null;
+  /** Null until somebody answers. */
+  would_host_again: boolean | null;
+  damage_found: string;
+  damage_cost: number;
+  /** Bearer token for the hirer's page. Null until a link is created. */
+  portal_token: string | null;
+  portal_enabled: boolean;
+  security_required: boolean;
+  security_provider: string;
+  security_from: string | null;
+  security_to: string | null;
+  car_guards_required: boolean;
+  car_guard_count: number;
+  access_plan: string;
+  av_preset_id: string | null;
+  walkie_channels: string;
   notes: string;
   created_at: string;
   updated_at: string;

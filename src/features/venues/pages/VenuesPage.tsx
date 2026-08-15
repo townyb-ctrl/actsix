@@ -107,6 +107,15 @@ export default function VenuesPage() {
         actions={
           <>
             <Button variant="outline" className="min-h-10" asChild>
+              <Link to="/venues/today">Today</Link>
+            </Button>
+            <Button variant="outline" className="min-h-10" asChild>
+              <Link to="/venues/reports">Reports</Link>
+            </Button>
+            <Button variant="outline" className="min-h-10" asChild>
+              <Link to="/venues/signage">Signage</Link>
+            </Button>
+            <Button variant="outline" className="min-h-10" asChild>
               <Link to="/venues/spaces">Spaces</Link>
             </Button>
             <Button
