@@ -54,6 +54,7 @@ import type { VenueTurnaroundTask } from "@/features/venues/lib/venueTurnaround"
 import type { VenueIncident } from "@/features/venues/lib/venueSafety";
 import { hireSpan } from "@/features/venues/lib/venueHires";
 import VenueHireDaysPanel from "@/features/venues/components/VenueHireDaysPanel";
+import VenueHireOverviewPanel from "@/features/venues/components/VenueHireOverviewPanel";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
 import VenueBookingModal from "@/features/venues/components/VenueBookingModal";
 import VenueQuotePanel from "@/features/venues/components/VenueQuotePanel";
@@ -130,7 +131,7 @@ export default function VenueHireDetailPage() {
    * silently resets to the top has to be re-navigated every single time.
    */
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeSection = (searchParams.get("section") as VenueHireSectionId) || "dates";
+  const activeSection = (searchParams.get("section") as VenueHireSectionId) || "overview";
   const selectSection = (id: VenueHireSectionId) =>
     setSearchParams(
       (current) => {
@@ -267,6 +268,13 @@ export default function VenueHireDetailPage() {
   const turnaround = turnaroundProgress(turnaroundTasks);
   const railSections = [
     {
+      id: "overview" as const,
+      name: "Overview",
+      // No badge: the four section badges below already count the same problems,
+      // and lighting a fifth number for them says nothing new.
+      attention: 0,
+    },
+    {
       id: "dates" as const,
       name: "Dates",
       attention: findClashes(hireBookings, churchEvents).clashes.length,
@@ -332,6 +340,22 @@ export default function VenueHireDetailPage() {
         />
 
         <div className="min-w-0 space-y-4">
+          {activeSection === "overview" && (
+            <VenueHireOverviewPanel
+              hire={hire}
+              bookings={hireBookings}
+              spaces={spaces}
+              lines={lines}
+              payments={payments}
+              runSheetItems={runSheetItems}
+              positions={positions}
+              assignments={assignments}
+              incidents={incidents}
+              turnaroundTasks={turnaroundTasks}
+              onSelect={selectSection}
+            />
+          )}
+
           {activeSection === "dates" && (
             <VenueHireDaysPanel
           bookings={hireBookings}

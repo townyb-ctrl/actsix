@@ -1,4 +1,4 @@
-export type VenueHireSectionId = "dates" | "money" | "plan" | "day" | "after";
+export type VenueHireSectionId = "overview" | "dates" | "money" | "plan" | "day" | "after";
 
 export type VenueHireRailSection = {
   id: VenueHireSectionId;
