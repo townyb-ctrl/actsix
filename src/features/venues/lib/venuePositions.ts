@@ -52,6 +52,12 @@ export const unfilledCount = (
   return Math.max(0, position.needed - filled);
 };
 
+/** Total shortfall across every position - the sum every caller was reducing by hand. */
+export const unfilledTotal = (
+  positions: VenuePosition[],
+  assignments: VenuePositionAssignment[]
+): number => positions.reduce((total, position) => total + unfilledCount(position, assignments), 0);
+
 export type PositionDay = {
   /** Local calendar day, as YYYY-MM-DD. */
   day: string;

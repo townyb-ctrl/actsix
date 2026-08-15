@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, type VenueBooking, type VenueSpace } from "@/features/venues/lib/venueBookings";
+import { isDebriefStarted } from "@/features/venues/lib/venueDebrief";
 import { hireSpan, type VenueHire } from "@/features/venues/lib/venueHires";
 import { paymentSummary, type VenuePayment } from "@/features/venues/lib/venuePayments";
-import { unfilledCount, type VenuePosition, type VenuePositionAssignment } from "@/features/venues/lib/venuePositions";
+import { unfilledTotal, type VenuePosition, type VenuePositionAssignment } from "@/features/venues/lib/venuePositions";
 import { incidentSummary, type VenueIncident } from "@/features/venues/lib/venueSafety";
 import { turnaroundProgress, type VenueTurnaroundTask } from "@/features/venues/lib/venueTurnaround";
 import type { VenueQuoteLine } from "@/features/venues/lib/venueQuotes";
@@ -93,9 +94,12 @@ export default function VenueHireOverviewPanel({
   onSelect,
 }: Props) {
   const span = hireSpan(bookings);
+  // hireSpan already drops cancelled bookings internally; the count and space
+  // list below need to agree with that, so they filter the same way.
+  const active = bookings.filter((booking) => booking.status !== "Cancelled");
   const spaceNames = [
     ...new Set(
-      bookings
+      active
         .map((entry) => spaces.find((room) => room.id === entry.space_id)?.name)
         .filter((name): name is string => Boolean(name))
     ),
@@ -107,12 +111,10 @@ export default function VenueHireOverviewPanel({
     money.charged > 0 ? Math.min(100, Math.max(0, (money.received / money.charged) * 100)) : 0;
   const overpaid = money.outstanding < 0;
 
-  const unfilled = positions.reduce(
-    (short, position) => short + unfilledCount(position, assignments),
-    0
-  );
+  const unfilled = unfilledTotal(positions, assignments);
   const safety = incidentSummary(incidents);
   const turnaround = turnaroundProgress(turnaroundTasks);
+  const debriefed = isDebriefStarted(hire);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -123,7 +125,7 @@ export default function VenueHireOverviewPanel({
               {formatDate(span.startsAt)} – {formatDate(span.endsAt)}
             </p>
             <p className="text-muted-foreground">
-              {plural(span.dayCount, "day")} · {plural(bookings.length, "booking")}
+              {plural(span.dayCount, "day")} · {plural(active.length, "booking")}
             </p>
             {spaceNames.length > 0 && <p className="text-muted-foreground">{spaceNames.join(", ")}</p>}
           </>
@@ -133,7 +135,7 @@ export default function VenueHireOverviewPanel({
       </OverviewCard>
 
       <OverviewCard title="Money" section="money" onSelect={onSelect}>
-        {lines.length === 0 ? (
+        {money.charged === 0 ? (
           <Empty>No quote lines yet.</Empty>
         ) : (
           <>
@@ -154,11 +156,7 @@ export default function VenueHireOverviewPanel({
             </p>
             <p className="text-muted-foreground">
               Quote {hire.quote_status.toLowerCase()} ·{" "}
-              {hire.contract_signed_on
-                ? "contract signed"
-                : hire.contract_clauses
-                  ? "contract unsigned"
-                  : "no contract yet"}
+              {hire.contract_signed_on ? "contract signed" : "contract unsigned"}
             </p>
           </>
         )}
@@ -184,7 +182,7 @@ export default function VenueHireOverviewPanel({
       <OverviewCard title="On the day" section="day" onSelect={onSelect}>
         {safety.open === 0 ? (
           <p className="text-muted-foreground">
-            No open incidents{safety.total > 0 ? ` · ${plural(safety.total, "resolved")}` : ""}.
+            No open incidents{safety.total > 0 ? ` · ${safety.total} resolved` : ""}.
           </p>
         ) : (
           <>
@@ -199,7 +197,7 @@ export default function VenueHireOverviewPanel({
       </OverviewCard>
 
       <OverviewCard title="Afterwards" section="after" onSelect={onSelect} className="sm:col-span-2">
-        {turnaround.total === 0 && !hire.debrief_completed_on ? (
+        {turnaround.total === 0 && !debriefed ? (
           <Empty>Nothing recorded yet.</Empty>
         ) : (
           <>
@@ -209,7 +207,7 @@ export default function VenueHireOverviewPanel({
                 : `${turnaround.done} of ${turnaround.total} turnaround tasks done`}
             </p>
             <p className="text-muted-foreground">
-              {hire.debrief_completed_on ? "Debrief written" : "No debrief yet"}
+              {debriefed ? "Debrief written" : "No debrief yet"}
             </p>
           </>
         )}

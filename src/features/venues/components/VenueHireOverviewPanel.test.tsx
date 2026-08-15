@@ -112,7 +112,7 @@ const line = (overrides: Partial<VenueQuoteLine> & { id: string }): VenueQuoteLi
   workspace_id: "workspace-1",
   hire_id: "hire-1",
   user_id: "user-1",
-  kind: "Space",
+  kind: "Venue",
   description: "Main Hall hire",
   quantity: 1,
   unit_price: 1200,
@@ -184,5 +184,48 @@ describe("VenueHireOverviewPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: /Money/i }));
 
     expect(onSelect).toHaveBeenCalledWith("money");
+  });
+
+  it("counts a written debrief as recorded, even with no turnaround tasks", () => {
+    render(
+      <VenueHireOverviewPanel
+        {...baseProps}
+        hire={hire({ debrief_notes: "Went smoothly, hirer happy." })}
+        turnaroundTasks={[]}
+        onSelect={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Debrief written/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing recorded yet/i)).not.toBeInTheDocument();
+  });
+
+  it("does not call a deposit-only quote settled", () => {
+    render(
+      <VenueHireOverviewPanel
+        {...baseProps}
+        lines={[line({ id: "line-1", kind: "Deposit", unit_price: 5000 })]}
+        payments={[]}
+        onSelect={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText(/settled/i)).not.toBeInTheDocument();
+  });
+
+  it("does not count a cancelled booking towards the booking total", () => {
+    render(
+      <VenueHireOverviewPanel
+        {...baseProps}
+        bookings={[
+          booking({ id: "booking-1", status: "Confirmed" }),
+          booking({ id: "booking-2", status: "Cancelled" }),
+        ]}
+        onSelect={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/1 booking/i)).toBeInTheDocument();
+    expect(screen.queryByText(/2 bookings/i)).not.toBeInTheDocument();
   });
 });

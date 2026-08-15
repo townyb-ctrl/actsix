@@ -30,7 +30,7 @@ import {
 import { signPlan } from "@/features/venues/lib/venueSignage";
 import { findClashes } from "@/features/venues/lib/venueClashes";
 import { paymentSummary } from "@/features/venues/lib/venuePayments";
-import { unfilledCount } from "@/features/venues/lib/venuePositions";
+import { unfilledTotal } from "@/features/venues/lib/venuePositions";
 import { incidentSummary } from "@/features/venues/lib/venueSafety";
 import { turnaroundProgress } from "@/features/venues/lib/venueTurnaround";
 import {
@@ -144,16 +144,16 @@ export default function VenueHireDetailPage() {
 
   const { hire, loading } = useVenueHire(hireId);
   const { bookings: hireBookings } = useHireBookings(hireId);
-  const { lines } = useQuoteLines(hireId);
+  const { lines, loading: linesLoading } = useQuoteLines(hireId);
   const { items: runSheetItems } = useRunSheet(hireId);
   const { roles: positionRoles } = usePositionRoles(workspace?.id);
-  const { positions } = usePositions(hireId);
+  const { positions, loading: positionsLoading } = usePositions(hireId);
   const { assignments } = usePositionAssignments(positions.map((position) => position.id));
   const { people } = usePositionPeople(workspace?.id);
-  const { payments } = usePayments(hireId);
-  const { tasks: turnaroundTasks } = useTurnaroundTasks(hireId);
+  const { payments, loading: paymentsLoading } = usePayments(hireId);
+  const { tasks: turnaroundTasks, loading: turnaroundLoading } = useTurnaroundTasks(hireId);
   const { walkthroughs } = useWalkthroughs(hireId);
-  const { incidents } = useIncidents(hireId);
+  const { incidents, loading: incidentsLoading } = useIncidents(hireId);
   const { contacts: hireContacts } = useHireContacts(hireId);
   const { signs } = useVenueSigns(workspace?.id);
   const { links: hireSignLinks } = useHireSigns(hireId);
@@ -220,7 +220,14 @@ export default function VenueHireDetailPage() {
     setPrinting(null);
   }, [printing]);
 
-  if (loading) {
+  if (
+    loading ||
+    linesLoading ||
+    paymentsLoading ||
+    positionsLoading ||
+    incidentsLoading ||
+    turnaroundLoading
+  ) {
     return (
       <div
         className="actsix-page-body grid min-w-0 gap-3 pt-8 lg:grid-cols-[12rem_minmax(0,1fr)_18rem]"
@@ -291,10 +298,7 @@ export default function VenueHireDetailPage() {
     {
       id: "plan" as const,
       name: "Plan",
-      attention: positions.reduce(
-        (short, position) => short + unfilledCount(position, assignments),
-        0
-      ),
+      attention: unfilledTotal(positions, assignments),
     },
     { id: "day" as const, name: "On the day", attention: incidentSummary(incidents).open },
     { id: "after" as const, name: "Afterwards", attention: turnaround.total - turnaround.done },

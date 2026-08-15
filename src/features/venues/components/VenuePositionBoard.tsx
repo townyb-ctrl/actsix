@@ -7,6 +7,7 @@ import {
   assignmentLabel,
   positionsByDay,
   unfilledCount,
+  unfilledTotal,
   type PositionPerson,
   type VenuePosition,
   type VenuePositionAssignment,
@@ -50,10 +51,7 @@ export default function VenuePositionBoard({
   const roleName = (roleId: string) =>
     roles.find((role) => role.id === roleId)?.name || "Unknown role";
 
-  const totalUnfilled = positions.reduce(
-    (total, position) => total + unfilledCount(position, assignments),
-    0
-  );
+  const totalUnfilled = unfilledTotal(positions, assignments);
 
   return (
     <Card>
