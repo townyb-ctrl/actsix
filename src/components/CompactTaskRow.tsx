@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { CalendarDays, Edit3, FolderKanban, RotateCcw, Trash2, UserRound } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
 import { dueToneClass, getDueTone } from "@/lib/dueDate";
 import type { RecurringFrequency } from "@/features/tasks/types/recurringTasks";
@@ -105,6 +107,7 @@ const CompactTaskRow = ({
   onDelete,
 }: CompactTaskRowProps) => {
   const { person: currentPerson } = useCurrentPerson();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   if (!task) return null;
 
@@ -280,20 +283,29 @@ const CompactTaskRow = ({
         )}
 
         {onDelete && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 max-sm:min-w-11 text-muted-foreground hover:text-destructive"
-            title={`Delete ${title}`}
-            aria-label={`Delete ${title}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              const confirmed = window.confirm(`Delete "${title}"? This can't be undone.`);
-              if (confirmed) onDelete(task);
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 max-sm:min-w-11 text-muted-foreground hover:text-destructive"
+              title={`Delete ${title}`}
+              aria-label={`Delete ${title}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                setConfirmDeleteOpen(true);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+            <ConfirmDialog
+              open={confirmDeleteOpen}
+              onOpenChange={setConfirmDeleteOpen}
+              title={`Delete "${title}"?`}
+              description="This will permanently delete this task. This action cannot be undone."
+              confirmLabel="Delete task"
+              onConfirm={() => onDelete(task)}
+            />
+          </>
         )}
       </div>
     </div>

@@ -63,13 +63,26 @@ export function QuickCaptureDialog({
           placeholder="What's on your mind?..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              e.preventDefault();
+              if (content.trim() && !isSubmitting) {
+                handleSubmit(e);
+              }
+            }
+          }}
           className="min-h-[120px] resize-none text-base"
           autoFocus
         />
         <div className="flex justify-between items-center pt-2">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Inbox className="w-4 h-4 mr-2" />
-            Saves to Inbox
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="flex items-center">
+              <Inbox className="w-4 h-4 mr-1.5" />
+              Saves to Inbox
+            </span>
+            <span className="hidden sm:inline-block text-xs bg-muted px-1.5 py-0.5 rounded border border-border text-muted-foreground font-mono">
+              ⌘Enter
+            </span>
           </div>
           <Button type="submit" disabled={!content.trim() || isSubmitting} className="min-w-[100px]">
             {isSubmitting ? (
