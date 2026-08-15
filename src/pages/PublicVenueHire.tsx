@@ -50,6 +50,13 @@ export default function PublicVenueHire() {
   const [signedBy, setSignedBy] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [answered, setAnswered] = useState<"Accepted" | "Declined" | null>(null);
+  /**
+   * Declining cannot be undone from this page - the link stops offering an
+   * answer once one is given. So it asks twice. Accepting is not double-checked:
+   * it is the expected path, it is what the hirer came here to do, and it is
+   * recoverable by phoning the office.
+   */
+  const [confirmingDecline, setConfirmingDecline] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -115,14 +122,39 @@ export default function PublicVenueHire() {
   const canAnswer = awaitingAnswer(payload);
 
   return (
-    <main className="mx-auto max-w-2xl space-y-8 px-4 py-10">
+    <main className={`mx-auto max-w-2xl space-y-8 px-4 py-10 ${canAnswer ? "pb-32" : ""}`}>
       <header className="space-y-1">
         <p className="label-eyebrow">{payload.workspace?.name || "Venue hire"}</p>
-        <h1 className="text-2xl font-semibold">{payload.hire.name}</h1>
+        {/* Tighter tracking as the type grows - letters read too far apart at display size. */}
+        <h1 className="text-2xl font-semibold tracking-[-0.02em]">{payload.hire.name}</h1>
         <p className="text-sm text-muted-foreground">
           For {payload.hire.hirer_name || "your organisation"}
         </p>
       </header>
+
+      {/*
+        The number and the ask, before the detail. Somebody opening this on a
+        phone wants to know what it costs and what is wanted of them; the
+        breakdown is for whoever goes looking.
+      */}
+      {balance.charged > 0 && (
+        <section className="rounded-lg border p-4">
+          <p className="label-eyebrow">Total</p>
+          <p className="text-3xl font-semibold tabular-nums tracking-[-0.02em]">
+            {formatCurrency(balance.charged)}
+          </p>
+          {balance.dueNow > 0 && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {formatCurrency(balance.dueNow)} deposit secures the date
+            </p>
+          )}
+          {canAnswer && (
+            <p className="mt-3 text-sm">
+              We need your answer before this booking is held.
+            </p>
+          )}
+        </section>
+      )}
 
       {answered && (
         <div className="flex items-start gap-2 rounded-lg border border-brand-sage/30 bg-brand-sage/10 p-3 text-sm">
@@ -212,8 +244,14 @@ export default function PublicVenueHire() {
       )}
 
       {canAnswer ? (
-        <section className="space-y-3 rounded-lg border p-4">
-          <h2 className="text-base font-semibold">Do you accept this quote?</h2>
+        <section
+          id="answer"
+          className="space-y-3 rounded-lg border p-4"
+          aria-labelledby="answer-heading"
+        >
+          <h2 id="answer-heading" className="text-base font-semibold">
+            Do you accept this quote?
+          </h2>
           <form className="space-y-3" onSubmit={(event) => respond(event, "Accepted")}>
             <div className="space-y-1">
               <Label htmlFor="signed-by">Your name</Label>
@@ -222,27 +260,63 @@ export default function PublicVenueHire() {
                 value={signedBy}
                 onChange={(event) => setSignedBy(event.target.value)}
                 placeholder="Who is agreeing to this"
+                autoComplete="name"
+                className="min-h-12 text-base"
               />
             </div>
 
-            {error && <p className="text-sm text-brand-danger">{error}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-brand-danger">
+                {error}
+              </p>
+            )}
 
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="actsix-btn-primary" disabled={submitting}>
+              <Button
+                type="submit"
+                className="actsix-btn-primary min-h-12 flex-1 transition active:scale-[0.98]"
+                disabled={submitting}
+              >
                 {submitting ? "Sending…" : "Accept"}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={submitting}
-                onClick={(event) => respond(event, "Declined")}
-              >
-                Decline
-              </Button>
+
+              {confirmingDecline ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="min-h-12 transition active:scale-[0.98]"
+                    disabled={submitting}
+                    onClick={(event) => respond(event, "Declined")}
+                  >
+                    Yes, decline
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-12"
+                    onClick={() => setConfirmingDecline(false)}
+                  >
+                    Keep it
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-12 transition active:scale-[0.98]"
+                  disabled={submitting}
+                  onClick={() => setConfirmingDecline(true)}
+                >
+                  Decline
+                </Button>
+              )}
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Typing your name records your agreement. A signed paper copy may still be requested.
+              {confirmingDecline
+                ? "Declining releases the dates. You cannot undo this here — call the office if you change your mind."
+                : "Typing your name records your agreement. A signed paper copy may still be requested."}
             </p>
           </form>
         </section>
@@ -253,6 +327,25 @@ export default function PublicVenueHire() {
             {payload.hire.contract_signed_on && ` on ${payload.hire.contract_signed_on}`}.
           </p>
         )
+      )}
+
+      {/*
+        A translucent bar the page scrolls under, rather than an opaque strip
+        that eats the bottom of the screen. It only jumps to the form - the
+        decision itself is still made in one place, so there is one Accept
+        button on the page, not two that could disagree.
+
+        Hidden once the form is on screen, so it never covers what it points at.
+      */}
+      {canAnswer && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/85 p-3 backdrop-blur-lg sm:hidden">
+          <a
+            href="#answer"
+            className="actsix-btn-primary flex min-h-12 items-center justify-center rounded-[var(--radius-control)] font-bold transition active:scale-[0.98]"
+          >
+            Answer this quote
+          </a>
+        </div>
       )}
     </main>
   );
