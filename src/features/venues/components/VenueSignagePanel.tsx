@@ -62,6 +62,9 @@ export default function VenueSignagePanel({
   const [checkoutResourceId, setCheckoutResourceId] = useState("");
   const [checkoutQuantity, setCheckoutQuantity] = useState("1");
   const [channels, setChannels] = useState(hire.walkie_channels);
+  /** Which check-out is being booked back in, and the condition note being typed. */
+  const [returningId, setReturningId] = useState<string | null>(null);
+  const [returnNote, setReturnNote] = useState("");
 
   const plan = signPlan(links, signs);
   const toPrint = printRunSize(plan);
@@ -286,16 +289,14 @@ export default function VenueSignagePanel({
                       {entry.condition_note && ` · ${entry.condition_note}`}
                     </span>
                   </span>
-                  {!entry.returned_at && (
+                  {!entry.returned_at && returningId !== entry.id && (
                     <Button
                       size="sm"
                       variant="outline"
+                      className="min-h-9 transition active:scale-[0.98]"
                       onClick={() => {
-                        const note = window.prompt("Any damage or notes? Leave blank if fine.", "");
-                        // A cancelled prompt means they changed their mind, so
-                        // nothing is booked back in.
-                        if (note === null) return;
-                        guard(returnResource(entry.id, note.trim()), "Could not book it back in");
+                        setReturningId(entry.id);
+                        setReturnNote("");
                       }}
                     >
                       Book in
@@ -303,6 +304,49 @@ export default function VenueSignagePanel({
                   )}
                 </li>
               ))}
+
+              {/*
+                Booking kit back in asks about its condition inline rather than
+                through window.prompt: a native prompt blocks the page, cannot
+                be styled or made legible on a phone, and gives no way to see
+                the item while typing about it.
+              */}
+              {returningId && (
+                <li className="rounded-[var(--radius-control)] border border-border/70 p-2.5">
+                  <label className="block space-y-1">
+                    <span className="label-eyebrow">
+                      Condition of {resourceName(
+                        checkouts.find((entry) => entry.id === returningId)?.resource_id || ""
+                      )}
+                    </span>
+                    <Input
+                      value={returnNote}
+                      onChange={(event) => setReturnNote(event.target.value)}
+                      placeholder="Leave blank if it is fine"
+                      autoFocus
+                    />
+                  </label>
+
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      size="sm"
+                      className="actsix-btn-primary transition active:scale-[0.98]"
+                      onClick={async () => {
+                        await guard(
+                          returnResource(returningId, returnNote.trim()),
+                          "Could not book it back in"
+                        );
+                        setReturningId(null);
+                      }}
+                    >
+                      Book in
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setReturningId(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </li>
+              )}
             </ul>
           )}
 

@@ -17,6 +17,7 @@ import {
   type VenueEnquiry,
   type VenueEnquiryStatus,
 } from "@/features/venues/lib/venueEnquiries";
+import VenueListSkeleton from "@/features/venues/components/VenueListSkeleton";
 
 type StatusFilter = "Open" | "All" | VenueEnquiryStatus;
 
@@ -105,7 +106,7 @@ export default function VenueEnquiriesPage() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading enquiries…</p>
+          <VenueListSkeleton />
         ) : visibleEnquiries.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">

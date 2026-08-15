@@ -14,6 +14,7 @@ import { useVenueResources } from "@/features/venues/api/venueResourcesQueries";
 import { formatCurrency } from "@/features/venues/lib/venueBookings";
 import type { VenueResource } from "@/features/venues/lib/venueResources";
 import VenueResourceEditorModal from "@/features/venues/components/VenueResourceEditorModal";
+import VenueListSkeleton from "@/features/venues/components/VenueListSkeleton";
 
 const UNCATEGORISED = "Uncategorised";
 
@@ -90,7 +91,7 @@ export default function VenueResourcesPage() {
 
       <div className="actsix-page-body actsix-page-stack">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading resources…</p>
+          <VenueListSkeleton />
         ) : resources.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">

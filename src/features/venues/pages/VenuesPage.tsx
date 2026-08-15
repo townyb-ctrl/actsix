@@ -15,6 +15,7 @@ import type { VenueBooking } from "@/features/venues/lib/venueBookings";
 import VenueBookingList from "@/features/venues/components/VenueBookingList";
 import VenueBookingModal from "@/features/venues/components/VenueBookingModal";
 import VenueCalendar from "@/features/venues/components/VenueCalendar";
+import VenueListSkeleton from "@/features/venues/components/VenueListSkeleton";
 
 type StatusFilter = "All" | "Pending" | "Confirmed" | "Cancelled";
 
@@ -183,7 +184,7 @@ export default function VenuesPage() {
             </div>
 
             {loading ? (
-              <p className="text-sm text-muted-foreground">Loading bookings…</p>
+              <VenueListSkeleton />
             ) : (
               <VenueBookingList
                 bookings={visibleBookings}

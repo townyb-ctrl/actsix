@@ -110,7 +110,12 @@ export default function VenueSignagePage() {
     refresh();
   };
 
-  const savePreset = async (preset: VenueAvPreset, payload: Partial<VenueAvPreset>) => {
+  const savePreset = async (
+    preset: VenueAvPreset,
+    payload: Partial<VenueAvPreset>,
+    /** Set for silent blur-saves, where nothing else tells the user it stuck. */
+    confirmation?: string
+  ) => {
     const { error } = await upsertAvPreset({
       presetId: preset.id,
       workspaceId: workspace?.id || "",
@@ -121,6 +126,7 @@ export default function VenueSignagePage() {
       toast.error("Could not update the preset", { description: error.message });
       return;
     }
+    if (confirmation) toast.success(confirmation);
     refresh();
   };
 
@@ -287,7 +293,7 @@ export default function VenueSignagePage() {
                       defaultValue={preset.routing}
                       onBlur={(event) => {
                         if (event.target.value === preset.routing) return;
-                        savePreset(preset, { routing: event.target.value.trim() });
+                        savePreset(preset, { routing: event.target.value.trim() }, "Routing saved");
                       }}
                       placeholder="Routing: what plugs into what"
                       className="mt-2 min-h-14 w-full rounded-[var(--radius-control)] border border-border/70 bg-background p-2 text-sm"
@@ -297,7 +303,10 @@ export default function VenueSignagePage() {
                       defaultValue={preset.changeover_steps}
                       onBlur={(event) => {
                         if (event.target.value === preset.changeover_steps) return;
-                        savePreset(preset, { changeover_steps: event.target.value.trim() });
+                        savePreset(preset,
+                          { changeover_steps: event.target.value.trim() },
+                          "Changeover steps saved"
+                        );
                       }}
                       placeholder="Changeover steps back to the Sunday setup"
                       className="mt-2 min-h-14 w-full rounded-[var(--radius-control)] border border-border/70 bg-background p-2 text-sm"

@@ -308,17 +308,19 @@ export default function VenueSafetyPanel({
             <ul className="space-y-2">
               {ordered.map((incident) => (
                 <li key={incident.id} className="flex items-start gap-2.5">
-                  <input
-                    type="checkbox"
-                    checked={incident.resolved}
-                    onChange={() => toggleResolved(incident)}
-                    aria-label={`Mark ${incident.summary} resolved`}
-                    className="mt-1 h-4 w-4 shrink-0"
-                  />
+                  <span className="-m-2 shrink-0 p-2">
+                    <input
+                      type="checkbox"
+                      checked={incident.resolved}
+                      onChange={() => toggleResolved(incident)}
+                      aria-label={`Mark ${incident.summary} resolved`}
+                      className="mt-1 h-5 w-5"
+                    />
+                  </span>
                   <button
                     type="button"
                     onClick={() => onEditIncident(incident)}
-                    className="flex-1 rounded px-1 py-0.5 text-left text-sm hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                    className="min-h-11 flex-1 rounded px-1 py-1 text-left text-sm transition hover:bg-muted/40 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                   >
                     <span
                       className={cn(

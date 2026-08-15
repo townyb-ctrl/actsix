@@ -96,18 +96,22 @@ export default function VenueTurnaroundPanel({
 
               return (
                 <li key={task.id} className="flex items-start gap-2.5">
-                  <input
-                    type="checkbox"
-                    checked={task.done}
-                    onChange={() => toggle(task)}
-                    aria-label={`Mark ${task.title} done`}
-                    className="mt-1 h-4 w-4 shrink-0"
-                  />
+                  {/* -m-2 p-2 gives the tick a finger-sized hit area without
+                      changing how the row looks. */}
+                  <span className="-m-2 shrink-0 p-2">
+                    <input
+                      type="checkbox"
+                      checked={task.done}
+                      onChange={() => toggle(task)}
+                      aria-label={`Mark ${task.title} done`}
+                      className="mt-1 h-5 w-5"
+                    />
+                  </span>
 
                   <button
                     type="button"
                     onClick={() => onEditTask(task)}
-                    className="flex-1 rounded px-1 py-0.5 text-left text-sm hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                    className="min-h-11 flex-1 rounded px-1 py-1 text-left text-sm transition hover:bg-muted/40 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                   >
                     <span className={cn("font-medium", task.done && "text-muted-foreground line-through")}>
                       {task.title}

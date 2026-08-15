@@ -90,7 +90,7 @@ export default function VenuePaymentsPanel({
                 <button
                   type="button"
                   onClick={() => onEditPayment(payment)}
-                  className="flex w-full flex-wrap items-center justify-between gap-2 rounded px-1 py-1 text-left text-sm hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                  className="flex min-h-11 w-full flex-wrap items-center justify-between gap-2 rounded px-1 py-1 text-left text-sm transition hover:bg-muted/40 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                 >
                   <span>
                     {formatDate(payment.paid_on)} · {payment.method}

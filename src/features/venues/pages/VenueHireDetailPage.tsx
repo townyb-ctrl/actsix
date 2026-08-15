@@ -83,6 +83,7 @@ import VenueSafetyPanel from "@/features/venues/components/VenueSafetyPanel";
 import VenueIncidentModal from "@/features/venues/components/VenueIncidentModal";
 import VenueSignagePanel from "@/features/venues/components/VenueSignagePanel";
 import VenueSignPrintSheet from "@/features/venues/components/VenueSignPrintSheet";
+import VenueListSkeleton from "@/features/venues/components/VenueListSkeleton";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -220,8 +221,25 @@ export default function VenueHireDetailPage() {
 
   if (loading) {
     return (
-      <div className="actsix-page-body pt-8">
-        <p className="text-sm text-muted-foreground">Loading hire…</p>
+      <div
+        className="actsix-page-body grid min-w-0 gap-3 pt-8 lg:grid-cols-[12rem_minmax(0,1fr)_18rem]"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <span className="sr-only">Loading the hire…</span>
+
+        {/* The real geometry, so nothing jumps when the hire lands. */}
+        <div className="space-y-1">
+          {[0, 1, 2, 3, 4].map((row) => (
+            <span key={row} className="st-skeleton block h-[42px] w-full" />
+          ))}
+        </div>
+
+        <VenueListSkeleton rows={2} />
+
+        <div className="space-y-3">
+          <VenueListSkeleton rows={2} />
+        </div>
       </div>
     );
   }

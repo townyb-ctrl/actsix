@@ -20,6 +20,7 @@ import {
 import { formatCurrency, type VenueSpace } from "@/features/venues/lib/venueBookings";
 import { resourcesForSpace } from "@/features/venues/lib/venueResources";
 import VenueSpaceEditorModal from "@/features/venues/components/VenueSpaceEditorModal";
+import VenueListSkeleton from "@/features/venues/components/VenueListSkeleton";
 
 export default function VenueSpacesPage() {
   const { user } = useAuth();
@@ -198,7 +199,7 @@ export default function VenueSpacesPage() {
         </Card>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading spaces…</p>
+          <VenueListSkeleton />
         ) : spaces.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">

@@ -14,6 +14,7 @@ import { useVenueHires } from "@/features/venues/api/venueHiresQueries";
 import { useVenueBookings } from "@/features/venues/api/venuesQueries";
 import { hireSpan, VENUE_HIRE_STATUSES, type VenueHireStatus } from "@/features/venues/lib/venueHires";
 import VenueHireEditorModal from "@/features/venues/components/VenueHireEditorModal";
+import VenueListSkeleton from "@/features/venues/components/VenueListSkeleton";
 
 type StatusFilter = "All" | VenueHireStatus;
 
@@ -98,7 +99,7 @@ export default function VenueHiresPage() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading hires…</p>
+          <VenueListSkeleton />
         ) : visibleHires.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">

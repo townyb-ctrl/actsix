@@ -182,9 +182,14 @@ export default function VenueWalkthroughPanel({
 
               <textarea
                 defaultValue={row.condition_notes}
-                onBlur={(event) => {
+                onBlur={async (event) => {
+                  // Blur-saving is invisible, so say it landed. Only when the
+                  // text actually changed - a toast on every focus loss is noise.
                   if (event.target.value === row.condition_notes) return;
-                  updateRow(row, { condition_notes: event.target.value.trim() });
+                  const saved = await updateRow(row, {
+                    condition_notes: event.target.value.trim(),
+                  });
+                  if (saved) toast.success("Notes saved");
                 }}
                 placeholder="What state is it in"
                 className="mt-2 min-h-14 w-full rounded-[var(--radius-control)] border border-border/70 bg-background p-2 text-sm"
