@@ -86,6 +86,12 @@ something a human sends.
 - `cloneHire` is sequential inserts with no transaction — PostgREST has none
   client-side. A mid-way failure leaves a partial draft; the UI says so and
   navigates to it. Marked with a `ponytail:` comment.
+- Supabase's default privileges grant `execute` on every new function in
+  `public` to `anon` by name. `revoke all ... from public` does **not** remove
+  that grant - a role that must be excluded has to be revoked by name. Found on
+  2026-08-15 when `new_venue_portal_token` came back anon-callable; fixed in
+  `20260815120000_restrict_portal_token_function.sql`. Worth checking on any
+  future function that is meant to be staff-only.
 - The portal token has no rate limit on lookup. It is 256 bits of entropy behind
   a `security definer` function, but a determined caller can hammer the endpoint.
 - Generated Supabase types (`src/integrations/supabase/types.ts`) still cover no

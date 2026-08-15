@@ -197,5 +197,10 @@ revoke all on function public.respond_to_venue_quote(text, text, text) from publ
 grant execute on function public.get_venue_hire_portal(text) to anon, authenticated;
 grant execute on function public.respond_to_venue_quote(text, text, text) to anon, authenticated;
 -- Token minting stays with signed-in staff; anon has no reason to call it.
+--
+-- anon is revoked by name, not just via PUBLIC. Supabase's default privileges
+-- grant execute on new functions in `public` to anon directly, and revoking
+-- PUBLIC does not touch that separate grant.
 revoke all on function public.new_venue_portal_token() from public;
+revoke all on function public.new_venue_portal_token() from anon;
 grant execute on function public.new_venue_portal_token() to authenticated;
