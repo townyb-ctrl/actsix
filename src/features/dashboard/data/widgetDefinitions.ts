@@ -9,6 +9,7 @@ import { TodaysTasksWidget } from "@/features/dashboard/components/widgets/Today
 import { UpcomingMeetingsWidget } from "@/features/dashboard/components/widgets/UpcomingMeetingsWidget";
 import { UpcomingServicesWidget } from "@/features/dashboard/components/widgets/UpcomingServicesWidget";
 import { UpcomingTasksWidget } from "@/features/dashboard/components/widgets/UpcomingTasksWidget";
+import { VenueTodayWidget } from "@/features/dashboard/components/widgets/VenueTodayWidget";
 
 export const widgetDefinitions: DashboardWidgetDefinition[] = [
   {
@@ -91,6 +92,15 @@ export const widgetDefinitions: DashboardWidgetDefinition[] = [
     description: "A lightweight feed from current dashboard data.",
     defaultSize: "medium",
     component: RecentActivityWidget,
+  },
+  {
+    id: "venue-today",
+    title: "Venue Today",
+    subtitle: "Who has the building",
+    category: "Events",
+    description: "Hires happening today, with a way into the event-day view.",
+    defaultSize: "medium",
+    component: VenueTodayWidget,
   },
   {
     id: "notes",
