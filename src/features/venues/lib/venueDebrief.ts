@@ -4,8 +4,10 @@ import type { VenueQuoteLine } from "@/features/venues/lib/venueQuotes";
 export type HireOutcome = {
   /** What the quote said the hire costs. */
   charged: number;
-  /** What actually arrived, refunds already deducted. */
+  /** What actually arrived. */
   received: number;
+  /** What went back to the hirer, as a positive number. */
+  refunded: number;
   /** Still owed. Negative means they overpaid and are owed money back. */
   outstanding: number;
   /** Bond money still held, before any damage is taken out of it. */
@@ -35,8 +37,8 @@ const fromCents = (cents: number) => cents / 100;
  * surfaced as `unrecoveredDamage` rather than being hidden in the net, because
  * somebody has to decide whether to chase it.
  *
- * Bond money is never counted as income - `net` is what was received for the
- * hire, less the repair cost.
+ * Bond money is never counted as income - `net` is what was kept: receipts,
+ * less anything refunded, less the repair cost.
  */
 export const hireOutcome = (
   lines: VenueQuoteLine[],
@@ -54,12 +56,13 @@ export const hireOutcome = (
   return {
     charged: money.charged,
     received: money.received,
+    refunded: money.refunded,
     outstanding: money.outstanding,
     bondHeld: money.bondHeld,
     damageCost: fromCents(damageCents),
     bondToReturn: fromCents(bondToReturnCents),
     unrecoveredDamage: fromCents(unrecoveredCents),
-    net: fromCents(toCents(money.received) - damageCents),
+    net: fromCents(toCents(money.received) - toCents(money.refunded) - damageCents),
   };
 };
 

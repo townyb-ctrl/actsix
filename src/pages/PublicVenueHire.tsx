@@ -138,6 +138,18 @@ export default function PublicVenueHire() {
       </header>
 
       {/*
+        The venue talking to whoever holds this link: where to load in, which
+        door is open, who has the keys. It sits above the money because it is
+        the part they have to act on.
+      */}
+      {payload.hire.hirer_notes?.trim() && (
+        <section className="border-l-[3px] border-brand-teal/60 bg-muted/40 py-3 pl-4 pr-3">
+          <p className="label-eyebrow">From {payload.workspace?.name || "the venue"}</p>
+          <p className="mt-1.5 whitespace-pre-wrap text-sm">{payload.hire.hirer_notes}</p>
+        </section>
+      )}
+
+      {/*
         The number and the ask, before the detail. Somebody opening this on a
         phone wants to know what it costs and what is wanted of them; the
         breakdown is for whoever goes looking.

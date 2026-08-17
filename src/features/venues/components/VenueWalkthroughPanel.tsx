@@ -4,7 +4,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   deleteWalkthrough,
   upsertWalkthrough,
@@ -106,27 +105,28 @@ export default function VenueWalkthroughPanel({
   };
 
   const renderRows = (rows: VenueWalkthrough[], phase: VenueWalkthroughPhase) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="label-eyebrow">{phase === "Before" ? "Before they arrive" : "After they leave"}</span>
-        <Button size="sm" variant="ghost" onClick={() => addWalkthrough(phase)}>
+    <div>
+      <div className="flex items-center justify-between gap-2 border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
+        <h3 className="label-eyebrow">
+          {phase === "Before" ? "Before they arrive" : "After they leave"}
+        </h3>
+        <Button size="sm" variant="ghost" className="min-h-9" onClick={() => addWalkthrough(phase)}>
           <Plus className="h-4 w-4" />
           Add
         </Button>
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing recorded.</p>
+        <p className="px-4 py-4 text-sm text-muted-foreground">Nothing recorded.</p>
       ) : (
-        <ul className="space-y-2">
+        <>
           {rows.map((row) => (
-            <li key={row.id} className="rounded-[var(--radius-control)] border border-border/70 p-2.5">
+            <div key={row.id} className="action-row">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="text-sm">
-                  <span className="font-medium">{spaceName(row.space_id)}</span>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    · {formatWhen(row.walked_at)}
+                <div className="min-w-0">
+                  <span className="text-sm font-semibold">{spaceName(row.space_id)}</span>
+                  <span className="ml-2 font-mono text-xs tabular-nums text-muted-foreground">
+                    {formatWhen(row.walked_at)}
                     {row.walked_by && ` · ${row.walked_by}`}
                   </span>
                 </div>
@@ -209,33 +209,33 @@ export default function VenueWalkthroughPanel({
                   ))}
                 </div>
               )}
-            </li>
+            </div>
           ))}
-        </ul>
+        </>
       )}
     </div>
   );
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-base">Condition walkthrough</CardTitle>
+    <section className="st-panel" aria-labelledby="walkthrough-heading">
+      <div className="st-panel-head">
+        <h2 className="st-panel-title" id="walkthrough-heading">
+          Condition walkthrough
+        </h2>
         <Badge variant={coverage.bothEndsCaptured ? "default" : "secondary"}>
           {coverage.bothEndsCaptured
             ? `Both ends · ${coverage.photoCount} ${coverage.photoCount === 1 ? "photo" : "photos"}`
             : "Incomplete"}
         </Badge>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          A bond argument needs both ends. Walk the rooms before they arrive and again after they
-          leave, and photograph anything that matters.
-        </p>
+      <p className="px-4 py-3 text-sm text-muted-foreground">
+        A bond argument needs both ends. Walk the rooms before they arrive and again after they
+        leave, and photograph anything that matters.
+      </p>
 
-        {renderRows(coverage.before, "Before")}
-        <div className="border-t pt-3">{renderRows(coverage.after, "After")}</div>
-      </CardContent>
-    </Card>
+      {renderRows(coverage.before, "Before")}
+      {renderRows(coverage.after, "After")}
+    </section>
   );
 }

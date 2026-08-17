@@ -2,7 +2,6 @@ import { Plus, Printer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VenueSpace } from "@/features/venues/lib/venueBookings";
 import { runSheetByDay, type VenueRunSheetItem } from "@/features/venues/lib/venueRunSheet";
 
@@ -27,13 +26,19 @@ const formatDayHeading = (day: string) => {
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", hour12: false });
 
-const DetailLine = ({ label, value }: { label: string; value: string }) =>
-  value ? (
-    <p className="text-sm">
-      <span className="text-muted-foreground">{label}: </span>
-      {value}
-    </p>
-  ) : null;
+/**
+ * The three note fields, folded into one line. On a run sheet somebody is
+ * holding while the doors open, four stacked labelled lines per slot is a wall;
+ * the detail that matters is what to do, and it opens on click.
+ */
+const notesSummary = (item: VenueRunSheetItem) =>
+  [
+    item.setup_notes && `Setup: ${item.setup_notes}`,
+    item.av_notes && `AV: ${item.av_notes}`,
+    item.access_notes && `Access: ${item.access_notes}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
 export default function VenueRunSheetPanel({
   items,
@@ -47,75 +52,94 @@ export default function VenueRunSheetPanel({
     spaceId ? spaces.find((space) => space.id === spaceId)?.name || "Unknown space" : "Whole venue";
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-base">Run sheet</CardTitle>
+    <section className="st-panel" aria-labelledby="run-sheet-heading">
+      <div className="st-panel-head">
+        <h2 className="st-panel-title" id="run-sheet-heading">
+          Run sheet
+        </h2>
 
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={onPrint} disabled={items.length === 0}>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="st-tally">{items.length}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="min-h-9"
+            onClick={onPrint}
+            disabled={items.length === 0}
+          >
             <Printer className="h-4 w-4" />
             Print
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onAddItem()}>
+          <Button size="sm" variant="ghost" className="min-h-9" onClick={() => onAddItem()}>
             <Plus className="h-4 w-4" />
             Add item
           </Button>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-5">
-        {days.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nothing on the run sheet yet. Add each slot — setup, registration, the event itself,
-            teardown — with what it needs and who can get where.
-          </p>
-        ) : (
-          days.map(({ day, items: dayItems }) => (
-            <section key={day} className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="label-eyebrow">{formatDayHeading(day)}</h3>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => onAddItem(dayItems[0]?.starts_at)}
+      {days.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+          Nothing on the run sheet yet. Add each slot: setup, registration, the event itself,
+          teardown, with what it needs and who can get where.
+        </p>
+      ) : (
+        days.map(({ day, items: dayItems }) => (
+          <div key={day}>
+            <div className="flex items-center justify-between gap-2 border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
+              <h3 className="label-eyebrow">{formatDayHeading(day)}</h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="min-h-9 px-2 text-xs"
+                onClick={() => onAddItem(dayItems[0]?.starts_at)}
+              >
+                <Plus className="h-3 w-3" />
+                Add to this day
+              </Button>
+            </div>
+
+            {dayItems.map((item) => {
+              const notes = notesSummary(item);
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onEditItem(item)}
+                  className="action-row flex w-full items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-teal/40"
                 >
-                  <Plus className="h-3 w-3" />
-                  Add to this day
-                </Button>
-              </div>
+                  {/* Times run down one column: a run sheet is read by scanning
+                      the clock, not the titles. */}
+                  <span className="w-24 shrink-0 font-mono text-xs tabular-nums">
+                    {formatTime(item.starts_at)}
+                    <span className="block text-muted-foreground">{formatTime(item.ends_at)}</span>
+                  </span>
 
-              <div className="space-y-2">
-                {dayItems.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onEditItem(item)}
-                    className="block w-full space-y-1 rounded-[0.75rem] border border-border/70 px-3 py-2 text-left transition hover:border-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold tabular-nums">
-                        {formatTime(item.starts_at)}–{formatTime(item.ends_at)}
-                      </span>
-                      <span className="font-medium">{item.title}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-sm font-semibold">{item.title}</span>
                       <Badge variant="outline" className="font-normal">
                         {spaceName(item.space_id)}
                       </Badge>
-                    </div>
+                    </span>
 
-                    <DetailLine label="Setup" value={item.setup_notes} />
-                    <DetailLine label="AV" value={item.av_notes} />
-                    <DetailLine label="Access" value={item.access_notes} />
-                    {item.risk_notes && (
-                      <p className="text-sm text-brand-danger">{item.risk_notes}</p>
+                    {notes && (
+                      <span className="mt-1 block truncate text-xs text-muted-foreground">
+                        {notes}
+                      </span>
                     )}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))
-        )}
-      </CardContent>
-    </Card>
+                    {item.risk_notes && (
+                      <span className="mt-1 block truncate text-xs font-medium text-brand-danger">
+                        {item.risk_notes}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))
+      )}
+    </section>
   );
 }

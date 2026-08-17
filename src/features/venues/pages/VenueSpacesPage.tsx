@@ -199,7 +199,7 @@ export default function VenueSpacesPage() {
         </Card>
 
         {loading ? (
-          <VenueListSkeleton />
+          <VenueListSkeleton shape="row" />
         ) : spaces.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
@@ -221,56 +221,65 @@ export default function VenueSpacesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {spaces.map((space) => (
-              <Card key={space.id} className={space.is_active ? "" : "opacity-60"}>
-                {space.photo_urls?.[0] && (
-                  <img
-                    src={space.photo_urls[0]}
-                    alt=""
-                    className="h-32 w-full rounded-t-[1rem] object-cover"
-                  />
-                )}
-                <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
-                  <CardTitle className="text-base">{space.name}</CardTitle>
-                  {!space.is_active && <Badge variant="secondary">Inactive</Badge>}
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  {space.description && <p className="text-muted-foreground">{space.description}</p>}
-                  <dl className="space-y-1 text-muted-foreground">
-                    {space.capacity != null && (
-                      <div className="flex justify-between">
-                        <dt>Capacity</dt>
-                        <dd>{space.capacity}</dd>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <dt>Hourly hire</dt>
-                      <dd>{formatCurrency(space.hourly_rate)}</dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt>Daily hire</dt>
-                      <dd>{formatCurrency(space.daily_rate)}</dd>
-                    </div>
-                  </dl>
-                  {(() => {
-                    const spaceResourceList = resourcesForSpace(space.id, spaceResources, resources);
-                    if (spaceResourceList.length === 0) return null;
+          <Card className="actsix-panel st-list">
+            {/* Rates are the reason this page gets opened, so they run in one
+                mono column down the list instead of hiding inside each card. */}
+            {spaces.map((space) => {
+              const spaceResourceList = resourcesForSpace(space.id, spaceResources, resources);
 
-                    return (
-                      <div className="flex flex-wrap gap-1">
-                        {spaceResourceList.map(({ resource, quantity }) => (
-                          <Badge key={resource.id} variant="outline" className="font-normal">
-                            {resource.name}
-                            {quantity > 1 ? ` ×${quantity}` : ""}
-                          </Badge>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                  <div className="flex gap-2 pt-2">
+              return (
+                <div
+                  key={space.id}
+                  className={`action-row flex flex-wrap items-center gap-3 sm:flex-nowrap ${
+                    space.is_active ? "" : "opacity-60"
+                  }`}
+                >
+                  {space.photo_urls?.[0] && (
+                    <img
+                      src={space.photo_urls[0]}
+                      alt=""
+                      loading="lazy"
+                      className="h-10 w-10 shrink-0 rounded-md object-cover"
+                    />
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-semibold">{space.name}</p>
+                      {!space.is_active && <Badge variant="secondary">Inactive</Badge>}
+                      {space.capacity != null && (
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                          seats {space.capacity}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {space.description ||
+                        (spaceResourceList.length > 0
+                          ? spaceResourceList
+                              .map(
+                                ({ resource, quantity }) =>
+                                  `${resource.name}${quantity > 1 ? ` ×${quantity}` : ""}`
+                              )
+                              .join(", ")
+                          : "No description yet")}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <span className="block font-mono text-xs tabular-nums">
+                      {formatCurrency(space.hourly_rate)}
+                      <span className="text-muted-foreground"> /hr</span>
+                    </span>
+                    <span className="mt-0.5 block font-mono text-xs tabular-nums text-muted-foreground">
+                      {formatCurrency(space.daily_rate)} /day
+                    </span>
+                  </div>
+
+                  <div className="flex shrink-0 gap-1">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => {
                         setEditingSpace(space);
@@ -283,10 +292,10 @@ export default function VenueSpacesPage() {
                       {space.is_active ? "Deactivate" : "Reactivate"}
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                </div>
+              );
+            })}
+          </Card>
         )}
       </div>
 

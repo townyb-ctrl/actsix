@@ -12,6 +12,12 @@ export type PortalPayload = {
     contract_signed_on: string | null;
     contract_signed_by: string;
     hirer_name: string;
+    /**
+     * Written for the hirer to read. Optional on the type because a workspace
+     * whose database has not taken the hirer_notes migration yet still returns
+     * a payload without it, and their page must not fall over for that.
+     */
+    hirer_notes?: string;
   };
   workspace: { name: string } | null;
   bookings: {

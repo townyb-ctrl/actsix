@@ -184,7 +184,7 @@ export default function VenuesPage() {
             </div>
 
             {loading ? (
-              <VenueListSkeleton />
+              <VenueListSkeleton shape="row" />
             ) : (
               <VenueBookingList
                 bookings={visibleBookings}

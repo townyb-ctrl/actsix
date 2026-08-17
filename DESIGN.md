@@ -14,7 +14,7 @@ colors:
   line-strong: "#C6C0B3"
   ink: "#1A1A16"
   ink-2: "#55534B"
-  ink-3: "#7E7C72"
+  ink-3: "#6E6C63"
   track: "#E7E3DA"
   amber: "#9A6410"
   rose: "#A8402F"
@@ -99,7 +99,8 @@ A dark build is a sibling token block away — the token layer was structured fo
 - **Panel** (`#FFFFFF`): raised surfaces. White signals elevation, not "default".
 - **Panel Hi** (`#FAF8F4`): row hover.
 - **Line / Line Soft / Line Strong** (`#DED9CF` / `#ECEAE3` / `#C6C0B3`): panel borders, row dividers, hover borders — in that order of strength.
-- **Ink / Ink-2 / Ink-3** (`#1A1A16` / `#55534B` / `#7E7C72`): primary text, secondary, muted.
+- **Ink / Ink-2 / Ink-3** (`#1A1A16` / `#55534B` / `#6E6C63`): primary text, secondary, muted. Ink-3 was `#7E7C72` until it was measured: 4.19:1 on panel and 3.74:1 on ground, a fail at every size the app uses it. It carries most of the muted body text in the product, so the token moved rather than the markup.
+- **Space colours** (`--st-space-1` … `--st-space-8`): categorical only, for telling one room from another on the calendar. Each is dark enough to carry white 10px type (5.7:1 to 8.6:1); the stock Tailwind hues they replaced ran 2.9:1. Legacy values are translated on read in `venueSpaceColors.ts`, so old rows adopt the palette without a migration.
 - **Amber** (`#9A6410`) / **Rose** (`#A8402F`) / **Green** (`#3F7A46`): due today, overdue/destructive, complete. Status meaning only — never decorative.
 
 **The One-Teal Rule.** Studio originally ran a lighter teal on paper and a deeper one on the rail. Two teals meant every element had to ask which surface it sat on, and half of them answered wrong. There is now one brand teal — `#123F3C`, the rail — used for buttons, links, active pills, focus rings, meters, everything on ground or panel.

@@ -2,7 +2,6 @@ import { Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, type VenueBooking, type VenueSpace } from "@/features/venues/lib/venueBookings";
 import { bookingsByDay } from "@/features/venues/lib/venueHires";
 
@@ -38,60 +37,68 @@ export default function VenueHireDaysPanel({
     spaces.find((space) => space.id === spaceId)?.name || "Unknown space";
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-base">Spaces &amp; days</CardTitle>
-        <Button size="sm" variant="outline" onClick={onAddBooking}>
-          <Plus className="h-4 w-4" />
-          Add a space or day
-        </Button>
-      </CardHeader>
+    <section className="st-panel" aria-labelledby="hire-days-heading">
+      <div className="st-panel-head">
+        <h2 className="st-panel-title" id="hire-days-heading">
+          Spaces &amp; days
+        </h2>
 
-      <CardContent className="space-y-4">
-        {days.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nothing booked yet. Add the spaces and days this hire needs — setup, the event itself,
-            and pack-down are usually separate.
-          </p>
-        ) : (
-          days.map(({ day, bookings: dayBookings }) => (
-            <section key={day} className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="st-tally">{bookings.length}</span>
+          <Button size="sm" variant="ghost" className="min-h-9" onClick={onAddBooking}>
+            <Plus className="h-4 w-4" />
+            Add a space or day
+          </Button>
+        </div>
+      </div>
+
+      {days.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+          Nothing booked yet. Add the spaces and days this hire needs: setup, the event itself, and
+          pack-down are usually separate.
+        </p>
+      ) : (
+        days.map(({ day, bookings: dayBookings }) => (
+          <div key={day}>
+            {/* The day is a header on the list, not a card around it - one
+                divider per group, and the times below stay in one column. */}
+            <div className="flex items-center justify-between border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
               <h3 className="label-eyebrow">{formatDayHeading(day)}</h3>
+              <span className="st-tally">{dayBookings.length}</span>
+            </div>
 
-              <div className="space-y-2">
-                {dayBookings.map((booking) => (
-                  <button
-                    key={booking.id}
-                    type="button"
-                    onClick={() => onEditBooking(booking)}
-                    className="flex w-full flex-wrap items-center justify-between gap-3 rounded-[0.75rem] border border-border/70 px-3 py-2 text-left transition hover:border-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">{booking.title}</p>
-                        {booking.status === "Cancelled" && (
-                          <Badge variant="outline">Cancelled</Badge>
-                        )}
-                        {booking.status === "Pending" && <Badge variant="secondary">Pending</Badge>}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {spaceName(booking.space_id)} · {formatTime(booking.starts_at)}–
-                        {formatTime(booking.ends_at)}
-                      </p>
-                    </div>
+            {dayBookings.map((booking) => (
+              <button
+                key={booking.id}
+                type="button"
+                onClick={() => onEditBooking(booking)}
+                className="action-row flex w-full items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-teal/40"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="truncate text-sm font-semibold">{booking.title}</span>
+                    {booking.status === "Cancelled" && <Badge variant="outline">Cancelled</Badge>}
+                    {booking.status === "Pending" && <Badge variant="secondary">Pending</Badge>}
+                  </span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">
+                    {spaceName(booking.space_id)}
+                  </span>
+                </span>
 
-                    {booking.booking_type === "external" && booking.quoted_fee > 0 && (
-                      <span className="text-sm text-muted-foreground">
-                        {formatCurrency(booking.quoted_fee)}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))
-        )}
-      </CardContent>
-    </Card>
+                <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                  {formatTime(booking.starts_at)}–{formatTime(booking.ends_at)}
+                </span>
+
+                {booking.booking_type === "external" && booking.quoted_fee > 0 && (
+                  <span className="w-24 shrink-0 text-right font-mono text-xs tabular-nums">
+                    {formatCurrency(booking.quoted_fee)}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        ))
+      )}
+    </section>
   );
 }

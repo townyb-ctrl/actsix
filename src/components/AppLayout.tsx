@@ -196,7 +196,17 @@ export default function AppLayout() {
     );
   }
 
-  if (!workspace) return <Navigate to="/workspace-setup" replace state={{ from: location.pathname }} />;
+  // pathname + search, not pathname alone: a detail page keeps its state in the
+  // query string, so dropping it sent people back to the top of a page they
+  // were already deep inside.
+  if (!workspace)
+    return (
+      <Navigate
+        to="/workspace-setup"
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    );
 
   const activateRouteModule = async () => {
     setActivatingModule(routeModuleKey);

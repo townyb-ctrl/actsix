@@ -838,7 +838,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     --st-line-strong: #c6c0b3;
     --st-ink: #1a1a16;
     --st-ink-2: #55534b;
-    --st-ink-3: #7e7c72;
+    /* Was #7e7c72, which measured 4.19:1 on panel and 3.74:1 on ground - a fail
+       at every size we use it. This still reads as the third, quietest ink
+       (5.27:1 on panel, 4.71:1 on ground) without becoming ink-2. */
+    --st-ink-3: #6e6c63;
     /* The accent IS the rail. Studio ran a lighter teal (#0f766e) on paper and a
        deeper one (#123f3c) on the sidebar; two teals meant every element had to
        ask which surface it sat on, and half of them guessed wrong. One color now:
@@ -859,6 +862,20 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     --st-rose-wash: rgba(168, 64, 47, 0.12);
     --st-green: #3f7a46;
 
+    /* Categorical space colours. Identity only - they say which room, never
+       whether something is wrong, so they stay under the accent rather than
+       competing with it. Each one carries white 10px type on the calendar, so
+       each is dark enough to clear 4.5:1 against white (5.7 to 8.6). The stock
+       Tailwind hues they replaced ran 2.9 to 3.1 and failed at every size. */
+    --st-space-1: #2c7169;
+    --st-space-2: #55613f;
+    --st-space-3: #8a4a38;
+    --st-space-4: #3e4a73;
+    --st-space-5: #6a3e5c;
+    --st-space-6: #7a5424;
+    --st-space-7: #4a5157;
+    --st-space-8: #3f6b4f;
+
     --st-r-ctl: 8px;
     --st-r-panel: 14px;
 
@@ -878,7 +895,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
     --secondary: 41 21% 88%;
     --secondary-foreground: 60 8% 9%;
     --muted: 41 21% 88%;
-    --muted-foreground: 50 5% 47%;
+    /* Ink-3, in the legacy HSL channel every shadcn primitive reads. Kept in
+       step with --st-ink-3 or half the app fails contrast and the other half
+       passes. */
+    --muted-foreground: 49 5% 41%;
     --accent: 176 22% 92%;
     --accent-foreground: 176 56% 16%;
     --destructive: 8 56% 42%;

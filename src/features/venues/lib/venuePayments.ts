@@ -28,6 +28,13 @@ export type PaymentSummary = {
   received: number;
   /** Still owed. Negative means they have overpaid. */
   outstanding: number;
+  /**
+   * Money that went back to the hirer, as a positive number. Refunds are
+   * recorded as negative payments, and netting them into `received` produced
+   * "-R 600,00 paid" on every surface that reads this - which looks like a data
+   * fault rather than a refund.
+   */
+  refunded: number;
   /** Bond money held, which is owed back and is never income. */
   bondHeld: number;
   isSettled: boolean;
@@ -55,6 +62,7 @@ export const paymentSummary = (
   const chargedCents = toCents(quoteTotals(lines).charges);
 
   let receivedCents = 0;
+  let refundedCents = 0;
   let bondCents = 0;
 
   for (const payment of payments) {
@@ -62,14 +70,22 @@ export const paymentSummary = (
       bondCents += toCents(payment.amount);
       continue;
     }
-    receivedCents += toCents(payment.amount);
+
+    const cents = toCents(payment.amount);
+    if (cents < 0) {
+      refundedCents += -cents;
+      continue;
+    }
+    receivedCents += cents;
   }
 
-  const outstandingCents = chargedCents - receivedCents;
+  // What is owed still nets the two: a refund puts money back on the bill.
+  const outstandingCents = chargedCents - receivedCents + refundedCents;
 
   return {
     charged: fromCents(chargedCents),
     received: fromCents(receivedCents),
+    refunded: fromCents(refundedCents),
     outstanding: fromCents(outstandingCents),
     bondHeld: fromCents(bondCents),
     isSettled: outstandingCents <= 0,

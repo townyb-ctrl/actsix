@@ -2,7 +2,6 @@ import { Plus, UserMinus, UserPlus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   assignmentLabel,
   positionsByDay,
@@ -54,10 +53,12 @@ export default function VenuePositionBoard({
   const totalUnfilled = unfilledTotal(positions, assignments);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+    <section className="st-panel" aria-labelledby="positions-heading">
+      <div className="st-panel-head">
         <div className="flex flex-wrap items-center gap-2">
-          <CardTitle className="text-base">Positions</CardTitle>
+          <h2 className="st-panel-title" id="positions-heading">
+            Positions
+          </h2>
           {positions.length > 0 && (
             <Badge variant={totalUnfilled > 0 ? "secondary" : "default"}>
               {totalUnfilled > 0 ? `${totalUnfilled} still to fill` : "Fully staffed"}
@@ -65,112 +66,114 @@ export default function VenuePositionBoard({
           )}
         </div>
 
-        <Button size="sm" variant="outline" onClick={() => onAddPosition()}>
+        <Button size="sm" variant="ghost" className="min-h-9" onClick={() => onAddPosition()}>
           <Plus className="h-4 w-4" />
           Add position
         </Button>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-5">
-        {days.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No positions yet. Add the roles this event needs — opener, tech, ops, car guards,
-            cleaner, closer — and who is on each.
-          </p>
-        ) : (
-          days.map(({ day, positions: dayPositions }) => (
-            <section key={day} className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="label-eyebrow">{formatDayHeading(day)}</h3>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => onAddPosition(dayPositions[0]?.starts_at)}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add to this day
-                </Button>
-              </div>
+      {days.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+          No positions yet. Add the roles this event needs: opener, tech, ops, car guards, cleaner,
+          closer, and who is on each.
+        </p>
+      ) : (
+        days.map(({ day, positions: dayPositions }) => (
+          <div key={day}>
+            <div className="flex items-center justify-between gap-2 border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
+              <h3 className="label-eyebrow">{formatDayHeading(day)}</h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="min-h-9 px-2 text-xs"
+                onClick={() => onAddPosition(dayPositions[0]?.starts_at)}
+              >
+                <Plus className="h-3 w-3" />
+                Add to this day
+              </Button>
+            </div>
 
-              <div className="space-y-2">
-                {dayPositions.map((position) => {
-                  const filledBy = assignments.filter(
-                    (entry) => entry.position_id === position.id
-                  );
-                  const short = unfilledCount(position, assignments);
+            {dayPositions.map((position) => {
+              const filledBy = assignments.filter((entry) => entry.position_id === position.id);
+              const short = unfilledCount(position, assignments);
+              const role = roleName(position.role_id);
+              const time = `${formatTime(position.starts_at)}–${formatTime(position.ends_at)}`;
 
-                  return (
-                    <div
-                      key={position.id}
-                      className="space-y-2 rounded-[0.75rem] border border-border/70 px-3 py-2"
+              return (
+                <div key={position.id}>
+                  <div className="action-row flex items-center gap-3">
+                    {/* aria-label rather than relying on the child text: the
+                        role and the time ran together as "Operations07:00". */}
+                    <button
+                      type="button"
+                      onClick={() => onEditPosition(position)}
+                      aria-label={`${role}, ${time}. Edit this position.`}
+                      className="min-h-11 min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onEditPosition(position)}
-                          className="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
-                        >
-                          <span className="font-medium">{roleName(position.role_id)}</span>
-                          <span className="ml-2 text-sm tabular-nums text-muted-foreground">
-                            {formatTime(position.starts_at)}–{formatTime(position.ends_at)}
-                          </span>
-                          {position.notes && (
-                            <span className="block text-sm text-muted-foreground">
-                              {position.notes}
-                            </span>
-                          )}
-                        </button>
+                      <span className="block truncate text-sm font-semibold" aria-hidden="true">
+                        {role}
+                      </span>
+                      <span
+                        className="mt-1 block truncate font-mono text-xs tabular-nums text-muted-foreground"
+                        aria-hidden="true"
+                      >
+                        {time}
+                        {position.notes && ` · ${position.notes}`}
+                      </span>
+                    </button>
 
-                        <div className="flex items-center gap-2">
-                          {short > 0 ? (
-                            <Badge variant="secondary">
-                              {filledBy.length}/{position.needed}
-                            </Badge>
-                          ) : (
-                            <Badge variant="default">{position.needed} filled</Badge>
-                          )}
-                          <Button size="sm" variant="outline" onClick={() => onAssign(position)}>
-                            <UserPlus className="h-4 w-4" />
-                            Add someone
-                          </Button>
-                        </div>
-                      </div>
+                    <span
+                      className={`shrink-0 font-mono text-xs tabular-nums ${
+                        short > 0 ? "font-bold text-brand-danger" : "text-muted-foreground"
+                      }`}
+                    >
+                      {filledBy.length}/{position.needed}
+                    </span>
 
-                      {filledBy.length > 0 && (
-                        <ul className="space-y-1">
-                          {filledBy.map((entry) => (
-                            <li
-                              key={entry.id}
-                              className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                            >
-                              <span>
-                                {assignmentLabel(entry, people)}
-                                {entry.notes && (
-                                  <span className="text-muted-foreground"> · {entry.notes}</span>
-                                )}
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 px-2 text-xs text-muted-foreground"
-                                onClick={() => onUnassign(entry)}
-                              >
-                                <UserMinus className="h-3 w-3" />
-                                Remove
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="min-h-9 shrink-0"
+                      onClick={() => onAssign(position)}
+                      aria-label={`Add someone to ${role}`}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Add someone
+                    </Button>
+                  </div>
+
+                  {filledBy.map((entry) => (
+                    // Assignments hang off their position: same row rhythm, one
+                    // indent, so a filled role reads as one block on the scan.
+                    <div
+                      key={entry.id}
+                      className="action-row flex items-center gap-3 bg-[--st-panel-hi] pl-8"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-xs">
+                        {assignmentLabel(entry, people)}
+                        {entry.notes && (
+                          <span className="text-muted-foreground"> · {entry.notes}</span>
+                        )}
+                      </span>
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="min-h-9 shrink-0 px-2 text-xs text-muted-foreground"
+                        onClick={() => onUnassign(entry)}
+                        aria-label={`Remove ${assignmentLabel(entry, people)} from ${role}`}
+                      >
+                        <UserMinus className="h-3 w-3" />
+                        Remove
+                      </Button>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))
-        )}
-      </CardContent>
-    </Card>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        ))
+      )}
+    </section>
   );
 }

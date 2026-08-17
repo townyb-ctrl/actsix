@@ -25,6 +25,8 @@ import {
   type VenueBookingStatus,
   type VenueSpace,
 } from "@/features/venues/lib/venueBookings";
+import { bookableDays, dayKey } from "@/features/venues/lib/venueSlots";
+import VenueSlotPicker from "@/features/venues/components/VenueSlotPicker";
 
 type Props = {
   open: boolean;
@@ -99,6 +101,7 @@ export default function VenueBookingModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [activeDay, setActiveDay] = useState(() => dayKey(new Date()));
 
   useEffect(() => {
     if (!open) return;
@@ -109,7 +112,21 @@ export default function VenueBookingModal({
     setStatus(booking?.status || "Confirmed");
     setNotes(booking?.notes || "");
     setOverrideConflict(false);
+    setActiveDay(dayKey(booking ? new Date(booking.starts_at) : new Date()));
   }, [open, booking]);
+
+  /**
+   * The days worth offering: the ones this hire already holds, since setup, the
+   * event and pack-down are one job, and otherwise the week ahead.
+   */
+  const days = useMemo(
+    () =>
+      bookableDays({
+        hireBookings: hireId ? bookings.filter((entry) => entry.hire_id === hireId) : [],
+        selectedKey: activeDay,
+      }),
+    [bookings, hireId, activeDay]
+  );
 
   const conflicts = useMemo(() => {
     if (!spaceId || !startsAt || !endsAt) return [];
@@ -261,6 +278,31 @@ export default function VenueBookingModal({
         }
       >
         <form id="venue-booking-form" className="space-y-5" onSubmit={save}>
+          <FieldGroup title="Which space, and when">
+            <VenueSlotPicker
+              spaces={activeSpaces}
+              bookings={bookings}
+              days={days}
+              activeDay={activeDay}
+              onDayChange={setActiveDay}
+              excludeBookingId={booking?.id}
+              selection={
+                spaceId && startsAt && endsAt
+                  ? {
+                      spaceId,
+                      startsAt: fromLocalInput(startsAt),
+                      endsAt: fromLocalInput(endsAt),
+                    }
+                  : null
+              }
+              onPick={(pickedSpaceId, start, end) => {
+                setSpaceId(pickedSpaceId);
+                setStartsAt(toLocalInput(start.toISOString()));
+                setEndsAt(toLocalInput(end.toISOString()));
+              }}
+            />
+          </FieldGroup>
+
           <FieldGroup title="Booking">
             <Field label="Space" htmlFor={spaceFieldId}>
                 <select
@@ -290,6 +332,8 @@ export default function VenueBookingModal({
               />
             </Field>
 
+            {/* Kept for the times the grid cannot express: a 19:30 start, a
+                booking that runs past midnight, a correction to the minute. */}
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Starts" htmlFor={startFieldId}>
                 <input

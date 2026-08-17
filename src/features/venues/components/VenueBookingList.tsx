@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   formatBookingRange,
@@ -42,40 +41,51 @@ export default function VenueBookingList({ bookings, spaces, onEdit }: Props) {
   }
 
   return (
-    <div className="space-y-2">
+    <Card className="actsix-panel st-list">
       {bookings.map((booking) => (
-        <Card key={booking.id}>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium">{booking.title}</p>
-                <Badge className={statusClass[booking.status]}>{booking.status}</Badge>
-                {booking.source === "public" && <Badge variant="outline">Request</Badge>}
-                {booking.hire_id && (
-                  <Link
-                    to={`/venues/hires/${booking.hire_id}`}
-                    className="text-xs font-medium text-brand-teal underline underline-offset-2"
-                  >
-                    Part of a hire
-                  </Link>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {spaceName(booking.space_id)} · {formatBookingRange(booking.starts_at, booking.ends_at)}
-              </p>
-              {booking.booking_type === "external" && (
-                <p className="text-sm text-muted-foreground">
-                  {booking.hirer_name || "Hirer not named"} · {formatCurrency(booking.quoted_fee)} ·{" "}
-                  {booking.payment_status}
-                </p>
-              )}
-            </div>
-            <Button variant="outline" size="sm" onClick={() => onEdit(booking)}>
-              Open
-            </Button>
-          </CardContent>
-        </Card>
+        <div key={booking.id} className="action-row flex items-center gap-3">
+          {/* The row itself opens the booking; the hire link is the one thing
+              that goes somewhere else, so it sits outside the button. */}
+          <button
+            type="button"
+            className="min-h-11 min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+            onClick={() => onEdit(booking)}
+          >
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="truncate text-sm font-semibold">{booking.title}</span>
+              <Badge className={statusClass[booking.status]}>{booking.status}</Badge>
+              {booking.source === "public" && <Badge variant="outline">Request</Badge>}
+            </span>
+
+            <span className="mt-1 block truncate text-xs text-muted-foreground">
+              {spaceName(booking.space_id)} ·{" "}
+              {formatBookingRange(booking.starts_at, booking.ends_at)}
+              {booking.booking_type === "external" &&
+                ` · ${booking.hirer_name || "Hirer not named"}`}
+            </span>
+          </button>
+
+          {booking.booking_type === "external" && (
+            <span className="shrink-0 text-right">
+              <span className="block font-mono text-xs tabular-nums">
+                {formatCurrency(booking.quoted_fee)}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {booking.payment_status}
+              </span>
+            </span>
+          )}
+
+          {booking.hire_id && (
+            <Link
+              to={`/venues/hires/${booking.hire_id}`}
+              className="shrink-0 text-xs font-medium text-brand-teal underline underline-offset-2"
+            >
+              Part of a hire
+            </Link>
+          )}
+        </div>
       ))}
-    </div>
+    </Card>
   );
 }

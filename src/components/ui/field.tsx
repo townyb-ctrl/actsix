@@ -11,11 +11,16 @@ type FieldProps = {
   label: string;
   htmlFor?: string;
   hint?: string;
+  /**
+   * Sits beside the label. For the one thing a label cannot say on its own -
+   * who else reads what gets typed here.
+   */
+  badge?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 };
 
-export function Field({ label, htmlFor, hint, children, className }: FieldProps) {
+export function Field({ label, htmlFor, hint, badge, children, className }: FieldProps) {
   // Only meaningful when both an id to point at and a hint to describe exist.
   const hintId = htmlFor && hint ? `${htmlFor}-hint` : undefined;
 
@@ -32,13 +37,16 @@ export function Field({ label, htmlFor, hint, children, className }: FieldProps)
 
   return (
     <div className={cn("space-y-1", className)}>
-      {htmlFor ? (
-        <label htmlFor={htmlFor} className="label-eyebrow">
-          {label}
-        </label>
-      ) : (
-        <span className="label-eyebrow block">{label}</span>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {htmlFor ? (
+          <label htmlFor={htmlFor} className="label-eyebrow">
+            {label}
+          </label>
+        ) : (
+          <span className="label-eyebrow block">{label}</span>
+        )}
+        {badge}
+      </div>
       {control}
       {hint && (
         <p id={hintId} className="text-xs text-muted-foreground">

@@ -19,6 +19,7 @@ export type VenueHirePayload = {
   enquiry_id?: string | null;
   lessons_learned?: string;
   notes?: string;
+  hirer_notes?: string;
 };
 
 export const getVenueHires = (workspaceId?: string | null) =>

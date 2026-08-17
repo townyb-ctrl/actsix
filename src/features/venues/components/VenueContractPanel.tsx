@@ -3,7 +3,6 @@ import { Printer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldRow, fieldControlClass } from "@/components/ui/field";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -16,6 +15,8 @@ type Props = {
   workspaceClauses: string;
   onPrint: () => void;
   onSaved: () => void;
+  /** Tells the page there is typing here that a section switch would discard. */
+  onUnsavedChange?: (key: string, label: string | null) => void;
 };
 
 export default function VenueContractPanel({
@@ -23,10 +24,14 @@ export default function VenueContractPanel({
   workspaceClauses,
   onPrint,
   onSaved,
+  onUnsavedChange,
 }: Props) {
-  const [clauses, setClauses] = useState("");
-  const [signedOn, setSignedOn] = useState("");
-  const [signedBy, setSignedBy] = useState("");
+  // Seeded at first render, not in the effect below: a first pass holding "" is
+  // a difference from the hire, and the page read that as unsaved typing before
+  // anybody had typed.
+  const [clauses, setClauses] = useState(hire.contract_clauses || workspaceClauses);
+  const [signedOn, setSignedOn] = useState(hire.contract_signed_on || "");
+  const [signedBy, setSignedBy] = useState(hire.contract_signed_by || "");
   const [savingClauses, setSavingClauses] = useState(false);
   const [savingSignature, setSavingSignature] = useState(false);
 
@@ -37,6 +42,16 @@ export default function VenueContractPanel({
     setSignedOn(hire.contract_signed_on || "");
     setSignedBy(hire.contract_signed_by || "");
   }, [hire, workspaceClauses]);
+
+  const dirty =
+    clauses !== (hire.contract_clauses || workspaceClauses) ||
+    signedOn !== (hire.contract_signed_on || "") ||
+    signedBy !== (hire.contract_signed_by || "");
+
+  useEffect(() => {
+    onUnsavedChange?.("contract", dirty ? "The contract wording" : null);
+    return () => onUnsavedChange?.("contract", null);
+  }, [dirty, onUnsavedChange]);
 
   const saveClauses = async () => {
     setSavingClauses(true);
@@ -68,10 +83,12 @@ export default function VenueContractPanel({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+    <section className="st-panel" aria-labelledby="contract-heading">
+      <div className="st-panel-head">
         <div className="flex flex-wrap items-center gap-2">
-          <CardTitle className="text-base">Contract</CardTitle>
+          <h2 className="st-panel-title" id="contract-heading">
+            Contract
+          </h2>
           {hire.contract_signed_on ? (
             <Badge variant="default">Signed</Badge>
           ) : (
@@ -79,13 +96,13 @@ export default function VenueContractPanel({
           )}
         </div>
 
-        <Button size="sm" variant="outline" onClick={onPrint}>
+        <Button size="sm" variant="ghost" className="min-h-9" onClick={onPrint}>
           <Printer className="h-4 w-4" />
           Print agreement
         </Button>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-4">
+      <div className="space-y-4 px-4 py-4">
         <Field label="Terms and conditions for this hire" htmlFor="venue-contract-clauses">
           <textarea
             id="venue-contract-clauses"
@@ -105,7 +122,7 @@ export default function VenueContractPanel({
           {savingClauses ? "Saving…" : "Save wording"}
         </Button>
 
-        <div className="space-y-3 border-t pt-4">
+        <div className="space-y-3 border-t border-[--st-line-soft] pt-4">
           <FieldRow>
             <Field label="Signed on" htmlFor="venue-contract-signed-on">
               <input
@@ -136,7 +153,7 @@ export default function VenueContractPanel({
             Printed, signed on paper, recorded here. ACTSIX does not do e-signature.
           </p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

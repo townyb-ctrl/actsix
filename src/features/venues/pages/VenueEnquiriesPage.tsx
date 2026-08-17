@@ -3,7 +3,6 @@ import { Inbox } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
@@ -107,7 +106,7 @@ export default function VenueEnquiriesPage() {
         </div>
 
         {loading ? (
-          <VenueListSkeleton />
+          <VenueListSkeleton shape="row" />
         ) : visibleEnquiries.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
@@ -123,46 +122,52 @@ export default function VenueEnquiriesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <Card className="actsix-panel st-list">
             {visibleEnquiries.map((enquiry) => {
               const progress = vettingProgress(enquiry);
               const spaceNames = spaceNamesForEnquiry(enquiry, spaces);
 
               return (
-                <Card key={enquiry.id}>
-                  <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">{enquiry.event_name}</p>
-                        <Badge variant={statusVariant(enquiry.status)}>{enquiry.status}</Badge>
-                        {enquiry.event_type && (
-                          <Badge variant="outline" className="font-normal">
-                            {enquiry.event_type}
-                          </Badge>
-                        )}
-                        {enquiry.is_for_profit && <Badge variant="outline">For profit</Badge>}
-                        {enquiry.is_ticketed && <Badge variant="outline">Ticketed</Badge>}
-                      </div>
-
-                      <p className="text-sm text-muted-foreground">
-                        {enquiry.contact_name} · {formatPreferred(enquiry)}
-                        {spaceNames.length > 0 && ` · ${spaceNames.join(", ")}`}
-                      </p>
-
-                      <p className="text-sm text-muted-foreground">
-                        Received {formatReceived(enquiry.created_at)} · vetting{" "}
-                        {progress.completed}/{progress.total}
-                      </p>
+                <div key={enquiry.id} className="action-row flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        to={`/venues/enquiries/${enquiry.id}`}
+                        className="truncate text-sm font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                      >
+                        {enquiry.event_name}
+                      </Link>
+                      <Badge variant={statusVariant(enquiry.status)}>{enquiry.status}</Badge>
+                      {enquiry.event_type && (
+                        <Badge variant="outline" className="font-normal">
+                          {enquiry.event_type}
+                        </Badge>
+                      )}
+                      {enquiry.is_for_profit && <Badge variant="outline">For profit</Badge>}
+                      {enquiry.is_ticketed && <Badge variant="outline">Ticketed</Badge>}
                     </div>
 
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/venues/enquiries/${enquiry.id}`}>Open</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {enquiry.contact_name} · {formatPreferred(enquiry)}
+                      {spaceNames.length > 0 && ` · ${spaceNames.join(", ")}`} · received{" "}
+                      {formatReceived(enquiry.created_at)}
+                    </p>
+                  </div>
+
+                  {/* Vetting is the number that decides whether this enquiry is
+                      ready to answer, so it holds the tally column. */}
+                  <span className="shrink-0 text-right">
+                    <span className="block font-mono text-xs tabular-nums">
+                      {progress.completed}/{progress.total}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] uppercase tracking-[0.17em] text-muted-foreground">
+                      Vetted
+                    </span>
+                  </span>
+                </div>
               );
             })}
-          </div>
+          </Card>
         )}
       </div>
     </div>

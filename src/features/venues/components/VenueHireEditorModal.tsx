@@ -1,12 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldRow, fieldControlClass } from "@/components/ui/field";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { upsertVenueHire } from "@/features/venues/api/venueHiresApi";
+import VenueHireReview from "@/features/venues/components/VenueHireReview";
 import {
   VENUE_HIRE_STATUSES,
   type VenueHire,
@@ -53,7 +55,15 @@ export default function VenueHireEditorModal({
   const [paymentTerms, setPaymentTerms] = useState("");
   const [lessons, setLessons] = useState("");
   const [notes, setNotes] = useState("");
+  const [hirerNotes, setHirerNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  /**
+   * Only new hires get a review. A hire commits rooms, a bond and a contract,
+   * and until now it came into existence the moment somebody pressed Save.
+   * Editing an existing one is a correction, not a commitment, so it keeps the
+   * single step it has always had.
+   */
+  const [step, setStep] = useState<"details" | "review">("details");
 
   useEffect(() => {
     if (!open) return;
@@ -68,10 +78,22 @@ export default function VenueHireEditorModal({
     setPaymentTerms(hire?.payment_terms || "");
     setLessons(hire?.lessons_learned || "");
     setNotes(hire?.notes || "");
+    setHirerNotes(hire?.hirer_notes || "");
+    setStep("details");
   }, [open, hire]);
 
-  const save = async (event: FormEvent) => {
+  const review = (event: FormEvent) => {
     event.preventDefault();
+
+    if (!name.trim()) {
+      toast.error("Give the hire a name");
+      return;
+    }
+    setStep("review");
+  };
+
+  const save = async (event?: FormEvent) => {
+    event?.preventDefault();
 
     if (!name.trim()) {
       toast.error("Give the hire a name");
@@ -99,6 +121,7 @@ export default function VenueHireEditorModal({
         payment_terms: paymentTerms.trim(),
         lessons_learned: lessons.trim(),
         notes: notes.trim(),
+        hirer_notes: hirerNotes.trim(),
       },
     });
     setSaving(false);
@@ -125,23 +148,59 @@ export default function VenueHireEditorModal({
         <>
           <div />
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="venue-hire-form"
-              disabled={saving}
-              className="actsix-btn-primary font-bold"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? "Saving…" : "Save hire"}
-            </Button>
+            {step === "review" ? (
+              <Button type="button" variant="outline" onClick={() => setStep("details")}>
+                <ChevronLeft className="h-4 w-4" />
+                Back
+              </Button>
+            ) : (
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+            )}
+
+            {step === "review" ? (
+              <Button
+                type="button"
+                disabled={saving}
+                onClick={() => save()}
+                className="actsix-btn-primary font-bold"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? "Creating…" : "Create the hire"}
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                form="venue-hire-form"
+                disabled={saving}
+                className="actsix-btn-primary font-bold"
+              >
+                {hire ? <Save className="h-4 w-4" /> : null}
+                {hire ? (saving ? "Saving…" : "Save hire") : "Review"}
+                {hire ? null : <ChevronRight className="h-4 w-4" />}
+              </Button>
+            )}
           </div>
         </>
       }
     >
-      <form id="venue-hire-form" className="space-y-5" onSubmit={save}>
+      {step === "review" ? (
+        <VenueHireReview
+          name={name.trim()}
+          eventType={eventType}
+          status={status}
+          hirerName={hirerName.trim()}
+          hirerEmail={hirerEmail.trim()}
+          hirerPhone={hirerPhone.trim()}
+          onsiteName={onsiteName.trim()}
+          onsitePhone={onsitePhone.trim()}
+          paymentTerms={paymentTerms.trim()}
+          hirerNotes={hirerNotes.trim()}
+          notes={notes.trim()}
+        />
+      ) : (
+      <form id="venue-hire-form" className="space-y-5" onSubmit={hire ? save : review}>
         <FieldGroup title="The event">
           <Field label="Name" htmlFor="venue-hire-name">
             <input
@@ -254,12 +313,43 @@ export default function VenueHireEditorModal({
           />
         </Field>
 
-        <Field label="Notes" htmlFor="venue-hire-notes" className="border-t border-border/70 pt-5">
+        <Field
+          label="Notes for the hirer"
+          htmlFor="venue-hire-hirer-notes"
+          badge={
+            <Badge variant="outline" className="border-brand-teal/25 bg-brand-teal/8 text-brand-teal">
+              They see this
+            </Badge>
+          }
+          hint="Appears on the hirer's own page, under their dates. Nothing else you write on a hire does."
+          className="border-t border-border/70 pt-5"
+        >
+          <textarea
+            id="venue-hire-hirer-notes"
+            value={hirerNotes}
+            onChange={(event) => setHirerNotes(event.target.value)}
+            rows={3}
+            placeholder="Load in through the side door on Barrack Street. Pieter has the keys from 06:00."
+            className={cn(fieldControlClass, "min-h-20 py-2")}
+          />
+        </Field>
+
+        <Field
+          label="Internal notes"
+          htmlFor="venue-hire-notes"
+          badge={
+            <Badge variant="outline" className="border-brand-amber/30 bg-brand-amber/10 text-brand-amber">
+              Staff only
+            </Badge>
+          }
+          hint="Never leaves the workspace: not on the hirer's page, not on the printed quote."
+        >
           <textarea
             id="venue-hire-notes"
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             rows={3}
+            placeholder="Anything the hirer should never read."
             className={cn(fieldControlClass, "min-h-20 py-2")}
           />
         </Field>
@@ -278,6 +368,7 @@ export default function VenueHireEditorModal({
           </p>
         </Field>
       </form>
+      )}
     </FormDialog>
   );
 }

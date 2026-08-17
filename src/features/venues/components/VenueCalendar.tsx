@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { bookingCoversDay, type VenueBooking, type VenueSpace } from "@/features/venues/lib/venueBookings";
+import { spaceColor } from "@/features/venues/lib/venueSpaceColors";
 
 type Props = {
   visibleMonth: Date;
@@ -17,7 +18,6 @@ type Props = {
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MAX_CHIPS_PER_DAY = 3;
-const DEFAULT_SPACE_COLOR = "#7e7c72"; // Studio ink-3 - unpainted spaces still read clearly
 
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
 
@@ -61,8 +61,8 @@ export default function VenueCalendar({
     [bookings]
   );
 
-  const spaceColor = (spaceId: string) =>
-    spaces.find((space) => space.id === spaceId)?.color || DEFAULT_SPACE_COLOR;
+  const chipColor = (spaceId: string) =>
+    spaceColor(spaces.find((space) => space.id === spaceId)?.color);
 
   const today = new Date();
   const monthLabel = visibleMonth.toLocaleDateString("en-ZA", { month: "long", year: "numeric" });
@@ -153,7 +153,7 @@ export default function VenueCalendar({
                         type="button"
                         onClick={() => onSelectBooking(booking)}
                         className="block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold text-white shadow-sm transition-[filter,transform] duration-100 ease-out hover:brightness-95 active:scale-[0.96] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50 focus-visible:ring-offset-1"
-                        style={{ backgroundColor: spaceColor(booking.space_id) }}
+                        style={{ backgroundColor: chipColor(booking.space_id) }}
                         title={`${booking.title} · ${chipTime(booking.starts_at)}`}
                       >
                         {chipTime(booking.starts_at)} {booking.title}

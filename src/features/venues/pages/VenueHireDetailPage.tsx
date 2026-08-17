@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, ArrowLeft, Pencil } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/PageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
@@ -32,7 +31,7 @@ import { findClashes } from "@/features/venues/lib/venueClashes";
 import { paymentSummary } from "@/features/venues/lib/venuePayments";
 import { unfilledTotal } from "@/features/venues/lib/venuePositions";
 import { incidentSummary } from "@/features/venues/lib/venueSafety";
-import { turnaroundProgress } from "@/features/venues/lib/venueTurnaround";
+import { turnaroundProgress, walkthroughCoverage } from "@/features/venues/lib/venueTurnaround";
 import {
   usePositionAssignments,
   usePositionPeople,
@@ -78,6 +77,8 @@ import VenueTurnaroundPanel from "@/features/venues/components/VenueTurnaroundPa
 import VenueTurnaroundTaskModal from "@/features/venues/components/VenueTurnaroundTaskModal";
 import VenueWalkthroughPanel from "@/features/venues/components/VenueWalkthroughPanel";
 import VenueHireSectionRail, {
+  HIRE_PANE_ID,
+  hireTabId,
   type VenueHireSectionId,
 } from "@/features/venues/components/VenueHireSectionRail";
 import VenueSafetyPanel from "@/features/venues/components/VenueSafetyPanel";
@@ -85,6 +86,7 @@ import VenueIncidentModal from "@/features/venues/components/VenueIncidentModal"
 import VenueSignagePanel from "@/features/venues/components/VenueSignagePanel";
 import VenueSignPrintSheet from "@/features/venues/components/VenueSignPrintSheet";
 import VenueListSkeleton from "@/features/venues/components/VenueListSkeleton";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
@@ -132,7 +134,8 @@ export default function VenueHireDetailPage() {
    */
   const [searchParams, setSearchParams] = useSearchParams();
   const activeSection = (searchParams.get("section") as VenueHireSectionId) || "overview";
-  const selectSection = (id: VenueHireSectionId) =>
+
+  const goToSection = (id: VenueHireSectionId) =>
     setSearchParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -142,19 +145,54 @@ export default function VenueHireDetailPage() {
       { replace: true }
     );
 
-  const { hire, loading } = useVenueHire(hireId);
-  const { bookings: hireBookings } = useHireBookings(hireId);
-  const { lines, loading: linesLoading } = useQuoteLines(hireId);
-  const { items: runSheetItems } = useRunSheet(hireId);
+  /**
+   * Switching sections unmounts the one you were in, and two of them hold long
+   * free text somebody typed. Losing three paragraphs of security plan because
+   * you looked up a start time is exactly the "punish mistakes" this product
+   * says it will not do, so the switch asks first.
+   */
+  const [unsaved, setUnsaved] = useState<Record<string, string>>({});
+  const [pendingSection, setPendingSection] = useState<VenueHireSectionId | null>(null);
+
+  const reportUnsaved = useCallback((key: string, label: string | null) => {
+    setUnsaved((current) => {
+      if (label === null) {
+        if (!(key in current)) return current;
+        const { [key]: _removed, ...rest } = current;
+        return rest;
+      }
+      if (current[key] === label) return current;
+      return { ...current, [key]: label };
+    });
+  }, []);
+
+  const unsavedLabels = Object.values(unsaved);
+
+  const selectSection = (id: VenueHireSectionId) => {
+    if (id !== activeSection && unsavedLabels.length > 0) {
+      setPendingSection(id);
+      return;
+    }
+    goToSection(id);
+  };
+
+  const { hire, loading, error: hireError } = useVenueHire(hireId);
+  const { bookings: hireBookings, error: bookingsError } = useHireBookings(hireId);
+  const { lines, loading: linesLoading, error: linesError } = useQuoteLines(hireId);
+  const { items: runSheetItems, error: runSheetError } = useRunSheet(hireId);
   const { roles: positionRoles } = usePositionRoles(workspace?.id);
-  const { positions, loading: positionsLoading } = usePositions(hireId);
+  const { positions, loading: positionsLoading, error: positionsError } = usePositions(hireId);
   const { assignments } = usePositionAssignments(positions.map((position) => position.id));
   const { people } = usePositionPeople(workspace?.id);
-  const { payments, loading: paymentsLoading } = usePayments(hireId);
-  const { tasks: turnaroundTasks, loading: turnaroundLoading } = useTurnaroundTasks(hireId);
-  const { walkthroughs } = useWalkthroughs(hireId);
-  const { incidents, loading: incidentsLoading } = useIncidents(hireId);
-  const { contacts: hireContacts } = useHireContacts(hireId);
+  const { payments, loading: paymentsLoading, error: paymentsError } = usePayments(hireId);
+  const {
+    tasks: turnaroundTasks,
+    loading: turnaroundLoading,
+    error: turnaroundError,
+  } = useTurnaroundTasks(hireId);
+  const { walkthroughs, error: walkthroughsError } = useWalkthroughs(hireId);
+  const { incidents, loading: incidentsLoading, error: incidentsError } = useIncidents(hireId);
+  const { contacts: hireContacts, error: contactsError } = useHireContacts(hireId);
   const { signs } = useVenueSigns(workspace?.id);
   const { links: hireSignLinks } = useHireSigns(hireId);
   const { presets: avPresets } = useAvPresets(workspace?.id);
@@ -252,6 +290,24 @@ export default function VenueHireDetailPage() {
     );
   }
 
+  // A failed load is not a deleted hire, and saying so would send someone off
+  // to re-create a hire that is sitting right there.
+  if (!hire && hireError) {
+    return (
+      <div className="actsix-page-body pt-8">
+        <div className="st-panel" role="alert">
+          <div className="st-error">
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              We couldn&rsquo;t load this hire. {hireError.message} Nothing about it is showing
+              right now. Check your connection and reload.
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!hire) {
     return (
       <div className="actsix-page-body pt-8">
@@ -267,6 +323,36 @@ export default function VenueHireDetailPage() {
   }
 
   const span = bookedSpan;
+
+  /**
+   * A dropped query must never read as good news. Every feed on this page can
+   * fail on its own, and the panels below all render "nothing yet" for an empty
+   * list, so a failure has to be said out loud - and the sections it feeds have
+   * to stop claiming they are clear.
+   */
+  const feedFailures = [
+    { label: "the bookings", error: bookingsError, section: "dates" as const },
+    { label: "the quote", error: linesError, section: "money" as const },
+    { label: "the payments", error: paymentsError, section: "money" as const },
+    { label: "the run sheet", error: runSheetError, section: "plan" as const },
+    { label: "the positions", error: positionsError, section: "plan" as const },
+    { label: "the incidents", error: incidentsError, section: "day" as const },
+    { label: "the on-the-day contacts", error: contactsError, section: "day" as const },
+    { label: "the turnaround tasks", error: turnaroundError, section: "after" as const },
+    { label: "the condition walkthrough", error: walkthroughsError, section: "after" as const },
+  ].filter((feed) => feed.error);
+
+  const failedSections = new Set(feedFailures.map((feed) => feed.section));
+
+  const failedLabel =
+    feedFailures.length === 0
+      ? ""
+      : feedFailures.length === 1
+        ? feedFailures[0].label
+        : `${feedFailures
+            .slice(0, -1)
+            .map((feed) => feed.label)
+            .join(", ")} and ${feedFailures[feedFailures.length - 1].label}`;
 
   /**
    * Rail badges count what somebody still has to do, never what merely exists.
@@ -289,19 +375,44 @@ export default function VenueHireDetailPage() {
     {
       id: "money" as const,
       name: "Money",
-      // Only once they have agreed to pay - an unaccepted quote is not a debt.
+      // A declined quote is not a debt. Everything else that is owed is - and a
+      // contract signed against a draft quote is its own thing to go and fix,
+      // which is why this no longer waits for "Accepted".
       attention:
-        hire.quote_status === "Accepted" && paymentSummary(lines, payments).outstanding > 0
+        (hire.quote_status !== "Declined" && paymentSummary(lines, payments).outstanding > 0
           ? 1
-          : 0,
+          : 0) + (hire.quote_status === "Draft" && hire.contract_signed_on ? 1 : 0),
     },
     {
       id: "plan" as const,
       name: "Plan",
       attention: unfilledTotal(positions, assignments),
     },
-    { id: "day" as const, name: "On the day", attention: incidentSummary(incidents).open },
-    { id: "after" as const, name: "Afterwards", attention: turnaround.total - turnaround.done },
+    {
+      id: "day" as const,
+      name: "On the day",
+      // Nobody to phone is the failure this section exists to prevent, so it
+      // counts the same as an open incident. Both places a contact can be
+      // recorded are read, or the badge argues with the sidebar.
+      attention:
+        incidentSummary(incidents).open +
+        (hireContacts.length === 0 && !hire.onsite_contact_name.trim() ? 1 : 0),
+    },
+    {
+      id: "after" as const,
+      name: "Afterwards",
+      // A missing walkthrough only becomes somebody's problem once the hire is
+      // over: before that there is nothing to have walked yet. After it, the
+      // bond argument can no longer be won, so it wants a person.
+      attention:
+        turnaround.total -
+        turnaround.done +
+        (span &&
+        new Date(span.endsAt) < new Date() &&
+        !walkthroughCoverage(walkthroughs).bothEndsCaptured
+          ? 1
+          : 0),
+    },
   ];
 
   const spanLabel = span
@@ -343,7 +454,26 @@ export default function VenueHireDetailPage() {
           onSelect={selectSection}
         />
 
-        <div className="min-w-0 space-y-4">
+        <div
+          id={HIRE_PANE_ID}
+          role="tabpanel"
+          aria-labelledby={hireTabId(activeSection)}
+          tabIndex={0}
+          className="min-w-0 space-y-4 focus-visible:outline-none"
+        >
+          {feedFailures.length > 0 && (
+            <div className="st-panel" role="alert">
+              <div className="st-error">
+                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>
+                  We couldn&rsquo;t load {failedLabel}. Those parts of this hire are{" "}
+                  <strong>not showing real data</strong>, so treat anything they report as unknown.
+                  Check your connection and reload.
+                </span>
+              </div>
+            </div>
+          )}
+
           {activeSection === "overview" && (
             <VenueHireOverviewPanel
               hire={hire}
@@ -355,7 +485,10 @@ export default function VenueHireDetailPage() {
               positions={positions}
               assignments={assignments}
               incidents={incidents}
+              contacts={hireContacts}
               turnaroundTasks={turnaroundTasks}
+              walkthroughs={walkthroughs}
+              failedSections={failedSections}
               onSelect={selectSection}
             />
           )}
@@ -409,6 +542,7 @@ export default function VenueHireDetailPage() {
               <VenueContractPanel
                 hire={hire}
                 workspaceClauses={workspaceClauses}
+              onUnsavedChange={reportUnsaved}
                 onPrint={() => setPrinting("contract")}
                 onSaved={refresh}
               />
@@ -462,6 +596,7 @@ export default function VenueHireDetailPage() {
                 hire={hire}
                 incidents={incidents}
                 contacts={hireContacts}
+                onUnsavedChange={reportUnsaved}
                 workspaceId={workspace?.id || ""}
                 userId={user?.id || ""}
                 onAddIncident={() => {
@@ -545,67 +680,139 @@ export default function VenueHireDetailPage() {
             hasSpan={Boolean(span)}
           />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-              <CardTitle className="text-base">Hire</CardTitle>
+          <section className="st-panel" aria-labelledby="hire-facts-heading">
+            <div className="st-panel-head">
+              <h2 className="st-panel-title" id="hire-facts-heading">
+                Hire
+              </h2>
               <Badge variant={hire.status === "Confirmed" ? "default" : "secondary"}>
                 {hire.status}
               </Badge>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+            </div>
+
+            <dl className="space-y-1 px-4 py-3 text-xs">
               {hire.event_type && (
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">Event type</span>
-                  <span>{hire.event_type}</span>
+                  <dt className="text-muted-foreground">Event type</dt>
+                  <dd>{hire.event_type}</dd>
                 </div>
               )}
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Bookings</span>
-                <span>{hireBookings.length}</span>
+                <dt className="text-muted-foreground">Bookings</dt>
+                <dd className="font-mono tabular-nums">{hireBookings.length}</dd>
               </div>
-            </CardContent>
-          </Card>
+            </dl>
+          </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Contacts</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Hirer</p>
-                <p>{hire.hirer_name || "Not named"}</p>
-                {hire.hirer_email && <p className="text-muted-foreground">{hire.hirer_email}</p>}
-                {hire.hirer_phone && <p className="text-muted-foreground">{hire.hirer_phone}</p>}
-              </div>
+          <section className="st-panel" aria-labelledby="hire-contacts-heading">
+            <div className="st-panel-head">
+              <h2 className="st-panel-title" id="hire-contacts-heading">
+                Contacts
+              </h2>
+            </div>
 
-              <div>
-                <p className="text-muted-foreground">On site on the day</p>
-                <p>{hire.onsite_contact_name || "Not named"}</p>
-                {hire.onsite_contact_phone && (
-                  <p className="text-muted-foreground">{hire.onsite_contact_phone}</p>
-                )}
-              </div>
+            {/* Phone numbers are the reason somebody opens this card while
+                standing in the building, so they dial rather than get read out. */}
+            <div className="action-row">
+              <p className="label-eyebrow">Hirer</p>
+              <p className="mt-1 text-sm font-semibold">{hire.hirer_name || "Not named"}</p>
+              {hire.hirer_email && (
+                <a
+                  href={`mailto:${hire.hirer_email}`}
+                  className="mt-0.5 block truncate text-xs underline"
+                >
+                  {hire.hirer_email}
+                </a>
+              )}
+              {hire.hirer_phone && (
+                <a
+                  href={`tel:${hire.hirer_phone}`}
+                  className="mt-0.5 block font-mono text-xs tabular-nums underline"
+                >
+                  {hire.hirer_phone}
+                </a>
+              )}
+            </div>
 
-              {hire.enquiry_id && (
-                <Button variant="outline" size="sm" asChild>
+            <div className="action-row">
+              <p className="label-eyebrow">On site on the day</p>
+              <p className="mt-1 text-sm font-semibold">
+                {hire.onsite_contact_name || "Not named"}
+              </p>
+              {hire.onsite_contact_phone && (
+                <a
+                  href={`tel:${hire.onsite_contact_phone}`}
+                  className="mt-0.5 block font-mono text-xs tabular-nums underline"
+                >
+                  {hire.onsite_contact_phone}
+                </a>
+              )}
+            </div>
+
+            {hire.enquiry_id && (
+              <div className="px-4 py-3">
+                <Button variant="outline" size="sm" className="min-h-9" asChild>
                   <Link to={`/venues/enquiries/${hire.enquiry_id}`}>Open the enquiry</Link>
                 </Button>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </section>
 
-          {hire.notes && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap text-sm">{hire.notes}</p>
-              </CardContent>
-            </Card>
+          {(hire.hirer_notes || hire.notes) && (
+            <section className="st-panel" aria-labelledby="hire-notes-heading">
+              <div className="st-panel-head">
+                <h2 className="st-panel-title" id="hire-notes-heading">
+                  Notes
+                </h2>
+              </div>
+
+              {/* Which of these the hirer can read is the first thing to know
+                  about them, so it is stated on the note, not in a tooltip. */}
+              {hire.hirer_notes && (
+                <div className="action-row">
+                  <Badge
+                    variant="outline"
+                    className="border-brand-teal/25 bg-brand-teal/8 text-brand-teal"
+                  >
+                    They see this
+                  </Badge>
+                  <p className="mt-2 whitespace-pre-wrap text-sm">{hire.hirer_notes}</p>
+                </div>
+              )}
+
+              {hire.notes && (
+                <div className="action-row">
+                  <Badge
+                    variant="outline"
+                    className="border-brand-amber/30 bg-brand-amber/10 text-brand-amber"
+                  >
+                    Staff only
+                  </Badge>
+                  <p className="mt-2 whitespace-pre-wrap text-sm">{hire.notes}</p>
+                </div>
+              )}
+            </section>
           )}
         </aside>
       </div>
+
+      <ConfirmDialog
+        open={pendingSection !== null}
+        title="Leave without saving?"
+        description={`${unsavedLabels.join(" and ")} ${
+          unsavedLabels.length === 1 ? "has" : "have"
+        } changes you have not saved yet. Leaving this section discards them.`}
+        confirmLabel="Discard and leave"
+        onConfirm={() => {
+          const target = pendingSection;
+          setPendingSection(null);
+          setUnsaved({});
+          if (target) goToSection(target);
+        }}
+        onOpenChange={(open) => {
+          if (!open) setPendingSection(null);
+        }}
+      />
 
       <VenueHireEditorModal
         open={editOpen}

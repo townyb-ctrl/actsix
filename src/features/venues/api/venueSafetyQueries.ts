@@ -22,6 +22,7 @@ export function useIncidents(hireId?: string | null) {
   return {
     incidents: query.data ?? [],
     loading: query.isPending && query.fetchStatus !== "idle",
+    error: (query.error as { message: string } | null) ?? null,
   };
 }
 
@@ -40,5 +41,6 @@ export function useHireContacts(hireId?: string | null) {
   return {
     contacts: query.data ?? [],
     loading: query.isPending && query.fetchStatus !== "idle",
+    error: (query.error as { message: string } | null) ?? null,
   };
 }

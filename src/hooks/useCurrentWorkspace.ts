@@ -148,6 +148,11 @@ export function useCurrentWorkspace() {
   };
 
   useEffect(() => {
+    // Synchronously, before the async load can report anything: the moment auth
+    // resolves a user there is one render where the previous "no user, not
+    // loading" result is still on state, and the app read that as "signed in
+    // with no workspace" and bounced to workspace setup mid-navigation.
+    setLoading(true);
     loadWorkspace();
   }, [user?.id]);
 

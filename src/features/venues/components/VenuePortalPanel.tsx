@@ -4,7 +4,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { disableHirePortal, enableHirePortal } from "@/features/venues/api/venuePortalApi";
 import type { VenueHire } from "@/features/venues/lib/venueHires";
 
@@ -51,17 +50,17 @@ export default function VenuePortalPanel({ hire, onChanged }: Props) {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <CardTitle className="text-base">Hirer link</CardTitle>
-          <Badge variant={hire.portal_enabled ? "default" : "secondary"}>
-            {hire.portal_enabled ? "On" : "Off"}
-          </Badge>
-        </div>
-      </CardHeader>
+    <section className="st-panel" aria-labelledby="hirer-link-heading">
+      <div className="st-panel-head">
+        <h2 className="st-panel-title" id="hirer-link-heading">
+          Hirer link
+        </h2>
+        <Badge variant={hire.portal_enabled ? "default" : "secondary"}>
+          {hire.portal_enabled ? "On" : "Off"}
+        </Badge>
+      </div>
 
-      <CardContent className="space-y-3">
+      <div className="space-y-3 px-4 py-4">
         <p className="text-sm text-muted-foreground">
           A page the hirer can open without an account: their dates, their quote, the terms, and a
           way to accept. Anyone with the link can see it, so send it to the hirer and nobody else.
@@ -69,15 +68,15 @@ export default function VenuePortalPanel({ hire, onChanged }: Props) {
 
         {hire.portal_enabled && url ? (
           <>
-            <p className="break-all rounded-[var(--radius-control)] border border-border/70 bg-muted/30 p-2 text-xs">
+            <p className="break-all rounded-[var(--radius-control)] border border-[--st-line-soft] bg-[--st-panel-hi] p-2 font-mono text-xs">
               {url}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={copy}>
+              <Button size="sm" variant="outline" className="min-h-9" onClick={copy}>
                 <Copy className="h-4 w-4" />
                 Copy link
               </Button>
-              <Button size="sm" variant="ghost" onClick={disable} disabled={busy}>
+              <Button size="sm" variant="ghost" className="min-h-9" onClick={disable} disabled={busy}>
                 Turn off
               </Button>
             </div>
@@ -88,12 +87,12 @@ export default function VenuePortalPanel({ hire, onChanged }: Props) {
             )}
           </>
         ) : (
-          <Button size="sm" variant="outline" onClick={enable} disabled={busy}>
+          <Button size="sm" variant="outline" className="min-h-9" onClick={enable} disabled={busy}>
             {hire.portal_token ? <Link2 className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
             {busy ? "Working…" : hire.portal_token ? "Turn the link back on" : "Create a link"}
           </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

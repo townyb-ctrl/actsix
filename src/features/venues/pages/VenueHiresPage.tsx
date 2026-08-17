@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PartyPopper, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +102,7 @@ export default function VenueHiresPage() {
         </div>
 
         {loading ? (
-          <VenueListSkeleton />
+          <VenueListSkeleton shape="row" />
         ) : visibleHires.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
@@ -111,7 +111,7 @@ export default function VenueHiresPage() {
                 {hires.length === 0 ? "No hires yet" : "Nothing under this filter"}
               </p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                A hire holds everything about one event — every space, every day, the hirer, and
+                A hire holds everything about one event: every space, every day, the hirer, and
                 the notes. Single bookings on the calendar carry on working without one.
               </p>
               {hires.length === 0 && (
@@ -122,53 +122,46 @@ export default function VenueHiresPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <Card className="actsix-panel st-list">
             {visibleHires.map((hire) => {
               const hireBookings = bookingsByHire.get(hire.id) ?? [];
               const span = hireSpan(hireBookings);
 
               return (
-                <Card key={hire.id}>
-                  <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">{hire.name}</p>
-                        <Badge variant={statusVariant(hire.status)}>{hire.status}</Badge>
-                        {hire.event_type && (
-                          <Badge variant="outline" className="font-normal">
-                            {hire.event_type}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <p className="text-sm text-muted-foreground">
-                        {span
-                          ? `${formatDate(span.startsAt)}${
-                              span.dayCount > 1 ? ` · ${span.dayCount} days` : ""
-                            }`
-                          : "Nothing booked yet"}
-                        {hire.hirer_name && ` · ${hire.hirer_name}`}
-                      </p>
-
-                      <p className="text-sm text-muted-foreground">
-                        {hireBookings.length === 1
-                          ? "1 booking"
-                          : `${hireBookings.length} bookings`}
-                      </p>
+                <div key={hire.id} className="action-row flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        to={`/venues/hires/${hire.id}`}
+                        className="truncate text-sm font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40"
+                      >
+                        {hire.name}
+                      </Link>
+                      <Badge variant={statusVariant(hire.status)}>{hire.status}</Badge>
+                      {hire.event_type && (
+                        <Badge variant="outline" className="font-normal">
+                          {hire.event_type}
+                        </Badge>
+                      )}
                     </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/venues/hires/${hire.id}`)}
-                    >
-                      Open
-                    </Button>
-                  </CardContent>
-                </Card>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {span
+                        ? `${formatDate(span.startsAt)}${
+                            span.dayCount > 1 ? ` · ${span.dayCount} days` : ""
+                          }`
+                        : "Nothing booked yet"}
+                      {hire.hirer_name && ` · ${hire.hirer_name}`}
+                    </p>
+                  </div>
+
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                    {hireBookings.length === 1 ? "1 booking" : `${hireBookings.length} bookings`}
+                  </span>
+                </div>
               );
             })}
-          </div>
+          </Card>
         )}
       </div>
 

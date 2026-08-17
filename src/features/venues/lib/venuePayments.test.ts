@@ -40,6 +40,7 @@ describe("paymentSummary", () => {
     expect(summary).toEqual({
       charged: 5000,
       received: 0,
+      refunded: 0,
       outstanding: 5000,
       bondHeld: 0,
       isSettled: false,
@@ -82,13 +83,16 @@ describe("paymentSummary", () => {
     expect(summary.bondHeld).toBe(2000);
   });
 
-  it("treats a refund as a negative payment", () => {
+  it("keeps a refund out of received, and still nets it into what is owed", () => {
     const summary = paymentSummary(
       [line({ id: "l1" })],
       [payment({ id: "p1", amount: 5000 }), payment({ id: "p2", amount: -500 })]
     );
 
-    expect(summary.received).toBe(4500);
+    // Received is what came in, refunded is what went back. Netting them into
+    // one number is what made the UI say "-R 500,00 paid".
+    expect(summary.received).toBe(5000);
+    expect(summary.refunded).toBe(500);
     expect(summary.outstanding).toBe(500);
   });
 

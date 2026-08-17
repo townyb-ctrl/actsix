@@ -47,7 +47,10 @@ export type VenueHire = {
   access_plan: string;
   av_preset_id: string | null;
   walkie_channels: string;
+  /** Staff only. Never leaves the workspace. */
   notes: string;
+  /** Shown to the hirer on their portal page. */
+  hirer_notes: string;
   created_at: string;
   updated_at: string;
 };

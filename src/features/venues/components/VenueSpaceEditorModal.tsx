@@ -10,6 +10,7 @@ import { upsertVenueSpace } from "@/features/venues/api/venuesApi";
 import { removeSpaceResource, setSpaceResource } from "@/features/venues/api/venueResourcesApi";
 import { uploadVenueSpacePhoto } from "@/features/venues/lib/uploadVenueSpacePhoto";
 import { type VenueSpace } from "@/features/venues/lib/venueBookings";
+import { SPACE_COLORS } from "@/features/venues/lib/venueSpaceColors";
 import type { VenueResource, VenueSpaceResource } from "@/features/venues/lib/venueResources";
 
 type Props = {
@@ -23,17 +24,6 @@ type Props = {
   onSaved: () => void;
 };
 
-/** Fixed palette so the calendar's chip colours stay legible and distinct - no free-form picker. */
-const SPACE_COLOR_PALETTE = [
-  { value: "#0d9488", label: "Teal" },
-  { value: "#d97706", label: "Amber" },
-  { value: "#0284c7", label: "Sky" },
-  { value: "#e11d48", label: "Rose" },
-  { value: "#7c3aed", label: "Violet" },
-  { value: "#059669", label: "Emerald" },
-  { value: "#ea580c", label: "Orange" },
-  { value: "#475569", label: "Slate" },
-];
 
 const nameFieldId = "venue-space-name";
 const descriptionFieldId = "venue-space-description";
@@ -463,7 +453,7 @@ export default function VenueSpaceEditorModal({
         <FieldGroup title="Calendar colour">
           <Field label="Colour">
             <div className="flex flex-wrap items-center gap-2">
-              {SPACE_COLOR_PALETTE.map((swatch) => (
+              {SPACE_COLORS.map((swatch) => (
                 <button
                   key={swatch.value}
                   type="button"
