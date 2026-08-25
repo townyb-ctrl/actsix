@@ -78,7 +78,6 @@ export default function VenueResourcesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Venue Hire"
         title="Resources"
         subtitle="Tables, chairs, AV kit, and everything else a hire can ask for."
         actions={

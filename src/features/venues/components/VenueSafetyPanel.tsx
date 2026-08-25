@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AlertTriangle, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import {
   setIncidentResolved,
   upsertHireContact,
 } from "@/features/venues/api/venueSafetyApi";
+import VenuePanelSection from "@/features/venues/components/VenuePanelSection";
 import type { VenueHire } from "@/features/venues/lib/venueHires";
 import {
   incidentSummary,
@@ -31,8 +33,6 @@ type Props = {
   onAddIncident: () => void;
   onEditIncident: (incident: VenueIncident) => void;
   onChanged: () => void;
-  /** Tells the page there is typing here that a section switch would discard. */
-  onUnsavedChange?: (key: string, label: string | null) => void;
 };
 
 const toLocalInput = (iso: string | null) => {
@@ -63,7 +63,6 @@ export default function VenueSafetyPanel({
   onAddIncident,
   onEditIncident,
   onChanged,
-  onUnsavedChange,
 }: Props) {
   const [securityRequired, setSecurityRequired] = useState(
     hire.security_required,
@@ -80,9 +79,13 @@ export default function VenueSafetyPanel({
     role: "",
     phone: "",
   });
+  /** Held until the confirm is answered: this is the list of who to phone when
+      something goes wrong, and a stray tap should not empty it. */
+  const [contactToRemove, setContactToRemove] = useState<VenueHireContact | null>(null);
 
-  // Everything the one Save button covers. Compared against the hire rather
-  // than tracked with a flag, so saving, or undoing your own edit, clears it.
+  // Everything the one Save button covers, only so the fold's lid can admit
+  // there is typing inside it. Compared against the hire rather than tracked
+  // with a flag, so saving, or undoing your own edit, clears it.
   const securityDirty =
     securityRequired !== hire.security_required ||
     provider !== hire.security_provider ||
@@ -92,14 +95,21 @@ export default function VenueSafetyPanel({
     guardCount !== String(hire.car_guard_count) ||
     accessPlan !== hire.access_plan;
 
-  useEffect(() => {
-    onUnsavedChange?.("safety", securityDirty ? "The security plan" : null);
-    return () => onUnsavedChange?.("safety", null);
-  }, [securityDirty, onUnsavedChange]);
-
   const gaps = safetyGaps(hire, contacts);
   const summary = incidentSummary(incidents);
   const ordered = sortIncidents(incidents);
+
+  // Folded, the block still has to answer "is anyone on the door" without being
+  // opened - otherwise it has only moved the reading, not saved it.
+  const securityHint = securityDirty
+    ? "Unsaved"
+    : [
+        securityRequired ? provider.trim() || "Guards booked" : null,
+        carGuards ? `${Math.max(0, Number(guardCount) || 0)} car guards` : null,
+        accessPlan.trim() ? "access planned" : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "Nothing arranged";
 
   const saveSecurity = async () => {
     setSaving(true);
@@ -216,6 +226,7 @@ export default function VenueSafetyPanel({
         </ul>
       )}
 
+      <VenuePanelSection title="Security & access" hint={securityHint}>
       <div className="space-y-3 px-4 py-4">
         <label className="flex items-center gap-2 text-sm font-semibold">
           <input
@@ -294,6 +305,7 @@ export default function VenueSafetyPanel({
           {saving ? "Saving…" : "Save security plan"}
         </Button>
       </div>
+      </VenuePanelSection>
 
       <div className="border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
         <h3 className="label-eyebrow">Who to call on the day</h3>
@@ -330,7 +342,7 @@ export default function VenueSafetyPanel({
               size="sm"
               variant="ghost"
               className="min-h-9 shrink-0 text-destructive hover:text-destructive"
-              onClick={() => removeContact(contact)}
+              onClick={() => setContactToRemove(contact)}
               aria-label={`Remove ${contact.name}`}
             >
               <Trash2 className="h-4 w-4" />
@@ -339,6 +351,7 @@ export default function VenueSafetyPanel({
         ))
       )}
 
+      <VenuePanelSection title="Add someone to call">
       <div className="px-4 py-3">
         <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
           <Input
@@ -372,6 +385,7 @@ export default function VenueSafetyPanel({
           </Button>
         </div>
       </div>
+      </VenuePanelSection>
 
       <div className="border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
         <h3 className="label-eyebrow">Incidents</h3>
@@ -420,6 +434,18 @@ export default function VenueSafetyPanel({
           </div>
         ))
       )}
+
+      <ConfirmDialog
+        open={contactToRemove !== null}
+        onOpenChange={(next) => !next && setContactToRemove(null)}
+        title="Remove this contact?"
+        description={`${contactToRemove?.name || "This person"} will no longer be listed to call on the day.`}
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (contactToRemove) removeContact(contactToRemove);
+          setContactToRemove(null);
+        }}
+      />
     </section>
   );
 }

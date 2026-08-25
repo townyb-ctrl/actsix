@@ -6,12 +6,15 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { bookingCoversDay, type VenueBooking, type VenueSpace } from "@/features/venues/lib/venueBookings";
 import { spaceColor } from "@/features/venues/lib/venueSpaceColors";
+import { localDateKey } from "@/features/venues/lib/venueDesk";
 
 type Props = {
   visibleMonth: Date;
   bookings: VenueBooking[];
   spaces: VenueSpace[];
   loading: boolean;
+  /** `YYYY-MM-DD` the visitor arrived asking for, marked so they can find it. */
+  highlightDay?: string | null;
   onMonthChange: (month: Date) => void;
   onSelectBooking: (booking: VenueBooking) => void;
 };
@@ -29,6 +32,7 @@ export default function VenueCalendar({
   bookings,
   spaces,
   loading,
+  highlightDay = null,
   onMonthChange,
   onSelectBooking,
 }: Props) {
@@ -127,14 +131,23 @@ export default function VenueCalendar({
               const overflow = dayBookings.length - visible.length;
               const muted = day.getMonth() !== visibleMonth.getMonth();
               const isToday = day.toDateString() === today.toDateString();
-              const dayKey = day.toISOString().slice(0, 10);
+              // Local parts, not toISOString(): these are local midnights, and
+              // UTC drags them onto the previous date east of Greenwich - which
+              // put the desk's day highlight one square to the right.
+              const dayKey = localDateKey(day);
 
               return (
                 <div
                   key={dayKey}
+                  // `highlightDay` is the day somebody asked for on the way in -
+                  // arriving on the right month with nothing marked leaves them
+                  // hunting for the square they clicked.
+                  data-asked={dayKey === highlightDay ? "true" : undefined}
                   className={cn(
                     "min-h-24 border-b border-r p-1.5 last:border-r-0 sm:min-h-28",
-                    muted && "bg-muted/20 text-muted-foreground"
+                    muted && "bg-muted/20 text-muted-foreground",
+                    dayKey === highlightDay &&
+                      "bg-[--st-accent-wash] ring-2 ring-inset ring-[--st-accent-edge-hi]"
                   )}
                 >
                   <span

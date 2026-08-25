@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
+import { RouteFallback } from "@/components/RouteFallback";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import RecurringTasks from "./features/tasks/pages/RecurringTasksPage";
@@ -45,6 +46,7 @@ const CalendarModule = lazy(() => import("./pages/CalendarModule"));
 const Reminders = lazy(() => import("./pages/Reminders"));
 const PublicEventRegistration = lazy(() => import("./pages/PublicEventRegistration"));
 const Meetups = lazy(() => import("./pages/Placeholder").then((module) => ({ default: module.Meetups })));
+const VenueDesk = lazy(() => import("./pages/VenueDesk"));
 const Venues = lazy(() => import("./pages/Venues"));
 const VenueSpaces = lazy(() => import("./pages/VenueSpaces"));
 const VenueResources = lazy(() => import("./pages/VenueResources"));
@@ -64,14 +66,6 @@ const LegacyGroupRedirect = () => {
   const { groupId } = useParams();
   return <Navigate to={`/groups/${groupId}`} replace />;
 };
-
-const RouteFallback = () => (
-  <div className="actsix-page-body pt-8">
-    <div className="actsix-loading-state" role="status">
-      Loading...
-    </div>
-  </div>
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -116,7 +110,12 @@ const App = () => (
                 <Route path="/service-planner/teams" element={<ServicePlannerTeams />} />
                 <Route path="/service-planner/teams/:teamId" element={<ServicePlannerTeamDetail />} />
                 <Route path="/service-planner/repertoire" element={<ServicePlannerRepertoire />} />
-                <Route path="/venues" element={<Venues />} />
+                {/* The module opens on the desk. The month grid it used to open
+                    on is still here as the diary, one click away, because
+                    "which Saturdays are free in November" is a real question -
+                    just not the one somebody arrives with. */}
+                <Route path="/venues" element={<VenueDesk />} />
+                <Route path="/venues/diary" element={<Venues />} />
                 <Route path="/venues/spaces" element={<VenueSpaces />} />
                 <Route path="/venues/resources" element={<VenueResources />} />
                 <Route path="/venues/hires" element={<VenueHires />} />

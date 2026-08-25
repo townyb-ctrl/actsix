@@ -15,6 +15,7 @@ import {
   setHireWalkieChannels,
   updateHireSign,
 } from "@/features/venues/api/venueSignageApi";
+import VenuePanelSection from "@/features/venues/components/VenuePanelSection";
 import type { VenueResource } from "@/features/venues/lib/venueResources";
 import type { VenueHire } from "@/features/venues/lib/venueHires";
 import {
@@ -201,9 +202,12 @@ export default function VenueSignagePanel({
         ))
       )}
 
-      <div className="px-4 py-3">
-        {unlinked.length > 0 && (
-          <div className="flex gap-2">
+      {unlinked.length > 0 && (
+        <VenuePanelSection
+          title="Add a sign"
+          hint={`${unlinked.length} in the library`}
+        >
+          <div className="flex gap-2 px-4 py-3">
             <select
               value={addingSignId}
               onChange={(event) => setAddingSignId(event.target.value)}
@@ -227,13 +231,17 @@ export default function VenueSignagePanel({
               Add
             </Button>
           </div>
-        )}
-      </div>
+        </VenuePanelSection>
+      )}
 
-      <div className="border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
-        <h3 className="label-eyebrow">AV preset</h3>
-      </div>
-
+      <VenuePanelSection
+        title="AV & walkies"
+        hint={
+          [chosenPreset?.name || "No preset", channels.trim() ? "channels set" : null]
+            .filter(Boolean)
+            .join(" · ")
+        }
+      >
       <div className="space-y-2 px-4 py-3">
         <select
           value={hire.av_preset_id || ""}
@@ -304,6 +312,7 @@ export default function VenueSignagePanel({
           />
         </label>
       </div>
+      </VenuePanelSection>
 
       <div className="flex items-center gap-2 border-t border-[--st-line-soft] bg-[--st-panel-hi] px-4 py-2">
         <Radio className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -407,6 +416,7 @@ export default function VenueSignagePanel({
         )}
 
         {resources.length > 0 && (
+          <VenuePanelSection title="Sign something out">
           <div className="flex gap-2 px-4 py-3">
             <select
               value={checkoutResourceId}
@@ -439,6 +449,7 @@ export default function VenueSignagePanel({
               Out
             </Button>
           </div>
+          </VenuePanelSection>
         )}
       </div>
     </section>

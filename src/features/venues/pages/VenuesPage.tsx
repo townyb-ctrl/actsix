@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,14 @@ export default function VenuesPage() {
   const queryClient = useQueryClient();
 
   const [filter, setFilter] = useState<StatusFilter>("All");
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
+  // `?on=YYYY-MM-DD` opens the month holding that day, so a column on the desk's
+  // strip lands somewhere useful instead of always on the current month.
+  const [searchParams] = useSearchParams();
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const on = searchParams.get("on");
+    const asked = on ? new Date(`${on}T00:00:00`) : null;
+    return startOfMonth(asked && !Number.isNaN(asked.getTime()) ? asked : new Date());
+  });
   const [editingBooking, setEditingBooking] = useState<VenueBooking | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -101,32 +108,20 @@ export default function VenuesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Venue Hire"
-        title="Bookings"
-        subtitle="Who has the building, and when."
+        title="Diary"
+        subtitle="Every month of the building, hire by hire."
         actions={
-          <>
-            <Button variant="outline" className="min-h-10" asChild>
-              <Link to="/venues/today">Today</Link>
-            </Button>
-            <Button variant="outline" className="min-h-10" asChild>
-              <Link to="/venues/reports">Reports</Link>
-            </Button>
-            <Button variant="outline" className="min-h-10" asChild>
-              <Link to="/venues/signage">Signage</Link>
-            </Button>
-            <Button variant="outline" className="min-h-10" asChild>
-              <Link to="/venues/spaces">Spaces</Link>
-            </Button>
-            <Button
-              className="actsix-btn-primary min-h-10"
-              onClick={openNewBooking}
-              disabled={activeSpaceCount === 0}
-            >
-              <Plus className="h-4 w-4" />
-              New booking
-            </Button>
-          </>
+          // The five outline buttons that used to live here were the module's
+          // whole navigation, hidden inside one page's header. They are in the
+          // sidebar now, where somebody can find them from anywhere.
+          <Button
+            className="actsix-btn-primary min-h-10"
+            onClick={openNewBooking}
+            disabled={activeSpaceCount === 0}
+          >
+            <Plus className="h-4 w-4" />
+            New booking
+          </Button>
         }
       />
 
@@ -156,6 +151,7 @@ export default function VenuesPage() {
                 bookings={visibleBookings}
                 spaces={spaces}
                 loading={loading}
+                highlightDay={searchParams.get("on")}
                 onMonthChange={setVisibleMonth}
                 onSelectBooking={(booking) => {
                   setEditingBooking(booking);

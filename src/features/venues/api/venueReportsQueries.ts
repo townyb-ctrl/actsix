@@ -28,6 +28,9 @@ export function useWorkspaceQuoteLines(workspaceId?: string | null) {
   return {
     lines: query.data ?? [],
     loading: query.isPending && query.fetchStatus !== "idle",
+    // Surfaced because a dropped money feed returns [] to every caller, which
+    // reads as "nothing is owed" - the most expensive silence in the module.
+    error: (query.error as { message: string } | null) ?? null,
   };
 }
 
@@ -46,5 +49,6 @@ export function useWorkspacePayments(workspaceId?: string | null) {
   return {
     payments: query.data ?? [],
     loading: query.isPending && query.fetchStatus !== "idle",
+    error: (query.error as { message: string } | null) ?? null,
   };
 }

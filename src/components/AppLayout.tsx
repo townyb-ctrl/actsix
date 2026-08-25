@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, Navigate, useLocation, useNavigate, Link } from "react-router-dom"; // <-- Added Link
+import { RouteFallback } from "@/components/RouteFallback";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -352,7 +353,16 @@ export default function AppLayout() {
             />
           ) : (
             <main id="main-content" className="flex-1 overflow-y-auto overscroll-contain md:px-4 xl:px-6 2xl:px-8">
-              <Outlet />
+              {/* The route chunks are lazy, so switching module suspends. The
+                  only Suspense boundary used to be above this whole layout, so
+                  React tore the shell down to render the fallback: the rail, the
+                  header and the rounded content panel all vanished for as long
+                  as the chunk took to arrive, and the viewport went flat and
+                  pale between every module. Catching it here keeps the shell
+                  mounted and confines the wait to the region actually changing. */}
+              <Suspense fallback={<RouteFallback />}>
+                <Outlet />
+              </Suspense>
             </main>
           )}
 

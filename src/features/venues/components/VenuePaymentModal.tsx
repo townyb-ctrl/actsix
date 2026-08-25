@@ -1,9 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Save, Trash2 } from "lucide-react";
+import { Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CheckboxField, Field, FieldRow, fieldControlClass } from "@/components/ui/field";
 import { FormDialog } from "@/components/ui/form-dialog";
+import { ModalDeleteButton } from "@/components/ui/modal-delete-button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { deletePayment, upsertPayment } from "@/features/venues/api/venuePaymentsApi";
@@ -127,17 +128,7 @@ export default function VenuePaymentModal({
       footer={
         <>
           {payment ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mr-auto text-destructive hover:text-destructive"
-              onClick={remove}
-              disabled={deleting}
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleting ? "Removing…" : "Remove"}
-            </Button>
+            <ModalDeleteButton what="payment" onConfirm={remove} deleting={deleting} />
           ) : (
             <div className="mr-auto" />
           )}
@@ -222,7 +213,7 @@ export default function VenuePaymentModal({
 
         <p className="text-sm text-muted-foreground">
           Recorded as{" "}
-          <span className="font-medium text-foreground">{formatCurrency(signedAmount)}</span>
+          <span className="font-mono font-medium tabular-nums text-foreground">{formatCurrency(signedAmount)}</span>
           {kind === "Bond" && " — held, and never counted as income"}
         </p>
 

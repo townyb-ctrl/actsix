@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Save, Trash2 } from "lucide-react";
+import { Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldRow, fieldControlClass } from "@/components/ui/field";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { Input } from "@/components/ui/input";
+import { ModalDeleteButton } from "@/components/ui/modal-delete-button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -130,17 +131,7 @@ export default function VenueIncidentModal({
       footer={
         <>
           {incident ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mr-auto text-destructive hover:text-destructive"
-              onClick={remove}
-              disabled={deleting}
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleting ? "Removing…" : "Remove"}
-            </Button>
+            <ModalDeleteButton what="incident" onConfirm={remove} deleting={deleting} />
           ) : (
             <div className="mr-auto" />
           )}

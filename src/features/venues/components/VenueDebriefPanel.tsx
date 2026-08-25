@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { saveHireDebrief } from "@/features/venues/api/venuePostEventApi";
+import VenuePanelSection from "@/features/venues/components/VenuePanelSection";
 import { formatCurrency } from "@/features/venues/lib/venueBookings";
 import {
   hireOutcome,
@@ -24,6 +25,9 @@ type Props = {
   onClone: () => void;
   onSaved: () => void;
 };
+
+const formatDone = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
 
 const todayIso = () => {
   const now = new Date();
@@ -147,7 +151,17 @@ export default function VenueDebriefPanel({
         <Row label="Net" value={formatCurrency(outcome.net)} strong />
       </dl>
 
-      <div className="space-y-3 border-t border-[--st-line-soft] px-4 py-4">
+      <VenuePanelSection
+        title="Write the debrief"
+        hint={
+          hire.debrief_completed_on
+            ? `Saved ${formatDone(hire.debrief_completed_on)}`
+            : started
+              ? "Started"
+              : "Not written"
+        }
+      >
+      <div className="space-y-3 px-4 py-4">
         <div className="space-y-1">
           <span className="label-eyebrow">How were they to host</span>
           <div className="flex items-center gap-1">
@@ -252,6 +266,7 @@ export default function VenueDebriefPanel({
           {saving ? "Saving…" : "Save debrief"}
         </Button>
       </div>
+      </VenuePanelSection>
     </section>
   );
 }

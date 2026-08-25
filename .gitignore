@@ -40,3 +40,5 @@ supabase/.temp/
 .superpowers/
 .claude/
 .worktrees/
+
+.impeccable/shots/

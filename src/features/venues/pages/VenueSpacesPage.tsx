@@ -118,7 +118,6 @@ export default function VenueSpacesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Venue Hire"
         title="Spaces"
         subtitle="The rooms and halls that can be booked or hired."
         actions={

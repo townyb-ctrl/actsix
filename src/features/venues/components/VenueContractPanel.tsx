@@ -7,7 +7,11 @@ import { Field, FieldRow, fieldControlClass } from "@/components/ui/field";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { setContractClauses, setContractSigned } from "@/features/venues/api/venuePaymentsApi";
+import VenuePanelSection from "@/features/venues/components/VenuePanelSection";
 import type { VenueHire } from "@/features/venues/lib/venueHires";
+
+const formatSigned = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
 
 type Props = {
   hire: VenueHire;
@@ -15,8 +19,6 @@ type Props = {
   workspaceClauses: string;
   onPrint: () => void;
   onSaved: () => void;
-  /** Tells the page there is typing here that a section switch would discard. */
-  onUnsavedChange?: (key: string, label: string | null) => void;
 };
 
 export default function VenueContractPanel({
@@ -24,10 +26,9 @@ export default function VenueContractPanel({
   workspaceClauses,
   onPrint,
   onSaved,
-  onUnsavedChange,
 }: Props) {
   // Seeded at first render, not in the effect below: a first pass holding "" is
-  // a difference from the hire, and the page read that as unsaved typing before
+  // a difference from the hire, and the lid would read as unsaved typing before
   // anybody had typed.
   const [clauses, setClauses] = useState(hire.contract_clauses || workspaceClauses);
   const [signedOn, setSignedOn] = useState(hire.contract_signed_on || "");
@@ -43,15 +44,12 @@ export default function VenueContractPanel({
     setSignedBy(hire.contract_signed_by || "");
   }, [hire, workspaceClauses]);
 
+  // Only so the fold's lid can admit there is typing inside it. Nothing
+  // unmounts this panel any more, so nothing can discard the typing either.
   const dirty =
     clauses !== (hire.contract_clauses || workspaceClauses) ||
     signedOn !== (hire.contract_signed_on || "") ||
     signedBy !== (hire.contract_signed_by || "");
-
-  useEffect(() => {
-    onUnsavedChange?.("contract", dirty ? "The contract wording" : null);
-    return () => onUnsavedChange?.("contract", null);
-  }, [dirty, onUnsavedChange]);
 
   const saveClauses = async () => {
     setSavingClauses(true);
@@ -102,27 +100,49 @@ export default function VenueContractPanel({
         </Button>
       </div>
 
-      <div className="space-y-4 px-4 py-4">
-        <Field label="Terms and conditions for this hire" htmlFor="venue-contract-clauses">
-          <textarea
-            id="venue-contract-clauses"
-            value={clauses}
-            onChange={(event) => setClauses(event.target.value)}
-            rows={6}
-            placeholder="No food in the auditorium. Upstairs is closed to guests. Damage is charged against the bond."
-            className={cn(fieldControlClass, "min-h-32 py-2")}
-          />
-          <p className="text-xs text-muted-foreground">
-            Starts from your standard wording, set under Spaces. Editing here changes this hire
-            only.
-          </p>
-        </Field>
+      <VenuePanelSection
+        title="Wording"
+        hint={
+          dirty && clauses !== (hire.contract_clauses || workspaceClauses)
+            ? "Unsaved"
+            : hire.contract_clauses
+              ? "Edited for this hire"
+              : "Your standard wording"
+        }
+      >
+        <div className="space-y-3 px-4 py-4">
+          <Field label="Terms and conditions for this hire" htmlFor="venue-contract-clauses">
+            <textarea
+              id="venue-contract-clauses"
+              value={clauses}
+              onChange={(event) => setClauses(event.target.value)}
+              rows={6}
+              placeholder="No food in the auditorium. Upstairs is closed to guests. Damage is charged against the bond."
+              className={cn(fieldControlClass, "min-h-32 py-2")}
+            />
+            <p className="text-xs text-muted-foreground">
+              Starts from your standard wording, set under Spaces. Editing here changes this hire
+              only.
+            </p>
+          </Field>
 
-        <Button size="sm" variant="outline" onClick={saveClauses} disabled={savingClauses}>
-          {savingClauses ? "Saving…" : "Save wording"}
-        </Button>
+          <Button size="sm" variant="outline" onClick={saveClauses} disabled={savingClauses}>
+            {savingClauses ? "Saving…" : "Save wording"}
+          </Button>
+        </div>
+      </VenuePanelSection>
 
-        <div className="space-y-3 border-t border-[--st-line-soft] pt-4">
+      <VenuePanelSection
+        title="Signature"
+        hint={
+          hire.contract_signed_on
+            ? `${formatSigned(hire.contract_signed_on)}${
+                hire.contract_signed_by ? ` · ${hire.contract_signed_by}` : ""
+              }`
+            : "Not recorded"
+        }
+      >
+        <div className="space-y-3 px-4 py-4">
           <FieldRow>
             <Field label="Signed on" htmlFor="venue-contract-signed-on">
               <input
@@ -153,7 +173,7 @@ export default function VenueContractPanel({
             Printed, signed on paper, recorded here. ACTSIX does not do e-signature.
           </p>
         </div>
-      </div>
+      </VenuePanelSection>
     </section>
   );
 }

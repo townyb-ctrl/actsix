@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarClock,
   CalendarDays,
+  ChartNoAxesColumn,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -12,6 +13,7 @@ import {
   FolderKanban,
   Home,
   Inbox,
+  LayoutDashboard,
   LayoutGrid,
   ListChecks,
   MoreHorizontal,
@@ -23,6 +25,7 @@ import {
   Presentation,
   RotateCcw,
   Settings as SettingsIcon,
+  Signpost,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -165,12 +168,19 @@ const navSections: NavSection[] = [
     moduleKey: "venues",
     matchPrefixes: ["/venues"],
     group: "Planning",
+    // Reports, signage and the event-day screen used to be reachable only from
+    // buttons crammed into the bookings header, which meant the three most
+    // operational screens in the module were the three hardest to find.
     items: [
+      { title: "Desk", url: "/venues", icon: LayoutDashboard },
+      { title: "Today", url: "/venues/today", icon: Clock },
       { title: "Enquiries", url: "/venues/enquiries", icon: Inbox },
       { title: "Hires", url: "/venues/hires", icon: PartyPopper },
-      { title: "Bookings", url: "/venues", icon: CalendarDays },
+      { title: "Diary", url: "/venues/diary", icon: CalendarDays },
       { title: "Spaces", url: "/venues/spaces", icon: DoorOpen },
       { title: "Resources", url: "/venues/resources", icon: Boxes },
+      { title: "Signs & AV", url: "/venues/signage", icon: Signpost },
+      { title: "Reports", url: "/venues/reports", icon: ChartNoAxesColumn },
     ],
   },
   {

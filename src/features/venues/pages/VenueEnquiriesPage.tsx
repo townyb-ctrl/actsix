@@ -80,7 +80,6 @@ export default function VenueEnquiriesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Venue Hire"
         title="Enquiries"
         subtitle="Who wants the building, and whether we should say yes."
       />

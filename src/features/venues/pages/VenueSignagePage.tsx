@@ -142,7 +142,6 @@ export default function VenueSignagePage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Venue Hire"
         title="Signage & AV"
         subtitle="Signs the church owns, and how the room is usually set up."
         actions={

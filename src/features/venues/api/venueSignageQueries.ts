@@ -46,7 +46,12 @@ export function useHireSigns(hireId?: string | null) {
     retry: false,
   });
 
-  return { links: query.data ?? [] };
+  return {
+    links: query.data ?? [],
+    // Surfaced because the hire page will not judge a concern settled until
+    // every feed behind it has actually landed.
+    loading: query.isPending && query.fetchStatus !== "idle",
+  };
 }
 
 export function useAvPresets(workspaceId?: string | null) {
@@ -76,5 +81,8 @@ export function useResourceCheckouts(hireId?: string | null) {
     retry: false,
   });
 
-  return { checkouts: query.data ?? [] };
+  return {
+    checkouts: query.data ?? [],
+    loading: query.isPending && query.fetchStatus !== "idle",
+  };
 }

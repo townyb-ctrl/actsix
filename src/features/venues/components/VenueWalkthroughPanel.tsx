@@ -2,8 +2,10 @@ import { useRef, useState } from "react";
 import { Camera, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormDialog } from "@/components/ui/form-dialog";
 import {
   deleteWalkthrough,
   upsertWalkthrough,
@@ -45,7 +47,11 @@ export default function VenueWalkthroughPanel({
   onChanged,
 }: Props) {
   const coverage = walkthroughCoverage(walkthroughs);
+  const [open, setOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  /** A walkthrough row is the photographic half of a bond argument. Deleting one
+      by mistake cannot be undone, so it gets asked about first. */
+  const [rowToRemove, setRowToRemove] = useState<VenueWalkthrough | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const spaceName = (spaceId: string | null) =>
@@ -158,7 +164,7 @@ export default function VenueWalkthroughPanel({
                     size="sm"
                     variant="ghost"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => remove(row)}
+                    onClick={() => setRowToRemove(row)}
                     aria-label="Remove walkthrough"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -217,25 +223,58 @@ export default function VenueWalkthroughPanel({
   );
 
   return (
-    <section className="st-panel" aria-labelledby="walkthrough-heading">
-      <div className="st-panel-head">
-        <h2 className="st-panel-title" id="walkthrough-heading">
-          Condition walkthrough
-        </h2>
-        <Badge variant={coverage.bothEndsCaptured ? "default" : "secondary"}>
-          {coverage.bothEndsCaptured
-            ? `Both ends · ${coverage.photoCount} ${coverage.photoCount === 1 ? "photo" : "photos"}`
-            : "Incomplete"}
-        </Badge>
-      </div>
+    // One strip, not a panel: the walking happens in the building with a phone
+    // in hand, not at this desk, so all this concern owes the page is whether
+    // both ends are captured. The forms live behind the button, where they cost
+    // the other panels nothing.
+    <>
+      <section className="st-panel" aria-labelledby="walkthrough-heading">
+        <div className="st-panel-head">
+          <h2 className="st-panel-title" id="walkthrough-heading">
+            Condition walkthrough
+          </h2>
+          <div className="flex items-center gap-2">
+            <Badge variant={coverage.bothEndsCaptured ? "default" : "secondary"}>
+              {coverage.bothEndsCaptured
+                ? `Both ends · ${coverage.photoCount} ${coverage.photoCount === 1 ? "photo" : "photos"}`
+                : "Incomplete"}
+            </Badge>
+            <Button size="sm" variant="outline" className="min-h-9" onClick={() => setOpen(true)}>
+              <Camera className="h-4 w-4" />
+              Walk the rooms
+            </Button>
+          </div>
+        </div>
+      </section>
 
-      <p className="px-4 py-3 text-sm text-muted-foreground">
-        A bond argument needs both ends. Walk the rooms before they arrive and again after they
-        leave, and photograph anything that matters.
-      </p>
+      <FormDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Condition walkthrough"
+        description="A bond argument needs both ends. Walk the rooms before they arrive and again after they leave, and photograph anything that matters."
+        size="lg"
+      >
+        {/* The rows keep their own panel chrome inside the dialog: they are the
+            same strips either way, and a heading stripe needs an edge to sit on. */}
+        <div className="st-panel overflow-hidden [&>div:first-child>div:first-child]:border-t-0">
+          {renderRows(coverage.before, "Before")}
+          {renderRows(coverage.after, "After")}
+        </div>
+      </FormDialog>
 
-      {renderRows(coverage.before, "Before")}
-      {renderRows(coverage.after, "After")}
-    </section>
+      <ConfirmDialog
+        open={rowToRemove !== null}
+        onOpenChange={(next) => !next && setRowToRemove(null)}
+        title="Remove this walkthrough?"
+        description={`The notes and ${rowToRemove?.photo_urls.length || 0} photo${
+          rowToRemove?.photo_urls.length === 1 ? "" : "s"
+        } recorded for ${spaceName(rowToRemove?.space_id ?? null)} go with it. This cannot be undone.`}
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (rowToRemove) remove(rowToRemove);
+          setRowToRemove(null);
+        }}
+      />
+    </>
   );
 }

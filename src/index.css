@@ -869,7 +869,9 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
        Tailwind hues they replaced ran 2.9 to 3.1 and failed at every size. */
     --st-space-1: #2c7169;
     --st-space-2: #55613f;
-    --st-space-3: #8a4a38;
+    /* Umber, not the old clay #8a4a38 - that sat a hair from --st-rose, and a
+       room colour must never be mistakable for an alarm. */
+    --st-space-3: #6b4a2f;
     --st-space-4: #3e4a73;
     --st-space-5: #6a3e5c;
     --st-space-6: #7a5424;
@@ -1487,5 +1489,639 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   .st-toggle:hover {
     background: var(--st-panel-hi);
     border-color: var(--st-line-strong);
+  }
+
+  /* ---- The hire detail measure -------------------------------------------- */
+  /* One column width for the whole page — title, the rule under it, and every
+     panel share a left edge and a right one.
+
+     It ran full-bleed before, which cost twice. A settled row is a name, a
+     status and a chevron: at 1450px the chevron sat a thousand pixels from the
+     name it belonged to and the row stopped being one thing to read — the exact
+     failure `.st-signal` already caps itself at 62rem to avoid. And a band of
+     four print buttons spent that whole width to hold about 300px of controls.
+     Same number, same reason, one level up. The paper to the right is the page's
+     margin, not a hole in it. */
+  .venue-hire-measure {
+    --venue-hire-measure: 62rem;
+  }
+
+  .venue-hire-measure .st-page-head > div,
+  .venue-hire-measure .actsix-page-body > *,
+  /* The loading and error returns wear the class on the body itself, having no
+     page head above them to share it with. */
+  .venue-hire-measure.actsix-page-body > * {
+    max-width: var(--venue-hire-measure);
+  }
+
+  /* ---- Hire section rhythm ------------------------------------------------ */
+  /* Two intervals, not one. A group heading belongs to the panels under it, so
+     it sits close to them (8px) and the air goes above the group instead (28px).
+     One repeated 12px gap made the heading float equally between the group it
+     named and the group it did not. */
+  .venue-hire-stack > * + * {
+    margin-top: 28px;
+  }
+
+  .venue-hire-group > .st-group {
+    margin-bottom: 8px;
+  }
+
+  /* ---- Hire section pane -------------------------------------------------- */
+  /* One column, down the page.
+     This was two-up on `auto-fit, minmax(28rem, 1fr)`, then on CSS columns. Both
+     assume the panels in a row are about the same height, and open concerns
+     never are: a three-row payments summary beside a safety panel with a
+     contact list left most of a screen of blank paper under the short one.
+     Column balancing cannot close that gap either, because a panel is a single
+     unbreakable box — it can only move a whole panel, not split one.
+     So: no rows to align, no gap to close. The pane is capped by the measure
+     above, which is the width a dense panel wanted anyway. */
+  .venue-hire-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ---- Panel disclosures -------------------------------------------------- */
+  /* The lid of a folded setup block. Same strip as the sub-headings it replaces,
+     so a shut block and an open sub-section read as one language. */
+  .venue-disclosure {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 9px 16px;
+    border-top: 1px solid var(--st-line-soft);
+    background: var(--st-panel-hi);
+    list-style: none;
+    cursor: pointer;
+    transition: background 130ms ease;
+  }
+
+  .venue-disclosure::-webkit-details-marker {
+    display: none;
+  }
+
+  /* The panel head already draws that line. */
+  .st-panel-head + details > .venue-disclosure {
+    border-top: 0;
+  }
+
+  .venue-disclosure:hover {
+    background: var(--st-track);
+  }
+
+  .venue-disclosure:focus-visible {
+    outline: 2px solid var(--st-accent);
+    outline-offset: -2px;
+  }
+
+  .venue-disclosure-mark {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    margin-left: auto;
+    color: var(--st-ink-3);
+    transition: transform 130ms ease;
+  }
+
+  /* The hint already took the auto margin; the mark then only needs its gap. */
+  .venue-disclosure-hint + .venue-disclosure-mark {
+    margin-left: 0;
+  }
+
+  details[open] > .venue-disclosure .venue-disclosure-mark {
+    transform: rotate(90deg);
+  }
+
+  .venue-disclosure-hint {
+    margin-left: auto;
+    min-width: 0;
+    text-align: right;
+    font-size: 0.71875rem;
+    color: var(--st-ink-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .venue-disclosure,
+    .venue-disclosure-mark {
+      transition: none;
+    }
+  }
+
+  /* ======================================================================
+     THE DESK
+     The venue module's front page. Ordered by when, never by record type.
+     Studio's own materials throughout: hairlines instead of boxes, one teal,
+     mono figures, 44px rows. Nothing here introduces a colour or a face.
+     ====================================================================== */
+
+  /* ---- The strip: the building's next fortnight ------------------------- */
+  .st-strip {
+    display: grid;
+    grid-auto-flow: column;
+    /* A fortnight of a busy building scrolls sideways on a phone rather than
+       shrinking to slivers nobody can read or hit. */
+    grid-auto-columns: minmax(44px, 1fr);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .st-strip {
+    /* The continuation bleed has to cross exactly this much: a column's own
+       side padding twice, plus the divider between them. Derived rather than
+       hard-coded, so changing the padding can't silently break every run. */
+    --st-strip-pad: 6px;
+    --st-strip-bleed: calc(var(--st-strip-pad) * 2 + 1px);
+  }
+
+  .st-strip-day {
+    display: block;
+    padding: 10px var(--st-strip-pad) 12px;
+    border-left: 1px solid var(--st-line-soft);
+    /* The top rule is where today is declared, so every column reserves it. */
+    border-top: 2px solid transparent;
+    color: inherit;
+    text-decoration: none;
+    transition: background 130ms ease;
+  }
+
+  .st-strip-day:hover {
+    background: var(--st-track);
+  }
+
+  .st-strip-day:focus-visible {
+    outline: 2px solid var(--st-accent);
+    outline-offset: -2px;
+  }
+
+  .st-strip-day:first-child {
+    border-left: 0;
+  }
+
+  .st-strip-day[data-weekend="true"] {
+    background: var(--st-panel-hi);
+  }
+
+  .st-strip-day[data-today="true"] {
+    border-top-color: var(--st-accent);
+  }
+
+  .st-strip-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    margin-bottom: 8px;
+  }
+
+  .st-strip-day:hover .st-strip-date {
+    color: var(--st-ink);
+  }
+
+  .st-strip-weekday {
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--st-ink-3);
+  }
+
+  .st-strip-date {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--st-ink-2);
+  }
+
+  .st-strip-day[data-today="true"] .st-strip-date,
+  .st-strip-day[data-today="true"] .st-strip-weekday {
+    color: var(--st-accent);
+    font-weight: 700;
+  }
+
+  .st-strip-month {
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--st-ink-3);
+  }
+
+  .st-strip-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-height: 24px;
+  }
+
+  /* A day's occupancy is bars, not text: at 14 columns wide there is no room
+     for a title, and the question the strip answers is "is it free". */
+  .st-strip-bar {
+    display: block;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--st-ink-3);
+  }
+
+  /* A booking that started before this column bleeds left across the gap, so a
+     three-day hire reads as one continuous run rather than three loose marks. */
+  .st-strip-bar[data-continues="true"] {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: calc(var(--st-strip-bleed) * -1);
+  }
+
+  /* The church's own diary is hatched rather than recoloured: a second cue for
+     the same fact, and it keeps the space palette meaning only "which room". */
+  .st-strip-bar[data-kind="church"] {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.55) 0 2px,
+      transparent 2px 4px
+    );
+  }
+
+  /* A free lane still takes its space, so a bar never changes row between the
+     days of one run. It draws nothing - ten placeholder bars competing with
+     four real ones is noise, not information. */
+  .st-strip-gap {
+    display: block;
+    height: 7px;
+  }
+
+  .st-strip-empty {
+    display: block;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--st-track);
+    opacity: 0.4;
+  }
+
+  /* The roll's colour key, matching the bar it names. */
+  .st-swatch {
+    display: block;
+    width: 10px;
+    height: 10px;
+    flex: none;
+    border-radius: 2px;
+    background: var(--st-ink-3);
+  }
+
+  .st-swatch[data-kind="church"] {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.55) 0 2px,
+      transparent 2px 4px
+    );
+  }
+
+  /* ---- The run: everything that wants a person -------------------------- */
+  .st-band {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 16px;
+    border-top: 1px solid var(--st-line-soft);
+    background: var(--st-panel-hi);
+  }
+
+  .st-panel-head + .st-band {
+    border-top: 0;
+  }
+
+  .st-band-blurb {
+    font-size: 0.6875rem;
+    color: var(--st-ink-3);
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .st-signal {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    /* On a wide monitor an unbounded row throws the fact a thousand pixels from
+       the title it belongs to. The row stops being one thing to read. */
+    max-width: 62rem;
+    min-height: 52px;
+    padding: 11px 16px;
+    border-top: 1px solid var(--st-line-soft);
+    background: transparent;
+    text-align: left;
+    text-decoration: none;
+    color: inherit;
+    transition: background 130ms ease;
+  }
+
+  .st-band + .st-signal {
+    border-top: 0;
+  }
+
+  .st-signal:hover {
+    background: var(--st-panel-hi);
+  }
+
+  .st-signal:focus-visible {
+    outline: 2px solid var(--st-accent);
+    outline-offset: -2px;
+  }
+
+  /* Heat is never colour alone: a hot row carries the mark as well as the ink. */
+  .st-signal-mark {
+    width: 15px;
+    height: 15px;
+    margin-top: 1px;
+    flex: none;
+    color: var(--st-rose);
+  }
+
+  .st-signal[data-weight="warm"] .st-signal-mark {
+    color: var(--st-ink-3);
+  }
+
+  .st-signal-title {
+    display: block;
+    font-size: 0.84375rem;
+    font-weight: 600;
+    color: var(--st-ink);
+  }
+
+  .st-signal-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.71875rem;
+    color: var(--st-ink-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .st-signal-fact {
+    flex: none;
+    align-self: center;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.71875rem;
+    color: var(--st-ink-2);
+    white-space: nowrap;
+  }
+
+  .st-signal[data-weight="hot"] .st-signal-fact {
+    color: var(--st-rose);
+    font-weight: 700;
+  }
+
+  /* ---- The plate: what is true right now -------------------------------- */
+  .st-figure {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 16px;
+    border-top: 1px solid var(--st-line-soft);
+  }
+
+  .st-panel-head + .st-figure {
+    border-top: 0;
+  }
+
+  .st-figure-label {
+    font-size: 0.75rem;
+    color: var(--st-ink-2);
+  }
+
+  .st-figure-value {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: var(--st-ink);
+    white-space: nowrap;
+  }
+
+  .st-figure-value[data-tone="rose"] {
+    color: var(--st-rose);
+  }
+
+  .st-figure-value[data-tone="quiet"] {
+    font-size: 0.8125rem;
+    color: var(--st-ink-3);
+  }
+
+  /* ======================================================================
+     THE HIRE PAGE
+     One page, ordered by what still wants a person. No tabs: the work that
+     needs somebody is open, everything in hand is a line that says its own
+     answer and opens in place.
+     ====================================================================== */
+
+  /* The vitals band. Replaced four stacked sidebar cards that cost 18rem of
+     every screen to say six short things. */
+  .st-standfirst {
+    display: grid;
+    gap: 14px 24px;
+    padding: 14px 16px;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  }
+
+  /* Concern headings inside the open stack, so a reader can tell the panels
+     apart at a glance without a tab rail naming them. */
+  .st-group {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 2px 0;
+  }
+
+  .st-group-note {
+    font-size: 0.6875rem;
+    color: var(--st-ink-3);
+  }
+
+  /* ---- A hire going quiet -------------------------------------------------- */
+  /* The one moment on this page worth marking: the last concern that wanted a
+     person stops wanting one. `hireBoard` is the only thing in the app that
+     knows it happened, and it happens while somebody is watching.
+
+     It is a tick and a changed heading, not a celebration. The reader has
+     finished an afternoon of admin so a church week can carry on — the feeling
+     that belongs here is a thing being genuinely in hand, and calm is how this
+     product says that. Green because green already means complete in this
+     palette, and the words carry it too, so the tick is never the only signal. */
+  .st-group[data-clear] .label-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--st-green);
+  }
+
+  .st-group-mark {
+    width: 13px;
+    height: 13px;
+    stroke-width: 3;
+  }
+
+  /* Only on the transition, never on arrival. A hire that was already quiet when
+     it opened has had nothing finished on it, and a mark that redraws on every
+     page load is decoration by the third time somebody sees it. */
+  .st-group-mark[data-drawn] {
+    animation: st-group-mark-draw 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes st-group-mark-draw {
+    /* Starts visible and lands: the tick never blinks in from nothing, it
+       arrives. */
+    0% {
+      transform: scale(0.55);
+      opacity: 0.4;
+    }
+    60% {
+      transform: scale(1.14);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .st-group-mark[data-drawn] {
+      animation: none;
+    }
+  }
+
+  /* ---- The shelf: settled work, one line each --------------------------- */
+  .st-shelf-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 16px;
+    border-top: 1px solid var(--st-line-soft);
+    background: transparent;
+    text-align: left;
+    transition: background 130ms ease;
+  }
+
+  .st-panel > div:first-child > .st-shelf-row {
+    border-top: 0;
+  }
+
+  .st-shelf-row:hover {
+    background: var(--st-panel-hi);
+  }
+
+  .st-shelf-row:focus-visible {
+    outline: 2px solid var(--st-accent);
+    outline-offset: -2px;
+  }
+
+  /* 12rem holds the longest real name ("Condition walkthrough") at this weight
+     with room to spare; the ellipsis is there for a translation that does not. */
+  .st-shelf-name {
+    flex: none;
+    width: 12rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--st-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .st-shelf-status {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--st-ink-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .st-shelf-mark {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    color: var(--st-ink-3);
+    transition: transform 130ms ease;
+  }
+
+  .st-shelf-row[aria-expanded="true"] .st-shelf-mark {
+    transform: rotate(90deg);
+  }
+
+  /* An opened panel sits inside the shelf on the raised ground, so it reads as
+     having come out of the row above it rather than as a new peer panel. */
+  /* An opened row is more of the row, not a container holding a card.
+     This used to inset the panel by 16px on a tinted ground, which drew a second
+     bordered, rounded, shadowed card inside the first one — a box nested in a
+     box, at two different widths, saying the same thing twice. The panel now has
+     no surface of its own: its rows sit on the same hairlines and the same left
+     edge as the shelf rows above it, and the rotated chevron is what says the
+     row is open. */
+  .st-shelf-body {
+    border-top: 1px solid var(--st-line-soft);
+  }
+
+  .st-shelf-body > .st-panel {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  /* The shelf row already names this concern and states its answer; the panel
+     restating it one line lower, in a second style, is the nesting again in
+     type. Keep the head only for what the row cannot carry — a tally and the
+     panel's own actions — and drop it entirely when the title was all it held. */
+  .st-shelf-body > .st-panel > .st-panel-head > .st-panel-title {
+    display: none;
+  }
+
+  .st-shelf-body > .st-panel > .st-panel-head:has(> :only-child) {
+    display: none;
+  }
+
+  .st-shelf-body > .st-panel > .st-panel-head:first-child {
+    border-top: 0;
+  }
+
+  @media (max-width: 640px) {
+    .st-shelf-row {
+      flex-wrap: wrap;
+      row-gap: 2px;
+    }
+
+    .st-shelf-name {
+      width: auto;
+      flex: 1;
+    }
+
+    .st-shelf-status {
+      flex-basis: 100%;
+      order: 3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .st-shelf-row,
+    .st-shelf-mark {
+      transition: none;
+    }
   }
 }

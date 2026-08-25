@@ -11,7 +11,11 @@
 export const SPACE_COLORS = [
   { value: "#2c7169", label: "Teal" },
   { value: "#55613f", label: "Sage" },
-  { value: "#8a4a38", label: "Clay" },
+  // Was #8a4a38, a red-brown that sat within a hair of --st-rose (#a8402f). A
+  // room's colour is identity and must never be mistakable for an alarm, and at
+  // 7px on the desk's strip the two were the same mark. Umber is unambiguously
+  // brown and still clears 4.5:1 under white type.
+  { value: "#6b4a2f", label: "Umber" },
   { value: "#3e4a73", label: "Indigo" },
   { value: "#6a3e5c", label: "Plum" },
   { value: "#7a5424", label: "Bronze" },
@@ -32,7 +36,9 @@ const LEGACY_SPACE_COLORS: Record<string, string> = {
   "#0d9488": "#2c7169",
   "#d97706": "#7a5424",
   "#0284c7": "#3e4a73",
-  "#e11d48": "#8a4a38",
+  "#e11d48": "#6b4a2f",
+  // Studio's own first Clay, retired for colliding with the rose alarm ink.
+  "#8a4a38": "#6b4a2f",
   "#7c3aed": "#6a3e5c",
   "#059669": "#3f6b4f",
   "#ea580c": "#55613f",
