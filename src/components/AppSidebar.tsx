@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  ChevronsUpDown,
   Clock,
   DoorOpen,
   FolderKanban,
@@ -41,7 +42,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWorkspace } from "@/hooks/useCurrentWorkspace";
 import { useCurrentPerson } from "@/hooks/useCurrentPerson";
@@ -67,6 +67,8 @@ type NavSection = {
   icon: typeof Home;
   moduleKey?: ActiveModuleKey;
   matchPrefixes: string[];
+  /** Count shown on the section row itself (e.g. open tasks on Tasks). */
+  badgeKey?: string;
   items: NavItem[];
   /** Groups related modules under a shared label so the top level never reads as one flat list. */
   group?: "Ministry Work" | "Planning" | "Content";
@@ -96,6 +98,7 @@ const navSections: NavSection[] = [
     icon: ListChecks,
     moduleKey: "tasks",
     matchPrefixes: ["/tasks", "/projects", "/inbox", "/waiting", "/someday"],
+    badgeKey: "tasks_open",
     group: "Ministry Work",
     items: [
       { title: "Inbox", url: "/tasks/inbox", icon: Inbox, badgeKey: "inbox_items" },
@@ -180,6 +183,7 @@ const navSections: NavSection[] = [
     icon: CalendarDays,
     moduleKey: "calendar",
     matchPrefixes: ["/calendar", "/reminders"],
+    badgeKey: "reminders_open",
     group: "Planning",
     items: [
       { title: "Calendar", url: "/calendar", icon: CalendarDays },
@@ -216,6 +220,10 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { person: currentPerson } = useCurrentPerson();
   const { workspace, role } = useCurrentWorkspace();
+  const workspaceInitial = (workspace?.name?.trim()?.charAt(0) ?? "A").toUpperCase();
+  const roleLabel = role
+    ? `Workspace · ${role.charAt(0).toUpperCase()}${role.slice(1)}`
+    : "Workspace";
   const { isModuleActive } = useUserSettings();
   const [recurringSidebarMeetings, setRecurringSidebarMeetings] = useState<RecurringSidebarMeeting[]>([]);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
@@ -399,6 +407,34 @@ export function AppSidebar() {
     );
   };
 
+  // The section row carries its own count (open tasks, pending reminders) so a
+  // collapsed group still shows load at a glance. Teal on the active white pill,
+  // muted off-white otherwise.
+  const renderSectionBadge = (section: NavSection, active: boolean) => {
+    if (!section.badgeKey) return null;
+    if (countsError) {
+      return (
+        <span className="font-mono text-[11px] font-semibold tabular-nums text-sidebar-foreground/45" title="Count unavailable">
+          –
+        </span>
+      );
+    }
+
+    const count = counts[section.badgeKey];
+    if (!count) return null;
+
+    return (
+      <span
+        className={cn(
+          "font-mono text-[11px] font-semibold tabular-nums",
+          active ? "text-brand-teal/70" : "text-sidebar-foreground/55"
+        )}
+      >
+        {count}
+      </span>
+    );
+  };
+
   return (
     <Sidebar
       collapsible="icon"
@@ -407,40 +443,57 @@ export function AppSidebar() {
       className="[&_[data-sidebar=sidebar]]:overflow-hidden [&_[data-sidebar=sidebar]]:border-r [&_[data-sidebar=sidebar]]:border-sidebar-border [&_[data-sidebar=sidebar]]:bg-gradient-sidebar"
     >
       <SidebarHeader className="border-b border-sidebar-border/55 bg-transparent">
-        <div
-          className={
-            collapsed
-              ? "flex h-24 flex-col items-center justify-center gap-2 px-0 py-2"
-              : "flex h-20 items-center gap-2.5 pl-3 pr-8 py-2.5"
-          }
-        >
-          <NavLink
-            to="/"
-            className={cn(
-              collapsed ? "flex w-full justify-center" : "flex min-w-0 flex-1 justify-start",
-              "rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
-            )}
-            title="Home"
-            aria-label="Go home"
-          >
-            <Logo compact={collapsed} tone="onDark" />
-          </NavLink>
-
-          <button
-            type="button"
-            className={cn(
-              collapsed
-                ? "flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-foreground/40 transition hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground/80"
-                : "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/40 transition hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground/80",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
-            )}
-            onClick={toggleSidebar}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
-        </div>
+        {collapsed ? (
+          <div className="flex h-24 flex-col items-center justify-center gap-2.5 px-0 py-2">
+            <NavLink
+              to="/"
+              title="Home"
+              aria-label="Go home"
+              className="flex h-9 w-9 items-center justify-center rounded-[9px] bg-brand-teal-bright font-heading text-base font-extrabold text-brand-teal-dark transition active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+            >
+              {workspaceInitial}
+            </NavLink>
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title="Expand sidebar"
+              aria-label="Expand sidebar"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-foreground/40 transition hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex h-20 items-center gap-2 py-2.5 pl-2 pr-3">
+            <NavLink
+              to="/workspace-settings"
+              title="Workspace settings"
+              className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-[10px] px-2 text-left transition hover:bg-sidebar-foreground/10 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-teal-bright font-heading text-[15px] font-extrabold text-brand-teal-dark">
+                {workspaceInitial}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[13.5px] font-extrabold leading-tight text-sidebar-foreground">
+                  {workspace?.name ?? "Your workspace"}
+                </span>
+                <span className="truncate text-[10.5px] font-semibold text-sidebar-foreground/55">
+                  {roleLabel}
+                </span>
+              </span>
+              <ChevronsUpDown className="h-4 w-4 shrink-0 text-sidebar-foreground/45" />
+            </NavLink>
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title="Collapse sidebar"
+              aria-label="Collapse sidebar"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/40 transition hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent className="bg-transparent">
@@ -451,6 +504,8 @@ export function AppSidebar() {
                 const SectionIcon = section.icon;
                 const sectionActive = section.id === activeSection?.id;
                 const hasSubmenu = section.items.length > 0;
+                const sectionCount =
+                  section.badgeKey && !countsError ? counts[section.badgeKey] : undefined;
                 const sectionOpen = !collapsed && openSections.has(section.id);
                 const moreOpen = !collapsed && moreOpenSections.has(section.id);
                 const primaryItems = section.items.filter((item) => !item.secondary);
@@ -502,8 +557,13 @@ export function AppSidebar() {
                             : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
                         )}
                       >
-                        <NavLink to={section.url} className="flex h-full w-full items-center justify-center">
+                        <NavLink to={section.url} className="relative flex h-full w-full items-center justify-center">
                           <SectionIcon className="!h-5 !w-5" />
+                          {sectionCount ? (
+                            <span className="absolute -right-1.5 -top-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-brand-teal-bright px-[3px] font-mono text-[9px] font-semibold tabular-nums text-brand-teal-dark shadow-[0_0_0_2px_hsl(var(--sidebar-background))]">
+                              {sectionCount}
+                            </span>
+                          ) : null}
                         </NavLink>
                       </SidebarMenuButton>
                     ) : hasSubmenu ? (
@@ -512,7 +572,7 @@ export function AppSidebar() {
                           className={cn(
                             "flex h-10 w-full items-center overflow-hidden rounded-lg border transition-colors",
                             sectionActive
-                              ? "border-transparent bg-card text-brand-ink shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
+                              ? "border-transparent bg-card text-brand-teal shadow-[0_2px_12px_rgba(0,0,0,0.20)]"
                               : "border-transparent text-sidebar-foreground/74 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                           )}
                         >
@@ -526,6 +586,7 @@ export function AppSidebar() {
                             <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold">
                               {section.title}
                             </span>
+                            {renderSectionBadge(section, sectionActive)}
                           </NavLink>
 
                           <button
@@ -560,7 +621,7 @@ export function AppSidebar() {
                                   key={item.url}
                                   to={item.url}
                                   className={cn(
-                                    "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                                    "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                                     itemActive
                                       ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
                                       : "text-sidebar-foreground/62 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
@@ -602,7 +663,7 @@ export function AppSidebar() {
                                         key={item.url}
                                         to={item.url}
                                         className={cn(
-                                          "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                                          "flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                                           itemActive
                                             ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
                                             : "text-sidebar-foreground/62 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
@@ -638,13 +699,19 @@ export function AppSidebar() {
                                         key={series.id}
                                         to={seriesUrl}
                                         className={cn(
-                                          "block truncate rounded-lg px-2 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                                          "flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                                           seriesActive
                                             ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
                                             : "text-sidebar-foreground/58 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                                         )}
                                       >
-                                        {series.title}
+                                        <span
+                                          className={cn(
+                                            "h-1 w-1 shrink-0 rounded-full",
+                                            seriesActive ? "bg-sidebar-foreground" : "bg-sidebar-foreground/40"
+                                          )}
+                                        />
+                                        <span className="min-w-0 flex-1 truncate">{series.title}</span>
                                       </NavLink>
                                     );
                                   })
@@ -659,16 +726,19 @@ export function AppSidebar() {
                         to={section.url}
                         data-tour={section.id === "home" ? "module-menu" : undefined}
                         className={cn(
-                          "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                          "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                           sectionActive
-                            ? "bg-transparent text-sidebar-foreground ring-1 ring-inset ring-sidebar-foreground/70"
+                            ? "bg-card text-brand-teal shadow-[0_2px_12px_rgba(0,0,0,0.20)]"
                             : "text-sidebar-foreground/74 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                         )}
                       >
-                        <SectionIcon className="h-4 w-4 shrink-0" />
+                        <SectionIcon
+                          className={cn("h-4 w-4 shrink-0", sectionActive && "text-brand-teal")}
+                        />
                         <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold">
                           {section.title}
                         </span>
+                        {renderSectionBadge(section, sectionActive)}
                       </NavLink>
                     )}
                     </SidebarMenuItem>
@@ -686,21 +756,9 @@ export function AppSidebar() {
             <span className="h-3 w-3 rounded-full bg-brand-teal-bright" title="Online" />
           </div>
         ) : (
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 text-sm font-bold text-sidebar-foreground">
-              <span className="h-2.5 w-2.5 rounded-full bg-brand-teal-bright" />
-              <span>Online</span>
-            </div>
-
-            {workspace?.name && (
-              <p className="mt-1 truncate text-xs font-bold text-sidebar-foreground/70">
-                {workspace.name}
-              </p>
-            )}
-
-            <p className="mt-1 truncate text-xs text-sidebar-foreground/60">
-              {role ? `${role.charAt(0).toUpperCase()}${role.slice(1)}` : user?.email}
-            </p>
+          <div className="flex items-center gap-2 px-3 py-1 text-xs font-bold text-sidebar-foreground/80">
+            <span className="h-2.5 w-2.5 rounded-full bg-brand-teal-bright" />
+            <span>Online</span>
           </div>
         )}
       </SidebarFooter>
