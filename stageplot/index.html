@@ -6,7 +6,7 @@
 <title>Stageplot Weekly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@700;800&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: three-column workbench (team/gear rail · scaled plot · inspector), stacks on phones. */
 :root {
@@ -32,10 +32,10 @@
   --k-inst: #2fa65a;
   --k-spk: #12a3a0;
   --k-vid: #e0457b;
-  --f-display: "Big Shoulders Stencil Display", "Barlow Condensed", Impact, sans-serif;
-  --f-body: "Barlow", "Segoe UI", system-ui, sans-serif;
-  --f-cond: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --f-display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --f-cond: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -58,13 +58,13 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 var(--f-body); }
+body { margin: 0; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font: 15px/1.4 var(--f-body); }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- top bar ---------- */
 .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
-.brand { font: 800 26px/1 var(--f-display); letter-spacing: .04em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.brand { font: 800 22px/1 var(--f-display); font-stretch: 118%; letter-spacing: .02em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
 .brand i { display: inline-block; width: 22px; height: 8px; background: var(--accent); transform: rotate(-4deg); }
 .week { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1 1 380px; min-width: 0; }
 .week select { max-width: 260px; }
@@ -84,17 +84,17 @@ button.ghost { background: transparent; }
 button:disabled { opacity: .5; cursor: default; }
 
 /* ---------- workbench ---------- */
-.work { display: grid; grid-template-columns: 300px minmax(0,1fr) 290px; height: calc(100% - 58px); min-height: 520px; }
+.work { display: grid; grid-template-columns: 300px minmax(0,1fr) 290px; flex: 1 1 0; min-height: 520px; }
 .rail { background: var(--panel); border-right: 1px solid var(--line); overflow: auto; min-width: 0; }
 .inspector { background: var(--panel); border-left: 1px solid var(--line); overflow: auto; padding: 14px 16px 24px; min-width: 0; }
 .tabs { display: flex; position: sticky; top: 0; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1; }
-.tabs button { flex: 1; border: 0; border-radius: 0; background: transparent; padding: 10px 4px; font: 600 15px/1 var(--f-cond); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); border-bottom: 3px solid transparent; }
+.tabs button { flex: 1; border: 0; border-radius: 0; background: transparent; padding: 11px 4px; font: 600 13px/1 var(--f-cond); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); border-bottom: 3px solid transparent; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .pane { padding: 14px 16px 24px; display: grid; gap: 14px; }
 
 h2, h3 { margin: 0; text-wrap: balance; }
-.h { font: 800 19px/1.1 var(--f-display); text-transform: uppercase; letter-spacing: .05em; }
-.label { font: 600 12px/1.2 var(--f-cond); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.h { font: 700 18px/1.2 var(--f-display); letter-spacing: -.005em; }
+.label { font: 600 11px/1.2 var(--f-cond); font-stretch: 90%; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
 .hint { color: var(--muted); font-size: 13px; margin: 0; }
 .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -112,6 +112,13 @@ h2, h3 { margin: 0; text-wrap: balance; }
 .gearlist button { text-align: left; white-space: normal; display: flex; gap: 8px; align-items: center; padding: 6px 8px; font-size: 13px; line-height: 1.15; }
 .swatch { width: 12px; height: 12px; border-radius: 2px; flex: none; }
 
+.pco { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); }
+.pco select { width: 100%; }
+.roster { display: grid; gap: 2px; max-height: 280px; overflow: auto; font-size: 13px; }
+.roster label { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 4px 2px; }
+.roster small { display: block; color: var(--muted); }
+.pco .err { color: var(--bad); font-size: 13px; margin: 0; }
+
 /* ---------- plot ---------- */
 .stagecol { display: grid; grid-template-rows: auto minmax(0,1fr) auto; min-width: 0; min-height: 0; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
@@ -119,10 +126,10 @@ h2, h3 { margin: 0; text-wrap: balance; }
 #plot { display: block; margin: 0 auto; user-select: none; -webkit-user-select: none; }
 .statusline { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 6px 12px; border-top: 1px solid var(--line); background: var(--panel); font: 13px/1.3 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .statusline b { color: var(--ink); font-weight: 500; }
-.chip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 99px; font: 600 12px/1.6 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; border: 1px solid currentColor; }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 99px; font: 600 11px/1.7 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; border: 1px solid currentColor; }
 .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); }
 
-svg text { font-family: var(--f-cond); }
+svg text { font-family: var(--f-cond); font-stretch: 85%; }
 .house-fill { fill: var(--house); }
 .deck { fill: var(--deck); }
 .g-minor { stroke: var(--deck-grid); stroke-width: .04; }
@@ -167,13 +174,13 @@ svg text { font-family: var(--f-cond); }
 .kbd { font: 12px var(--f-mono); padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; }
 
 /* ---------- paperwork ---------- */
-.paper { height: calc(100% - 58px); overflow: auto; padding-block: 20px 48px; padding-inline: 16px; }
+.paper { flex: 1 1 0; min-height: 0; overflow: auto; padding-block: 20px 48px; padding-inline: 16px; }
 .paper-inner { max-width: 1100px; margin: 0 auto; display: grid; gap: 28px; }
 .sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
 .sheet header { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; }
 .tablewrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
-th { text-align: left; font: 600 12px/1.2 var(--f-cond); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+th { text-align: left; font: 600 11px/1.2 var(--f-cond); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
 td { padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 td.mono { font-family: var(--f-mono); font-size: 13px; }
 td.num { text-align: right; font-family: var(--f-mono); font-size: 13px; }
@@ -191,14 +198,14 @@ tr.flag td { color: var(--bad); }
 @media (max-width: 1100px) {
   .work { grid-template-columns: 270px minmax(0,1fr); }
   .inspector { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
-  .work { height: auto; }
+  .work { flex: none; }
   .stagecol { height: 72vh; }
 }
 @media (max-width: 720px) {
   .work { grid-template-columns: minmax(0,1fr); }
   .rail { border-right: 0; border-bottom: 1px solid var(--line); max-height: none; }
   .stagecol { height: 70vh; }
-  .paper { height: auto; }
+  .paper { flex: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -283,6 +290,7 @@ tr.flag td { color: var(--bad); }
    Catalog: every unit is feet. w = width (stage left/right), d = depth.
    =================================================================== */
 const CAT = {
+  // sizes below are feet (internal unit); the UI converts to metres
   person:      { name: 'Performer', cat: 'person', w: 1.5, d: 1.5, shape: 'person', hidden: true },
   // Audio
   vox_mic:     { name: 'Vocal mic (wired)', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Vox'] },
@@ -310,11 +318,11 @@ const CAT = {
   laptop:      { name: 'Tracks laptop', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
   music_stand: { name: 'Music stand', cat: 'staging', w: 1.5, d: .8, shape: 'rect' },
   pulpit:      { name: 'Pulpit', cat: 'staging', w: 2.5, d: 2, shape: 'rect' },
-  riser:       { name: 'Riser 8×8', cat: 'staging', w: 8, d: 8, shape: 'platform' },
+  riser:       { name: 'Riser 2.4 × 2.4 m', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   drum_riser:  { name: 'Drum riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   // Power
-  distro:      { name: 'Power distro', cat: 'power', w: 2, d: 1.5, shape: 'rack', circuits: 6, amps: 20, volts: 120 },
-  wall_outlet: { name: 'Wall / floor outlet', cat: 'power', w: .7, d: .5, shape: 'rect', circuits: 1, amps: 20, volts: 120 },
+  distro:      { name: 'Power distro', cat: 'power', w: 2, d: 1.5, shape: 'rack', circuits: 6, amps: 16, volts: 230 },
+  wall_outlet: { name: 'Wall / floor socket', cat: 'power', w: .7, d: .5, shape: 'rect', circuits: 1, amps: 16, volts: 230 },
   // Video & lighting
   camera:      { name: 'Camera on tripod', cat: 'video', w: 2, d: 2, shape: 'round', watts: 40 },
   conf_mon:    { name: 'Confidence monitor', cat: 'video', w: 3.5, d: 1, shape: 'rect', watts: 150 },
@@ -328,12 +336,13 @@ const GEAR_GROUPS = [
   ['Video & lighting', ['camera', 'conf_mon', 'light_stand']],
 ];
 const CABLES = {
-  xlr:     { name: 'XLR (mic / line)', stock: [3, 6, 10, 15, 25, 50, 75, 100] },
-  cat6:    { name: 'Cat6 (digital snake)', stock: [25, 50, 100, 150, 200, 300] },
-  power:   { name: 'Power (Edison / stinger)', stock: [6, 15, 25, 50, 100] },
-  inst:    { name: '¼″ instrument', stock: [3, 10, 15, 20, 25] },
-  speakon: { name: 'Speakon', stock: [10, 25, 50, 100] },
-  video:   { name: 'SDI / HDMI', stock: [6, 15, 25, 50, 100, 150] },
+  // stock lengths in metres
+  xlr:     { name: 'XLR (mic / line)', stock: [1, 2, 3, 5, 10, 15, 20, 30] },
+  cat6:    { name: 'Cat6 (digital snake)', stock: [10, 20, 30, 50, 75, 100] },
+  power:   { name: 'Power extension', stock: [2, 3, 5, 10, 15, 25] },
+  inst:    { name: 'Jack instrument', stock: [1, 3, 5, 6, 10] },
+  speakon: { name: 'Speakon', stock: [5, 10, 15, 20, 30] },
+  video:   { name: 'SDI / HDMI', stock: [2, 5, 10, 20, 30, 50] },
 };
 /* Roles: anchor = [fraction of stage width, fraction of stage depth] where depth 0 is upstage.
    spread = x offsets (ft) used when several people share a role. gear = [type, dx, dy, opts]. */
@@ -359,7 +368,7 @@ const ROLE_ORDER = ['Drums', 'Bass', 'Electric Guitar', 'Keys', 'Tracks / MD', '
 const ROLE_MATCH = [
   [/drum|perc|kit/i, 'Drums'], [/bass/i, 'Bass'], [/electric|\beg\b|lead gtr|guitar 2/i, 'Electric Guitar'],
   [/key|piano|synth|organ/i, 'Keys'], [/track|\bmd\b|music dir/i, 'Tracks / MD'], [/acoustic|\bag\b/i, 'Acoustic Guitar'],
-  [/violin|cello|viola|string|fiddle/i, 'Strings'], [/leader|\bwl\b/i, 'Worship Leader'], [/vocal|vox|bgv|singer|choir/i, 'Vocalist'],
+  [/violin|cello|viola|string|fiddle/i, 'Strings'], [/worship lead|\bwl\b|^leader$|lead vocal/i, 'Worship Leader'], [/vocal|vox|bgv|singer|choir/i, 'Vocalist'],
   [/pastor|speaker|preach|teach/i, 'Pastor / Speaker'], [/host|mc\b|announce/i, 'Host'], [/camera|video/i, 'Camera'],
   [/foh|front of house|audio|sound/i, 'FOH Engineer'], [/monitor/i, 'Monitor Engineer'], [/light/i, 'Lighting'], [/produc|director/i, 'Producer'],
   [/guitar/i, 'Electric Guitar'],
@@ -372,16 +381,17 @@ const $ = id => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const r2 = n => Math.round(n * 100) / 100;
-const snapTo = (n, s = .25) => Math.round(n / s) * s;
+/* Positions are stored in feet internally (keeps older saved weeks valid); everything shown or typed is metric. */
+const FT = 0.3048;
+const toM = ft => ft * FT, fromM = m => m / FT;
+const snapTo = (ft, m = .05) => Math.round(ft * FT / m) * m / FT;   // snap to 5 cm by default
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const firstName = s => String(s || '').trim().split(/\s+/)[0] || '';
 const initials = s => String(s || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-function fmtLen(ft) {
-  if (plan.settings.units === 'm') return `${r2(ft * 0.3048).toFixed(1)} m`;
-  return `${Math.round(ft * 10) / 10} ft`;
-}
-function fmtStock(ft) { return plan.settings.units === 'm' ? `${ft}′ (${(ft * 0.3048).toFixed(1)} m)` : `${ft}′`; }
+function fmtLen(ft, dp = 1) { return `${Number(toM(ft).toFixed(dp))} m`; }
+function fmtStock(m) { return `${m} m`; }
+const mVal = ft => Number(toM(ft).toFixed(2));
 function addDays(iso, n) {
   const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
@@ -419,15 +429,15 @@ const STORE = 'stageplot.v1';
 let db, plan;
 let sel = null;                 // {kind:'item'|'cable', id}
 let mode = 'select', cableType = 'xlr', pending = null, cursorPt = null;
-let zoom = null;                // px per ft, null = fit
+let zoom = null;                // px per internal unit, null = fit
 let view = 'plot', railTab = 'team';
 let history = [], drag = null, delArmed = false;
 
 function blankPlan(date) {
   return {
     id: uid(), date: date || nextSunday(), name: 'Sunday service',
-    stage: { w: 32, d: 20, house: 40, houseW: 52 },
-    settings: { slack: 10, ends: 3, units: 'ft' },
+    stage: { w: fromM(10), d: fromM(6), house: fromM(12), houseW: fromM(16) },
+    settings: { slack: 10, ends: fromM(1) },
     team: [], items: [], cables: [], notes: '',
   };
 }
@@ -502,17 +512,17 @@ function buildFromTeam() {
     const off = spread[k % spread.length] + Math.floor(k / spread.length) * 2;
     const ax = role.anchor[0] * W + off, ay = role.anchor[1] * D;
     gear.forEach(([type, dx, dy, opts], gi) => {
-      const genKey = `${person.id}:${gi}:${type}`;
+      const genKey = `${person.role}#${k}:${gi}:${type}`;
       const prev = old.get(genKey);
       const o = opts || {};
       const fn = firstName(person.name);
       const label = type === 'person' ? person.name : `${fn} ${o.label || cat({ type }).short || cat({ type }).name}`;
       const x = prev ? prev.x : clamp(ax + dx, -20, W + 20), y = prev ? prev.y : ay + dy;
-      const extra = { gen: true, genKey, personId: person.id, label: prev?.labelEdited ? prev.label : label, rot: prev ? prev.rot : 0 };
-      if (prev?.labelEdited) extra.labelEdited = true;
+      const extra = { gen: true, genKey, personId: person.id, label: prev?.labelEdited && prev.personId === person.id ? prev.label : label, rot: prev ? prev.rot : 0 };
+      if (prev?.labelEdited && prev.personId === person.id) extra.labelEdited = true;
       const base = o.inputs || CAT[type].inputs;
       if (base) extra.inputs = base.map(n => `${fn} ${n}`);
-      if (prev) { for (const kk of ['w', 'd', 'watts', 'ins', 'outsMax', 'outs']) if (prev[kk] !== undefined) extra[kk] = prev[kk]; if (prev.inputsEdited) { extra.inputs = prev.inputs; extra.inputsEdited = true; } }
+      if (prev) { for (const kk of ['w', 'd', 'watts', 'ins', 'outsMax', 'outs']) if (prev[kk] !== undefined) extra[kk] = prev[kk]; if (prev.inputsEdited && prev.personId === person.id) { extra.inputs = prev.inputs; extra.inputsEdited = true; } }
       const it = addItem(type, x, y, extra);
       if (prev) { it.id = prev.id; keepIds.add(prev.id); }
     });
@@ -542,12 +552,12 @@ const runLen = pts => pts.reduce((s, p, i) => i ? s + Math.abs(p[0] - pts[i - 1]
 function cableLen(c) {
   const pts = routePts(c); if (!pts) return 0;
   const slack = (c.slack ?? plan.settings.slack) / 100;
-  return runLen(pts) * (1 + slack) + 2 * (Number(plan.settings.ends) || 0);
+  return runLen(pts) * (1 + slack) + 2 * (Number(plan.settings.ends) || 0);   // feet
 }
 /* Pick stock lengths covering the run: smallest single length that fits, else joined max-lengths. */
-function stockFor(type, len) {
+function stockFor(type, lenFt) {
   const s = CABLES[type].stock, max = s[s.length - 1], out = [];
-  let rest = len;
+  let rest = toM(lenFt);
   while (rest > max) { out.push(max); rest -= max; }
   out.push(s.find(x => x >= rest) || max);
   return out;
@@ -572,7 +582,7 @@ function circuitLoads(src) {
     const k = clamp((c.circuit || 1) - 1, 0, n - 1);
     loads[k] += Number(prop(it, 'watts')) || 0; items[k].push(it);
   }
-  return { loads, items, cap: (Number(prop(src, 'amps')) || 20) * (Number(prop(src, 'volts')) || 120) };
+  return { loads, items, cap: (Number(prop(src, 'amps')) || 16) * (Number(prop(src, 'volts')) || 230) };
 }
 
 function autoCable() {
@@ -803,27 +813,27 @@ function renderPlot() {
   let s = '';
   s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`;
   s += `<rect class="deck" x="0" y="0" width="${w}" height="${d}"/>`;
-  for (let x = 1; x < w; x++) s += `<line class="${x % 4 ? 'g-minor' : 'g-major'}" x1="${x}" x2="${x}" y1="0" y2="${d}"/>`;
-  for (let y = 1; y < d; y++) s += `<line class="${y % 4 ? 'g-minor' : 'g-major'}" x1="0" x2="${w}" y1="${y}" y2="${y}"/>`;
+  const half = fromM(.5);   // 50 cm grid, heavier every 1 m
+  for (let i = 1; i * half < w; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="${i * half}" x2="${i * half}" y1="0" y2="${d}"/>`;
+  for (let i = 1; i * half < d; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="0" x2="${w}" y1="${i * half}" y2="${i * half}"/>`;
   s += `<line class="edge" x1="0" x2="${w}" y1="${d}" y2="${d}"/>`;
   // rulers
   s += '<g class="ruler">';
-  const step = plan.settings.units === 'm' ? 1 / 0.3048 : 1;
-  const major = plan.settings.units === 'm' ? 2 : 4;
+  const step = fromM(1), major = 2;
   for (let i = 0, x = 0; x <= w + .001; i++, x = i * step) {
     s += `<line x1="${x}" x2="${x}" y1="${-.3}" y2="${i % major ? -.7 : -1.1}"/>`;
-    if (i % major === 0) s += `<text x="${x}" y="-1.4" text-anchor="middle">${i}${plan.settings.units === 'm' ? 'm' : '′'}</text>`;
+    if (i % major === 0) s += `<text x="${x}" y="-1.4" text-anchor="middle">${i} m</text>`;
   }
   for (let i = 0, y = 0; y <= d + .001; i++, y = i * step) {
     s += `<line y1="${y}" y2="${y}" x1="${-.3}" x2="${i % major ? -.7 : -1.1}"/>`;
-    if (i % major === 0 && i) s += `<text x="-1.4" y="${y + .18}" text-anchor="end">${i}${plan.settings.units === 'm' ? 'm' : '′'}</text>`;
+    if (i % major === 0 && i) s += `<text x="-1.4" y="${y + .18}" text-anchor="end">${i} m</text>`;
   }
   s += '</g>';
   s += `<text class="zone on-deck" x="${w / 2}" y=".9" text-anchor="middle">UPSTAGE</text>`;
   s += `<text class="zone on-deck" x="${w / 2}" y="${d - .5}" text-anchor="middle">DOWNSTAGE</text>`;
   s += `<text class="zone on-deck" x=".5" y="${d / 2}" transform="rotate(-90 .5 ${d / 2})" text-anchor="middle" dy=".5">STAGE RIGHT</text>`;
   s += `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".5">STAGE LEFT</text>`;
-  s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE · ${fmtLen(w)} × ${fmtLen(d)} STAGE</text>`;
+  s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE · ${fmtLen(w, 2)} × ${fmtLen(d, 2)} STAGE</text>`;
 
   const layer = it => cat(it).shape === 'platform' ? 0 : cat(it).shape === 'person' ? 3 : (Math.min(prop(it, 'w'), prop(it, 'd')) >= 1.6 ? 1 : 2);
   const sorted = plan.items.slice().sort((a, b2) => layer(a) - layer(b2));
@@ -878,6 +888,7 @@ function renderRail() {
   if (railTab === 'team') {
     pane.innerHTML = `
       <div class="row" style="justify-content:space-between"><h2 class="h">This week's team</h2><span class="label">${plan.team.length} people</span></div>
+      ${pcoHtml()}
       <div class="people">${plan.team.map(p => `
         <div class="person" data-pid="${p.id}">
           <input type="text" id="pn-${p.id}" value="${esc(p.name)}" aria-label="Name" data-f="name" placeholder="Name">
@@ -893,7 +904,7 @@ function renderRail() {
       <div class="field"><label class="label" for="bulk">Paste a schedule</label>
         <textarea id="bulk" rows="5" placeholder="One per line, e.g.&#10;Alex Rivera - Worship Leader&#10;Casey Brooks, Drums&#10;Riley Chen	Keys / BGV"></textarea></div>
       <button id="bulkAdd">Add pasted people</button>
-      <p class="hint">Works with a copy from Planning Center or a spreadsheet: name, then position. “BGV”, “Keys / Vox” and similar are recognised.</p>`;
+      <p class="hint">Works with a copy from a spreadsheet or roster: name, then position. “BGV”, “Keys / Vox” and similar are recognised.</p>`;
   } else if (railTab === 'gear') {
     pane.innerHTML = `<p class="hint">Tap an item to drop it on centre stage, then drag it into place.</p>` + GEAR_GROUPS.map(([g, types]) => `
       <div class="gearcat"><h3 class="label">${esc(g)}</h3><div class="gearlist">
@@ -905,19 +916,18 @@ function renderRail() {
     pane.innerHTML = `
       <h2 class="h">Room & stage</h2>
       <div class="grid2">
-        <div class="field"><label class="label" for="sw">Stage width (ft)</label><input id="sw" type="number" min="8" max="200" step="1" value="${st.w}"></div>
-        <div class="field"><label class="label" for="sd">Stage depth (ft)</label><input id="sd" type="number" min="6" max="120" step="1" value="${st.d}"></div>
-        <div class="field"><label class="label" for="shd">House depth (ft)</label><input id="shd" type="number" min="5" max="300" step="1" value="${st.house}"></div>
-        <div class="field"><label class="label" for="shw">House width (ft)</label><input id="shw" type="number" min="8" max="300" step="1" value="${st.houseW}"></div>
+        <div class="field"><label class="label" for="sw">Stage width (m)</label><input id="sw" type="number" min="3" max="60" step=".1" value="${mVal(st.w)}"></div>
+        <div class="field"><label class="label" for="sd">Stage depth (m)</label><input id="sd" type="number" min="2" max="40" step=".1" value="${mVal(st.d)}"></div>
+        <div class="field"><label class="label" for="shd">House depth (m)</label><input id="shd" type="number" min="2" max="100" step=".5" value="${mVal(st.house)}"></div>
+        <div class="field"><label class="label" for="shw">House width (m)</label><input id="shw" type="number" min="3" max="100" step=".5" value="${mVal(st.houseW)}"></div>
       </div>
-      <p class="hint">Grid is 1 ft with a heavier line every 4 ft, matching 4×8 stage-deck panels. FOH distance is measured into the house.</p>
+      <p class="hint">Grid is 50 cm with a heavier line every metre, matching 2 × 1 m stage-deck panels. FOH distance is measured into the house.</p>
       <h2 class="h">Cable math</h2>
       <div class="grid2">
         <div class="field"><label class="label" for="slack">Slack %</label><input id="slack" type="number" min="0" max="100" step="1" value="${se.slack}"></div>
-        <div class="field"><label class="label" for="ends">Each end (ft)</label><input id="ends" type="number" min="0" max="20" step=".5" value="${se.ends}"></div>
-        <div class="field"><label class="label" for="units">Show lengths in</label><select id="units"><option value="ft" ${se.units === 'ft' ? 'selected' : ''}>Feet</option><option value="m" ${se.units === 'm' ? 'selected' : ''}>Metres</option></select></div>
+        <div class="field"><label class="label" for="ends">Each end (m)</label><input id="ends" type="number" min="0" max="6" step=".1" value="${mVal(se.ends)}"></div>
       </div>
-      <p class="hint">Runs follow the floor at right angles. Length = run × (1 + slack) + drop at each end, then rounded up to stock lengths you actually own.</p>
+      <p class="hint">Runs follow the floor at right angles. Length = run × (1 + slack) + drop at each end, then rounded up to standard metric stock lengths.</p>
       <h2 class="h">Wiring</h2>
       <button id="autoBtn">Re-run auto cabling</button>
       <button id="clearAuto">Remove auto-run cables</button>
@@ -963,15 +973,15 @@ function renderInspector() {
       ${field('iLabel', 'Label', it.label || '')}
       <div class="field"><label class="label" for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>
       <div class="grid2">
-        ${field('iX', 'Across (ft from SR)', r2(it.x), 'number', 'step=".25"')}${field('iY', 'Depth (ft from US)', r2(it.y), 'number', 'step=".25"')}
-        ${field('iW', 'Width (ft)', prop(it, 'w'), 'number', 'step=".25" min=".25"')}${field('iD', 'Depth (ft)', prop(it, 'd'), 'number', 'step=".25" min=".25"')}
+        ${field('iX', 'Across (m from SR)', mVal(it.x), 'number', 'step=".05"')}${field('iY', 'Depth (m from US)', mVal(it.y), 'number', 'step=".05"')}
+        ${field('iW', 'Width (m)', mVal(prop(it, 'w')), 'number', 'step=".05" min=".05"')}${field('iD', 'Depth (m)', mVal(prop(it, 'd')), 'number', 'step=".05" min=".05"')}
         ${field('iRot', 'Rotation °', it.rot || 0, 'number', 'step="15"')}${C.wireless || isPowerSource(it) ? '' : field('iWatts', 'Power draw (W)', prop(it, 'watts') || 0, 'number', 'step="10" min="0"')}
       </div>
       ${C.inputs || ins.length ? `<div class="field"><label class="label" for="iInputs">Inputs (one per channel, comma-separated)</label><input id="iInputs" type="text" value="${esc(ins.join(', '))}"></div>` : ''}
       ${extra}
       <div class="field"><span class="label">Connections</span>${conns.length ? `<ul class="warnlist">${conns.map(x => `<li style="border-left-color:var(--k-${x.type === 'cat6' ? 'cat' : x.type === 'power' ? 'pow' : x.type === 'speakon' ? 'spk' : x.type === 'video' ? 'vid' : x.type})"><button class="ghost" data-selc="${x.id}" style="padding:0;border:0;text-align:left;white-space:normal">${esc(CABLES[x.type].name)} → ${esc(itemName(other(x, it.id)) || '?')} · ${fmtLen(cableLen(x))}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</button></li>`).join('')}</ul>` : '<p class="hint">No cables yet. Use Run cable to connect it.</p>'}</div>
       <div class="row"><button id="iRotate">Rotate 90°</button><button id="iDup">Duplicate</button><button id="iDel" class="danger">Delete</button></div>
-      <p class="hint"><span class="kbd">R</span> rotate · <span class="kbd">Del</span> delete · arrows nudge 3″ (Shift: 1 ft)</p>
+      <p class="hint"><span class="kbd">R</span> rotate · <span class="kbd">Del</span> delete · arrows nudge 5 cm (Shift: 50 cm)</p>
     </div>`;
   } else if (c) {
     const len = cableLen(c), st = stockFor(c.type, len), a = itemById(c.from), b = itemById(c.to);
@@ -995,7 +1005,7 @@ function renderInspector() {
     el.innerHTML = `<div class="insp">
       <div><span class="label">${esc(plan.date)}</span><h2 class="h">${esc(plan.name)}</h2></div>
       <dl class="kv">
-        <dt>Stage</dt><dd>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</dd>
+        <dt>Stage</dt><dd>${fmtLen(plan.stage.w, 2)} × ${fmtLen(plan.stage.d, 2)}</dd>
         <dt>Team</dt><dd>${plan.team.length}</dd>
         <dt>Inputs</dt><dd>${t.ins} (${t.wired} wired · ${t.rf} RF)</dd>
         <dt>Cable runs</dt><dd>${plan.cables.length}</dd>
@@ -1025,7 +1035,7 @@ function renderPaper() {
   const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Source', 'source'], ['Person', 'person'], ['Patch', 'port']];
   const outCols = [['Destination', 'dest'], ['Type', 'type'], ['Patch', 'port']];
   const mixCols = [['Mix', 'mix'], ['Person', 'person'], ['Position', 'role'], ['Monitor', 'kind']];
-  const pullCols = [['Cable', r => CABLES[r.type].name], ['Length', r => `${r.len} ft`], ['Qty', 'n']];
+  const pullCols = [['Cable', r => CABLES[r.type].name], ['Length', r => `${r.len} m`], ['Qty', 'n']];
   paperData = { inputs: tsv(ins, inCols), outputs: tsv(outs, outCols), mixes: tsv(mixes, mixCols), pull: tsv(pull, pullCols),
     team: tsv(plan.team, [['Name', 'name'], ['Position', 'role'], ['Sings', r => r.sings ? 'yes' : '']]) };
   const table = (rows, cols, flagKey) => `<div class="tablewrap"><table><thead><tr>${cols.map(c => `<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr class="${flagKey && r[flagKey] ? 'flag' : ''}">${cols.map((c, i) => `<td class="${i === 0 && typeof r[c[1]] === 'number' ? 'num' : (c[0] === 'Patch' || c[0] === 'Length') ? 'mono' : ''}">${esc(typeof c[1] === 'function' ? c[1](r) : r[c[1]])}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length}" class="hint">Nothing yet.</td></tr>`}</tbody></table></div>`;
@@ -1034,11 +1044,11 @@ function renderPaper() {
     const { loads, items, cap } = circuitLoads(src);
     return `<div class="field"><span class="label">${esc(itemName(src))} · ${prop(src, 'circuits')} × ${prop(src, 'amps')} A @ ${prop(src, 'volts')} V</span>
       <div class="tablewrap"><table><thead><tr><th>Circuit</th><th>Load</th><th style="width:30%">Use</th><th>Gear</th></tr></thead><tbody>
-      ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td class="num">${k + 1}</td><td class="num">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 120)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
+      ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td class="num">${k + 1}</td><td class="num">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or outlet from the Gear tab.</p>';
   $('paperInner').innerHTML = `
-    <div><span class="label">${esc(plan.date)}</span><h1 class="h" style="font-size:34px">${esc(plan.name)}</h1>${plan.notes ? `<p style="max-width:65ch;white-space:pre-wrap">${esc(plan.notes)}</p>` : ''}</div>
+    <div><span class="label">${esc(plan.date)}</span><h1 class="h" style="font-size:30px">${esc(plan.name)}</h1>${plan.notes ? `<p style="max-width:65ch;white-space:pre-wrap">${esc(plan.notes)}</p>` : ''}</div>
     ${w.length ? `<section class="sheet">${head('To check before load-in', '', `${w.length} item${w.length === 1 ? '' : 's'}`)}<ul class="warnlist">${w.map(x => `<li class="${x.lvl}">${esc(x.msg)}</li>`).join('')}</ul></section>` : ''}
     <section class="sheet">${head('Input list', 'inputs', `${ins.length} channels, numbered in band order. Stage box ports fill in the same order.`)}${table(ins, inCols, 'flag')}</section>
     <div class="sheets2">
@@ -1046,13 +1056,134 @@ function renderPaper() {
       <section class="sheet">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols)}</section>
     </div>
     <div class="sheets2">
-      <section class="sheet">${head('Cable pull list', 'pull', `Stock lengths to pull from storage. Slack ${plan.settings.slack}% and ${plan.settings.ends} ft each end included.`)}${table(pull, pullCols)}</section>
+      <section class="sheet">${head('Cable pull list', 'pull', `Stock lengths to pull from storage. Slack ${plan.settings.slack}% and ${mVal(plan.settings.ends)} m each end included.`)}${table(pull, pullCols)}</section>
       <section class="sheet">${head('Team', 'team')}${table(plan.team, [['Name', 'name'], ['Position', 'role'], ['Sings', r => r.sings ? 'yes' : '']])}</section>
     </div>
-    <section class="sheet">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it.')}${powerHtml}</section>
+    <section class="sheet">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it. Defaults are 16 A at 230 V; change them on each distro.')}${powerHtml}</section>
     <textarea id="copyFallback" rows="2" aria-label="Copied text" style="opacity:.01;height:1px;padding:0;border:0"></textarea>`;
 }
 function renderAll() { renderHeader(); renderRail(); renderToolbar(); renderPlot(); renderInspector(); renderStatus(); renderPaper(); }
+
+/* ===================================================================
+   Planning Center import (runs through the viewer's claude.ai connector)
+   =================================================================== */
+const PCO = 'Planning Center';
+const pco = { mcp: undefined, busy: '', err: '', types: [], typeId: '', plans: [], planId: '', roster: null, picked: new Set(), replace: true };
+
+function pcoErrText(e) {
+  switch (e?.code) {
+    case 'needs_reauth': return 'Planning Center needs signing in again. Reconnect it in claude.ai Settings → Connectors, then try again.';
+    case 'server_not_connected': case 'server_not_found': return 'Planning Center isn’t connected for you. Add it in claude.ai Settings → Connectors.';
+    case 'selection_required': return 'You have more than one Planning Center connection. Choose one when Claude asks, then try again.';
+    case 'not_in_manifest': case 'consent_required': return 'Planning Center is switched off for this page. Allow it from the page’s Permissions menu.';
+    case 'blocked_by_policy': return 'Your organisation blocks Planning Center here.';
+    case 'approval_required': return 'Planning Center needs your approval. Try again and choose Allow.';
+    case 'tool_error': return `Planning Center said: ${e.message || 'the request failed'}.`;
+    case 'server_unavailable': case 'rate_limited': return 'Planning Center isn’t answering right now. Wait a moment and try again.';
+    case 'not_granted': case 'capability_disabled': case 'capability_removed': return 'Connectors aren’t available in this view.';
+    default: return `Couldn’t reach Planning Center (${e?.message || 'unknown error'}).`;
+  }
+}
+async function pcoCall(tool, input) {
+  try { return (await pco.mcp.callTool(PCO, tool, input)).payload; }
+  catch (e) {
+    if (e?.retryable) { await new Promise(r => setTimeout(r, Math.min(e.retryAfterMs || 1500 + Math.random() * 1000, 10000))); return (await pco.mcp.callTool(PCO, tool, input)).payload; }
+    throw e;
+  }
+}
+async function pcoRun(label, fn) {
+  pco.busy = label; pco.err = ''; renderRail();
+  try { await fn(); } catch (e) { pco.err = pcoErrText(e); }
+  pco.busy = ''; renderRail();
+}
+const pcoLoadTypes = () => pcoRun('Loading services…', async () => {
+  const r = await pcoCall('services_service_types', { per_page: 100, order_by: 'sequence', output_fields: ['id', 'name'] });
+  pco.types = (r?.data || []).map(t => ({ id: t.id, name: t.attributes?.name || `Service ${t.id}` }));
+  if (!pco.types.length) { pco.err = 'No service types found in Planning Center.'; return; }
+  pco.typeId = (pco.types.find(t => /weekend|sunday|service/i.test(t.name)) || pco.types[0]).id;
+  await pcoLoadPlansInner();
+});
+async function pcoLoadPlansInner() {
+  pco.plans = []; pco.planId = ''; pco.roster = null;
+  const r = await pcoCall('services_plans', { service_type_id: pco.typeId, filter: 'future', order_by: 'sort_date', per_page: 15, output_fields: ['id', 'title', 'dates', 'sort_date', 'series_title'] });
+  pco.plans = (r?.data || []).map(p => ({ id: p.id, title: p.attributes?.title || p.attributes?.series_title || '', dates: p.attributes?.dates || '', date: String(p.attributes?.sort_date || '').slice(0, 10) }));
+  pco.planId = (pco.plans.find(p => p.date === plan.date) || pco.plans[0])?.id || '';
+  if (!pco.plans.length) pco.err = 'No upcoming plans in this service type.';
+}
+const pcoLoadPlans = () => pcoRun('Loading plans…', pcoLoadPlansInner);
+const pcoLoadRoster = () => pcoRun('Loading roster…', async () => {
+  const rows = [], teams = new Map();
+  let after = null;
+  for (let page = 0; page < 6; page++) {
+    const input = { service_type_id: pco.typeId, plan_id: pco.planId, per_page: 100, filter: ['not_declined'], include: ['team'], output_fields: ['id', 'name', 'status', 'team_position_name'] };
+    if (after) input.page_after = after;
+    const r = await pcoCall('services_plan_people', input);
+    for (const t of r?.included || []) if (t.type === 'Team') teams.set(t.id, t.attributes?.name || '');
+    rows.push(...(r?.data || []));
+    if (!r?.has_more || !r?.next_page_token) break;
+    after = r.next_page_token;
+  }
+  // one entry per person; someone on two positions (e.g. Acoustic + Vocals) keeps the instrument and "also sings"
+  const people = new Map();
+  for (const row of rows) {
+    const a = row.attributes || {}, key = row.relationships?.person?.data?.id || a.name;
+    const team = teams.get(row.relationships?.team?.data?.id) || '';
+    const pos = a.team_position_name || '';
+    const role = matchRole(pos) || (ROLES[matchRole(team)]?.gear?.length === 0 ? matchRole(team) : '');
+    const e = people.get(key) || { key, name: a.name || 'Unnamed', positions: [], roles: [], unconfirmed: false };
+    e.positions.push([pos, team].filter(Boolean).join(' · '));
+    if (role) e.roles.push(role);
+    if (a.status && a.status !== 'confirmed') e.unconfirmed = true;
+    people.set(key, e);
+  }
+  const rank = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? 99 : (r === 'Vocalist' || r === 'Worship Leader' ? 50 + i : i); };
+  pco.roster = [...people.values()].map(e => {
+    const roles = [...new Set(e.roles)].sort((a, b) => rank(a) - rank(b));
+    const role = roles.includes('Worship Leader') ? 'Worship Leader' : roles[0] || '';
+    const sings = role !== 'Vocalist' && role !== 'Worship Leader' && roles.some(r => r === 'Vocalist' || r === 'Worship Leader');
+    return { ...e, role, sings };
+  }).sort((a, b) => (a.role ? 0 : 1) - (b.role ? 0 : 1) || rank(a.role) - rank(b.role) || a.name.localeCompare(b.name));
+  pco.picked = new Set(pco.roster.filter(e => e.role).map(e => e.key));
+  if (!pco.roster.length) pco.err = 'No one is scheduled on this plan yet.';
+});
+function pcoApply() {
+  const chosen = pco.roster.filter(e => pco.picked.has(e.key));
+  if (!chosen.length) { toast('Tick at least one person'); return; }
+  const pl = pco.plans.find(p => p.id === pco.planId);
+  mutate(() => {
+    if (pco.replace) plan.team = [];
+    for (const e of chosen) {
+      if (plan.team.some(p => p.pcoId === e.key)) continue;
+      plan.team.push({ id: uid(), name: e.name, role: e.role, sings: e.sings, pcoId: e.key });
+    }
+    if (pl?.date) plan.date = pl.date;
+    if (pl) plan.name = pl.title || pl.dates || plan.name;
+    buildFromTeam(); autoCable();
+  });
+  toast(`Added ${chosen.length} from Planning Center`);
+}
+function pcoHtml() {
+  const head = `<h3 class="label">Planning Center</h3>`;
+  if (!window.claude?.use) return `<div class="pco">${head}<p class="hint">Importing from Planning Center works when this page is opened in Claude. Here, paste the schedule below instead.</p></div>`;
+  if (pco.mcp === undefined) return `<div class="pco">${head}<p class="hint">Checking for Planning Center…</p></div>`;
+  if (pco.mcp === null) return `<div class="pco">${head}<p class="hint">Connectors aren’t available in this view. Paste the schedule below instead.</p></div>`;
+  const busy = pco.busy ? `<p class="hint" role="status">${esc(pco.busy)}</p>` : '';
+  const err = pco.err ? `<p class="err" role="alert">${esc(pco.err)}</p>` : '';
+  if (!pco.types.length) return `<div class="pco">${head}<p class="hint">Pull this week's scheduled team straight from Services.</p>
+    <button id="pcoStart" class="primary" ${pco.busy ? 'disabled' : ''}>Import from Planning Center</button>${busy}${err}</div>`;
+  const typeSel = `<div class="field"><label class="label" for="pcoType">Service type</label><select id="pcoType">${pco.types.map(t => `<option value="${esc(t.id)}" ${t.id === pco.typeId ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>`;
+  const planSel = pco.plans.length ? `<div class="field"><label class="label" for="pcoPlan">Plan</label><select id="pcoPlan">${pco.plans.map(p => `<option value="${esc(p.id)}" ${p.id === pco.planId ? 'selected' : ''}>${esc(p.dates)}${p.title ? ' · ' + esc(p.title) : ''}</option>`).join('')}</select></div>
+    <button id="pcoRoster" ${pco.busy || !pco.planId ? 'disabled' : ''}>Get roster</button>` : '';
+  let roster = '';
+  if (pco.roster?.length) {
+    roster = `<div class="row" style="justify-content:space-between"><span class="label">${pco.picked.size} of ${pco.roster.length} ticked</span><span class="hint">Stage positions are pre-ticked</span></div>
+      <div class="roster">${pco.roster.map(e => `<label for="pk-${esc(e.key)}"><input type="checkbox" id="pk-${esc(e.key)}" data-pick="${esc(e.key)}" ${pco.picked.has(e.key) ? 'checked' : ''}>
+        <span>${esc(e.name)}${e.unconfirmed ? ' <span class="chip warn">unconfirmed</span>' : ''}<small>${esc(e.positions.join(', '))}${e.role ? ` → ${esc(e.role)}${e.sings ? ' + sings' : ''}` : ' → not on stage'}</small></span></label>`).join('')}</div>
+      <label class="row" for="pcoReplace"><input type="checkbox" id="pcoReplace" ${pco.replace ? 'checked' : ''}> Replace this week's team</label>
+      <button id="pcoApply" class="primary">Put ${pco.picked.size} on stage</button>`;
+  }
+  return `<div class="pco">${head}${typeSel}${planSel}${busy}${err}${roster}</div>`;
+}
 
 /* ===================================================================
    Events
@@ -1081,7 +1212,7 @@ svg.addEventListener('pointerdown', e => {
         });
         return;
       }
-    } else if (pending) pending.points.push([snapTo(p.x, .5), snapTo(p.y, .5)]);
+    } else if (pending) pending.points.push([snapTo(p.x, .25), snapTo(p.y, .25)]);
     renderToolbar(); renderPlot(); return;
   }
   if (wp) {
@@ -1099,7 +1230,7 @@ svg.addEventListener('pointerdown', e => {
   renderPlot(); renderInspector();
 });
 svg.addEventListener('pointermove', e => {
-  if (pending) { const p = toFt(e); cursorPt = [snapTo(p.x, .5), snapTo(p.y, .5)]; renderPlot(); return; }
+  if (pending) { const p = toFt(e); cursorPt = [snapTo(p.x, .25), snapTo(p.y, .25)]; renderPlot(); return; }
   if (!drag) return;
   const p = toFt(e);
   if (drag.kind === 'item') {
@@ -1108,7 +1239,7 @@ svg.addEventListener('pointermove', e => {
     if (nx !== it.x || ny !== it.y) { it.x = nx; it.y = ny; drag.moved = true; renderPlot(); }
   } else {
     const c = plan.cables.find(x => x.id === drag.cid); if (!c) return;
-    c.points[drag.k] = [snapTo(p.x, .5), snapTo(p.y, .5)]; c.auto = false; drag.moved = true; renderPlot();
+    c.points[drag.k] = [snapTo(p.x, .25), snapTo(p.y, .25)]; c.auto = false; drag.moved = true; renderPlot();
   }
 });
 function endDrag() {
@@ -1140,7 +1271,7 @@ document.addEventListener('keydown', e => {
   else if (e.key.toLowerCase() === 'r') rotateSelected(e.shiftKey ? 45 : 90);
   else if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.metaKey) setMode(mode === 'cable' ? 'select' : 'cable');
   else if (e.key.startsWith('Arrow') && sel?.kind === 'item') {
-    e.preventDefault(); const it = itemById(sel.id), s = e.shiftKey ? 1 : .25;
+    e.preventDefault(); const it = itemById(sel.id), s = fromM(e.shiftKey ? .5 : .05);
     mutate(() => { if (e.key === 'ArrowLeft') it.x -= s; if (e.key === 'ArrowRight') it.x += s; if (e.key === 'ArrowUp') it.y -= s; if (e.key === 'ArrowDown') it.y += s; });
   }
 });
@@ -1180,6 +1311,9 @@ for (const [id, t] of [['tTeam', 'team'], ['tGear', 'gear'], ['tStage', 'stage']
 function matchRole(s) { for (const [re, r] of ROLE_MATCH) if (re.test(s)) return r; return ''; }
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
+  if (t.id === 'pcoStart') { pcoLoadTypes(); return; }
+  if (t.id === 'pcoRoster') { pcoLoadRoster(); return; }
+  if (t.id === 'pcoApply') { pcoApply(); return; }
   if (t.id === 'addPerson') mutate(() => { plan.team.push({ id: uid(), name: '', role: '', sings: false }); });
   else if (t.dataset.del) mutate(() => { plan.team = plan.team.filter(p => p.id !== t.dataset.del); buildFromTeam(); });
   else if (t.id === 'buildBtn') { mutate(() => { buildFromTeam(); autoCable(); }); toast('Stage built from team'); }
@@ -1199,7 +1333,7 @@ $('railPane').addEventListener('click', e => {
   else if (t.dataset.add) {
     mutate(() => {
       const ty = t.dataset.add, n = plan.items.filter(i => i.type === ty).length;
-      const it = addItem(ty, snapTo(plan.stage.w / 2 + (n % 5)), snapTo(plan.stage.d / 2 + (n % 5)));
+      const it = addItem(ty, snapTo(plan.stage.w / 2 + fromM(.3 * (n % 5))), snapTo(plan.stage.d / 2 + fromM(.3 * (n % 5))));
       if (ty === 'stagebox') it.label = `Stage box ${String.fromCharCode(65 + n)}`;
       if (ty === 'distro') it.label = `Distro ${n + 1}`;
       sel = { kind: 'item', id: it.id };
@@ -1211,6 +1345,10 @@ $('railPane').addEventListener('click', e => {
 });
 $('railPane').addEventListener('change', e => {
   const t = e.target, card = t.closest('[data-pid]');
+  if (t.id === 'pcoType') { pco.typeId = t.value; pcoLoadPlans(); return; }
+  if (t.id === 'pcoPlan') { pco.planId = t.value; pco.roster = null; renderRail(); return; }
+  if (t.id === 'pcoReplace') { pco.replace = t.checked; return; }
+  if (t.dataset.pick) { t.checked ? pco.picked.add(t.dataset.pick) : pco.picked.delete(t.dataset.pick); renderRail(); return; }
   if (card) {
     const p = personById(card.dataset.pid), f = t.dataset.f;
     mutate(() => {
@@ -1221,13 +1359,12 @@ $('railPane').addEventListener('change', e => {
   }
   const num = v => Number(v);
   const map = {
-    sw: () => { plan.stage.w = clamp(num(t.value) || 32, 8, 200); },
-    sd: () => { plan.stage.d = clamp(num(t.value) || 20, 6, 120); },
-    shd: () => { plan.stage.house = clamp(num(t.value) || 40, 5, 300); },
-    shw: () => { plan.stage.houseW = clamp(num(t.value) || 48, 8, 300); },
+    sw: () => { plan.stage.w = fromM(clamp(num(t.value) || 10, 3, 60)); },
+    sd: () => { plan.stage.d = fromM(clamp(num(t.value) || 6, 2, 40)); },
+    shd: () => { plan.stage.house = fromM(clamp(num(t.value) || 12, 2, 100)); },
+    shw: () => { plan.stage.houseW = fromM(clamp(num(t.value) || 16, 3, 100)); },
     slack: () => { plan.settings.slack = clamp(num(t.value) || 0, 0, 100); },
-    ends: () => { plan.settings.ends = clamp(num(t.value) || 0, 0, 20); },
-    units: () => { plan.settings.units = t.value; },
+    ends: () => { plan.settings.ends = fromM(clamp(num(t.value) || 0, 0, 6)); },
     notes: () => { plan.notes = t.value; },
   };
   if (map[t.id]) mutate(map[t.id]);
@@ -1242,8 +1379,8 @@ $('inspector').addEventListener('change', e => {
     switch (t.id) {
       case 'iLabel': it.label = t.value; it.labelEdited = true; break;
       case 'iPerson': it.personId = t.value || undefined; break;
-      case 'iX': it.x = n; break; case 'iY': it.y = n; break;
-      case 'iW': if (n > 0) it.w = n; break; case 'iD': if (n > 0) it.d = n; break;
+      case 'iX': it.x = fromM(n); break; case 'iY': it.y = fromM(n); break;
+      case 'iW': if (n > 0) it.w = fromM(n); break; case 'iD': if (n > 0) it.d = fromM(n); break;
       case 'iRot': it.rot = ((n % 360) + 360) % 360; break;
       case 'iWatts': it.watts = Math.max(0, n); break;
       case 'iInputs': it.inputs = t.value.split(',').map(s => s.trim()).filter(Boolean); it.inputsEdited = true; break;
@@ -1265,7 +1402,7 @@ $('inspector').addEventListener('click', e => {
   if (t.id === 'iDel' || t.id === 'cDel') deleteSelected();
   if (t.id === 'iDup') {
     const it = itemById(sel.id);
-    mutate(() => { const copy = { ...JSON.parse(JSON.stringify(it)), id: uid(), x: it.x + 1, y: it.y + 1 }; delete copy.gen; delete copy.genKey; plan.items.push(copy); sel = { kind: 'item', id: copy.id }; });
+    mutate(() => { const copy = { ...JSON.parse(JSON.stringify(it)), id: uid(), x: it.x + fromM(.3), y: it.y + fromM(.3) }; delete copy.gen; delete copy.genKey; plan.items.push(copy); sel = { kind: 'item', id: copy.id }; });
   }
   if (t.id === 'cClear') { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.points = []; }); }
 });
@@ -1295,7 +1432,7 @@ function importJson(text) {
   let n = 0, last = null;
   for (const [id, p] of Object.entries(plans)) {
     if (!p?.stage || !Array.isArray(p.items)) continue;
-    p.id = id; p.team ||= []; p.cables ||= []; p.settings ||= { slack: 10, ends: 3, units: 'ft' };
+    p.id = id; p.team ||= []; p.cables ||= []; p.settings ||= { slack: 10, ends: fromM(1) };
     db.plans[id] = p; n++; last = p;
   }
   if (!n) { toast('No weeks found in that JSON'); return; }
@@ -1317,6 +1454,7 @@ if (db) plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]];
 else { db = seed(); plan = db.plans[db.currentId]; save(); }
 renderAll();
 requestAnimationFrame(() => renderPlot());
+if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); }, () => { pco.mcp = null; renderRail(); });
 </script>
 </body>
 </html>
