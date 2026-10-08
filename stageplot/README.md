@@ -15,6 +15,10 @@ Open `index.html` in any modern browser (Chrome, Edge, Safari, Firefox).
 - **Paperwork**: input list with stage box port patching, outputs, monitor mixes, cable pull list, power sheet, team. Each table copies straight into a spreadsheet.
 - **Weeks**: every week saved separately. *Next week (copy)* clones everything; *Next week (stage only)* keeps the room and infrastructure and clears the team.
 
+## Stage-plot symbols
+
+Every gear item is drawn as a real top-down symbol (drum kit with shells and cymbals, mic stands with booms, consoles with fader strips, stage boxes with XLR ports, distros with sockets, etc.). They live in `index.html` and are also exported as standalone files in [`symbols/`](symbols/README.md). After editing a symbol, run `node tools/export-symbols.mjs` to refresh the files.
+
 ## Saving
 
 Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or download JSON as a backup or to move to another computer.

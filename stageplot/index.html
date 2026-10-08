@@ -254,14 +254,15 @@ svg text { font-family: var(--f-ui); }
 .zone.on-deck { fill: rgba(255,255,255,.28); }
 .item { cursor: pointer; touch-action: none; }
 .item .body { stroke: rgba(0,0,0,.35); stroke-width: .05; transition: filter .12s; }
-.item:hover .body { filter: brightness(1.18); }
+.item:hover .body, .item:hover .sym { filter: brightness(1.18); }
+.hit { fill: transparent; }
 .c-audio { fill: #2e6a99; } .c-inst { fill: #6b51a3; } .c-power { fill: #b85a22; } .c-infra { fill: #44535e; }
 .c-video { fill: #a3426b; } .c-staging { fill: rgba(255,255,255,.05); stroke: rgba(255,255,255,.42) !important; stroke-dasharray: .3 .2; stroke-width: .07 !important; }
 .c-person { fill: var(--accent); stroke: rgba(0,0,0,.45) !important; }
 .item .detail { stroke: rgba(255,255,255,.42); stroke-width: .05; fill: none; }
-.ilabel { fill: #fff; font-size: .48px; font-weight: 600; paint-order: stroke; stroke: rgba(0,0,0,.65); stroke-width: .12px; pointer-events: none; }
-.ilabel.out { fill: var(--ink-2); stroke: var(--house); stroke-width: .1px; }
-.ilabel.pname { font-size: .52px; font-weight: 700; }
+.ilabel { fill: #fff; font-size: var(--lab, .48px); font-weight: 600; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: var(--labs, .12px); pointer-events: none; }
+.ilabel.out { fill: var(--ink-2); stroke: var(--house); }
+.ilabel.pname { font-size: var(--labp, .52px); font-weight: 700; }
 .initials { fill: var(--accent-ink); font-size: .58px; font-weight: 800; pointer-events: none; }
 .selbox { fill: none; stroke: var(--accent); stroke-width: .1; pointer-events: none; }
 .selglow { fill: var(--accent); opacity: .16; pointer-events: none; }
@@ -274,7 +275,7 @@ svg text { font-family: var(--f-ui); }
 .k-inst { stroke: var(--k-inst); } .k-speakon { stroke: var(--k-spk); } .k-video { stroke: var(--k-vid); }
 .bg-xlr { background: var(--k-xlr); } .bg-cat6 { background: var(--k-cat); } .bg-power { background: var(--k-pow); }
 .bg-inst { background: var(--k-inst); } .bg-speakon { background: var(--k-spk); } .bg-video { background: var(--k-vid); }
-.cablen { font: 600 .46px var(--f-mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.8); stroke-width: .14px; pointer-events: none; }
+.cablen { font: 600 var(--lab, .46px) var(--f-mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.8); stroke-width: .14px; pointer-events: none; }
 .wp { fill: var(--accent); stroke: #000; stroke-width: .05; cursor: move; touch-action: none; }
 .pending { fill: none; stroke: var(--accent); stroke-width: .14; stroke-dasharray: .4 .25; pointer-events: none; }
 .pend-start { fill: none; stroke: var(--accent); stroke-width: .12; pointer-events: none; }
@@ -484,45 +485,47 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 /* ===================================================================
    Catalog: every unit is feet. w = width (stage left/right), d = depth.
    =================================================================== */
+/* CAT:BEGIN */
 const CAT = {
   // sizes below are feet (internal unit); the UI converts to metres
   person:      { name: 'Performer', cat: 'person', w: 1.5, d: 1.5, shape: 'person', hidden: true },
   // Audio
-  vox_mic:     { name: 'Vocal mic (wired)', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Vox'] },
-  vox_wl:      { name: 'Vocal mic (wireless)', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Vox RF'], wireless: true },
-  headset:     { name: 'Headset (wireless)', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Headset RF'], wireless: true },
-  inst_mic:    { name: 'Instrument mic', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Inst'] },
-  di_mono:     { name: 'DI box (mono)', cat: 'audio', w: .8, d: .6, shape: 'rect', inputs: ['DI'] },
-  di_stereo:   { name: 'DI box (stereo)', cat: 'audio', w: 1, d: .6, shape: 'rect', inputs: ['DI L', 'DI R'] },
-  wedge:       { name: 'Wedge monitor', cat: 'audio', w: 2, d: 1.4, shape: 'wedge', outs: 1, watts: 300 },
-  iem:         { name: 'IEM pack', cat: 'audio', w: .6, d: .6, shape: 'rect', wireless: true, iem: true },
-  iem_rack:    { name: 'IEM transmitter rack', cat: 'infra', w: 2, d: 2, shape: 'rack', outs: 8, watts: 120 },
-  stagebox:    { name: 'Stage box / digital snake', cat: 'infra', w: 2, d: 1.4, shape: 'rack', ins: 32, outsMax: 16, watts: 120, short: 'Stage box' },
-  foh:         { name: 'FOH console', cat: 'infra', w: 6, d: 3, shape: 'desk', watts: 250, desk: true },
-  mon_desk:    { name: 'Monitor console', cat: 'infra', w: 4, d: 2.5, shape: 'desk', watts: 200, desk: true },
-  main_spk:    { name: 'Main speaker (powered)', cat: 'audio', w: 2, d: 2, shape: 'speaker', outs: 1, watts: 600 },
-  sub:         { name: 'Subwoofer (powered)', cat: 'audio', w: 3, d: 3, shape: 'speaker', outs: 1, watts: 1000 },
+  vox_mic:     { name: 'Vocal mic (wired)', short: 'Vox mic', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Vox'] },
+  vox_wl:      { name: 'Vocal mic (wireless)', short: 'RF mic', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Vox RF'], wireless: true },
+  headset:     { name: 'Headset (wireless)', short: 'Headset', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Headset RF'], wireless: true },
+  inst_mic:    { name: 'Instrument mic', short: 'Inst mic', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Inst'] },
+  di_mono:     { name: 'DI box (mono)', short: 'DI', cat: 'audio', w: .8, d: .6, shape: 'rect', inputs: ['DI'] },
+  di_stereo:   { name: 'DI box (stereo)', short: 'Stereo DI', cat: 'audio', w: 1, d: .6, shape: 'rect', inputs: ['DI L', 'DI R'] },
+  wedge:       { name: 'Wedge monitor', short: 'Wedge', cat: 'audio', w: 2, d: 1.4, shape: 'wedge', outs: 1, watts: 300 },
+  iem:         { name: 'IEM pack', short: 'IEM', cat: 'audio', w: .6, d: .6, shape: 'rect', wireless: true, iem: true },
+  iem_rack:    { name: 'IEM transmitter rack', short: 'IEM rack', cat: 'infra', w: 2, d: 2, shape: 'rack', outs: 8, watts: 120 },
+  stagebox:    { name: 'Stage box / digital snake', short: 'Stage box', cat: 'infra', w: 2, d: 1.4, shape: 'rack', ins: 32, outsMax: 16, watts: 120 },
+  foh:         { name: 'FOH console', short: 'FOH', cat: 'infra', w: 6, d: 3, shape: 'desk', watts: 250, desk: true },
+  mon_desk:    { name: 'Monitor console', short: 'Monitors', cat: 'infra', w: 4, d: 2.5, shape: 'desk', watts: 200, desk: true },
+  main_spk:    { name: 'Main speaker (powered)', short: 'Main', cat: 'audio', w: 2, d: 2, shape: 'speaker', outs: 1, watts: 600 },
+  sub:         { name: 'Subwoofer (powered)', short: 'Sub', cat: 'audio', w: 3, d: 3, shape: 'speaker', outs: 1, watts: 1000 },
   // Instruments & staging
-  drum_kit:    { name: 'Drum kit', cat: 'inst', w: 6.5, d: 5.5, shape: 'kit',
+  drum_kit:    { name: 'Drum kit', short: 'Kit', cat: 'inst', w: 6.5, d: 5.5, shape: 'kit',
                  inputs: ['Kick In', 'Kick Out', 'Snare Top', 'Snare Btm', 'Hi-hat', 'Rack Tom', 'Floor Tom', 'OH L', 'OH R'] },
-  drum_shield: { name: 'Drum shield', cat: 'staging', w: 8, d: .4, shape: 'rect' },
-  gtr_amp:     { name: 'Guitar amp (miked)', cat: 'inst', w: 2, d: 1, shape: 'rect', inputs: ['Gtr Amp'], watts: 120 },
-  bass_amp:    { name: 'Bass amp', cat: 'inst', w: 2, d: 1.5, shape: 'rect', watts: 400 },
-  keys:        { name: 'Keyboard rig', cat: 'inst', w: 5, d: 2, shape: 'keys', inputs: ['Keys L', 'Keys R'], watts: 150 },
-  pedalboard:  { name: 'Pedalboard', cat: 'inst', w: 2.5, d: 1.2, shape: 'rect', watts: 30 },
-  laptop:      { name: 'Tracks laptop', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
-  music_stand: { name: 'Music stand', cat: 'staging', w: 1.5, d: .8, shape: 'rect' },
-  pulpit:      { name: 'Pulpit', cat: 'staging', w: 2.5, d: 2, shape: 'rect' },
-  riser:       { name: 'Riser 2.4 × 2.4 m', cat: 'staging', w: 8, d: 8, shape: 'platform' },
-  drum_riser:  { name: 'Drum riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
+  drum_shield: { name: 'Drum shield', short: 'Shield', cat: 'staging', w: 8, d: .4, shape: 'rect' },
+  gtr_amp:     { name: 'Guitar amp (miked)', short: 'Gtr amp', cat: 'inst', w: 2, d: 1, shape: 'rect', inputs: ['Gtr Amp'], watts: 120 },
+  bass_amp:    { name: 'Bass amp', short: 'Bass amp', cat: 'inst', w: 2, d: 1.5, shape: 'rect', watts: 400 },
+  keys:        { name: 'Keyboard rig', short: 'Keys', cat: 'inst', w: 5, d: 2, shape: 'keys', inputs: ['Keys L', 'Keys R'], watts: 150 },
+  pedalboard:  { name: 'Pedalboard', short: 'Pedals', cat: 'inst', w: 2.5, d: 1.2, shape: 'rect', watts: 30 },
+  laptop:      { name: 'Tracks laptop', short: 'Tracks rig', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
+  music_stand: { name: 'Music stand', short: 'Stand', cat: 'staging', w: 1.5, d: .8, shape: 'rect' },
+  pulpit:      { name: 'Pulpit', short: 'Pulpit', cat: 'staging', w: 2.5, d: 2, shape: 'rect' },
+  riser:       { name: 'Riser 2.4 × 2.4 m', short: 'Riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
+  drum_riser:  { name: 'Drum riser', short: 'Drum riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   // Power
-  distro:      { name: 'Power distro', cat: 'power', w: 2, d: 1.5, shape: 'rack', circuits: 6, amps: 16, volts: 230 },
-  wall_outlet: { name: 'Wall / floor socket', cat: 'power', w: .7, d: .5, shape: 'rect', circuits: 1, amps: 16, volts: 230 },
+  distro:      { name: 'Power distro', short: 'Distro', cat: 'power', w: 2, d: 1.5, shape: 'rack', circuits: 6, amps: 16, volts: 230 },
+  wall_outlet: { name: 'Wall / floor socket', short: 'Socket', cat: 'power', w: .7, d: .5, shape: 'rect', circuits: 1, amps: 16, volts: 230 },
   // Video & lighting
-  camera:      { name: 'Camera on tripod', cat: 'video', w: 2, d: 2, shape: 'round', watts: 40 },
-  conf_mon:    { name: 'Confidence monitor', cat: 'video', w: 3.5, d: 1, shape: 'rect', watts: 150 },
-  light_stand: { name: 'Light on stand', cat: 'video', w: 1.5, d: 1.5, shape: 'round', watts: 250 },
+  camera:      { name: 'Camera on tripod', short: 'Camera', cat: 'video', w: 2, d: 2, shape: 'round', watts: 40 },
+  conf_mon:    { name: 'Confidence monitor', short: 'Confidence', cat: 'video', w: 3.5, d: 1, shape: 'rect', watts: 150 },
+  light_stand: { name: 'Light on stand', short: 'Light', cat: 'video', w: 1.5, d: 1.5, shape: 'round', watts: 250 },
 };
+/* CAT:END */
 const GEAR_GROUPS = [
   ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
   ['Snakes & desks', ['stagebox', 'foh', 'mon_desk', 'iem_rack']],
@@ -1099,6 +1102,108 @@ function gearMeta(type) {
   return bits[0];
 }
 
+/* SYMBOLS:BEGIN */
+/* ===================================================================
+   Stage-plot symbols. Top-down drawings in feet, centred on the item,
+   authored at each catalog size (scaled if an item is resized).
+   +y is downstage (toward the audience). Performers stand upstage of
+   their gear; FOH and house gear face the stage (−y).
+   =================================================================== */
+const SYM_CSS = `
+.s-bg{opacity:.5}
+.s-line{fill:none;stroke:rgba(255,255,255,.55);stroke-width:.05;stroke-linecap:round;stroke-linejoin:round}
+.s-thin{fill:none;stroke:rgba(255,255,255,.32);stroke-width:.035;stroke-linecap:round}
+.s-boom{fill:none;stroke:#e8ecef;stroke-width:.06;stroke-linecap:round}
+.s-edge{stroke:rgba(0,0,0,.45);stroke-width:.05}
+.s-dark{fill:#14181c}
+.s-white{fill:#eef1f3}
+.s-head{fill:rgba(255,255,255,.13)}
+.s-glass{fill:#0c1a24;stroke:rgba(255,255,255,.35);stroke-width:.04}
+.s-grille{fill:#171c21;stroke:rgba(255,255,255,.22);stroke-width:.035}
+.s-metal{fill:rgba(222,184,86,.42);stroke:#e1bd5f;stroke-width:.045}
+.s-led{fill:#5be08f}
+.s-red{fill:#ff6b5e}
+.s-port{fill:#14181c;stroke:rgba(255,255,255,.6);stroke-width:.03}
+.s-acrylic{fill:rgba(170,215,255,.16);stroke:rgba(190,225,255,.75);stroke-width:.05}
+.s-beam{fill:rgba(255,214,110,.16)}
+.s-ped1{fill:#3fb6a8}.s-ped2{fill:#e2833a}.s-ped3{fill:#d8d24a}.s-ped4{fill:#8a73d6}
+.s-deck{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.45);stroke-width:.07;stroke-dasharray:.3 .2}
+.c-audio{fill:#2e6a99}.c-inst{fill:#6b51a3}.c-power{fill:#b85a22}.c-infra{fill:#44535e}.c-video{fill:#a3426b}
+`;
+const SYM = (() => {
+  const f = n => +n.toFixed(3);
+  const rect = (x, y, w, h, cls, rx = .06) => `<rect class="${cls}" x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${rx}"/>`;
+  const circ = (cx, cy, r, cls) => `<circle class="${cls}" cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}"/>`;
+  const line = (x1, y1, x2, y2, cls = 's-line') => `<path class="${cls}" d="M${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}"/>`;
+  const box = (w, d, c, rx = .08) => rect(-w / 2, -d / 2, w, d, `body c-${c} s-edge`, rx);
+  const tripod = (r, cls = 's-line') => [90, 210, 330].map(a => line(0, 0, r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180), cls)).join('');
+  const grid = (x0, y0, cols, rows, dx, dy, r, cls) => { let s = ''; for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) s += circ(x0 + i * dx, y0 + j * dy, r, cls); return s; };
+  const drum = (cx, cy, r) => circ(cx, cy, r, 'body c-inst s-edge') + circ(cx, cy, r * .82, 's-head') + circ(cx, cy, r * .08, 's-thin');
+  const cymbal = (cx, cy, r) => circ(cx, cy, r, 's-metal') + circ(cx, cy, r * .55, 's-thin') + circ(cx, cy, r * .14, 's-metal');
+  const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
+  function console_(w, d) {
+    const hw = w / 2, hd = d / 2;
+    let s = box(w, d, 'infra', .2) + rect(-hw + .15, -hd + .15, w - .3, d - .3, 's-head', .12);
+    s += rect(-w * .22, -hd + .25, w * .44, d * .26, 's-glass', .05) + line(-w * .18, -hd + .45, w * .1, -hd + .45, 's-thin') + line(-w * .18, -hd + .6, w * .05, -hd + .6, 's-thin');
+    const strips = Math.floor((w - .9) / .28);
+    for (let i = 0; i < strips; i++) {
+      const x = -hw + .45 + i * .28;
+      if (Math.abs(x) < w * .23 && false) continue;
+      const knobY = -hd + d * .42, slotTop = hd - d * .42, slotBot = hd - .3;
+      s += circ(x, knobY, .055, 's-thin') + circ(x, knobY + .2, .055, 's-thin');
+      s += line(x, slotTop, x, slotBot, 's-thin');
+      const pos = slotTop + (slotBot - slotTop) * (.25 + .5 * ((i * 37) % 10) / 10);
+      s += rect(x - .07, pos - .05, .14, .1, 's-white', .02);
+    }
+    return s;
+  }
+  return {
+    vox_mic: circ(0, 0, .45, 'body c-audio s-bg') + tripod(.4) + line(0, 0, 0, -.22, 's-boom') + rect(-.06, -.3, .12, .2, 's-dark', .05) + circ(0, -.33, .085, 's-white') + circ(0, 0, .06, 's-dark'),
+    vox_wl: circ(0, 0, .45, 'body c-audio s-bg') + rect(-.07, -.18, .14, .5, 's-dark', .07) + circ(0, -.26, .11, 's-white') + '<path class="s-line" d="M.18 -.36a.25 .25 0 0 1 .1 .2M.27 -.44a.38 .38 0 0 1 .14 .3"/>' + circ(0, .2, .025, 's-led'),
+    headset: circ(0, 0, .45, 'body c-audio s-bg') + circ(0, 0, .22, 's-line') + '<path class="s-boom" d="M.22 0q.12 .25 -.1 .36"/>' + circ(.12, .36, .05, 's-white'),
+    inst_mic: circ(0, 0, .45, 'body c-audio s-bg') + tripod(.38) + `<g transform="rotate(-35)">${line(0, 0, 0, -.25, 's-boom')}${rect(-.05, -.38, .1, .18, 's-dark', .04)}${circ(0, -.4, .06, 's-white')}</g>` + circ(0, 0, .05, 's-dark'),
+    di_mono: box(.8, .6, 'audio') + rect(-.32, -.22, .64, .44, 's-head', .04) + circ(-.22, 0, .08, 's-white') + circ(-.22, 0, .035, 's-dark') + circ(.2, 0, .11, 's-port') + rect(-.06, -.17, .1, .06, 's-white', .02),
+    di_stereo: box(1, .6, 'audio') + rect(-.42, -.22, .84, .44, 's-head', .04) + circ(-.3, -.09, .07, 's-white') + circ(-.3, .1, .07, 's-white') + circ(.28, -.09, .09, 's-port') + circ(.28, .1, .09, 's-port') + rect(-.05, -.17, .1, .06, 's-white', .02),
+    wedge: '<polygon class="body c-audio s-edge" points="-1,.7 1,.7 .65,-.7 -.65,-.7"/>' + '<polygon class="s-grille" points="-.86,.28 .86,.28 .58,-.6 -.58,-.6"/>' + circ(-.22, -.15, .3, 's-line') + circ(-.22, -.15, .09, 's-line') + rect(.22, -.42, .36, .28, 's-line', .04) + line(-.85, .52, .85, .52, 's-thin'),
+    iem: rect(-.18, -.26, .36, .52, 'body c-audio s-edge', .06) + line(.1, -.26, .1, -.4, 's-boom') + rect(-.11, -.16, .22, .13, 's-glass', .02) + circ(0, .12, .05, 's-white') + '<path class="s-line" d="M-.12 .26q-.05 .12 -.16 .08"/>',
+    iem_rack: box(2, 2, 'infra') + rect(-.85, -.85, 1.7, 1.7, 's-head', .05) + rect(-.75, -.55, 1.5, .45, 's-grille', .04) + rect(-.75, .1, 1.5, .45, 's-grille', .04) + rect(-.6, -.45, .5, .2, 's-glass', .02) + rect(-.6, .2, .5, .2, 's-glass', .02) + circ(.45, -.33, .07, 's-led') + circ(.45, .33, .07, 's-led') + line(-.85, .85, -1.1, 1.1, 's-boom') + line(.85, .85, 1.1, 1.1, 's-boom') + circ(-1.1, 1.1, .06, 's-white') + circ(1.1, 1.1, .06, 's-white'),
+    stagebox: box(2, 1.4, 'infra') + rect(-.92, -.62, 1.84, 1.24, 's-head', .05) + grid(-.75, -.45, 8, 3, .214, .2, .07, 's-port') + grid(-.75, .2, 8, 1, .214, 0, .055, 's-white') + rect(-.82, .38, .16, .14, 's-port', .02) + rect(-.6, .38, .16, .14, 's-port', .02) + circ(.78, .45, .045, 's-led'),
+    foh: console_(6, 3),
+    mon_desk: console_(4, 2.5),
+    main_spk: box(2, 2, 'audio') + rect(-.85, .45, 1.7, .4, 's-grille', .04) + '<polygon class="s-line" points="-.5,.45 .5,.45 .2,-.35 -.2,-.35"/>' + rect(-.35, -.8, .7, .14, 's-dark', .07),
+    sub: box(3, 3, 'audio') + rect(-1.35, .9, 2.7, .45, 's-grille', .05) + rect(-1.1, 1, .7, .25, 's-port', .05) + rect(.4, 1, .7, .25, 's-port', .05) + circ(0, -.2, .9, 's-line') + circ(0, -.2, .3, 's-line') + rect(-.4, -1.35, .8, .16, 's-dark', .08),
+    drum_kit: rect(-3.25, -2.75, 6.5, 5.5, 's-deck', .3) +
+      circ(0, -1.85, .55, 's-dark') + circ(0, -1.85, .4, 's-line') +            // throne
+      rect(-.92, -.05, 1.84, 1.5, 'body c-inst s-edge', .2) + rect(-.8, .05, 1.6, .2, 's-head', .05) + rect(-.8, 1.15, 1.6, .2, 's-head', .05) + // kick on its side
+      drum(.95, -.8, .58) +                                                      // snare (drummer's left)
+      drum(.42, .15, .46) +                                                      // rack tom over the kick
+      drum(-1.35, -.55, .78) +                                                   // floor tom
+      cymbal(2.05, -.75, .62) +                                                  // hi-hat
+      cymbal(1.95, 1.15, .82) +                                                  // crash
+      cymbal(-1.95, .75, .95),                                                   // ride
+    drum_shield: [-3.2, -1.6, 0, 1.6, 3.2].map(x => rect(x - .78, -.2, 1.56, .4, 's-acrylic', .05)).join('') + [-2.4, -.8, .8, 2.4].map(x => circ(x, 0, .07, 's-white')).join(''),
+    gtr_amp: box(2, 1, 'inst') + rect(-.92, .1, 1.84, .32, 's-grille', .04) + rect(-.35, -.22, .7, .14, 's-dark', .07) + grid(-.75, -.34, 6, 1, .12, 0, .035, 's-white') + circ(.82, -.34, .035, 's-red'),
+    bass_amp: box(2, 1.5, 'inst') + rect(-.92, .25, 1.84, .42, 's-grille', .04) + rect(-.85, -.68, 1.7, .6, 'body c-infra s-edge', .05) + grid(-.65, -.38, 7, 1, .16, 0, .04, 's-white') + rect(-.25, -.62, .5, .1, 's-dark', .05) + circ(.72, -.38, .04, 's-led'),
+    keys: line(-2.1, -.9, -1.6, .9, 's-thin') + line(-1.6, -.9, -2.1, .9, 's-thin') + line(2.1, -.9, 1.6, .9, 's-thin') + line(1.6, -.9, 2.1, .9, 's-thin') +
+      rect(-2.5, -.75, 5, 1.5, 'body c-inst s-edge', .1) + rect(-2.35, -.68, 4.7, .58, 's-white', .03) +
+      Array.from({ length: 35 }, (_, i) => -2.35 + (i + 1) * 4.7 / 36).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
+      grid(-2.1, .25, 10, 1, .2, 0, .045, 's-thin') + rect(.6, .12, 1.3, .3, 's-glass', .03),
+    pedalboard: rect(-1.25, -.6, 2.5, 1.2, 's-dark', .08) + rect(-1.25, -.6, 2.5, 1.2, 's-line', .08) +
+      [['s-ped1', -1.05], ['s-ped2', -.6], ['s-ped3', -.15], ['s-ped4', .3], ['s-ped1', .75]].map(([c, x]) => rect(x, -.35, .34, .6, c, .04) + circ(x + .17, -.2, .05, 's-dark') + circ(x + .17, .12, .07, 's-white')).join('') + line(-1.2, -.5, 1.2, -.5, 's-thin'),
+    laptop: rect(-1, -.75, 2, 1.5, 'body c-infra s-bg', .08) + rect(-.65, -.45, 1.1, .75, 'body c-inst s-edge', .04) + rect(-.58, -.38, .96, .45, 's-head', .02) + rect(-.65, .3, 1.1, .08, 's-glass', .02) + rect(.55, -.3, .38, .55, 'body c-infra s-edge', .04) + circ(.74, -.12, .06, 's-white') + circ(.74, .1, .06, 's-white'),
+    music_stand: tripod(.38, 's-thin') + rect(-.72, -.1, 1.44, .34, 's-dark', .03) + rect(-.72, -.1, 1.44, .34, 's-line', .03) + line(-.68, .22, .68, .22, 's-boom'),
+    pulpit: rect(-1.25, -1, 2.5, 2, 'body c-infra s-edge', .12) + rect(-1.05, -.8, 2.1, 1.25, 's-head', .06) + line(-1.05, -.8, 1.05, -.8, 's-boom') + rect(-.7, .62, 1.4, .18, 's-dark', .05) + '<path class="s-boom" d="M.6 .55q.05 -.6 -.3 -.75"/>' + circ(.3, -.2, .05, 's-white'),
+    riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
+    drum_riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
+    distro: box(2, 1.5, 'power') + rect(-.9, -.65, 1.8, 1.3, 's-head', .05) + grid(-.7, -.45, 6, 1, .28, 0, .06, 's-white') + socket(-.55, -.05) + socket(0, -.05) + socket(.55, -.05) + socket(-.55, .4) + socket(0, .4) + socket(.55, .4) + circ(.85, -.5, .04, 's-led'),
+    wall_outlet: rect(-.35, -.25, .7, .5, 's-white s-edge', .06) + circ(0, 0, .17, 'body c-power') + circ(-.06, 0, .03, 's-dark') + circ(.06, 0, .03, 's-dark'),
+    camera: tripod(.95, 's-line') + rect(-.32, -.28, .64, .62, 'body c-video s-edge', .08) + rect(-.18, -.62, .36, .36, 's-dark', .05) + circ(0, -.62, .15, 's-glass') + rect(-.12, .34, .24, .2, 's-dark', .03),
+    conf_mon: '<polygon class="body c-infra s-bg" points="-.6,.45 .6,.45 .35,-.05 -.35,-.05"/>' + rect(-1.75, -.42, 3.5, .34, 'body c-video s-edge', .05) + rect(-1.65, -.4, 3.3, .14, 's-glass', .02),
+    light_stand: '<polygon class="s-beam" points="-.35,-.2 .35,-.2 .75,-.75 -.75,-.75"/>' + tripod(.7, 's-thin') + '<path class="s-line" d="M-.48 -.05V-.3M.48 -.05V-.3M-.48 -.3H.48"/>' + circ(0, 0, .42, 'body c-video s-edge') + circ(0, -.12, .22, 's-glass') + circ(0, -.12, .08, 's-white'),
+  };
+})();
+/* SYMBOLS:END */
+
 /* ===================================================================
    Rendering: plot
    =================================================================== */
@@ -1119,6 +1224,10 @@ function fitScale() {
 }
 function shapeSvg(it, w, d) {
   const c = cat(it), hw = w / 2, hd = d / 2, cls = `body c-${c.cat}`;
+  if (SYM[it.type]) {
+    const sx = w / c.w, sy = d / c.d, sc = Math.abs(sx - 1) > .001 || Math.abs(sy - 1) > .001;
+    return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="sym"${sc ? ` transform="scale(${f3(sx)} ${f3(sy)})"` : ''}>${SYM[it.type]}</g>`;
+  }
   switch (c.shape) {
     case 'person': return `<circle class="${cls}" r="${hw}"/><text class="initials" text-anchor="middle" dy=".21">${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
     case 'round': return `<ellipse class="${cls}" rx="${hw}" ry="${hd}"/>`;
@@ -1153,6 +1262,7 @@ function midpoint(pts) {
   }
   return pts[0];
 }
+const f3 = n => +n.toFixed(3);
 const layerOf = it => cat(it).shape === 'platform' ? 0 : cat(it).shape === 'person' ? 3 : (Math.min(prop(it, 'w'), prop(it, 'd')) >= 1.6 ? 1 : 2);
 
 function renderPlot() {
@@ -1163,7 +1273,8 @@ function renderPlot() {
   svg.setAttribute('viewBox', `${b.x0} ${b.y0} ${b.vw} ${b.vh}`);
   $('scroller').classList.toggle('cabling', mode === 'cable');
   const { w, d, house } = plan.stage;
-  const showSmall = scale >= 20, showBig = scale >= 11;
+  const showSmall = scale >= 34, showBig = scale >= 11;
+  svg.style.setProperty('--lab', `${f3(10.5 / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 / scale)}px`); svg.style.setProperty('--labs', `${f3(3 / scale)}px`);
   let s = `<defs><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
   s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/><rect class="house-dots" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`;
   s += `<rect class="deck-shadow" x=".25" y=".35" width="${w}" height="${d}" rx=".15"/>`;
@@ -1202,9 +1313,10 @@ function renderPlot() {
     const person = C.shape === 'person';
     const visible = isSel || (person ? showBig : big ? showBig : showSmall);
     if (visible && C.shape !== 'platform') {
-      const text = person ? firstName(personById(it.personId)?.name || it.label) : itemName(it);
+      const owner = it.personId && personById(it.personId), fn = owner && firstName(owner.name);
+      const text = person ? firstName(owner?.name || it.label) : (fn && itemName(it).startsWith(fn + ' ') ? itemName(it).slice(fn.length + 1) : itemName(it));
       const onDeck = it.y < plan.stage.d && it.x > 0 && it.x < plan.stage.w;
-      const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - .28 : it.y + Math.max(iw, id) / 2 + .55;
+      const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
       labels += `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${ly}" text-anchor="middle">${esc(text)}</text>`;
     } else if (C.shape === 'platform' && showBig) {
       labels += `<text class="zone on-deck" x="${it.x}" y="${it.y + id / 2 - .35}" text-anchor="middle">${esc(itemName(it).toUpperCase())}</text>`;
@@ -1920,6 +2032,7 @@ $('loadPaste').onclick = () => importJson($('dataText').value);
 $('loadFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => importJson(r.result); r.readAsText(f); e.target.value = ''; };
 
 /* ----- boot ----- */
+document.head.insertAdjacentHTML('beforeend', `<style id="symcss">${SYM_CSS}</style>`);
 try { const t = localStorage.getItem('stageplot.theme'); if (t === 'light' || t === 'dark') { themePref = t; document.documentElement.dataset.theme = t; } } catch { /* ignore */ }
 db = load();
 if (db) plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]];
