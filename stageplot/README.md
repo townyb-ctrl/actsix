@@ -19,6 +19,13 @@ Open `index.html` in any modern browser (Chrome, Edge, Safari, Firefox).
 
 Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or download JSON as a backup or to move to another computer.
 
+## Using it
+
+- Drag the floor to pan; pinch or Ctrl+scroll to zoom. **Stage** / **Room** buttons refit the view.
+- Drag gear from the Gear tab onto the stage, or click it to drop centre stage.
+- The right panel shows a four-step checklist for the week (team → build → patch → power) with the next action button.
+- Every change can be undone; toasts offer one-click undo. Theme follows your system or can be set with the half-circle button.
+
 ## Shortcuts
 
-`C` run cable · `Esc` cancel · `R` rotate (Shift+R 45°) · `Del` delete · arrows nudge 5 cm (Shift 50 cm) · `Ctrl/Cmd+Z` undo
+`V` move · `C` run cable · `Esc` cancel · `R` rotate (Shift+R 45°) · `D` duplicate · `Del` delete · `+`/`−` zoom · `0` fit · `?` help · arrows nudge 5 cm (Shift 50 cm) · `Ctrl/Cmd+Z` undo (add Shift to redo)
