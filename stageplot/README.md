@@ -6,6 +6,7 @@ Open `index.html` in any modern browser (Chrome, Edge, Safari, Firefox).
 
 ## What it does
 
+- **Stage designer**: on first use, draw your stage outline (click corners, drag to adjust, `+` on an edge adds a corner) or start from a rectangle, thrust, curved-front or angled-corner preset. Change it any time from **Room → Draw or edit stage shape**, optionally for every saved week. Edges facing the audience get the gold spike-tape line.
 - **Stage & room**: set stage width/depth and house depth/width in metres. 50 cm grid, heavier line every 1 m (2×1 m deck panels). Rulers, upstage/downstage, stage left/right marked.
 - **Planning Center import**: when opened in Claude (as a published artifact), pick a service type and plan, tick who's on stage, and the team is pulled from Services through your Planning Center connector. Positions map to stage roles automatically; people on two positions (e.g. Keys + Vocals) become "Keys, also sings".
 - **Team → stage**: add this week's team by hand, or paste a schedule (`Name - Position` per line). Press **Build stage from team** and each person's gear is placed by position: drums + riser + shield, bass amp + DI, guitar amp + pedalboard, keys, tracks laptop, vocal mics, IEM packs, pulpit + headset, etc. Gear positions are remembered per stage role, so next week's drummer lands where you put this week's kit.
@@ -25,6 +26,7 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Using it
 
+- **Cables** menu on the canvas hides all cables or single types (also `H`, or click a colour in the right panel's legend). Hidden types stay hidden in your browser until you show them again.
 - Hide the left or right panel with the header buttons, `[` and `]`, or press `\` for focus mode (both hidden). The left panel shrinks to an icon strip; with the right panel hidden, a small card over the plot keeps rotate / duplicate / delete for whatever you select.
 - Drag the floor to pan; pinch or Ctrl+scroll to zoom. **Stage** / **Room** buttons refit the view.
 - Drag gear from the Gear tab onto the stage, or click it to drop centre stage.
@@ -33,4 +35,4 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Shortcuts
 
-`V` move · `C` run cable · `Esc` cancel · `R` rotate (Shift+R 45°) · `D` duplicate · `Del` delete · `+`/`−` zoom · `0` fit · `?` help · arrows nudge 5 cm (Shift 50 cm) · `Ctrl/Cmd+Z` undo (add Shift to redo)
+`V` move · `C` run cable · `H` hide cables · `Esc` cancel · `R` rotate (Shift+R 45°) · `D` duplicate · `Del` delete · `+`/`−` zoom · `0` fit · `?` help · arrows nudge 5 cm (Shift 50 cm) · `Ctrl/Cmd+Z` undo (add Shift to redo)

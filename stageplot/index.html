@@ -338,7 +338,69 @@ svg text { font-family: var(--f-ui); }
 .warnlist li.bad { background: var(--bad-soft); }
 .warnlist li.bad .ic { color: var(--bad); }
 .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 12.5px; }
-.legend div { display: flex; align-items: center; gap: 8px; }
+.legend div, .legend button { display: flex; align-items: center; gap: 8px; }
+.legend button { border: 0; background: transparent; padding: 4px 6px; margin: -4px -6px; border-radius: var(--r-sm); cursor: pointer; text-align: left; font-size: 12.5px; color: var(--ink); }
+.legend button:hover { background: var(--surface-2); }
+.legend button[aria-pressed="false"] { color: var(--muted); text-decoration: line-through; }
+.legend button[aria-pressed="false"] .sw { opacity: .3; }
+.cabwrap { position: relative; }
+.cabmenu { position: absolute; top: calc(100% + 8px); left: 0; width: 270px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-3); padding: 6px; display: grid; gap: 1px; z-index: 6; }
+.cm-row { display: grid; grid-template-columns: 18px 1fr auto 18px; gap: 10px; align-items: center; border: 0; background: transparent; padding: 7px 8px; border-radius: var(--r-sm); cursor: pointer; text-align: left; font-size: 13px; color: var(--ink); }
+.cm-row:hover:not(:disabled) { background: var(--surface-2); }
+.cm-row:disabled { opacity: .45; cursor: default; }
+.cm-row .sw { width: 18px; height: 4px; border-radius: 2px; }
+.cm-row[aria-pressed="false"] { color: var(--muted); }
+.cm-row[aria-pressed="false"] .sw { opacity: .3; }
+.cm-all { grid-template-columns: 1fr auto; font-weight: 600; border-bottom: 1px solid var(--line); border-radius: 0; margin-bottom: 4px; padding-bottom: 10px; cursor: pointer; }
+.switch { appearance: none; -webkit-appearance: none; width: 34px; height: 20px; border-radius: 99px; background: var(--line-2); position: relative; cursor: pointer; border: 0; padding: 0; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-1); transition: transform .15s; }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(14px); }
+.deck-outline { fill: none; stroke: rgba(255,255,255,.14); stroke-width: .06; }
+.railbody > * { min-width: 0; }
+.stage-thumb { width: 100%; max-width: 100%; height: 86px; background: var(--surface-2); border-radius: var(--r-sm); display: block; }
+.stage-thumb .th-deck, .presets .th-deck { fill: var(--deck); stroke: var(--accent); stroke-width: .18; }
+
+/* ---------- stage designer & welcome ---------- */
+.designer { padding: 16px; }
+.dsg { width: min(1240px, 100%); height: min(860px, 100%); background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--line); box-shadow: var(--shadow-3); display: grid; grid-template-rows: auto minmax(0,1fr); overflow: hidden; }
+.dsg-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.dsg-head h2 { font-size: 19px; font-weight: 700; }
+.dsg-body { display: grid; grid-template-columns: 300px minmax(0,1fr); min-height: 0; }
+.dsg-side { padding: 16px; display: grid; gap: 14px; align-content: start; overflow: auto; border-right: 1px solid var(--line); }
+.dsg-canvas { position: relative; background: var(--house); min-height: 300px; }
+#dsgSvg { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; user-select: none; -webkit-user-select: none; }
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.preset { display: grid; gap: 4px; justify-items: center; padding: 8px 4px 6px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); cursor: pointer; font-size: 11.5px; font-weight: 550; color: var(--ink-2); }
+.preset svg { width: 100%; height: 30px; }
+.preset:hover { border-color: var(--line-2); }
+.preset[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); color: var(--ink); }
+.d-bg { fill: var(--house); }
+.d-minor { stroke: var(--house-dot); stroke-width: .02; }
+.d-major { stroke: var(--house-dot); stroke-width: .045; }
+.d-axis { fill: var(--house-ink); font: .32px var(--f-mono); }
+.d-dir { fill: var(--house-ink); font-size: .42px; font-weight: 700; letter-spacing: .08px; }
+.d-deck { fill: var(--deck); stroke: rgba(255,255,255,.25); stroke-width: .05; }
+.d-deck.bad { fill: var(--bad-soft); stroke: var(--bad); }
+.d-front { stroke: var(--accent); stroke-width: .1; stroke-dasharray: .4 .2; }
+.d-open { fill: none; stroke: var(--accent); stroke-width: .07; stroke-dasharray: .25 .15; }
+.d-len { fill: var(--ink-2); font: 600 .3px var(--f-mono); pointer-events: none; }
+.d-pt { fill: #fff; stroke: var(--deck); stroke-width: .06; cursor: grab; }
+.d-pt.sel { fill: var(--accent); }
+.d-pt.first { fill: var(--accent); r: .3; }
+.d-add { cursor: copy; }
+.d-add circle { fill: var(--surface); stroke: var(--accent); stroke-width: .04; opacity: .9; }
+.d-add path { stroke: var(--accent-text); stroke-width: .04; }
+.d-cur { fill: var(--accent); pointer-events: none; }
+.welcome { width: min(560px, 100%); padding: 28px; gap: 16px; }
+.welcome .art { height: 120px; border-radius: var(--r-md); background: var(--deck); display: grid; place-items: center; overflow: hidden; }
+.welcome ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--ink-2); }
+@media (max-width: 760px) {
+  .dsg-body { grid-template-columns: minmax(0,1fr); grid-template-rows: minmax(0,1fr) auto; }
+  .dsg-side { order: 2; border-right: 0; border-top: 1px solid var(--line); max-height: 45vh; }
+  .designer { padding: 0; }
+  .dsg { border-radius: 0; height: 100%; }
+}
 .legend .sw { width: 18px; height: 4px; border-radius: 2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips .ctype { border: 1px solid var(--line); }
@@ -492,6 +554,24 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   </div>
 </div>
 
+<div class="overlay designer" id="stageDlg" hidden>
+  <div class="dsg" role="dialog" aria-labelledby="dsgTitle">
+    <header class="dsg-head"><div><div class="eyebrow" id="dsgEyebrow">Stage designer</div><h2 id="dsgTitle">Draw your stage</h2></div>
+      <div class="row"><button class="btn" id="dsgCancel">Cancel</button><button class="btn primary" id="dsgSave">Save</button></div></header>
+    <div class="dsg-body"><aside class="dsg-side" id="dsgSide"></aside><div class="dsg-canvas"><svg id="dsgSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stage outline editor"></svg></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="welcomeDlg" hidden>
+  <div class="modal welcome" role="dialog" aria-labelledby="welcomeTitle">
+    <div class="art"><svg viewBox="0 0 120 50" width="260" aria-hidden="true"><path d="M10 8H110V34H76V44H44V34H10Z" fill="none" stroke="#f0b429" stroke-width="1.6" stroke-dasharray="4 2.4"/><circle cx="42" cy="22" r="4" fill="#f0b429"/><circle cx="60" cy="18" r="4" fill="#8f7cd4"/><circle cx="78" cy="22" r="4" fill="#f0b429"/></svg></div>
+    <div><div class="eyebrow">Welcome to Stageplot</div><h2 id="welcomeTitle" style="font-size:24px">Let’s start with your stage</h2></div>
+    <ol><li>Draw the shape of your stage, or pick a preset and set the size.</li><li>Add this week’s team, from Planning Center or by hand.</li><li>Build the stage, then check patching, power and paperwork.</li></ol>
+    <div class="row"><button class="btn primary lg" id="welcomeDraw">Draw my stage</button><button class="btn lg" id="welcomeExample">Explore an example first</button></div>
+    <p class="hint">Drawing your stage replaces the example week. You can change the shape any time from the Room tab.</p>
+  </div>
+</div>
+
 <div class="overlay" id="helpDlg" hidden>
   <div class="modal" role="dialog" aria-labelledby="helpTitle" style="width:min(460px,100%)">
     <div class="row" style="justify-content:space-between"><h2 id="helpTitle">Shortcuts</h2><button class="iconbtn" id="helpClose" aria-label="Close"></button></div>
@@ -506,6 +586,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <dt><span class="kbd">+</span><span class="kbd">−</span></dt><dd>Zoom</dd>
       <dt><span class="kbd">0</span></dt><dd>Fit stage</dd>
       <dt><span class="kbd">Ctrl</span><span class="kbd">Z</span></dt><dd>Undo (add Shift to redo)</dd>
+      <dt><span class="kbd">H</span></dt><dd>Show / hide cables</dd>
       <dt><span class="kbd">[</span><span class="kbd">]</span></dt><dd>Hide left / right panel</dd>
       <dt><span class="kbd">\</span></dt><dd>Focus: hide both panels</dd>
       <dt>Drag floor</dt><dd>Pan · pinch or Ctrl+scroll to zoom</dd>
@@ -1077,6 +1158,9 @@ function pcoApply() {
    Icons (stroke icons, 24px grid)
    =================================================================== */
 const ICONS = {
+  eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 005.4-1.6"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   panelL: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
   panelR: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>',
   chevsL: '<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>',
@@ -1315,12 +1399,16 @@ function renderPlot() {
   svg.style.setProperty('--lab', `${f3(10.5 / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 / scale)}px`); svg.style.setProperty('--labs', `${f3(3 / scale)}px`);
   let s = `<defs><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
   s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/><rect class="house-dots" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`;
-  s += `<rect class="deck-shadow" x=".25" y=".35" width="${w}" height="${d}" rx=".15"/>`;
-  s += `<rect class="deck" x="0" y="0" width="${w}" height="${d}" rx=".1"/>`;
+  const poly = stagePoly(), deckD = polyPath(poly);
+  s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath></defs>`);
+  s += `<path class="deck-shadow" transform="translate(.25 .35)" d="${deckD}"/>`;
+  s += `<path class="deck" d="${deckD}"/>`;
   const half = fromM(.5);
+  s += '<g clip-path="url(#deckclip)">';
   for (let i = 1; i * half < w - .01; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="${i * half}" x2="${i * half}" y1="0" y2="${d}"/>`;
   for (let i = 1; i * half < d - .01; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="0" x2="${w}" y1="${i * half}" y2="${i * half}"/>`;
-  s += `<line class="edge" x1="0" x2="${w}" y1="${d}" y2="${d}"/>`;
+  s += '</g>';
+  for (const [a, c] of frontEdges(poly)) s += `<line class="edge" x1="${a[0]}" y1="${a[1]}" x2="${c[0]}" y2="${c[1]}"/>`;
   s += '<g class="ruler">';
   const step = fromM(1);
   for (let i = 0; i * step <= w + .001; i++) {
@@ -1353,7 +1441,7 @@ function renderPlot() {
     if (visible && C.shape !== 'platform') {
       const owner = it.personId && personById(it.personId), fn = owner && firstName(owner.name);
       const text = person ? firstName(owner?.name || it.label) : (fn && itemName(it).startsWith(fn + ' ') ? itemName(it).slice(fn.length + 1) : itemName(it));
-      const onDeck = it.y < plan.stage.d && it.x > 0 && it.x < plan.stage.w;
+      const onDeck = inPoly(it.x, it.y, stagePoly());
       const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
       labels += `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${ly}" text-anchor="middle">${esc(text)}</text>`;
     } else if (C.shape === 'platform' && showBig) {
@@ -1368,6 +1456,7 @@ function renderPlot() {
   for (const c of plan.cables) {
     const pts = routePts(c); if (!pts) continue;
     const o = orth(pts), isSel = sel?.kind === 'cable' && sel.id === c.id;
+    if (!isSel && !cableShown(c)) continue;
     const rel = selItem ? (touches(c, selItem) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : '');
     const ps = o.map(p => p.join(',')).join(' ');
     s += `<polyline class="cab k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>`;
@@ -1440,7 +1529,7 @@ function renderFloat() {
     </div>`;
   const types = mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
     <div class="panel"><span class="toolhint">${pending ? 'Tap the floor to add bends · tap the destination to finish' : 'Tap where the cable starts'}</span></div>` : '';
-  $('ftools').innerHTML = tools + types;
+  $('ftools').innerHTML = tools + cableMenuHtml() + types;
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel">
       <span class="stat"><b>${t.ins}</b> inputs</span>
@@ -1544,7 +1633,9 @@ function renderRail() {
     const st = plan.stage, se = plan.settings;
     const num = (id, label, v, attrs) => `<div class="field"><label for="${id}">${label}</label><div class="unit" data-unit="m"><input id="${id}" type="number" value="${v}" ${attrs}></div></div>`;
     pane.innerHTML = `
-      <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage</h3><p>The performance deck, measured from upstage right.</p></div></div>
+      <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage</h3><p>${plan.stage.poly ? `Custom shape · ${plan.stage.poly.length} corners` : 'Rectangle'}, measured from upstage right.</p></div></div>
+        <svg class="stage-thumb" viewBox="${-fromM(.6)} ${-fromM(.6)} ${st.w + fromM(1.2)} ${st.d + fromM(1.2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="th-deck" d="${polyPath(stagePoly())}"/></svg>
+        <button class="btn" id="editStage">${ic('pen', 'sm')}Draw or edit stage shape</button>
         <div class="grid2">${num('sw', 'Width', mVal(st.w), 'min="3" max="60" step=".1"')}${num('sd', 'Depth', mVal(st.d), 'min="2" max="40" step=".1"')}</div>
         <p class="hint">50 cm grid, heavier every metre (2 × 1 m deck panels).</p></div>
       <div class="card"><div class="card-head"><span class="badge">${ic('users', 'sm')}</span><div><h3>House</h3><p>Room in front of the stage, where FOH sits.</p></div></div>
@@ -1650,7 +1741,7 @@ function renderInspector() {
         <div class="tile"><b>${(t.watts / 1000).toFixed(1)} kW</b><span>stage power</span></div>
       </div></section>
       ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 6).map(warnItem).join('')}</ul>${w.length > 6 ? `<button class="btn quiet" data-go="paper">See all ${w.length} in the paperwork</button>` : ''}</section>` : ''}
-      <section class="isec"><h3>Cable colours</h3><div class="legend">${Object.keys(CABLES).map(k => `<div><span class="sw bg-${k}"></span>${esc(SHORT[k])}</div>`).join('')}</div>
+      <section class="isec"><h3>Cable colours</h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
         <p class="hint">Click anything on the plot to edit it. Press <span class="kbd">?</span> for shortcuts.</p></section>
     </div>`;
   }
@@ -1770,6 +1861,7 @@ svg.addEventListener('pointerdown', e => {
           }
           sel = { kind: 'cable', id: c.id };
         });
+        if (!cableView.all || cableView.hidden.has(cableType)) setCableView(() => { cableView.all = true; cableView.hidden.delete(cableType); });
         toast(`${SHORT[cableType]} run added`, true);
         return;
       }
@@ -1846,10 +1938,17 @@ function addGear(type, x, y) {
   }, `${CAT[type].name} added`);
 }
 $('ftools').addEventListener('click', e => {
+  if (e.target.closest('#cabBtn')) { cableView.menu = !cableView.menu; renderFloat(); return; }
+  const ct = e.target.closest('[data-cabtype]');
+  if (ct) { const k = ct.dataset.cabtype; setCableView(() => { cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
+  if (e.target.closest('#cabShowAll')) { setCableView(() => { cableView.all = true; cableView.hidden.clear(); }); return; }
+  if (e.target.closest('#cabOnly')) { setCableView(() => { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(k => k !== 'power')); }); return; }
   const m = e.target.closest('[data-mode]'), t = e.target.closest('[data-ctype]');
   if (m) setMode(m.dataset.mode);
   if (t) { cableType = t.dataset.ctype; renderFloat(); }
 });
+$('ftools').addEventListener('change', e => { if (e.target.id === 'cabAll') setCableView(() => { cableView.all = e.target.checked; }); });
+document.addEventListener('pointerdown', e => { if (cableView.menu && !e.target.closest('.cabwrap')) { cableView.menu = false; renderFloat(); } });
 $('fzoom').addEventListener('click', e => {
   const f = e.target.closest('[data-fit]');
   if (f) fit(f.dataset.fit);
@@ -1905,6 +2004,8 @@ function setTheme(t) {
 function closePops() { $('weekPop').hidden = true; $('weekBtn').setAttribute('aria-expanded', 'false'); delArmed = false; }
 
 document.addEventListener('keydown', e => {
+  if (!$('stageDlg').hidden) { dsgKey(e); return; }
+  if (!$('welcomeDlg').hidden) return;
   const tag = (e.target.tagName || '').toLowerCase(), typing = ['input', 'textarea', 'select'].includes(tag);
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && !typing && (k === 'z' || k === 'y')) { e.preventDefault(); (k === 'y' || e.shiftKey) ? redo() : undo(); return; }
@@ -1921,6 +2022,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'd' && !e.ctrlKey && !e.metaKey) duplicateSelected();
   else if (k === 'c' && !e.ctrlKey && !e.metaKey) setMode(mode === 'cable' ? 'select' : 'cable');
   else if (k === 'v') setMode('select');
+  else if (k === 'h' && !e.ctrlKey && !e.metaKey) setCableView(() => { cableView.all = !cableView.all; });
   else if (e.key === '[') togglePanel('rail');
   else if (e.key === ']') togglePanel('insp');
   else if (e.key === '\\') { const show = !railOpen && !inspOpen; railOpen = show; inspOpen = show; applyPanels(); }
@@ -1996,6 +2098,7 @@ $('railPane').addEventListener('click', e => {
     }, `Added ${plural(lines.length, 'person', 'people')}`);
   }
   else if (t.dataset.add) addGear(t.dataset.add, snapTo(plan.stage.w / 2), snapTo(plan.stage.d / 2));
+  else if (t.id === 'editStage') openDesigner(false);
   else if (t.id === 'autoBtn') mutate(autoCable, 'Cabling re-run');
   else if (t.id === 'clearAuto') mutate(() => { plan.cables = plan.cables.filter(c => !c.auto); }, 'Auto runs cleared');
   else if (t.id === 'clearGen') mutate(() => { const g = new Set(plan.items.filter(i => i.gen).map(i => i.id)); plan.items = plan.items.filter(i => !i.gen); plan.cables = plan.cables.filter(c => !g.has(c.from) && !g.has(c.to)); sel = null; }, 'Team gear removed');
@@ -2020,8 +2123,8 @@ $('railPane').addEventListener('change', e => {
   }
   const num = v => Number(v);
   const map = {
-    sw: () => { plan.stage.w = fromM(clamp(num(t.value) || 10, 3, 60)); needFit = true; },
-    sd: () => { plan.stage.d = fromM(clamp(num(t.value) || 6, 2, 40)); needFit = true; },
+    sw: () => { const nw = fromM(clamp(num(t.value) || 10, 3, 60)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [r2(x * nw / plan.stage.w), y]); plan.stage.w = nw; needFit = true; },
+    sd: () => { const nd = fromM(clamp(num(t.value) || 6, 2, 40)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [x, r2(y * nd / plan.stage.d)]); plan.stage.d = nd; needFit = true; },
     shd: () => { plan.stage.house = fromM(clamp(num(t.value) || 12, 2, 100)); },
     shw: () => { plan.stage.houseW = fromM(clamp(num(t.value) || 16, 3, 100)); },
     slack: () => { plan.settings.slack = clamp(num(t.value) || 0, 0, 100); },
@@ -2060,6 +2163,7 @@ $('inspector').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.selc) { sel = { kind: 'cable', id: t.dataset.selc }; renderPlot(); renderInspector(); return; }
   if (t.dataset.settype) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.type = t.dataset.settype; c.auto = false; }); return; }
+  if (t.dataset.legend) { const k = t.dataset.legend; setCableView(() => { if (!cableView.all) { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(x => x !== k)); } else cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
   if (t.dataset.go === 'team') { railTab = 'team'; renderRail(); $('pcoStart')?.focus(); return; }
   if (t.dataset.go === 'build') { buildNow(); return; }
   if (t.dataset.go === 'cable') { mutate(autoCable, 'Cabling re-run'); return; }
@@ -2107,6 +2211,245 @@ function importJson(text) {
 $('loadPaste').onclick = () => importJson($('dataText').value);
 $('loadFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => importJson(r.result); r.readAsText(f); e.target.value = ''; };
 
+/* ===================================================================
+   Stage shape helpers (polygon in feet, origin = upstage-right corner)
+   =================================================================== */
+const stagePoly = () => (plan.stage.poly && plan.stage.poly.length >= 3) ? plan.stage.poly : [[0, 0], [plan.stage.w, 0], [plan.stage.w, plan.stage.d], [0, plan.stage.d]];
+const polyPath = pts => 'M' + pts.map(p => `${f3(p[0])} ${f3(p[1])}`).join('L') + 'Z';
+const signedArea = pts => pts.reduce((s, p, i) => { const q = pts[(i + 1) % pts.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
+function inPoly(x, y, pts) {
+  let c = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i], [xj, yj] = pts[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+// edges that face the audience get the gold spike-tape line
+function frontEdges(pts) {
+  const cw = signedArea(pts) > 0, out = [];
+  pts.forEach((a, i) => {
+    const b = pts[(i + 1) % pts.length], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+    const ny = (cw ? -dx : dx) / L;
+    if (ny > .35) out.push([a, b]);
+  });
+  return out;
+}
+function selfIntersects(pts) {
+  const n = pts.length, cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    if (Math.abs(i - j) <= 1 || (i === 0 && j === n - 1)) continue;
+    const a = pts[i], b = pts[(i + 1) % n], c = pts[j], d = pts[(j + 1) % n];
+    if (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0) return true;
+  }
+  return false;
+}
+function addStarterGear() {
+  const W = plan.stage.w, D = plan.stage.d;
+  addItem('stagebox', Math.min(9.5, W * .3), 1.4, { label: 'Stage box A' });
+  addItem('distro', Math.min(5, W * .16), 1.2, { label: 'Distro SL' });
+  addItem('distro', W - Math.min(5, W * .16), 1.2, { label: 'Distro SR' });
+  addItem('iem_rack', W - 2, 3.6, { label: 'IEM rack' });
+  addItem('main_spk', -3, D + 1.5, { label: 'Main L' });
+  addItem('main_spk', W + 3, D + 1.5, { label: 'Main R' });
+  addItem('foh', W / 2, D + Math.min(28, plan.stage.house * .7), { label: 'FOH console' });
+  addItem('wall_outlet', W / 2 + 4.2, D + Math.min(30, plan.stage.house * .75), { label: 'FOH outlet' });
+}
+
+/* ===================================================================
+   Stage designer (metres)
+   =================================================================== */
+const dsg = { pts: [], tool: 'edit', preset: 'rect', p: { w: 10, d: 6, tw: 4, td: 2, curve: 1.5, corner: 1.5 }, sel: -1, drag: null, cursor: null, firstRun: false, starter: true, applyAll: false };
+const PRESETS = {
+  rect: { name: 'Rectangle', params: [['w', 'Width'], ['d', 'Depth']], make: ({ w, d }) => [[0, 0], [w, 0], [w, d], [0, d]] },
+  thrust: { name: 'Thrust', params: [['w', 'Width'], ['d', 'Depth'], ['tw', 'Thrust width'], ['td', 'Thrust depth']], make: ({ w, d, tw, td }) => { tw = Math.min(tw, w); return [[0, 0], [w, 0], [w, d], [(w + tw) / 2, d], [(w + tw) / 2, d + td], [(w - tw) / 2, d + td], [(w - tw) / 2, d], [0, d]]; } },
+  round: { name: 'Curved front', params: [['w', 'Width'], ['d', 'Depth'], ['curve', 'Curve depth']], make: ({ w, d, curve }) => [[0, 0], [w, 0], [w, d], ...Array.from({ length: 15 }, (_, i) => { const t = (i + 1) / 16; return [w * (1 - t), d + curve * Math.sin(Math.PI * t)]; }), [0, d]] },
+  angled: { name: 'Angled corners', params: [['w', 'Width'], ['d', 'Depth'], ['corner', 'Corner cut']], make: ({ w, d, corner }) => { const c = Math.min(corner, w / 2, d); return [[0, 0], [w, 0], [w, d - c], [w - c, d], [c, d], [0, d - c]]; } },
+};
+const rnd = n => Math.round(n * 100) / 100;
+function openDesigner(firstRun = false) {
+  dsg.firstRun = firstRun; dsg.sel = -1; dsg.drag = null; dsg.cursor = null; dsg.applyAll = false; dsg.starter = true;
+  dsg.p.w = mVal(plan.stage.w); dsg.p.d = mVal(plan.stage.d);
+  if (plan.stage.poly && !firstRun) { dsg.preset = 'custom'; dsg.pts = plan.stage.poly.map(([x, y]) => [rnd(toM(x)), rnd(toM(y))]); }
+  else { dsg.preset = 'rect'; dsg.pts = PRESETS.rect.make(dsg.p); }
+  dsg.tool = 'edit'; dsg.view = null;
+  $('stageDlg').hidden = false;
+  renderDesigner();
+}
+function closeDesigner() { $('stageDlg').hidden = true; }
+const dsgBox = pts => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) }; };
+function dsgThumb(key) {
+  const pts = PRESETS[key].make({ w: 10, d: 6, tw: 4, td: 2, curve: 1.6, corner: 1.8 }), b = dsgBox(pts);
+  return `<svg viewBox="${b.x0 - .8} ${b.y0 - .8} ${b.x1 - b.x0 + 1.6} ${b.y1 - b.y0 + 1.6}" aria-hidden="true"><path d="${polyPath(pts)}" class="th-deck"/></svg>`;
+}
+function renderDesigner() {
+  const closed = dsg.tool === 'edit' && dsg.pts.length >= 3;
+  const b = dsg.pts.length ? dsgBox(dsg.pts) : { x0: 0, y0: 0, x1: 10, y1: 6 };
+  const bad = closed && selfIntersects(dsg.pts);
+  const area = closed ? Math.abs(signedArea(dsg.pts)) : 0;
+  $('dsgEyebrow').textContent = dsg.firstRun ? 'Step 1 of 2 · Your stage' : 'Stage designer';
+  $('dsgTitle').textContent = dsg.firstRun ? 'Draw your stage' : 'Edit stage shape';
+  $('dsgSave').disabled = !closed || bad;
+  $('dsgSave').innerHTML = `${ic('check', 'sm')}${dsg.firstRun ? 'Use this stage' : 'Save shape'}`;
+  $('dsgCancel').textContent = dsg.firstRun ? 'Back' : 'Cancel';
+  const pr = PRESETS[dsg.preset];
+  $('dsgSide').innerHTML = `
+    <div class="field"><span>Start from</span><div class="presets">
+      ${Object.entries(PRESETS).map(([k, v]) => `<button class="preset" data-preset="${k}" aria-pressed="${dsg.preset === k}">${dsgThumb(k)}<span>${v.name}</span></button>`).join('')}
+      <button class="preset" data-preset="draw" aria-pressed="${dsg.tool === 'draw'}"><svg viewBox="0 0 24 24" aria-hidden="true" class="ic" style="width:100%;height:30px">${ICONS.pen}</svg><span>Draw it</span></button>
+    </div></div>
+    ${pr ? `<div class="grid2">${pr.params.map(([k, l]) => `<div class="field"><label for="dp-${k}">${l}</label><div class="unit" data-unit="m"><input id="dp-${k}" data-param="${k}" type="number" min=".5" max="80" step=".1" value="${dsg.p[k]}"></div></div>`).join('')}</div>` : ''}
+    <div class="card soft" style="gap:8px">
+      ${dsg.tool === 'draw'
+        ? `<b>Drawing</b><p class="hint">Click each corner of your stage in order. Click the first corner again, or press Finish, to close the shape.</p>
+           <div class="row"><button class="btn" id="dsgUndoPt" ${dsg.pts.length ? '' : 'disabled'}>Undo corner</button><button class="btn primary" id="dsgFinish" ${dsg.pts.length >= 3 ? '' : 'disabled'}>Finish</button></div>`
+        : `<b>Adjusting</b><p class="hint">Drag a corner to move it. Click a <span class="kbd">+</span> on an edge to add a corner. Select a corner and press <span class="kbd">Del</span> to remove it.</p>
+           ${dsg.sel >= 0 ? `<button class="btn danger" id="dsgDelPt" ${dsg.pts.length > 3 ? '' : 'disabled'}>${ic('trash', 'sm')}Remove corner ${dsg.sel + 1}</button>` : ''}`}
+    </div>
+    <dl class="kv">
+      <dt>Width</dt><dd>${rnd(b.x1 - b.x0)} m</dd><dt>Depth</dt><dd>${rnd(b.y1 - b.y0)} m</dd>
+      <dt>Floor area</dt><dd>${closed ? rnd(area) + ' m²' : '—'}</dd><dt>Corners</dt><dd>${dsg.pts.length}</dd>
+    </dl>
+    ${bad ? `<p class="err">Two edges cross. Move a corner so the outline doesn't overlap itself.</p>` : ''}
+    ${dsg.firstRun ? `<label class="row" for="dsgStarter" style="gap:8px;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="dsgStarter" ${dsg.starter ? 'checked' : ''} style="accent-color:var(--accent);margin-top:3px"><span>Add starter gear<br><span class="hint">Stage box, two distros, IEM rack, mains and FOH. Move or delete any of it later.</span></span></label>`
+      : Object.keys(db.plans).length > 1 ? `<label class="row" for="dsgApplyAll" style="gap:8px"><input type="checkbox" id="dsgApplyAll" ${dsg.applyAll ? 'checked' : ''} style="accent-color:var(--accent)"> Use for all saved weeks</label>` : ''}`;
+  // canvas
+  // the view only re-frames when nothing is being drawn or dragged, so the canvas never jumps under the cursor
+  if (!dsg.view || (dsg.tool === 'edit' && dsg.drag === null)) {
+    const nv = { x0: Math.min(-1.5, b.x0 - 1.5), y0: Math.min(-2, b.y0 - 2), x1: Math.max(16, b.x1 + 2), y1: Math.max(11, b.y1 + 3.5) };
+    if (!dsg.view || nv.x0 < dsg.view.x0 || nv.y0 < dsg.view.y0 || nv.x1 > dsg.view.x1 || nv.y1 > dsg.view.y1 || dsg.reframe) dsg.view = nv;
+    dsg.reframe = false;
+  }
+  const { x0: vx0, y0: vy0, x1: vx1, y1: vy1 } = dsg.view;
+  const vw = vx1 - vx0, vh = vy1 - vy0;
+  const svgEl = $('dsgSvg');
+  svgEl.setAttribute('viewBox', `${vx0} ${vy0} ${vw} ${vh}`);
+  let s = `<rect x="${vx0}" y="${vy0}" width="${vw}" height="${vh}" class="d-bg"/>`;
+  for (let x = Math.ceil(vx0 * 2) / 2; x <= vx1; x += .5) s += `<line class="${Number.isInteger(x) ? 'd-major' : 'd-minor'}" x1="${x}" x2="${x}" y1="${vy0}" y2="${vy1}"/>`;
+  for (let y = Math.ceil(vy0 * 2) / 2; y <= vy1; y += .5) s += `<line class="${Number.isInteger(y) ? 'd-major' : 'd-minor'}" y1="${y}" y2="${y}" x1="${vx0}" x2="${vx1}"/>`;
+  for (let x = Math.ceil(vx0); x <= vx1; x++) if (x % 2 === 0) s += `<text class="d-axis" x="${x}" y="${vy0 + .55}" text-anchor="middle">${x} m</text>`;
+  for (let y = Math.ceil(vy0); y <= vy1; y++) if (y % 2 === 0 && y) s += `<text class="d-axis" x="${vx0 + .25}" y="${y + .15}">${y} m</text>`;
+  s += `<text class="d-dir" x="${(b.x0 + b.x1) / 2}" y="${vy1 - .6}" text-anchor="middle">AUDIENCE ↓</text>`;
+  s += `<text class="d-dir" x="${(b.x0 + b.x1) / 2}" y="${vy0 + 1.15}" text-anchor="middle">UPSTAGE</text>`;
+  const pts = dsg.pts;
+  if (closed) {
+    s += `<path class="d-deck${bad ? ' bad' : ''}" d="${polyPath(pts)}"/>`;
+    for (const [a, c] of frontEdges(pts)) s += `<line class="d-front" x1="${a[0]}" y1="${a[1]}" x2="${c[0]}" y2="${c[1]}"/>`;
+    pts.forEach((a, i) => {
+      const c = pts[(i + 1) % pts.length], L = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      const mx = (a[0] + c[0]) / 2, my = (a[1] + c[1]) / 2;
+      const cw = signedArea(pts) > 0, nx = (cw ? c[1] - a[1] : a[1] - c[1]) / (L || 1), ny = (cw ? a[0] - c[0] : c[0] - a[0]) / (L || 1);
+      if (L >= .9) s += `<text class="d-len" x="${f3(mx + nx * .62)}" y="${f3(my + ny * .5 + .1)}" text-anchor="middle">${rnd(L)} m</text>`;
+      if (L >= .6) s += `<g class="d-add" data-add="${i}"><circle cx="${mx}" cy="${my}" r=".2"/><path d="M${mx - .09} ${my}H${mx + .09}M${mx} ${my - .09}V${my + .09}"/></g>`;
+    });
+  } else if (pts.length) {
+    const path = pts.concat(dsg.cursor ? [dsg.cursor] : []);
+    s += `<polyline class="d-open" points="${path.map(p => p.join(',')).join(' ')}"/>`;
+  }
+  pts.forEach((p, i) => { s += `<circle class="d-pt${i === dsg.sel ? ' sel' : ''}${!closed && i === 0 && pts.length >= 3 ? ' first' : ''}" data-pt="${i}" cx="${p[0]}" cy="${p[1]}" r=".22"/>`; });
+  if (dsg.tool === 'draw' && dsg.cursor) s += `<circle class="d-cur" cx="${dsg.cursor[0]}" cy="${dsg.cursor[1]}" r=".12"/>`;
+  svgEl.innerHTML = s;
+}
+const dsgPoint = e => { const p = toFtOn($('dsgSvg'), e); return [Math.round(p.x * 4) / 4, Math.round(p.y * 4) / 4]; };
+function toFtOn(el, e) { const pt = el.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const m = el.getScreenCTM(); if (!m) return { x: 0, y: 0 }; const p = pt.matrixTransform(m.inverse()); return { x: p.x, y: p.y }; }
+function dsgSetPreset(k) {
+  if (k === 'draw') { dsg.tool = 'draw'; dsg.preset = 'custom'; dsg.pts = []; dsg.sel = -1; }
+  else { dsg.tool = 'edit'; dsg.preset = k; dsg.pts = PRESETS[k].make(dsg.p); dsg.sel = -1; dsg.reframe = true; }
+  renderDesigner();
+}
+function dsgFinish() { if (dsg.pts.length >= 3) { dsg.tool = 'edit'; dsg.cursor = null; renderDesigner(); } }
+function dsgSave() {
+  if (dsg.pts.length < 3 || selfIntersects(dsg.pts)) return;
+  const b = dsgBox(dsg.pts);
+  const ptsFt = dsg.pts.map(([x, y]) => [r2(fromM(x - b.x0)), r2(fromM(y - b.y0))]);
+  const W = fromM(b.x1 - b.x0), D = fromM(b.y1 - b.y0);
+  const isRect = ptsFt.length === 4 && ptsFt.every(([x, y]) => (Math.abs(x) < .01 || Math.abs(x - W) < .05) && (Math.abs(y) < .01 || Math.abs(y - D) < .05));
+  const apply = p => { p.stage.w = r2(W); p.stage.d = r2(D); p.stage.poly = isRect ? null : ptsFt.map(q => q.slice()); p.stage.houseW = Math.max(p.stage.houseW, r2(W) + fromM(2)); };
+  if (dsg.firstRun) {
+    const p = blankPlan(); apply(p); plan = p;
+    if (dsg.starter) { addStarterGear(); autoCable(); }
+    db = { plans: { [p.id]: p }, currentId: p.id, setup: true };
+    history = []; future = []; sel = null; railTab = 'team'; save();
+    closeDesigner(); needFit = true; zoom = null; renderAll();
+    toast('Stage saved. Next: add this week’s team.');
+  } else {
+    mutate(() => { apply(plan); if (dsg.applyAll) for (const p of Object.values(db.plans)) if (p !== plan) { apply(p); db.plans[p.id] = p; } }, 'Stage shape saved');
+    try { localStorage.setItem(STORE, JSON.stringify(db)); } catch { /* ignore */ }
+    closeDesigner(); needFit = true; zoom = null; renderPlot();
+  }
+}
+$('dsgSvg').addEventListener('pointerdown', e => {
+  const p = dsgPoint(e), pt = e.target.closest('[data-pt]'), add = e.target.closest('[data-add]');
+  if (dsg.tool === 'draw') {
+    if (pt && Number(pt.dataset.pt) === 0 && dsg.pts.length >= 3) { dsgFinish(); return; }
+    const last = dsg.pts[dsg.pts.length - 1];
+    if (!last || last[0] !== p[0] || last[1] !== p[1]) dsg.pts.push(p);
+    renderDesigner(); return;
+  }
+  if (add) { const i = Number(add.dataset.add); dsg.pts.splice(i + 1, 0, p); dsg.sel = i + 1; dsg.drag = i + 1; dsg.preset = 'custom'; }
+  else if (pt) { dsg.sel = Number(pt.dataset.pt); dsg.drag = dsg.sel; }
+  else dsg.sel = -1;
+  try { $('dsgSvg').setPointerCapture(e.pointerId); } catch { /* ok */ }
+  renderDesigner();
+});
+$('dsgSvg').addEventListener('pointermove', e => {
+  const p = dsgPoint(e);
+  if (dsg.tool === 'draw') { dsg.cursor = p; renderDesigner(); return; }
+  if (dsg.drag === null) return;
+  const cur = dsg.pts[dsg.drag];
+  if (cur[0] !== p[0] || cur[1] !== p[1]) { dsg.pts[dsg.drag] = p; dsg.preset = 'custom'; renderDesigner(); }
+});
+const dsgEnd = () => { if (dsg.drag !== null) { dsg.drag = null; renderDesigner(); } };
+$('dsgSvg').addEventListener('pointerup', dsgEnd);
+$('dsgSvg').addEventListener('pointercancel', dsgEnd);
+$('dsgSide').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.preset) dsgSetPreset(b.dataset.preset);
+  else if (b.id === 'dsgUndoPt') { dsg.pts.pop(); renderDesigner(); }
+  else if (b.id === 'dsgFinish') dsgFinish();
+  else if (b.id === 'dsgDelPt' && dsg.pts.length > 3) { dsg.pts.splice(dsg.sel, 1); dsg.sel = -1; dsg.preset = 'custom'; renderDesigner(); }
+});
+$('dsgSide').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.param) { dsg.p[t.dataset.param] = clamp(Number(t.value) || .5, .5, 80); if (PRESETS[dsg.preset]) { dsg.pts = PRESETS[dsg.preset].make(dsg.p); dsg.reframe = true; renderDesigner(); } }
+  if (t.id === 'dsgStarter') dsg.starter = t.checked;
+  if (t.id === 'dsgApplyAll') dsg.applyAll = t.checked;
+});
+$('dsgSave').onclick = dsgSave;
+$('dsgCancel').onclick = () => { closeDesigner(); if (dsg.firstRun) $('welcomeDlg').hidden = false; };
+function dsgKey(e) {
+  if (e.target.tagName === 'INPUT') { if (e.key === 'Enter') e.target.blur(); return; }
+  if (e.key === 'Escape') { if (dsg.tool === 'draw' && dsg.pts.length) { dsg.pts.pop(); renderDesigner(); } else if (!dsg.firstRun) closeDesigner(); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && dsg.sel >= 0 && dsg.pts.length > 3) { e.preventDefault(); dsg.pts.splice(dsg.sel, 1); dsg.sel = -1; dsg.preset = 'custom'; renderDesigner(); }
+  else if (e.key === 'Enter' && dsg.tool === 'draw') dsgFinish();
+}
+$('welcomeDraw').onclick = () => { $('welcomeDlg').hidden = true; openDesigner(true); };
+$('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = true; save(); toast('This is an example. Draw your own stage any time from the Room tab.'); };
+
+/* ===================================================================
+   Cable visibility (per browser)
+   =================================================================== */
+const cableView = { all: true, hidden: new Set(), menu: false };
+try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); } } catch { /* ignore */ }
+const cableShown = c => cableView.all && !cableView.hidden.has(c.type);
+function setCableView(fn) {
+  fn();
+  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden] })); } catch { /* ignore */ }
+  if (sel?.kind === 'cable') { const c = plan.cables.find(x => x.id === sel.id); if (c && !cableShown(c)) sel = null; }
+  renderPlot(); renderInspector();
+}
+function cableMenuHtml() {
+  const counts = {}; for (const c of plan.cables) counts[c.type] = (counts[c.type] || 0) + 1;
+  const hiddenN = cableView.all ? [...cableView.hidden].filter(k => counts[k]).length : 0;
+  const btn = `<button class="tool" id="cabBtn" aria-expanded="${cableView.menu}" title="Show or hide cables (H)">${ic(cableView.all ? 'eye' : 'eyeOff', 'sm')}Cables${!cableView.all ? ' off' : hiddenN ? ` <span class="chip" style="padding:0 6px">${hiddenN} hidden</span>` : ''}</button>`;
+  const menu = cableView.menu ? `<div class="cabmenu" role="menu">
+      <label class="cm-row cm-all" for="cabAll"><span>Show cables</span><input type="checkbox" id="cabAll" class="switch" ${cableView.all ? 'checked' : ''}></label>
+      ${Object.keys(CABLES).map(k => `<button class="cm-row" data-cabtype="${k}" aria-pressed="${!cableView.hidden.has(k)}" ${cableView.all ? '' : 'disabled'}><span class="sw bg-${k}"></span><span>${esc(CABLES[k].name)}</span><span class="hint">${counts[k] || 0}</span>${ic(cableView.hidden.has(k) ? 'eyeOff' : 'eye', 'sm')}</button>`).join('')}
+      <div class="row" style="justify-content:space-between;padding:6px 8px 2px"><button class="btn quiet" id="cabShowAll" style="padding:4px 8px">Show all</button><button class="btn quiet" id="cabOnly" style="padding:4px 8px" title="Hide every type except power">Power only</button></div>
+    </div>` : '';
+  return `<div class="panel cabwrap">${btn}${menu}</div>`;
+}
+
 $('railToggle').onclick = () => togglePanel('rail');
 $('inspToggle').onclick = () => togglePanel('insp');
 $('railCollapse').onclick = () => togglePanel('rail');
@@ -2129,7 +2472,7 @@ document.head.insertAdjacentHTML('beforeend', `<style id="symcss">${SYM_CSS}</st
 try { const t = localStorage.getItem('stageplot.theme'); if (t === 'light' || t === 'dark') { themePref = t; document.documentElement.dataset.theme = t; } } catch { /* ignore */ }
 db = load();
 if (db) plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]];
-else { db = seed(); plan = db.plans[db.currentId]; save(); }
+else { db = seed(); plan = db.plans[db.currentId]; save(); $('welcomeDlg').hidden = false; }
 renderAll();
 requestAnimationFrame(() => { needFit = true; renderPlot(); });
 if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); }, () => { pco.mcp = null; renderRail(); });
