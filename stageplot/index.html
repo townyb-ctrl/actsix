@@ -121,7 +121,7 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
 
 /* ---------- header ---------- */
-.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line); position: relative; z-index: 10; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 7px 12px; background: var(--surface); border-bottom: 1px solid var(--line); position: relative; z-index: 10; }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 750; font-size: 17px; letter-spacing: -.01em; font-stretch: 110%; }
 .brand svg { width: 28px; height: 28px; }
 .weeknav { display: flex; align-items: center; gap: 4px; position: relative; min-width: 0; }
@@ -145,9 +145,20 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .pop-actions .btn { justify-content: flex-start; }
 
 /* ---------- workbench ---------- */
-.work { display: grid; grid-template-columns: 320px minmax(0,1fr) 316px; flex: 1 1 0; min-height: 560px; }
+.work { --railw: 296px; --inspw: 296px; display: grid; grid-template-columns: var(--railw) minmax(0,1fr) var(--inspw); flex: 1 1 0; min-height: 520px; transition: grid-template-columns .22s ease; }
+.work.rail-collapsed { --railw: 56px; }
+.work.insp-collapsed { --inspw: 0px; }
+.insp-collapsed .inspector { visibility: hidden; border-left: 0; }
+.rail-collapsed .railbody, .rail-collapsed .railfoot { display: none; }
+.rail-collapsed .tabs { flex-direction: column; padding: 8px; gap: 6px; border-bottom: 0; }
+.rail-collapsed .tabs button { flex: none; padding: 10px 0; border-bottom: 0; border-radius: var(--r-sm); margin: 0; position: relative; }
+.rail-collapsed .tabs button[aria-selected="true"] { background: var(--surface-3); }
+.rail-collapsed .tabs .tlabel { display: none; }
+.rail-collapsed .tabs .count { position: absolute; top: 2px; right: 2px; padding: 2px 4px; font-size: 9.5px; }
+.tabs .collapse { flex: none; width: 30px; padding: 0; color: var(--muted); }
+.rail-collapsed .tabs .collapse { order: -1; width: auto; padding: 8px 0; }
 .rail { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.tabs { display: flex; gap: 4px; padding: 10px 12px 0; border-bottom: 1px solid var(--line); }
+.tabs { display: flex; gap: 2px; padding: 6px 8px 0 12px; border-bottom: 1px solid var(--line); }
 .tabs button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; padding: 9px 4px 11px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -216,13 +227,20 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 
 /* ---------- canvas ---------- */
 .canvas { position: relative; min-width: 0; min-height: 0; background: var(--house); }
-.scroller { position: absolute; inset: 0; overflow: auto; padding: 24px; cursor: grab; }
+.scroller { position: absolute; inset: 0; overflow: auto; padding: 16px; cursor: grab; }
 .scroller.panning { cursor: grabbing; }
 .scroller.cabling { cursor: crosshair; }
 #plot { display: block; margin: 0 auto; user-select: none; -webkit-user-select: none; }
 .float { position: absolute; z-index: 5; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .panel { max-width: 100%; flex-wrap: wrap; background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-2); padding: 4px; display: flex; align-items: center; gap: 2px; }
-.f-tl { top: 14px; left: 14px; right: 14px; pointer-events: none; }
+.f-tl { top: 12px; left: 12px; right: 12px; pointer-events: none; }
+.f-tr { top: 60px; right: 12px; width: 260px; }
+.quick { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
+.quick .qh { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+.quick .qh .glyph { width: 36px; height: 36px; }
+.quick h3 { font-size: 14px; font-weight: 650; line-height: 1.25; }
+.quick .qa { display: flex; gap: 4px; }
+.quick .qa .btn { flex: 1; padding: 6px 8px; }
 .f-tl > * { pointer-events: auto; }
 .f-bl { bottom: 14px; left: 14px; }
 .f-br { bottom: 14px; right: 14px; }
@@ -284,11 +302,11 @@ svg text { font-family: var(--f-ui); }
 /* ---------- inspector ---------- */
 .inspector { background: var(--surface); border-left: 1px solid var(--line); overflow: auto; min-width: 0; }
 .insp { display: grid; gap: 0; }
-.insp-head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 18px 18px 14px; border-bottom: 1px solid var(--line); }
+.insp-head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 14px 14px 12px 16px; border-bottom: 1px solid var(--line); }
 .insp-head .glyph { width: 44px; height: 44px; border-radius: 10px; }
 .insp-head h2 { font-size: 17px; font-weight: 700; line-height: 1.25; }
 .insp-head .swline { width: 44px; height: 6px; border-radius: 3px; }
-.isec { padding: 16px 18px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.isec { padding: 14px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
 .isec > h3 { font-size: 11px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
 .isec:last-child { border-bottom: 0; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; margin: 0; }
@@ -312,7 +330,7 @@ svg text { font-family: var(--f-ui); }
 .steps .btn { margin-top: 8px; }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .tile { background: var(--surface-2); border-radius: var(--r-md); padding: 10px 12px; display: grid; gap: 2px; }
-.tile b { font: 600 19px/1.2 var(--f-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.tile b { white-space: nowrap; font: 600 17px/1.2 var(--f-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .tile span { color: var(--muted); font-size: 12px; }
 .warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .warnlist li { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 8px 10px; border-radius: var(--r-sm); background: var(--warn-soft); color: var(--ink); font-size: 13px; }
@@ -377,9 +395,17 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   .canvas { height: 74vh; min-height: 480px; }
   .inspector { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
   .rail { max-height: 74vh; min-height: 480px; }
+  .work.rail-collapsed { grid-template-columns: 56px minmax(0,1fr); }
+  .insp-collapsed .inspector { display: none; }
 }
+@media (max-width: 1320px) { .brand span { display: none; } }
 @media (max-width: 760px) {
-  .work { grid-template-columns: minmax(0,1fr); }
+  .work, .work.rail-collapsed { grid-template-columns: minmax(0,1fr); }
+  .rail-collapsed .railbody, .rail-collapsed .railfoot { display: revert; }
+  .rail-collapsed .tabs { flex-direction: row; }
+  .rail-collapsed .tabs .tlabel { display: inline; }
+  .tabs .collapse, #railToggle { display: none !important; }
+  .f-tr { display: none; }
   .canvas { order: -1; height: 62vh; min-height: 380px; }
   .rail { max-height: none; min-height: 0; border-right: 0; border-top: 1px solid var(--line); }
   .railbody { overflow: visible; }
@@ -412,6 +438,9 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
     <button id="vPaper" aria-pressed="false"></button>
   </div>
   <div class="hgroup">
+    <button class="iconbtn" id="railToggle" aria-label="Show or hide the left panel" title="Left panel ( [ )"></button>
+    <button class="iconbtn" id="inspToggle" aria-label="Show or hide the right panel" title="Right panel ( ] )"></button>
+    <span class="vsep"></span>
     <button class="iconbtn" id="undoBtn" aria-label="Undo" title="Undo (Ctrl+Z)"></button>
     <button class="iconbtn" id="redoBtn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)"></button>
     <span class="vsep"></span>
@@ -427,6 +456,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <button role="tab" id="tTeam" aria-selected="true"></button>
       <button role="tab" id="tGear" aria-selected="false"></button>
       <button role="tab" id="tStage" aria-selected="false"></button>
+      <button class="collapse" id="railCollapse" aria-label="Collapse panel"></button>
     </div>
     <div class="railbody" id="railPane"></div>
     <div class="railfoot" id="railFoot"></div>
@@ -437,6 +467,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
     <div class="float f-tl" id="ftools"></div>
     <div class="float f-bl" id="fstats"></div>
     <div class="float f-br" id="fzoom"></div>
+    <div class="float f-tr" id="fquick" hidden></div>
   </section>
 
   <aside class="inspector" id="inspector"></aside>
@@ -475,6 +506,8 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <dt><span class="kbd">+</span><span class="kbd">−</span></dt><dd>Zoom</dd>
       <dt><span class="kbd">0</span></dt><dd>Fit stage</dd>
       <dt><span class="kbd">Ctrl</span><span class="kbd">Z</span></dt><dd>Undo (add Shift to redo)</dd>
+      <dt><span class="kbd">[</span><span class="kbd">]</span></dt><dd>Hide left / right panel</dd>
+      <dt><span class="kbd">\</span></dt><dd>Focus: hide both panels</dd>
       <dt>Drag floor</dt><dd>Pan · pinch or Ctrl+scroll to zoom</dd>
     </dl>
   </div>
@@ -1044,6 +1077,10 @@ function pcoApply() {
    Icons (stroke icons, 24px grid)
    =================================================================== */
 const ICONS = {
+  panelL: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
+  panelR: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>',
+  chevsL: '<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>',
+  chevsR: '<path d="M13 17l5-5-5-5M6 17l5-5-5-5"/>',
   cursor: '<path d="M5 3.5l13 7.2-5.6 1.6-2.4 5.6z"/>',
   cable: '<path d="M5 19c0-5 3-7 7-7s7-2 7-7"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/>',
   undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/>',
@@ -1083,6 +1120,7 @@ const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hid
 /* ===================================================================
    UI state & small helpers
    =================================================================== */
+let railOpen = true, inspOpen = true;
 let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', themePref = 'system';
 const SHORT = { xlr: 'XLR', cat6: 'Cat6', power: 'Power', inst: 'Jack', speakon: 'Speakon', video: 'Video' };
 const KVAR = { xlr: '--k-xlr', cat6: '--k-cat', power: '--k-pow', inst: '--k-inst', speakon: '--k-spk', video: '--k-vid' };
@@ -1365,7 +1403,37 @@ function renderPlot() {
 }
 
 /* floating canvas controls */
+function renderQuick() {
+  const q = $('fquick');
+  const it = sel?.kind === 'item' ? itemById(sel.id) : null;
+  const c = sel?.kind === 'cable' ? plan.cables.find(x => x.id === sel.id) : null;
+  q.hidden = inspOpen || view !== 'plot' || !(it || c);
+  if (q.hidden) { q.innerHTML = ''; return; }
+  const more = `<button class="btn" data-insp-show>${ic('panelR', 'sm')}Details</button>`;
+  q.innerHTML = it ? `<div class="panel quick">
+      <div class="qh">${cat(it).shape === 'person' ? `<span class="avatar">${esc(initials(personById(it.personId)?.name || it.label))}</span>` : glyph(it.type)}<div><div class="eyebrow">${esc(cat(it).name)}</div><h3>${esc(itemName(it))}</h3></div></div>
+      <div class="qa"><button class="btn" data-q="rotate" title="Rotate (R)" aria-label="Rotate">${ic('rotate', 'sm')}</button><button class="btn" data-q="dup" title="Duplicate (D)" aria-label="Duplicate">${ic('copy', 'sm')}</button><button class="btn danger" data-q="del" title="Delete" aria-label="Delete">${ic('trash', 'sm')}</button>${more}</div></div>`
+    : `<div class="panel quick">
+      <div class="qh"><span class="swline bg-${c.type}" style="width:28px;height:5px;border-radius:3px"></span><div><div class="eyebrow">${esc(CABLES[c.type].name)}</div><h3>${esc(itemName(itemById(c.from)))} → ${esc(itemName(itemById(c.to)))}</h3></div></div>
+      <div class="row" style="justify-content:space-between"><span class="chip">${fmtLen(cableLen(c))}</span><span class="hint">pull ${stockFor(c.type, cableLen(c)).map(fmtStock).join(' + ')}</span></div>
+      <div class="qa"><button class="btn danger" data-q="del">${ic('trash', 'sm')}Delete</button>${more}</div></div>`;
+}
+function applyPanels(refit = true) {
+  $('plotView').classList.toggle('rail-collapsed', !railOpen);
+  $('plotView').classList.toggle('insp-collapsed', !inspOpen);
+  try { localStorage.setItem('stageplot.panels', JSON.stringify({ railOpen, inspOpen })); } catch { /* ignore */ }
+  renderHeader(); renderRail(); renderQuick();
+  if (refit && !zoom) {
+    const done = () => { needFit = true; renderPlot(); };
+    setTimeout(done, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240);
+  }
+}
+function togglePanel(which, open) {
+  if (which === 'rail') railOpen = open ?? !railOpen; else inspOpen = open ?? !inspOpen;
+  applyPanels();
+}
 function renderFloat() {
+  renderQuick();
   const tools = `<div class="panel">
       <button class="tool" data-mode="select" aria-pressed="${mode === 'select'}" title="Move (V)">${ic('cursor', 'sm')}Move</button>
       <button class="tool" data-mode="cable" aria-pressed="${mode === 'cable'}" title="Run cable (C)">${ic('cable', 'sm')}Run cable</button>
@@ -1406,6 +1474,8 @@ function renderHeader() {
   $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length;
   $('themeBtn').innerHTML = ic(themePref === 'dark' ? 'moon' : themePref === 'light' ? 'sun' : 'auto');
   $('themeBtn').title = `Theme: ${themePref === 'system' ? 'match system' : themePref}`;
+  $('railToggle').innerHTML = ic('panelL'); $('inspToggle').innerHTML = ic('panelR');
+  $('railToggle').setAttribute('aria-pressed', railOpen); $('inspToggle').setAttribute('aria-pressed', inspOpen);
   $('helpBtn').innerHTML = ic('keyboard'); $('dataBtn').innerHTML = ic('save');
   $('dataClose').innerHTML = ic('x'); $('helpClose').innerHTML = ic('x');
   if (!$('weekPop').hidden) renderWeekPop();
@@ -1432,8 +1502,11 @@ function renderRail() {
   const tabs = [['tTeam', 'team', 'users', 'Team', plan.team.length], ['tGear', 'gear', 'box', 'Gear'], ['tStage', 'stage', 'room', 'Room']];
   for (const [id, t, icon, label, n] of tabs) {
     $(id).setAttribute('aria-selected', railTab === t);
-    $(id).innerHTML = `${ic(icon, 'sm')}${label}${n !== undefined ? `<span class="count">${n}</span>` : ''}`;
+    $(id).innerHTML = `${ic(icon, 'sm')}<span class="tlabel">${label}</span>${n !== undefined ? `<span class="count">${n}</span>` : ''}`;
+    $(id).title = label;
   }
+  $('railCollapse').innerHTML = ic(railOpen ? 'chevsL' : 'chevsR', 'sm');
+  $('railCollapse').title = railOpen ? 'Collapse panel ( [ )' : 'Expand panel ( [ )';
   const pane = $('railPane'), foot = $('railFoot');
   const keepScroll = pane.scrollTop;
   foot.hidden = railTab !== 'team';
@@ -1516,7 +1589,7 @@ function renderInspector() {
     el.innerHTML = `<div class="insp">
       <div class="insp-head">${C.shape === 'person' ? `<span class="avatar tone-${roleTone(owner?.role)}" style="width:44px;height:44px">${esc(initials(owner?.name || it.label))}</span>` : glyph(it.type)}
         <div><div class="eyebrow">${esc(C.name)}</div><h2>${esc(itemName(it))}</h2></div>
-        <button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div>
+        <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       <section class="isec"><h3>Details</h3>
         ${field('iLabel', 'Label', it.label || '', 'text', `placeholder="${esc(C.short || C.name)}"`)}
         <div class="field"><label for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>
@@ -1540,7 +1613,7 @@ function renderInspector() {
     const circOpts = src ? Array.from({ length: Number(prop(src, 'circuits')) || 1 }, (_, k) => `<option ${c.circuit === k + 1 ? 'selected' : ''} value="${k + 1}">Circuit ${k + 1}</option>`).join('') : '';
     el.innerHTML = `<div class="insp">
       <div class="insp-head"><span class="swline bg-${c.type}"></span><div><div class="eyebrow">${esc(CABLES[c.type].name)}${c.auto ? ' · auto' : ''}</div><h2>${esc(itemName(a))} → ${esc(itemName(b))}</h2></div>
-        <button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div>
+        <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       <section class="isec"><h3>Length</h3>
         <div class="tiles"><div class="tile"><b>${fmtLen(len)}</b><span>with slack</span></div><div class="tile"><b>${st.map(fmtStock).join(' + ')}</b><span>to pull${cableQty(c) > 1 ? ` · ×${cableQty(c)}` : ''}</span></div></div>
         <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(orth(routePts(c))))}</dd><dt>Bends</dt><dd>${c.points.length}</dd></dl>
@@ -1565,7 +1638,7 @@ function renderInspector() {
     ];
     const nowIdx = steps.findIndex(s => !s.done);
     el.innerHTML = `<div class="insp">
-      <div class="insp-head" style="grid-template-columns:1fr"><div><div class="eyebrow">${esc(longDate(plan.date))}</div><h2>${esc(plan.name || 'Untitled service')}</h2></div></div>
+      <div class="insp-head" style="grid-template-columns:1fr auto"><div><div class="eyebrow">${esc(longDate(plan.date))}</div><h2>${esc(plan.name || 'Untitled service')}</h2></div><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button></div>
       <section class="isec"><h3>This week <span>${steps.filter(s => s.done).length}/${steps.length}</span></h3>
         <ol class="steps">${steps.map((s, i) => `<li class="${s.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${s.done ? ic('check', 'sm') : i + 1}</span><div><b>${esc(s.t)}</b><span class="sub">${esc(s.sub)}</span>${i === nowIdx ? `<div>${s.act}</div>` : ''}</div></li>`).join('')}</ol>
         ${nowIdx < 0 ? `<button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button>` : ''}
@@ -1848,6 +1921,9 @@ document.addEventListener('keydown', e => {
   else if (k === 'd' && !e.ctrlKey && !e.metaKey) duplicateSelected();
   else if (k === 'c' && !e.ctrlKey && !e.metaKey) setMode(mode === 'cable' ? 'select' : 'cable');
   else if (k === 'v') setMode('select');
+  else if (e.key === '[') togglePanel('rail');
+  else if (e.key === ']') togglePanel('insp');
+  else if (e.key === '\\') { const show = !railOpen && !inspOpen; railOpen = show; inspOpen = show; applyPanels(); }
   else if (e.key === '+' || e.key === '=') zoomCenter(1.25);
   else if (e.key === '-' || e.key === '_') zoomCenter(1 / 1.25);
   else if (e.key === '0') fit('stage');
@@ -2031,7 +2107,24 @@ function importJson(text) {
 $('loadPaste').onclick = () => importJson($('dataText').value);
 $('loadFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => importJson(r.result); r.readAsText(f); e.target.value = ''; };
 
+$('railToggle').onclick = () => togglePanel('rail');
+$('inspToggle').onclick = () => togglePanel('insp');
+$('railCollapse').onclick = () => togglePanel('rail');
+$('inspector').addEventListener('click', e => { if (e.target.closest('[data-insp-hide]')) togglePanel('insp', false); });
+$('fquick').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.inspShow !== undefined) togglePanel('insp', true);
+  else if (b.dataset.q === 'rotate') rotateSelected(90);
+  else if (b.dataset.q === 'dup') duplicateSelected();
+  else if (b.dataset.q === 'del') deleteSelected();
+});
+// a collapsed rail opens again when you pick one of its tabs
+for (const id of ['tTeam', 'tGear', 'tStage']) $(id).addEventListener('click', () => { if (!railOpen) togglePanel('rail', true); });
+
 /* ----- boot ----- */
+try { const ps = JSON.parse(localStorage.getItem('stageplot.panels') || 'null'); if (ps) { railOpen = ps.railOpen !== false; inspOpen = ps.inspOpen !== false; } else if (innerWidth < 1360) inspOpen = false; } catch { /* ignore */ }
+$('plotView').classList.toggle('rail-collapsed', !railOpen);
+$('plotView').classList.toggle('insp-collapsed', !inspOpen);
 document.head.insertAdjacentHTML('beforeend', `<style id="symcss">${SYM_CSS}</style>`);
 try { const t = localStorage.getItem('stageplot.theme'); if (t === 'light' || t === 'dark') { themePref = t; document.documentElement.dataset.theme = t; } } catch { /* ignore */ }
 db = load();

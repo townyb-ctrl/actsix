@@ -25,6 +25,7 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Using it
 
+- Hide the left or right panel with the header buttons, `[` and `]`, or press `\` for focus mode (both hidden). The left panel shrinks to an icon strip; with the right panel hidden, a small card over the plot keeps rotate / duplicate / delete for whatever you select.
 - Drag the floor to pan; pinch or Ctrl+scroll to zoom. **Stage** / **Room** buttons refit the view.
 - Drag gear from the Gear tab onto the stage, or click it to drop centre stage.
 - The right panel shows a four-step checklist for the week (team → build → patch → power) with the next action button.
