@@ -1043,7 +1043,20 @@ function pivotSnap(p, prev) {
   if (prev) { if (Math.abs(x - prev[0]) >= Math.abs(y - prev[1])) y = prev[1]; else x = prev[0]; }
   return [x, y];
 }
-let pendHover = null;
+let pendHover = null, pendChan = null;   // gear / channel under the pointer while a cable is being run
+function channelAt(p, lvl) {   // nearest channel within reach of a point, matching the cable's level when given
+  let best = null;
+  for (const ch of chans()) {
+    if (ch.pts.length < 2 || (lvl && chLevel(ch) !== lvl)) continue;
+    const k = CH_KINDS[ch.kind] || CH_KINDS.trench, n = nearestOn(ch.pts, p.x, p.y);
+    const d = Math.hypot(n.pt[0] - p.x, n.pt[1] - p.y);
+    if (d <= fromM(ch.w ?? k.w) / 2 + 8 / scale && (!best || d < best.d)) best = { ch, s: n.s, pt: n.pt, d };
+  }
+  return best;
+}
+const pendingExpanded = end => { const a = itemById(pending.from); return expandRoute([a.x, a.y], pending.points, end); };
+const pendingLast = () => { const r = pendingExpanded(null); return r.pts[r.pts.length - 1]; };
+const openHop = () => { const q = pending?.points[pending.points.length - 1]; return isHop(q) && q.s1 == null ? q : null; };
 const cableEnd = it => it && !['platform', 'person'].includes(cat(it).shape);   // risers and performer markers are floor, not cable ends   // gear under the pointer while a cable is being run
 const runLen = pts => pts.reduce((s, p, i) => i ? s + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
 function cableLen(c) {
@@ -1776,9 +1789,9 @@ function renderPlot() {
       hits += `<polyline class="cabhit" data-cid="${c.id}" points="${sp}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
     }
     if (parts?.inside) {
-      if (isSel) out += `<polyline class="cab-inside" points="${parts.inside.map(p => p.join(',')).join(' ')}" style="stroke:var(${KVAR[c.type]})"/>`;
+      if (isSel) for (const ins of parts.insides) out += `<polyline class="cab-inside" points="${ins.map(p => p.join(',')).join(' ')}" style="stroke:var(${KVAR[c.type]})"/>`;
       const r = Math.max(.12, 3.2 / scale);
-      for (const q of [parts.entry, parts.exit]) out += `<circle class="chport${rel}" cx="${f3(q[0])}" cy="${f3(q[1])}" r="${f3(r)}" style="fill:var(${KVAR[c.type]})"/>`;
+      for (const q of parts.ports) out += `<circle class="chport${rel}" cx="${f3(q[0])}" cy="${f3(q[1])}" r="${f3(r)}" style="fill:var(${KVAR[c.type]})"/>`;
     }
     if (c.level === 'ceiling') ceil += out; else s += out;
     if (isSel || (selItem && touches(c, selItem))) {
@@ -1791,7 +1804,7 @@ function renderPlot() {
         lens += `<g class="ptag ptag-${pr.kind}"><rect x="${f3(x - wv / 2)}" y="${f3(y - hv / 2)}" width="${f3(wv)}" height="${f3(hv)}" rx="${f3(hv / 2)}" style="stroke:var(${KVAR[c.type]})"/><text x="${f3(x)}" y="${f3(y + fs * .36)}" text-anchor="middle" style="font-size:${f3(fs)}px">${esc(pr.text.toUpperCase())}</text></g>`;
       }
     }
-    if (isSel) c.points.forEach((p, k) => { wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
+    if (isSel) c.points.forEach((p, k) => { if (isHop(p)) return; wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
   s += top + chv.over + ceil + labels + selb + lens + wps + chv.handles;
@@ -1803,17 +1816,20 @@ function renderPlot() {
     const a = itemById(pending.from);
     if (a) {
       const tgt = pendHover && itemById(pendHover);
-      const pts = [[a.x, a.y], ...pending.points]; if (tgt) pts.push([tgt.x, tgt.y]); else if (cursorPt) pts.push(cursorPt);
-      const geo = orth(pts, null, tgt ? lastLegTurn(pts, pending.points.length) : null);
+      const ex = pendingExpanded(tgt ? [tgt.x, tgt.y] : cursorPt), pts = ex.pts;
+      const geo = orth(pts, ex.straight, tgt ? lastLegTurn(pts, pending.points.length) : null);
+      if (pendChan) s += `<circle class="pend-target" cx="${f3(pendChan.pt[0])}" cy="${f3(pendChan.pt[1])}" r="${f3(Math.max(.25, 7 / scale))}"/>`;
       s += `<circle class="pend-start" cx="${a.x}" cy="${a.y}" r="${Math.max(prop(a, 'w'), prop(a, 'd')) / 2 + .3}"/>`;
       if (tgt) s += `<circle class="pend-target" cx="${tgt.x}" cy="${tgt.y}" r="${Math.max(prop(tgt, 'w'), prop(tgt, 'd')) / 2 + .3}"/>`;
       s += `<polyline class="pending pending-${cableType}" points="${geo.map(p => p.join(',')).join(' ')}" style="stroke:var(${KVAR[cableType]})"/>`;
       const r = Math.max(.14, 4 / scale);
-      for (const q of pending.points) s += `<circle class="pivot" cx="${q[0]}" cy="${q[1]}" r="${f3(r)}"/>`;
+      for (const q of pending.points) if (!isHop(q)) s += `<circle class="pivot" cx="${q[0]}" cy="${q[1]}" r="${f3(r)}"/>`;
+      for (const [i0, i1] of ex.ranges) for (const k of [i0, i1]) s += `<circle class="chport" cx="${f3(pts[k][0])}" cy="${f3(pts[k][1])}" r="${f3(r)}" style="fill:var(${KVAR[cableType]})"/>`;
       const end = geo[geo.length - 1];
       if (geo.length > 1) {
         const len = runLen(geo) * (1 + plan.settings.slack / 100) + 2 * (Number(plan.settings.ends) || 0);
-        s += `<text class="cablen" x="${f3(end[0] + 10 / scale)}" y="${f3(end[1] - 10 / scale)}">${fmtLen(len)}${tgt ? ' · ' + esc(itemName(tgt)) : ''}</text>`;
+        const oh = openHop(), note = tgt ? ' · ' + esc(itemName(tgt)) : pendChan ? (oh && oh.ch === pendChan.ch.id ? ` · come out of ${esc(pendChan.ch.name)} here` : ` · click to enter ${esc(pendChan.ch.name)}`) : '';
+        s += `<text class="cablen" x="${f3(end[0] + 10 / scale)}" y="${f3(end[1] - 10 / scale)}">${fmtLen(len)}${note}</text>`;
       }
     }
   }
@@ -1877,7 +1893,7 @@ function renderFloat() {
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
     </div>`;
   $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip gold">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
-      <span class="dock-sep"></span><span class="toolhint">${pending ? `Click to pivot · click gear to finish · <span class="kbd">⌫</span> undo pivot · <span class="kbd">Esc</span> cancel` : 'Click the gear where the cable starts'}</span></div>` : '';
+      <span class="dock-sep"></span><span class="toolhint">${pending ? `Click to pivot · click a channel to enter it · click gear to finish · <span class="kbd">⌫</span> undo pivot · <span class="kbd">Esc</span> cancel` : 'Click the gear where the cable starts'}</span></div>` : '';
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel statuspill">
       <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}">${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${plural(w.length, 'check')}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
@@ -2058,7 +2074,7 @@ function renderInspector() {
     </div>`;
   } else if (sel?.kind === 'channel' && chans().find(x => x.id === sel.id)) {
     const ch = chans().find(x => x.id === sel.id), k = CH_KINDS[ch.kind] || CH_KINDS.trench;
-    const using = plan.cables.filter(x => routeInfo(x)?.via === ch);
+    const using = plan.cables.filter(x => (routeInfo(x)?.vias || []).includes(ch));
     el.innerHTML = `<div class="insp">
       <div class="insp-head"><span class="swline" style="background:var(--house-ink);height:10px"></span><div><div class="eyebrow">${esc(k.name)}</div><h2>${esc(ch.name)}</h2></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
@@ -2082,7 +2098,7 @@ function renderInspector() {
       <section class="isec"><h3>Length</h3>
         <div class="tiles"><div class="tile"><b>${fmtLen(len)}</b><span>with slack</span></div><div class="tile"><b>${st.map(fmtStock).join(' + ')}</b><span>to pull${cableQty(c) > 1 ? ` · ×${cableQty(c)}` : ''}</span></div></div>
         <p class="flowline flow-${flowOf(c).kind}">${esc(flowText(c))}</p>
-        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
+        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.filter(q => !isHop(q)).length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
         <div class="field"><span>Runs along</span><div class="seg"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}">Floor</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}">Ceiling</button></div>${c.level === 'ceiling' ? `<span class="hint">Includes ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end.</span>` : ''}</div>
         ${chans().length && !c.points.length ? `<div class="field"><span>Route</span><div class="seg"><button data-route="auto" aria-pressed="${c.route !== 'direct'}">Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}">Direct</button></div></div>` : ''}
       </section>
@@ -2272,9 +2288,10 @@ svg.addEventListener('pointerdown', e => {
       else if (id !== pending.from && cableType === 'power' && isMains(itemById(id)) && isMains(itemById(pending.from))) {
         pending = null; cursorPt = null; toast('Distros and power points are fed from the DB board, so they don’t need a lead between them.'); renderPlot(); return;
       } else if (id !== pending.from) {
-        const pts = pending.points, from = pending.from; pending = null; cursorPt = null; pendHover = null;
+        const pts = pending.points, from = pending.from, lvl = pending.level; pending = null; cursorPt = null; pendHover = null; pendChan = null;
         mutate(() => {
           const c = addCable(cableType, from, id, { points: pts });
+          if (lvl) c.level = lvl;
           if (cableType === 'power') {
             const src = [itemById(from), itemById(id)].find(isPowerSource);
             if (src) { const { loads } = circuitLoads(src); c.circuit = loads.indexOf(Math.min(...loads)) + 1; }
@@ -2286,9 +2303,18 @@ svg.addEventListener('pointerdown', e => {
         return;
       }
     } else if (pending) {
-      const a = itemById(pending.from), prev = pending.points[pending.points.length - 1] || [a.x, a.y];
-      const q = pivotSnap(p, prev);
-      if (Math.abs(q[0] - prev[0]) + Math.abs(q[1] - prev[1]) > .05) pending.points.push(q);
+      const hit = channelAt(p, pending.level === 'ceiling' ? null : null), oh = openHop();
+      if (hit && oh && oh.ch === hit.ch.id) { oh.s1 = hit.s; toast(`Leaves ${hit.ch.name} here`); }   // second click on the same channel: come out here
+      else if (hit) {
+        if (oh) oh.s1 = nearestOn(chans().find(x => x.id === oh.ch).pts, hit.pt[0], hit.pt[1]).s;
+        pending.points.push({ ch: hit.ch.id, s0: hit.s, s1: null });
+        if (chLevel(hit.ch) === 'ceiling') pending.level = 'ceiling';
+        toast(`Into ${hit.ch.name}. Click the channel again where it comes out, or click the destination.`);
+      } else {
+        if (oh) oh.s1 = nearestOn(chans().find(x => x.id === oh.ch).pts, p.x, p.y).s;
+        const prev = pendingLast(), q = pivotSnap(p, prev);
+        if (Math.abs(q[0] - prev[0]) + Math.abs(q[1] - prev[1]) > .05) pending.points.push(q);
+      }
     } else { toast('Start on a piece of gear: click a stage box, mic, distro…'); }
     renderPlot(); return;
   }
@@ -2312,9 +2338,10 @@ svg.addEventListener('pointerdown', e => {
 });
 svg.addEventListener('pointermove', e => {
   if (pending) {
-    const p = toFt(e), g = e.target.closest('[data-id]'), a = itemById(pending.from);
+    const p = toFt(e), g = e.target.closest('[data-id]');
     pendHover = g && g.dataset.id !== pending.from && cableEnd(itemById(g.dataset.id)) ? g.dataset.id : null;
-    cursorPt = pivotSnap(p, pending.points[pending.points.length - 1] || (a && [a.x, a.y]));
+    pendChan = pendHover ? null : channelAt(p);
+    cursorPt = pendChan ? pendChan.pt : pivotSnap(p, pendingLast());
     renderPlot(); return;
   }
   if (mode === 'channel' && chDraft?.pts.length) { cursorPt = chSnap(toFt(e), chDraft.pts[chDraft.pts.length - 1], e.altKey); renderPlot(); return; }
@@ -2355,7 +2382,7 @@ svg.addEventListener('pointermove', e => {
     const c = plan.cables.find(x => x.id === drag.cid); if (!c) return;
     const all = [[itemById(c.from).x, itemById(c.from).y], ...c.points, [itemById(c.to).x, itemById(c.to).y]], k = drag.k + 1, tol = 9 / scale;
     let x = snapTo(p.x, .25), y = snapTo(p.y, .25);
-    for (const nb of [all[k - 1], all[k + 1]]) { if (Math.abs(nb[0] - x) < tol) x = nb[0]; if (Math.abs(nb[1] - y) < tol) y = nb[1]; }
+    for (const nb of [all[k - 1], all[k + 1]]) { if (!Array.isArray(nb)) continue; if (Math.abs(nb[0] - x) < tol) x = nb[0]; if (Math.abs(nb[1] - y) < tol) y = nb[1]; }
     c.points[drag.k] = [x, y]; c.auto = false; drag.moved = true; renderPlot();
   }
 });
@@ -2445,7 +2472,7 @@ function duplicateSelected() {
   mutate(() => { const copy = { ...JSON.parse(JSON.stringify(it)), id: uid(), x: it.x + fromM(.3), y: it.y + fromM(.3) }; delete copy.gen; delete copy.genKey; plan.items.push(copy); sel = { kind: 'item', id: copy.id }; });
 }
 function rotateSelected(by) { const it = sel?.kind === 'item' && itemById(sel.id); if (it) mutate(() => { it.rot = ((it.rot || 0) + by + 360) % 360; }); }
-function setMode(m) { mode = m; pending = null; cursorPt = null; pendHover = null; if (m !== 'channel') chDraft = null; renderPlot(); }
+function setMode(m) { mode = m; pending = null; cursorPt = null; pendHover = null; pendChan = null; if (m !== 'channel') chDraft = null; renderPlot(); }
 function openPaper(anchor) {
   view = 'paper'; pending = null; renderAll();
   if (anchor) requestAnimationFrame(() => $(anchor)?.scrollIntoView({ block: 'start' }));
@@ -2499,7 +2526,7 @@ document.addEventListener('keydown', e => {
   if (mode === 'channel' && e.key === 'Escape') { if (chDraft?.pts.length) { chDraft.pts.pop(); cursorPt = null; renderPlot(); } else setMode('select'); return; }
   if (pending && (e.key === 'Backspace' || e.key === 'Delete')) { e.preventDefault(); if (pending.points.length) pending.points.pop(); else pending = null; renderPlot(); return; }
   if (pending && e.key === 'Enter' && pendHover) { e.preventDefault(); return; }
-  if (e.key === 'Escape') { if (pending) { pending = null; cursorPt = null; pendHover = null; renderPlot(); } else if (mode === 'cable') setMode('select'); else if (sel) { sel = null; renderPlot(); renderInspector(); } }
+  if (e.key === 'Escape') { if (pending) { pending = null; cursorPt = null; pendHover = null; pendChan = null; renderPlot(); } else if (mode === 'cable') setMode('select'); else if (sel) { sel = null; renderPlot(); renderInspector(); } }
   else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
   else if (k === 'r' && !e.ctrlKey && !e.metaKey) rotateSelected(e.shiftKey ? 45 : 90);
   else if (k === 'd' && !e.ctrlKey && !e.metaKey) duplicateSelected();
@@ -3138,10 +3165,32 @@ function subpath(pts, a, b) {   // channel points strictly between two projectio
   else for (let k = a.i - 1; k >= b.i; k--) out.push(pts[k]);
   return out;
 }
+/* A cable's points are floor pivots [x, y] or channel hops { ch, s0, s1 }: enter the channel s0 along it,
+   travel inside, leave at s1 (or, while s1 is unset, at the point nearest whatever comes next). */
+const isHop = q => q && !Array.isArray(q) && q.ch;
+const chLenAt = (pts, s) => { let acc = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (acc + L >= s || i === pts.length - 1) { const t = L ? clamp((s - acc) / L, 0, 1) : 0; return { pt: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], i }; } acc += L; } return { pt: pts[0], i: 1 }; };
+function expandRoute(start, points, end) {
+  const pts = [start], straight = new Set(), ranges = [], vias = [];
+  points.forEach((q, k) => {
+    if (!isHop(q)) { pts.push(q); return; }
+    const ch = chans().find(x => x.id === q.ch); if (!ch || ch.pts.length < 2) return;
+    let next = end; for (let j = k + 1; j < points.length; j++) { const n = points[j]; if (!isHop(n)) { next = n; break; } const nc = chans().find(x => x.id === n.ch); if (nc) { next = chLenAt(nc.pts, n.s0).pt; break; } }
+    const s1 = q.s1 ?? (next ? nearestOn(ch.pts, next[0], next[1]).s : q.s0);
+    const A = chLenAt(ch.pts, q.s0), B = chLenAt(ch.pts, s1);
+    const mid = subpath(ch.pts, { s: q.s0, i: A.i }, { s: s1, i: B.i });
+    const i0 = pts.length;
+    pts.push(A.pt, ...mid, B.pt);
+    for (let k2 = i0 + 1; k2 < pts.length; k2++) straight.add(k2);   // inside the channel the run follows it exactly
+    ranges.push([i0, pts.length - 1]); vias.push(ch);
+  });
+  if (end) pts.push(end);
+  return { pts, straight, ranges, vias, via: vias[0] || null };
+}
 function routeInfo(c) {
   const a = itemById(c.from), b = itemById(c.to);
   if (!a || !b) return null;
-  const direct = { pts: [[a.x, a.y], ...c.points, [b.x, b.y]], straight: new Set(), via: null };
+  if (c.points.some(isHop)) return expandRoute([a.x, a.y], c.points, [b.x, b.y]);
+  const direct = { pts: [[a.x, a.y], ...c.points, [b.x, b.y]], straight: new Set(), via: null, vias: [], ranges: [] };
   if (c.points.length || c.route === 'direct' || !chans().length) return direct;
   let best = direct, bestCost = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
   const lvl = c.level === 'ceiling' ? 'ceiling' : 'floor';
@@ -3152,7 +3201,7 @@ function routeInfo(c) {
     if (cost < bestCost - .5) {
       const mid = subpath(ch.pts, ea, eb), pts = [[a.x, a.y], ea.pt, ...mid, eb.pt, [b.x, b.y]];
       const straight = new Set(); for (let k = 2; k <= mid.length + 2; k++) straight.add(k);   // segments inside the channel follow it exactly
-      best = { pts, straight, via: ch }; bestCost = cost;
+      best = { pts, straight, via: ch, vias: [ch], ranges: [[1, pts.length - 2]] }; bestCost = cost;
     }
   }
   return best;
@@ -3160,13 +3209,21 @@ function routeInfo(c) {
 // split a channel-routed cable into its open-stage stretches and the stretch inside the channel
 function cableParts(c) {
   const r = routeInfo(c);
-  if (!r || !r.via) return { inside: null };
-  const p = r.pts, n = p.length;
-  return { exposed: [orth(p.slice(0, 2)), orth(p.slice(n - 2))], inside: p.slice(1, n - 1), entry: p[1], exit: p[n - 2] };
+  if (!r || !r.ranges?.length) return { inside: null };
+  const p = r.pts, exposed = [], inside = [], ports = [];
+  let from = 0;
+  for (const [i0, i1] of r.ranges) {
+    exposed.push(orth(p.slice(from, i0 + 1)));
+    inside.push(p.slice(i0, i1 + 1)); ports.push(p[i0], p[i1]);
+    from = i1;
+  }
+  const tail = p.slice(from), turn = lastLegTurn(p, c.points.length);   // same final turn as the full route
+  exposed.push(orth(tail, null, turn ? new Set([tail.length - 1]) : null));
+  return { exposed, inside: inside.flat().length ? inside[0] : null, insides: inside, ports, entry: ports[0], exit: ports[ports.length - 1] };
 }
 function renderChannels(selId) {
   const counts = new Map();
-  for (const c of plan.cables) { const v = routeInfo(c)?.via; if (v && cableShown(c)) counts.set(v.id, (counts.get(v.id) || 0) + 1); }
+  for (const c of plan.cables) { if (!cableShown(c)) continue; for (const v of new Set(routeInfo(c)?.vias || [])) counts.set(v.id, (counts.get(v.id) || 0) + 1); }
   let s = '', hits = '', handles = '', over = '';
   for (const ch of chans()) {
     if (ch.pts.length < 2) continue;
