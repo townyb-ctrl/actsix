@@ -31,7 +31,10 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Riser 2.4 × 2.4 m](riser.svg) | `riser` | Riser 2.4 × 2.4 m | 2.44 × 2.44 m |
 | ![Drum riser](drum_riser.svg) | `drum_riser` | Drum riser | 2.44 × 2.44 m |
 | ![Power distro](distro.svg) | `distro` | Power distro | 0.61 × 0.46 m |
-| ![Wall / floor socket](wall_outlet.svg) | `wall_outlet` | Wall / floor socket | 0.21 × 0.15 m |
+| ![Extension lead (2-way)](pboard2.svg) | `pboard2` | Extension lead (2-way) | 0.27 × 0.14 m |
+| ![Extension lead (4-way)](pboard4.svg) | `pboard4` | Extension lead (4-way) | 0.43 × 0.14 m |
+| ![Extension lead (6-way)](pboard6.svg) | `pboard6` | Extension lead (6-way) | 0.58 × 0.14 m |
+| ![Power point (wall / floor)](wall_outlet.svg) | `wall_outlet` | Power point (wall / floor) | 0.21 × 0.15 m |
 | ![Camera on tripod](camera.svg) | `camera` | Camera on tripod | 0.61 × 0.61 m |
 | ![Confidence monitor](conf_mon.svg) | `conf_mon` | Confidence monitor | 1.07 × 0.30 m |
 | ![Light on stand](light_stand.svg) | `light_stand` | Light on stand | 0.46 × 0.46 m |

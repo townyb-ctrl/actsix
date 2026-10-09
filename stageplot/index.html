@@ -756,9 +756,9 @@ const CAT = {
   drum_riser:  { name: 'Drum riser', short: 'Drum riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   // Power
   distro:      { name: 'Power distro', short: 'Distro', cat: 'power', w: 2, d: 1.5, shape: 'rack', circuits: 6, amps: 16, volts: 230 },
-  pboard4:     { name: 'Power board (4-way)', short: 'Power board', cat: 'power', w: 1.4, d: .45, shape: 'rect', circuits: 1, amps: 10, volts: 230, board: true, outlets: 4 },
-  pboard6:     { name: 'Power board (6-way)', short: 'Power board', cat: 'power', w: 1.9, d: .45, shape: 'rect', circuits: 1, amps: 10, volts: 230, board: true, outlets: 6 },
-  reel:        { name: 'Extension reel', short: 'Reel', cat: 'power', w: 1.2, d: 1.2, shape: 'round', circuits: 1, amps: 10, volts: 230, board: true, outlets: 4 },
+  pboard2:     { name: 'Extension lead (2-way)', short: 'Ext lead', cat: 'power', w: .9, d: .45, shape: 'rect', circuits: 1, amps: 10, volts: 230, board: true, outlets: 2 },
+  pboard4:     { name: 'Extension lead (4-way)', short: 'Ext lead', cat: 'power', w: 1.4, d: .45, shape: 'rect', circuits: 1, amps: 10, volts: 230, board: true, outlets: 4 },
+  pboard6:     { name: 'Extension lead (6-way)', short: 'Ext lead', cat: 'power', w: 1.9, d: .45, shape: 'rect', circuits: 1, amps: 10, volts: 230, board: true, outlets: 6 },
   wall_outlet: { name: 'Power point (wall / floor)', short: 'Power point', cat: 'power', w: .7, d: .5, shape: 'rect', circuits: 1, amps: 16, volts: 230 },
   // Video & lighting
   camera:      { name: 'Camera on tripod', short: 'Camera', cat: 'video', w: 2, d: 2, shape: 'round', watts: 40 },
@@ -769,7 +769,7 @@ const CAT = {
 const GEAR_GROUPS = [
   ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
-  ['Power', ['distro', 'wall_outlet', 'pboard4', 'pboard6', 'reel']],
+  ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
   ['Band & staging', ['drum_kit', 'drum_riser', 'drum_shield', 'gtr_amp', 'bass_amp', 'keys', 'pedalboard', 'laptop', 'music_stand', 'pulpit', 'riser']],
   ['Video & lighting', ['camera', 'conf_mon', 'light_stand']],
 ];
@@ -778,7 +778,7 @@ const CABLES = {
   // stock lengths in metres
   xlr:     { name: 'XLR (mic / line)', stock: [1, 2, 3, 5, 10, 15, 20, 30] },
   cat6:    { name: 'Cat6 (digital snake)', stock: [10, 20, 30, 50, 75, 100] },
-  power:   { name: 'Extension lead (power)', stock: [2, 3, 5, 10, 15, 25] },
+  power:   { name: 'Power lead', stock: [2, 3, 5, 10, 15, 25] },
   inst:    { name: 'Jack instrument', stock: [1, 3, 5, 6, 10] },
   speakon: { name: 'Speakon', stock: [5, 10, 15, 20, 30] },
   video:   { name: 'SDI / HDMI', stock: [2, 5, 10, 20, 30, 50] },
@@ -885,7 +885,16 @@ function blankPlan(date) {
   };
 }
 function load() {
-  try { const raw = localStorage.getItem(STORE); if (raw) { const d = JSON.parse(raw); if (d && d.plans && Object.keys(d.plans).length) return d; } } catch { /* storage blocked */ }
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && d.plans && Object.keys(d.plans).length) {
+        for (const p of Object.values(d.plans)) for (const i of p.items || []) if (i.type === 'reel') i.type = 'pboard4';
+        return d;
+      }
+    }
+  } catch { /* storage blocked */ }
   return null;
 }
 function save() {
@@ -1028,7 +1037,8 @@ const other = (c, id) => itemById(c.from === id ? c.to : c.from);
 const dist = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 function nearest(it, list) { let best = null, bd = Infinity; for (const o of list) { const d = dist(it, o); if (d < bd) { bd = d; best = o; } } return best; }
 
-/* Power boards and reels: plugged into a power point or distro (their feed), with gear plugged into them.
+/* Extension leads: plugged into a power point or distro (their feed), with gear plugged into them.
+   Distros and power points are fed from the DB board, so they never plug into anything.
    Their load counts against the circuit that feeds them. */
 const isExt = it => !!(it && cat(it).board);
 function feedOf(e) {
@@ -1089,7 +1099,7 @@ function autoCable() {
       const b = pickBox(it, outs, 'outs'); portUse.get(b.id).outs += outs; addCable('xlr', b.id, it.id, { auto: true });
     }
   }
-  // power boards first: each one plugs into the nearest power point or distro
+  // extension leads first: each one plugs into the nearest power point or distro
   const mains = sources.filter(x => !isExt(x));
   for (const e of sources.filter(isExt)) {
     if (feedOf(e) || !mains.length) continue;
@@ -1184,12 +1194,14 @@ function pullList() {
   for (const c of plan.cables) {
     const len = cableLen(c); if (!len) continue;
     const q = cableQty(c);
+    const ext = c.type === 'power' && [itemById(c.from), itemById(c.to)].find(i => isExt(i) && feedOf(i) === c);
+    const label = ext ? cat(ext).name : '';
     for (const s of stockFor(c.type, len)) {
-      const k = `${c.type}|${s}`; map.set(k, (map.get(k) || 0) + q);
+      const k = `${c.type}|${s}|${label}`; map.set(k, (map.get(k) || 0) + q);
     }
   }
-  return [...map.entries()].map(([k, n]) => { const [type, len] = k.split('|'); return { type, len: Number(len), n }; })
-    .sort((a, b) => Object.keys(CABLES).indexOf(a.type) - Object.keys(CABLES).indexOf(b.type) || a.len - b.len);
+  return [...map.entries()].map(([k, n]) => { const [type, len, label] = k.split('|'); return { type, len: Number(len), n, label }; })
+    .sort((a, b) => Object.keys(CABLES).indexOf(a.type) - Object.keys(CABLES).indexOf(b.type) || (a.label || '').localeCompare(b.label || '') || a.len - b.len);
 }
 function warnings() {
   const out = [];
@@ -1210,7 +1222,7 @@ function warnings() {
   for (const e of plan.items.filter(isExt)) {
     const f = feedOf(e), n = extUsed(e), max = Number(prop(e, 'outlets')) || 4;
     if (!f) out.push({ lvl: 'warn', msg: `${itemName(e)} isn't plugged into a power point or distro.` });
-    else if (isExt(other(f, e.id))) out.push({ lvl: 'warn', msg: `${itemName(e)} is plugged into another power board. Avoid daisy-chaining boards.` });
+    else if (isExt(other(f, e.id))) out.push({ lvl: 'warn', msg: `${itemName(e)} is plugged into another extension lead. Plug it into a power point or distro instead.` });
     if (n > max) out.push({ lvl: 'bad', msg: `${itemName(e)}: ${n} plugs but only ${max} outlets.` });
   }
   const unp = plan.items.filter(i => inputsOf(i).length && !patchOf(i));
@@ -1489,9 +1501,9 @@ const SYM = (() => {
     riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
     drum_riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
     distro: box(2, 1.5, 'power') + rect(-.9, -.65, 1.8, 1.3, 's-head', .05) + grid(-.7, -.45, 6, 1, .28, 0, .06, 's-white') + socket(-.55, -.05) + socket(0, -.05) + socket(.55, -.05) + socket(-.55, .4) + socket(0, .4) + socket(.55, .4) + circ(.85, -.5, .04, 's-led'),
+    pboard2: rect(-.45, -.22, .9, .44, 's-white s-edge', .1) + [-.15, .2].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.36, 0, .035, 's-red'),
     pboard4: rect(-.7, -.22, 1.4, .44, 's-white s-edge', .1) + [-.45, -.15, .15, .45].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.62, 0, .035, 's-red'),
     pboard6: rect(-.95, -.22, 1.9, .44, 's-white s-edge', .1) + [-.7, -.42, -.14, .14, .42, .7].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.87, 0, .035, 's-red'),
-    reel: circ(0, 0, .6, 'body c-power s-edge') + circ(0, 0, .45, 's-dark') + circ(0, 0, .45, 's-thin') + circ(0, 0, .32, 's-thin') + circ(0, 0, .2, 's-white') + [0, 90, 180, 270].map(a => circ(.2 * Math.cos(a * Math.PI / 180) * .5, .2 * Math.sin(a * Math.PI / 180) * .5, .03, 's-dark')).join(''),
     wall_outlet: rect(-.35, -.25, .7, .5, 's-white s-edge', .06) + circ(0, 0, .17, 'body c-power') + circ(-.06, 0, .03, 's-dark') + circ(.06, 0, .03, 's-dark'),
     camera: tripod(.95, 's-line') + rect(-.32, -.28, .64, .62, 'body c-video s-edge', .08) + rect(-.18, -.62, .36, .36, 's-dark', .05) + circ(0, -.62, .15, 's-glass') + rect(-.12, .34, .24, .2, 's-dark', .03),
     conf_mon: '<polygon class="body c-infra s-bg" points="-.6,.45 .6,.45 .35,-.05 -.35,-.05"/>' + rect(-1.75, -.42, 3.5, .34, 'body c-video s-edge', .05) + rect(-1.65, -.4, 3.3, .14, 's-glass', .02),
@@ -1878,13 +1890,13 @@ function renderInspector() {
     if (it.type === 'stagebox') extra = `<section class="isec"><h3>Ports</h3><div class="grid2">${field('iIns', 'Inputs', prop(it, 'ins'), 'number', 'min="1" max="128"')}${field('iOuts', 'Outputs', prop(it, 'outsMax'), 'number', 'min="0" max="64"')}</div></section>`;
     if (isExt(it)) {
       const f = feedOf(it), load = extLoad(it), cap = (Number(prop(it, 'amps')) || 10) * (Number(prop(it, 'volts')) || 230), pct = load / cap;
-      extra = `<section class="isec"><h3>Power board <span>${extUsed(it)}/${prop(it, 'outlets')} used</span></h3>
+      extra = `<section class="isec"><h3>Extension lead <span>${extUsed(it)}/${prop(it, 'outlets')} used</span></h3>
         <div class="grid2">${field('iOutlets', 'Outlets', prop(it, 'outlets'), 'number', 'min="1" max="12"')}${field('iAmps', 'Rating', prop(it, 'amps'), 'number', 'min="1" max="32"', 'A')}</div>
         <div class="circ"><span class="n">Load</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(load)} W</span></div>
         <p class="hint">${f ? `Plugged into ${esc(itemName(other(f, it.id)))}${f.circuit ? ` · circuit ${f.circuit}` : ''}.` : 'Not plugged in yet. Run an extension lead from a power point or distro, or press Re-run cabling.'}</p></section>`;
     } else if (isPowerSource(it)) {
       const { loads, cap } = circuitLoads(it);
-      extra = `<section class="isec"><h3>Power</h3><div class="grid3">${field('iCirc', 'Circuits', prop(it, 'circuits'), 'number', 'min="1" max="24"')}${field('iAmps', 'Amps', prop(it, 'amps'), 'number', 'min="1" max="100"', 'A')}${field('iVolts', 'Volts', prop(it, 'volts'), 'number', 'min="100" max="250"', 'V')}</div>
+      extra = `<section class="isec"><h3>Power <span style="text-transform:none;letter-spacing:0;font-weight:500">fed from the DB board</span></h3><div class="grid3">${field('iCirc', 'Circuits', prop(it, 'circuits'), 'number', 'min="1" max="24"')}${field('iAmps', 'Amps', prop(it, 'amps'), 'number', 'min="1" max="100"', 'A')}${field('iVolts', 'Volts', prop(it, 'volts'), 'number', 'min="100" max="250"', 'V')}</div>
         <div style="display:grid;gap:6px">${loads.map((w, k) => { const pct = w / cap; return `<div class="circ"><span class="n">C${k + 1}</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(w)} W</span></div>`; }).join('')}</div></section>`;
     }
     if (it.type === 'rack') {
@@ -1996,7 +2008,7 @@ function renderPaper() {
   const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Source', 'source'], ['Person', 'person'], ['Patch', 'port']];
   const outCols = [['Destination', 'dest'], ['Type', 'type'], ['Patch', 'port']];
   const mixCols = [['Mix', 'mix'], ['Person', 'person'], ['Position', 'role'], ['Monitor', 'kind']];
-  const pullCols = [['Cable', r => CABLES[r.type].name], ['Length', r => `${r.len} m`], ['Qty', 'n']];
+  const pullCols = [['Cable', r => r.label || CABLES[r.type].name], ['Length', r => `${r.len} m`], ['Qty', 'n']];
   const teamCols = [['Name', 'name'], ['Position', 'role'], ['Sings', r => r.sings ? 'yes' : '']];
   paperData = { inputs: tsv(ins, inCols), outputs: tsv(outs, outCols), mixes: tsv(mixes, mixCols), pull: tsv(pull, pullCols), team: tsv(plan.team, teamCols) };
   const cell = (r, c, i) => {
@@ -2011,7 +2023,7 @@ function renderPaper() {
   const powerHtml = sources.map(src => {
     const { loads, items, cap } = circuitLoads(src);
     const f = isExt(src) && feedOf(src);
-    return `<div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(src))}</b><span class="hint">${isExt(src) ? `${prop(src, 'outlets')}-way board · ${prop(src, 'amps')} A · ${f ? 'fed from ' + esc(itemName(other(f, src.id))) : 'not plugged in'}` : `${prop(src, 'circuits')} × ${prop(src, 'amps')} A @ ${prop(src, 'volts')} V`}</span></div>
+    return `<div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(src))}</b><span class="hint">${isExt(src) ? `${prop(src, 'outlets')}-way extension lead · ${prop(src, 'amps')} A · ${f ? 'fed from ' + esc(itemName(other(f, src.id))) : 'not plugged in'}` : `${prop(src, 'circuits')} × ${prop(src, 'amps')} A @ ${prop(src, 'volts')} V`}</span></div>
       <div class="tablewrap"><table><thead><tr><th>Circuit</th><th>Load</th><th style="width:28%">Use</th><th>Gear</th></tr></thead><tbody>
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
@@ -2126,8 +2138,11 @@ svg.addEventListener('pointerdown', e => {
   if (mode === 'cable') {
     if (g) {
       const id = g.dataset.id;
+      const isMains = x => x && isPowerSource(x) && !isExt(x);
       if (!pending) pending = { from: id, points: [] };
-      else if (id !== pending.from) {
+      else if (id !== pending.from && cableType === 'power' && isMains(itemById(id)) && isMains(itemById(pending.from))) {
+        pending = null; cursorPt = null; toast('Distros and power points are fed from the DB board, so they don’t need a lead between them.'); renderPlot(); return;
+      } else if (id !== pending.from) {
         const pts = pending.points, from = pending.from; pending = null; cursorPt = null;
         mutate(() => {
           const c = addCable(cableType, from, id, { points: pts });
