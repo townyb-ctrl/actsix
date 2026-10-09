@@ -294,6 +294,22 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .chplus { cursor: copy; }
 .chplus circle { fill: var(--surface); stroke: var(--accent); stroke-width: .05; }
 .chplus path { stroke: var(--accent-text); stroke-width: .06; stroke-linecap: round; }
+.fl { pointer-events: none; }
+.fl-out { fill: var(--deck); stroke-width: .07; stroke-linejoin: round; }
+.flowg.dim { opacity: .18; }
+.flowanim { fill: none; stroke-width: .2; stroke-linecap: round; pointer-events: none; opacity: .9; animation: flowmove 1.1s linear infinite; }
+@keyframes flowmove { to { stroke-dashoffset: -2; } }
+@media (prefers-reduced-motion: reduce) { .flowanim { animation: none; } }
+.ptag rect { fill: var(--deck); stroke-width: .06; }
+.ptag text { fill: #fff; font-family: var(--f-mono); font-weight: 600; pointer-events: none; }
+.ptag-out rect { fill: #fff; }
+.ptag-out text { fill: #12161a; }
+.flowline { margin: 0; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 13px; font-weight: 550; }
+.flowline.flow-in { border-left: 3px solid var(--ok); }
+.flowline.flow-out { border-left: 3px solid var(--accent); }
+.flowlegend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.flowlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.flowlegend svg { width: 13px; height: 13px; }
 .cab.ceil { stroke-dasharray: .55 .3; opacity: .8; }
 .ceilsw { background: repeating-linear-gradient(90deg, var(--ink-2) 0 5px, transparent 5px 8px) !important; }
 .ch-draft { fill: none; stroke: var(--accent); opacity: .45; stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
@@ -1158,7 +1174,7 @@ function inputList() {
         }
       } else flag = true;
       const person = it.personId ? personById(it.personId) : null;
-      rows.push({ ch, name, source: cat(it).name, person: person?.name || '', port, flag, unpatched: !patch });
+      rows.push({ ch, name, source: cat(it).name, person: person?.name || '', port, flag, unpatched: !patch, itemId: it.id });
     }
   }
   return rows;
@@ -1176,7 +1192,7 @@ function outputList() {
         port = `${itemName(patch.box)} · out ${m}`;
         if (m > (Number(prop(patch.box, 'outsMax')) || 0)) flag = true;
       } else if (patch?.box) port = `${itemName(patch.box)} local`;
-      rows.push({ dest: itemName(it) + (n > 1 ? ` · ${k}` : ''), type: cat(it).name, port, flag });
+      rows.push({ dest: itemName(it) + (n > 1 ? ` · ${k}` : ''), type: cat(it).name, port, flag, itemId: it.id });
     }
   }
   return rows;
@@ -1575,6 +1591,68 @@ function glyph(type, extraCls = '') {
   const c = CAT[type], m = Math.max(c.w, c.d) / 2 + .35;
   return `<svg class="glyph ${extraCls}" viewBox="${-m} ${-m} ${2 * m} ${2 * m}" aria-hidden="true">${shapeSvg({ type, rot: 0 }, c.w, c.d)}</svg>`;
 }
+/* ---------- signal flow ----------
+   dir: 1 = from c.from to c.to (the order the geometry is drawn in), -1 = reverse, 0 = both ways.
+   kind: in (source into a stage box/desk), out (stage box/desk out to a destination), power, link (digital snake), signal. */
+const isHub = x => x && (isBox(x) || cat(x).desk);
+function flowOf(c) {
+  const a = itemById(c.from), b = itemById(c.to);
+  if (!a || !b) return { dir: 1, kind: 'signal' };
+  if (c.type === 'cat6') return { dir: 0, kind: 'link' };
+  if (c.type === 'power') {
+    const up = [a, b].find(x => isPowerSource(x) && !(isExt(x) && feedOf(x) === c)) || b;
+    return { dir: up === a ? 1 : -1, kind: 'power' };
+  }
+  if (c.type === 'xlr' && isHub(a) !== isHub(b)) {
+    const hub = isHub(a) ? a : b, dev = hub === a ? b : a, towardHub = hub === b ? 1 : -1;
+    if (inputsOf(dev).length) return { dir: towardHub, kind: 'in' };
+    if (Number(prop(dev, 'outs')) > 0) return { dir: -towardHub, kind: 'out' };
+  }
+  return { dir: 1, kind: 'signal' };
+}
+function pointAt(o, d) {
+  let acc = 0;
+  for (let i = 1; i < o.length; i++) {
+    const p = o[i - 1], q = o[i], L = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (L && acc + L >= d) { const t = (d - acc) / L; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI]; }
+    acc += L;
+  }
+  const p = o[o.length - 1]; return [p[0], p[1], 0];
+}
+function flowMarks(c, o, cls) {
+  if (cableView.noFlow) return '';
+  const f = flowOf(c), L = runLen(o), sz = Math.max(.2, 5.2 / scale), step = Math.max(fromM(1.2), 80 / scale);
+  if (L < sz * 6) return '';
+  const col = `var(${KVAR[c.type]})`;
+  let s = '';
+  for (let d = Math.min(step / 2, L / 2); d < L - sz * 2; d += step) {
+    const [x, y, ang] = pointAt(o, d), a = f.dir < 0 ? ang + 180 : ang, tf = `translate(${f3(x)} ${f3(y)}) rotate(${f3(a)})`;
+    if (f.kind === 'link') s += `<rect class="fl" transform="${tf} rotate(45)" x="${f3(-sz * .55)}" y="${f3(-sz * .55)}" width="${f3(sz * 1.1)}" height="${f3(sz * 1.1)}" style="fill:${col}"/>`;
+    else if (f.kind === 'out') s += `<path class="fl fl-out" transform="${tf}" d="M${f3(-sz * .9)} ${f3(-sz * .85)}L${f3(sz * .7)} 0L${f3(-sz * .9)} ${f3(sz * .85)}Z" style="stroke:${col}"/>`;
+    else s += `<path class="fl" transform="${tf}" d="M${f3(-sz * .9)} ${f3(-sz * .85)}L${f3(sz * .8)} 0L${f3(-sz * .9)} ${f3(sz * .85)}Z" style="fill:${col}"/>`;
+  }
+  if (cableView.anim && f.dir !== 0) {
+    const pts = f.dir < 0 ? o.slice().reverse() : o;
+    s += `<polyline class="flowanim" points="${pts.map(p => p.join(',')).join(' ')}" style="stroke:${col};stroke-dasharray:${f3(sz * .9)} ${f3(2 - sz * .9)}"/>`;
+  }
+  return `<g class="flowg${cls}">${s}</g>`;
+}
+function portRange(c) {   // "in 1–9" / "out 3" for an XLR run at its stage-box end
+  const f = flowOf(c); if (c.type !== 'xlr' || (f.kind !== 'in' && f.kind !== 'out')) return null;
+  const a = itemById(c.from), b = itemById(c.to), hub = isHub(a) ? a : b, dev = hub === a ? b : a;
+  const rows = (f.kind === 'in' ? inputList() : outputList()).filter(r => r.itemId === dev.id);
+  const nums = rows.map(r => Number((r.port.match(/(?:in|out) (\d+)/) || [])[1])).filter(Boolean);
+  if (!nums.length) return { hub, dev, kind: f.kind, text: f.kind === 'in' ? 'in —' : 'out —' };
+  const lo = Math.min(...nums), hi = Math.max(...nums);
+  return { hub, dev, kind: f.kind, text: `${f.kind} ${lo}${hi > lo ? '–' + hi : ''}` };
+}
+function flowText(c) {
+  const f = flowOf(c), a = itemById(c.from), b = itemById(c.to), pr = portRange(c);
+  if (f.kind === 'link') return `Digital link, both ways`;
+  const [src, dst] = f.dir < 0 ? [b, a] : [a, b];
+  const what = { in: 'Input', out: 'Output', power: 'Power', signal: 'Signal' }[f.kind];
+  return `${what}: ${itemName(src)} → ${itemName(dst)}${pr ? ` (${pr.text})` : ''}`;
+}
 function midpoint(pts) {
   const L = runLen(pts) / 2; let acc = 0;
   for (let i = 1; i < pts.length; i++) {
@@ -1668,12 +1746,19 @@ function renderPlot() {
     if (!isSel && !cableShown(c)) continue;
     const rel = selItem ? (touches(c, selItem) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : '');
     const ps = o.map(p => p.join(',')).join(' ');
-    if (c.level === 'ceiling') ceil += `<polyline class="cab ceil k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>`;
-    else s += `<polyline class="cab k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>`;
+    const marks = flowMarks(c, o, isSel ? '' : rel);
+    if (c.level === 'ceiling') ceil += `<polyline class="cab ceil k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>` + marks;
+    else s += `<polyline class="cab k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>` + marks;
     hits += `<polyline class="cabhit" data-cid="${c.id}" points="${ps}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
     if (isSel || (selItem && touches(c, selItem))) {
       const m = midpoint(o);
       lens += `<text class="cablen" x="${m[0]}" y="${m[1] - .3}" text-anchor="middle">${fmtLen(cableLen(c))}${cableQty(c) > 1 ? ` ×${cableQty(c)}` : ''}</text>`;
+      const pr = portRange(c);
+      if (pr) {   // port badge just outside the stage box, IN and OUT styled differently
+        const hubAtEnd = pr.hub.id === c.to, L = runLen(o), d = Math.min(L / 2, Math.max(prop(pr.hub, 'w'), prop(pr.hub, 'd')) / 2 + 16 / scale);
+        const [x, y] = pointAt(o, hubAtEnd ? L - d : d), fs = 10 / scale, wv = (pr.text.length * .62 + 1.2) * fs, hv = fs * 1.7;
+        lens += `<g class="ptag ptag-${pr.kind}"><rect x="${f3(x - wv / 2)}" y="${f3(y - hv / 2)}" width="${f3(wv)}" height="${f3(hv)}" rx="${f3(hv / 2)}" style="stroke:var(${KVAR[c.type]})"/><text x="${f3(x)}" y="${f3(y + fs * .36)}" text-anchor="middle" style="font-size:${f3(fs)}px">${esc(pr.text.toUpperCase())}</text></g>`;
+      }
     }
     if (isSel) c.points.forEach((p, k) => { wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
   }
@@ -1954,6 +2039,7 @@ function renderInspector() {
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       <section class="isec"><h3>Length</h3>
         <div class="tiles"><div class="tile"><b>${fmtLen(len)}</b><span>with slack</span></div><div class="tile"><b>${st.map(fmtStock).join(' + ')}</b><span>to pull${cableQty(c) > 1 ? ` · ×${cableQty(c)}` : ''}</span></div></div>
+        <p class="flowline flow-${flowOf(c).kind}">${esc(flowText(c))}</p>
         <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
         <div class="field"><span>Runs along</span><div class="seg"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}">Floor</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}">Ceiling</button></div>${c.level === 'ceiling' ? `<span class="hint">Includes ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end.</span>` : ''}</div>
         ${chans().length && !c.points.length ? `<div class="field"><span>Route</span><div class="seg"><button data-route="auto" aria-pressed="${c.route !== 'direct'}">Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}">Direct</button></div></div>` : ''}
@@ -1991,7 +2077,8 @@ function renderInspector() {
       </div></section>
       ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 6).map(warnItem).join('')}</ul>${w.length > 6 ? `<button class="btn quiet" data-go="paper">See all ${w.length} in the paperwork</button>` : ''}</section>` : ''}
       <section class="isec"><h3>Cable colours <span style="text-transform:none;letter-spacing:0;font-weight:500">dashed = overhead</span></h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
-        <p class="hint">Click anything on the plot to edit it. Press <span class="kbd">?</span> for shortcuts.</p></section>
+        <div class="flowlegend"><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg>Input / power</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3 0L-4 3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Output</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)" fill="currentColor"/></svg>Digital link</span></div>
+        <p class="hint">Arrows point the way the signal travels. Click anything on the plot to edit it. Press <span class="kbd">?</span> for shortcuts.</p></section>
     </div>`;
   }
 }
@@ -2259,6 +2346,8 @@ $('ftools').addEventListener('click', e => {
   if (e.target.closest('#cabBtn')) { cableView.menu = !cableView.menu; renderFloat(); return; }
   const ct = e.target.closest('[data-cabtype]');
   if (ct) { const k = ct.dataset.cabtype; setCableView(() => { cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
+  if (e.target.closest('#cabFlow')) { setCableView(() => { cableView.noFlow = !cableView.noFlow; }); return; }
+  if (e.target.closest('#cabAnim')) { setCableView(() => { cableView.anim = !cableView.anim; }); return; }
   if (e.target.closest('#cabCeil')) { setCableView(() => { cableView.hideCeil = !cableView.hideCeil; }); return; }
   if (e.target.closest('#cabShowAll')) { setCableView(() => { cableView.all = true; cableView.hidden.clear(); cableView.hideCeil = false; }); return; }
   if (e.target.closest('#cabOnly')) { setCableView(() => { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(k => k !== 'power')); }); return; }
@@ -2784,11 +2873,11 @@ $('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = 
    Cable visibility (per browser)
    =================================================================== */
 const cableView = { all: true, hidden: new Set(), menu: false };
-try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; } } catch { /* ignore */ }
+try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; } } catch { /* ignore */ }
 const cableShown = c => cableView.all && !cableView.hidden.has(c.type) && !(c.level === 'ceiling' && cableView.hideCeil);
 function setCableView(fn) {
   fn();
-  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil })); } catch { /* ignore */ }
+  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim })); } catch { /* ignore */ }
   if (sel?.kind === 'cable') { const c = plan.cables.find(x => x.id === sel.id); if (c && !cableShown(c)) sel = null; }
   renderPlot(); renderInspector();
 }
@@ -2800,6 +2889,8 @@ function cableMenuHtml() {
       <label class="cm-row cm-all" for="cabAll"><span>Show cables</span><input type="checkbox" id="cabAll" class="switch" ${cableView.all ? 'checked' : ''}></label>
       ${Object.keys(CABLES).map(k => `<button class="cm-row" data-cabtype="${k}" aria-pressed="${!cableView.hidden.has(k)}" ${cableView.all ? '' : 'disabled'}><span class="sw bg-${k}"></span><span>${esc(CABLES[k].name)}</span><span class="hint">${counts[k] || 0}</span>${ic(cableView.hidden.has(k) ? 'eyeOff' : 'eye', 'sm')}</button>`).join('')}
       <div class="ctx-sep"></div>
+      <button class="cm-row" id="cabFlow" aria-pressed="${!cableView.noFlow}"><span class="sw" style="background:none;display:grid;place-items:center"><svg viewBox="-6 -6 12 12" width="12" height="12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg></span><span>Signal flow arrows</span><span></span>${ic(cableView.noFlow ? 'eyeOff' : 'eye', 'sm')}</button>
+      <button class="cm-row" id="cabAnim" aria-pressed="${!!cableView.anim}" ${cableView.noFlow ? 'disabled' : ''}><span></span><span>Animate the flow</span><span></span><input type="checkbox" class="switch" tabindex="-1" ${cableView.anim ? 'checked' : ''} style="pointer-events:none;transform:scale(.8)"></button>
       <button class="cm-row" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="hint">${plan.cables.filter(c => c.level === 'ceiling').length}</span>${ic(cableView.hideCeil ? 'eyeOff' : 'eye', 'sm')}</button>
       <div class="row" style="justify-content:space-between;padding:6px 8px 2px"><button class="btn quiet" id="cabShowAll" style="padding:4px 8px">Show all</button><button class="btn quiet" id="cabOnly" style="padding:4px 8px" title="Hide every type except power">Power only</button></div>
     </div>` : '';
