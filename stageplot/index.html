@@ -288,6 +288,14 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .ch-band.ch-tray { stroke: #2a3640; }
 .ch-label { fill: rgba(255,255,255,.55); font-size: var(--lab, .45px); font-weight: 650; letter-spacing: .02em; pointer-events: none; }
 .chhit { fill: none; stroke: transparent; cursor: pointer; }
+.ch-over { fill: none; stroke: rgba(150,200,255,.22); stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
+.ch-over.sel { stroke: rgba(240,180,41,.26); }
+.ch-label.over { fill: rgba(170,210,255,.8); }
+.chplus { cursor: copy; }
+.chplus circle { fill: var(--surface); stroke: var(--accent); stroke-width: .05; }
+.chplus path { stroke: var(--accent-text); stroke-width: .06; stroke-linecap: round; }
+.cab.ceil { stroke-dasharray: .55 .3; opacity: .8; }
+.ceilsw { background: repeating-linear-gradient(90deg, var(--ink-2) 0 5px, transparent 5px 8px) !important; }
 .ch-draft { fill: none; stroke: var(--accent); opacity: .45; stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
 /* rack builder */
 .rk { width: min(1180px, 100%); height: min(860px, 100%); background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--line); box-shadow: var(--shadow-3); display: grid; grid-template-rows: auto minmax(0,1fr); overflow: hidden; }
@@ -748,7 +756,10 @@ const CAT = {
   drum_riser:  { name: 'Drum riser', short: 'Drum riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   // Power
   distro:      { name: 'Power distro', short: 'Distro', cat: 'power', w: 2, d: 1.5, shape: 'rack', circuits: 6, amps: 16, volts: 230 },
-  wall_outlet: { name: 'Wall / floor socket', short: 'Socket', cat: 'power', w: .7, d: .5, shape: 'rect', circuits: 1, amps: 16, volts: 230 },
+  pboard4:     { name: 'Power board (4-way)', short: 'Power board', cat: 'power', w: 1.4, d: .45, shape: 'rect', circuits: 1, amps: 10, volts: 230, board: true, outlets: 4 },
+  pboard6:     { name: 'Power board (6-way)', short: 'Power board', cat: 'power', w: 1.9, d: .45, shape: 'rect', circuits: 1, amps: 10, volts: 230, board: true, outlets: 6 },
+  reel:        { name: 'Extension reel', short: 'Reel', cat: 'power', w: 1.2, d: 1.2, shape: 'round', circuits: 1, amps: 10, volts: 230, board: true, outlets: 4 },
+  wall_outlet: { name: 'Power point (wall / floor)', short: 'Power point', cat: 'power', w: .7, d: .5, shape: 'rect', circuits: 1, amps: 16, volts: 230 },
   // Video & lighting
   camera:      { name: 'Camera on tripod', short: 'Camera', cat: 'video', w: 2, d: 2, shape: 'round', watts: 40 },
   conf_mon:    { name: 'Confidence monitor', short: 'Confidence', cat: 'video', w: 3.5, d: 1, shape: 'rect', watts: 150 },
@@ -758,15 +769,16 @@ const CAT = {
 const GEAR_GROUPS = [
   ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
-  ['Power', ['distro', 'wall_outlet']],
+  ['Power', ['distro', 'wall_outlet', 'pboard4', 'pboard6', 'reel']],
   ['Band & staging', ['drum_kit', 'drum_riser', 'drum_shield', 'gtr_amp', 'bass_amp', 'keys', 'pedalboard', 'laptop', 'music_stand', 'pulpit', 'riser']],
   ['Video & lighting', ['camera', 'conf_mon', 'light_stand']],
 ];
+const OVERHEAD_TYPES = ['main_spk', 'sub'];
 const CABLES = {
   // stock lengths in metres
   xlr:     { name: 'XLR (mic / line)', stock: [1, 2, 3, 5, 10, 15, 20, 30] },
   cat6:    { name: 'Cat6 (digital snake)', stock: [10, 20, 30, 50, 75, 100] },
-  power:   { name: 'Power extension', stock: [2, 3, 5, 10, 15, 25] },
+  power:   { name: 'Extension lead (power)', stock: [2, 3, 5, 10, 15, 25] },
   inst:    { name: 'Jack instrument', stock: [1, 3, 5, 6, 10] },
   speakon: { name: 'Speakon', stock: [5, 10, 15, 20, 30] },
   video:   { name: 'SDI / HDMI', stock: [2, 5, 10, 20, 30, 50] },
@@ -993,7 +1005,8 @@ const runLen = pts => pts.reduce((s, p, i) => i ? s + Math.hypot(p[0] - pts[i - 
 function cableLen(c) {
   const pts = cableGeom(c); if (!pts) return 0;
   const slack = (c.slack ?? plan.settings.slack) / 100;
-  return runLen(pts) * (1 + slack) + 2 * (Number(plan.settings.ends) || 0);   // feet
+  const rise = c.level === 'ceiling' ? 2 * (plan.settings.ceilH ?? fromM(4.5)) : 0;   // up to the ceiling and back down
+  return runLen(pts) * (1 + slack) + 2 * (Number(plan.settings.ends) || 0) + rise;   // feet
 }
 /* Pick stock lengths covering the run: smallest single length that fits, else joined max-lengths. */
 function stockFor(type, lenFt) {
@@ -1015,11 +1028,33 @@ const other = (c, id) => itemById(c.from === id ? c.to : c.from);
 const dist = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 function nearest(it, list) { let best = null, bd = Infinity; for (const o of list) { const d = dist(it, o); if (d < bd) { bd = d; best = o; } } return best; }
 
+/* Power boards and reels: plugged into a power point or distro (their feed), with gear plugged into them.
+   Their load counts against the circuit that feeds them. */
+const isExt = it => !!(it && cat(it).board);
+function feedOf(e) {
+  return plan.cables.find(c => c.type === 'power' && touches(c, e.id) && (() => { const o = other(c, e.id); return o && isPowerSource(o) && (!isExt(o) || c.from === e.id); })());
+}
+function extDown(e, depth = 0) {   // what is plugged into a board: [{it, watts}]
+  const f = feedOf(e), out = [];
+  if (depth > 6) return out;
+  for (const c of plan.cables) {
+    if (c.type !== 'power' || !touches(c, e.id) || c === f) continue;
+    const o = other(c, e.id); if (!o) continue;
+    if (isExt(o)) { if (feedOf(o) === c) out.push({ it: o, watts: extDown(o, depth + 1).reduce((a, x) => a + x.watts, 0) }); }
+    else if (!isPowerSource(o)) out.push({ it: o, watts: Number(prop(o, 'watts')) || 0 });
+  }
+  return out;
+}
+const extLoad = e => extDown(e).reduce((a, x) => a + x.watts, 0);
+const extUsed = e => { const f = feedOf(e); return plan.cables.filter(c => c.type === 'power' && touches(c, e.id) && c !== f).length; };
 function circuitLoads(src) {
+  if (isExt(src)) { const d = extDown(src); return { loads: [d.reduce((a, x) => a + x.watts, 0)], items: [d.map(x => x.it)], cap: (Number(prop(src, 'amps')) || 10) * (Number(prop(src, 'volts')) || 230) }; }
   const n = Number(prop(src, 'circuits')) || 1, loads = Array(n).fill(0), items = Array.from({ length: n }, () => []);
   for (const c of plan.cables) {
     if (c.type !== 'power' || !touches(c, src.id)) continue;
-    const it = other(c, src.id); if (!it || isPowerSource(it)) continue;
+    const it = other(c, src.id); if (!it) continue;
+    if (isExt(it)) { if (feedOf(it) === c) { const k = clamp((c.circuit || 1) - 1, 0, n - 1); loads[k] += extLoad(it); items[k].push(it); } continue; }
+    if (isPowerSource(it)) continue;
     const k = clamp((c.circuit || 1) - 1, 0, n - 1);
     loads[k] += Number(prop(it, 'watts')) || 0; items[k].push(it);
   }
@@ -1054,16 +1089,27 @@ function autoCable() {
       const b = pickBox(it, outs, 'outs'); portUse.get(b.id).outs += outs; addCable('xlr', b.id, it.id, { auto: true });
     }
   }
+  // power boards first: each one plugs into the nearest power point or distro
+  const mains = sources.filter(x => !isExt(x));
+  for (const e of sources.filter(isExt)) {
+    if (feedOf(e) || !mains.length) continue;
+    const src = nearest(e, mains), { loads } = circuitLoads(src);
+    addCable('power', e.id, src.id, { auto: true, circuit: loads.indexOf(Math.min(...loads)) + 1 });
+  }
   for (const it of order) {
     if (!needsPower(it) || has(it, 'power') || !sources.length) continue;
-    const src = nearest(it, sources);
-    const { loads } = circuitLoads(src);
     const w = Number(prop(it, 'watts')) || 0;
-    let k = loads.indexOf(Math.min(...loads));
+    // a board is only used while it is plugged in and has a free outlet and headroom
+    const cands = sources.filter(x => !isExt(x) || (feedOf(x) && extUsed(x) < (Number(prop(x, 'outlets')) || 4) && circuitLoads(x).loads[0] + w <= circuitLoads(x).cap * .8));
+    if (!cands.length) continue;
+    const src = nearest(it, cands);
+    const { loads } = circuitLoads(src);
+    const k = loads.indexOf(Math.min(...loads));
     addCable('power', it.id, src.id, { auto: true, circuit: k + 1 });
-    loads[k] += w;
   }
   for (const b of boxes) for (const d of desks) if (!plan.cables.some(c => c.type === 'cat6' && touches(c, b.id) && touches(c, d.id))) addCable('cat6', b.id, d.id, { auto: true });
+  // speaker and sub feeds fly overhead unless the room setting says otherwise
+  if (plan.settings.overheadSpk !== false) for (const c of plan.cables) if (c.auto && [itemById(c.from), itemById(c.to)].some(i => i && OVERHEAD_TYPES.includes(i.type))) c.level = 'ceiling';
 }
 
 /* ===================================================================
@@ -1160,6 +1206,12 @@ function warnings() {
       if (w > cap) out.push({ lvl: 'bad', msg: `${itemName(src)} circuit ${k + 1}: ${Math.round(w)} W is over the ${cap} W breaker.` });
       else if (w > cap * .8) out.push({ lvl: 'warn', msg: `${itemName(src)} circuit ${k + 1}: ${Math.round(w)} W is above 80% of ${cap} W.` });
     });
+  }
+  for (const e of plan.items.filter(isExt)) {
+    const f = feedOf(e), n = extUsed(e), max = Number(prop(e, 'outlets')) || 4;
+    if (!f) out.push({ lvl: 'warn', msg: `${itemName(e)} isn't plugged into a power point or distro.` });
+    else if (isExt(other(f, e.id))) out.push({ lvl: 'warn', msg: `${itemName(e)} is plugged into another power board. Avoid daisy-chaining boards.` });
+    if (n > max) out.push({ lvl: 'bad', msg: `${itemName(e)}: ${n} plugs but only ${max} outlets.` });
   }
   const unp = plan.items.filter(i => inputsOf(i).length && !patchOf(i));
   for (const i of unp) out.push({ lvl: 'warn', msg: `${itemName(i)} isn't patched to a stage box or desk.` });
@@ -1437,6 +1489,9 @@ const SYM = (() => {
     riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
     drum_riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
     distro: box(2, 1.5, 'power') + rect(-.9, -.65, 1.8, 1.3, 's-head', .05) + grid(-.7, -.45, 6, 1, .28, 0, .06, 's-white') + socket(-.55, -.05) + socket(0, -.05) + socket(.55, -.05) + socket(-.55, .4) + socket(0, .4) + socket(.55, .4) + circ(.85, -.5, .04, 's-led'),
+    pboard4: rect(-.7, -.22, 1.4, .44, 's-white s-edge', .1) + [-.45, -.15, .15, .45].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.62, 0, .035, 's-red'),
+    pboard6: rect(-.95, -.22, 1.9, .44, 's-white s-edge', .1) + [-.7, -.42, -.14, .14, .42, .7].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.87, 0, .035, 's-red'),
+    reel: circ(0, 0, .6, 'body c-power s-edge') + circ(0, 0, .45, 's-dark') + circ(0, 0, .45, 's-thin') + circ(0, 0, .32, 's-thin') + circ(0, 0, .2, 's-white') + [0, 90, 180, 270].map(a => circ(.2 * Math.cos(a * Math.PI / 180) * .5, .2 * Math.sin(a * Math.PI / 180) * .5, .03, 's-dark')).join(''),
     wall_outlet: rect(-.35, -.25, .7, .5, 's-white s-edge', .06) + circ(0, 0, .17, 'body c-power') + circ(-.06, 0, .03, 's-dark') + circ(.06, 0, .03, 's-dark'),
     camera: tripod(.95, 's-line') + rect(-.32, -.28, .64, .62, 'body c-video s-edge', .08) + rect(-.18, -.62, .36, .36, 's-dark', .05) + circ(0, -.62, .15, 's-glass') + rect(-.12, .34, .24, .2, 's-dark', .03),
     conf_mon: '<polygon class="body c-infra s-bg" points="-.6,.45 .6,.45 .35,-.05 -.35,-.05"/>' + rect(-1.75, -.42, 3.5, .34, 'body c-video s-edge', .05) + rect(-1.65, -.4, 3.3, .14, 's-glass', .02),
@@ -1594,14 +1649,15 @@ function renderPlot() {
       selb += `<rect class="selglow" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/><rect class="selbox" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/>`;
     }
   }
-  let hits = '', lens = '', wps = '';
+  let hits = '', lens = '', wps = '', ceil = '';
   for (const c of plan.cables) {
     const o = cableGeom(c); if (!o) continue;
     const isSel = sel?.kind === 'cable' && sel.id === c.id;
     if (!isSel && !cableShown(c)) continue;
     const rel = selItem ? (touches(c, selItem) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : '');
     const ps = o.map(p => p.join(',')).join(' ');
-    s += `<polyline class="cab k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>`;
+    if (c.level === 'ceiling') ceil += `<polyline class="cab ceil k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>`;
+    else s += `<polyline class="cab k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>`;
     hits += `<polyline class="cabhit" data-cid="${c.id}" points="${ps}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
     if (isSel || (selItem && touches(c, selItem))) {
       const m = midpoint(o);
@@ -1610,7 +1666,7 @@ function renderPlot() {
     if (isSel) c.points.forEach((p, k) => { wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
-  s += top + labels + selb + lens + wps + chv.handles;
+  s += top + chv.over + ceil + labels + selb + lens + wps + chv.handles;
   if (drag?.kind === 'item') {
     if (drag.gx != null) s += `<line class="guide" x1="${drag.gx}" x2="${drag.gx}" y1="${b.y0}" y2="${b.y0 + b.vh}"/>`;
     if (drag.gy != null) s += `<line class="guide" y1="${drag.gy}" y2="${drag.gy}" x1="${b.x0}" x2="${b.x0 + b.vw}"/>`;
@@ -1682,7 +1738,7 @@ function renderFloat() {
       <button class="iconbtn" id="zIn" aria-label="Zoom in" title="Zoom in (+)">${ic('plus')}</button>
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
     </div>`;
-  $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel"><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
+  $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip gold">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
       <span class="dock-sep"></span><span class="toolhint">${pending ? 'Click the floor to bend · click the destination to finish' : 'Click where the cable starts'}</span></div>` : '';
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel statuspill">
@@ -1792,6 +1848,8 @@ function renderRail() {
       <div class="card"><div class="card-head"><span class="badge">${ic('cable', 'sm')}</span><div><h3>Cable maths</h3><p>Runs follow the floor at right angles.</p></div></div>
         <div class="grid2"><div class="field"><label for="slack">Slack</label><div class="unit" data-unit="%"><input id="slack" type="number" min="0" max="100" step="1" value="${se.slack}"></div></div>
         ${num('ends', 'Drop each end', mVal(se.ends), 'min="0" max="6" step=".1"')}</div>
+        <div class="grid2">${num('ceilH', 'Ceiling height', mVal(se.ceilH ?? fromM(4.5)), 'min="2" max="30" step=".1"')}</div>
+        <label class="row" for="overheadSpk" style="gap:8px;flex-wrap:nowrap"><input type="checkbox" id="overheadSpk" ${se.overheadSpk !== false ? 'checked' : ''} style="accent-color:var(--accent)"><span>Run speaker &amp; sub feeds along the ceiling</span></label>
         <div class="grid2"><button class="btn" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button><button class="btn" id="clearAuto">Clear auto runs</button></div></div>
       <div class="card"><div class="card-head"><span class="badge">${ic('clip', 'sm')}</span><div><h3>Notes for the crew</h3><p>Shows at the top of the paperwork.</p></div></div>
         <textarea id="notes" rows="4" aria-label="Notes for the crew" placeholder="Load-in time, changeovers, anything special this week" style="font-family:var(--f-ui);font-size:14px">${esc(plan.notes)}</textarea></div>
@@ -1818,7 +1876,13 @@ function renderInspector() {
     const C = cat(it), ins = inputsOf(it), owner = it.personId ? personById(it.personId) : null;
     let extra = '';
     if (it.type === 'stagebox') extra = `<section class="isec"><h3>Ports</h3><div class="grid2">${field('iIns', 'Inputs', prop(it, 'ins'), 'number', 'min="1" max="128"')}${field('iOuts', 'Outputs', prop(it, 'outsMax'), 'number', 'min="0" max="64"')}</div></section>`;
-    if (isPowerSource(it)) {
+    if (isExt(it)) {
+      const f = feedOf(it), load = extLoad(it), cap = (Number(prop(it, 'amps')) || 10) * (Number(prop(it, 'volts')) || 230), pct = load / cap;
+      extra = `<section class="isec"><h3>Power board <span>${extUsed(it)}/${prop(it, 'outlets')} used</span></h3>
+        <div class="grid2">${field('iOutlets', 'Outlets', prop(it, 'outlets'), 'number', 'min="1" max="12"')}${field('iAmps', 'Rating', prop(it, 'amps'), 'number', 'min="1" max="32"', 'A')}</div>
+        <div class="circ"><span class="n">Load</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(load)} W</span></div>
+        <p class="hint">${f ? `Plugged into ${esc(itemName(other(f, it.id)))}${f.circuit ? ` · circuit ${f.circuit}` : ''}.` : 'Not plugged in yet. Run an extension lead from a power point or distro, or press Re-run cabling.'}</p></section>`;
+    } else if (isPowerSource(it)) {
       const { loads, cap } = circuitLoads(it);
       extra = `<section class="isec"><h3>Power</h3><div class="grid3">${field('iCirc', 'Circuits', prop(it, 'circuits'), 'number', 'min="1" max="24"')}${field('iAmps', 'Amps', prop(it, 'amps'), 'number', 'min="1" max="100"', 'A')}${field('iVolts', 'Volts', prop(it, 'volts'), 'number', 'min="100" max="250"', 'V')}</div>
         <div style="display:grid;gap:6px">${loads.map((w, k) => { const pct = w / cap; return `<div class="circ"><span class="n">C${k + 1}</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(w)} W</span></div>`; }).join('')}</div></section>`;
@@ -1864,7 +1928,8 @@ function renderInspector() {
         ${field('chName', 'Name', ch.name)}
         <div class="field"><span>Type</span><div class="chips">${Object.entries(CH_KINDS).map(([key, v]) => `<button class="ctype" data-chkind="${key}" aria-pressed="${ch.kind === key}">${esc(v.name)}</button>`).join('')}</div></div>
         <div class="grid2">${field('chW', 'Width', mVal(fromM(ch.w ?? k.w)), 'number', 'step=".05" min=".1"', 'm')}<div class="field"><span>Length</span><b style="font:500 14px var(--f-mono);padding:8px 0">${fmtLen(runLen(ch.pts))}</b></div></div>
-        <p class="hint">Drag the gold squares on the plot to reshape it.</p></section>
+        <p class="hint">${k.level ? 'Overhead: only ceiling runs use it. ' : ''}Drag the gold squares to reshape it. Click a + on an edge to add a bend, or past an end to extend it.</p>
+        <div class="grid2"><button class="btn" data-chextbtn="0">${ic('plus', 'sm')}Extend start</button><button class="btn" data-chextbtn="1">${ic('plus', 'sm')}Extend end</button></div></section>
       <section class="isec"><h3>Cables inside <span>${using.length}</span></h3>${using.length ? `<ul class="conns">${using.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(itemById(x.from)))} → ${esc(itemName(itemById(x.to)))}<small>${esc(CABLES[x.type].name)}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : '<p class="hint">No cables use it yet. Cables route through a channel when it keeps more of the run off the open floor.</p>'}</section>
       <section class="isec"><div class="actions"><button class="btn danger" id="chDel">${ic('trash', 'sm')}Delete channel</button></div></section>
     </div>`;
@@ -1878,6 +1943,7 @@ function renderInspector() {
       <section class="isec"><h3>Length</h3>
         <div class="tiles"><div class="tile"><b>${fmtLen(len)}</b><span>with slack</span></div><div class="tile"><b>${st.map(fmtStock).join(' + ')}</b><span>to pull${cableQty(c) > 1 ? ` · ×${cableQty(c)}` : ''}</span></div></div>
         <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
+        <div class="field"><span>Runs along</span><div class="seg"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}">Floor</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}">Ceiling</button></div>${c.level === 'ceiling' ? `<span class="hint">Includes ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end.</span>` : ''}</div>
         ${chans().length && !c.points.length ? `<div class="field"><span>Route</span><div class="seg"><button data-route="auto" aria-pressed="${c.route !== 'direct'}">Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}">Direct</button></div></div>` : ''}
       </section>
       <section class="isec"><h3>Cable type</h3><div class="chips">${Object.keys(CABLES).map(k => `<button class="ctype" data-settype="${k}" aria-pressed="${k === c.type}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
@@ -1912,7 +1978,7 @@ function renderInspector() {
         <div class="tile"><b>${(t.watts / 1000).toFixed(1)} kW</b><span>stage power</span></div>
       </div></section>
       ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 6).map(warnItem).join('')}</ul>${w.length > 6 ? `<button class="btn quiet" data-go="paper">See all ${w.length} in the paperwork</button>` : ''}</section>` : ''}
-      <section class="isec"><h3>Cable colours</h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
+      <section class="isec"><h3>Cable colours <span style="text-transform:none;letter-spacing:0;font-weight:500">dashed = overhead</span></h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
         <p class="hint">Click anything on the plot to edit it. Press <span class="kbd">?</span> for shortcuts.</p></section>
     </div>`;
   }
@@ -1944,7 +2010,8 @@ function renderPaper() {
   const head = (title, key, sub) => `<header><div><h2>${title}</h2>${sub ? `<p class="hint">${sub}</p>` : ''}</div>${key ? `<button class="btn" data-copy="${key}">${ic('copy', 'sm')}Copy</button>` : ''}</header>`;
   const powerHtml = sources.map(src => {
     const { loads, items, cap } = circuitLoads(src);
-    return `<div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(src))}</b><span class="hint">${prop(src, 'circuits')} × ${prop(src, 'amps')} A @ ${prop(src, 'volts')} V</span></div>
+    const f = isExt(src) && feedOf(src);
+    return `<div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(src))}</b><span class="hint">${isExt(src) ? `${prop(src, 'outlets')}-way board · ${prop(src, 'amps')} A · ${f ? 'fed from ' + esc(itemName(other(f, src.id))) : 'not plugged in'}` : `${prop(src, 'circuits')} × ${prop(src, 'amps')} A @ ${prop(src, 'volts')} V`}</span></div>
       <div class="tablewrap"><table><thead><tr><th>Circuit</th><th>Load</th><th style="width:28%">Use</th><th>Gear</th></tr></thead><tbody>
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
@@ -2020,8 +2087,25 @@ svg.addEventListener('pointerdown', e => {
   const p = toFt(e);
   const g = e.target.closest('[data-id]'), ch = e.target.closest('[data-cid]'), wp = e.target.closest('[data-wp]');
   const rh = e.target.closest('[data-rh]'), chp = e.target.closest('[data-chp]'), chh = e.target.closest('[data-chid]');
+  const chx = e.target.closest('[data-chext]'), chi = e.target.closest('[data-chins]');
+  if (chx && mode === 'select') { const [id, end] = chx.dataset.chext.split(':'); startExtend(id, end === '1'); return; }
+  if (chi && mode === 'select') {
+    const [id, i] = chi.dataset.chins.split(':'), ch = chans().find(x => x.id === id), k = Number(i);
+    const snap = JSON.stringify(plan), a = ch.pts[k - 1], b = ch.pts[k];
+    ch.pts.splice(k, 0, [snapTo((a[0] + b[0]) / 2, .25), snapTo((a[1] + b[1]) / 2, .25)]);
+    drag = { kind: 'chp', cid: id, k, snap, moved: true };
+    try { svg.setPointerCapture(e.pointerId); } catch { /* ok */ }
+    e.preventDefault(); renderPlot(); return;
+  }
   if (mode === 'channel') {
-    if (!chDraft) chDraft = { pts: [] };
+    if (!chDraft) {   // starting on the end of an existing channel continues it
+      const tol = Math.max(.6, 12 / scale);
+      for (const ch of chans()) for (const end of [0, ch.pts.length - 1]) {
+        const q = ch.pts[end];
+        if (Math.abs(q[0] - p.x) + Math.abs(q[1] - p.y) < tol) { startExtend(ch.id, end !== 0); toast(`Extending ${ch.name}. Click to add points, Enter to finish.`); return; }
+      }
+      chDraft = { pts: [] };
+    }
     const last = chDraft.pts[chDraft.pts.length - 1], q = chSnap(p, last, e.altKey);
     if (last && Math.abs(last[0] - q[0]) + Math.abs(last[1] - q[1]) < .05) { finishChannel(); return; }   // click the last point again to finish
     chDraft.pts.push(q); renderPlot(); return;
@@ -2160,7 +2244,8 @@ $('ftools').addEventListener('click', e => {
   if (e.target.closest('#cabBtn')) { cableView.menu = !cableView.menu; renderFloat(); return; }
   const ct = e.target.closest('[data-cabtype]');
   if (ct) { const k = ct.dataset.cabtype; setCableView(() => { cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
-  if (e.target.closest('#cabShowAll')) { setCableView(() => { cableView.all = true; cableView.hidden.clear(); }); return; }
+  if (e.target.closest('#cabCeil')) { setCableView(() => { cableView.hideCeil = !cableView.hideCeil; }); return; }
+  if (e.target.closest('#cabShowAll')) { setCableView(() => { cableView.all = true; cableView.hidden.clear(); cableView.hideCeil = false; }); return; }
   if (e.target.closest('#cabOnly')) { setCableView(() => { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(k => k !== 'power')); }); return; }
   const m = e.target.closest('[data-mode]'), t = e.target.closest('[data-ctype]');
   if (m) setMode(m.dataset.mode);
@@ -2171,6 +2256,7 @@ document.addEventListener('pointerdown', e => { if (cableView.menu && !e.target.
 $('fzoom').addEventListener('click', e => {
   const t = e.target.closest('[data-ctype]'); if (t) { cableType = t.dataset.ctype; renderFloat(); }
   if (e.target.closest('#chFinish')) finishChannel();
+  const dk = e.target.closest('[data-chdraftkind]'); if (dk) { chDraftKind = dk.dataset.chdraftkind; renderFloat(); }
   const m = e.target.closest('[data-mode]'); if (m) setMode(m.dataset.mode);
 });
 $('ftools').addEventListener('click', e => {
@@ -2365,6 +2451,8 @@ $('railPane').addEventListener('change', e => {
     shd: () => { plan.stage.house = fromM(clamp(num(t.value) || 12, 2, 100)); },
     shw: () => { plan.stage.houseW = fromM(clamp(num(t.value) || 16, 3, 100)); },
     slack: () => { plan.settings.slack = clamp(num(t.value) || 0, 0, 100); },
+    ceilH: () => { plan.settings.ceilH = fromM(clamp(num(t.value) || 4.5, 2, 30)); },
+    overheadSpk: () => { plan.settings.overheadSpk = t.checked; for (const c of plan.cables) if (c.auto && [itemById(c.from), itemById(c.to)].some(i => i && OVERHEAD_TYPES.includes(i.type))) c.level = t.checked ? 'ceiling' : undefined; },
     ends: () => { plan.settings.ends = fromM(clamp(num(t.value) || 0, 0, 6)); },
     notes: () => { plan.notes = t.value; },
   };
@@ -2389,6 +2477,7 @@ $('inspector').addEventListener('change', e => {
       case 'iInputs': it.inputs = t.value.split(',').map(s => s.trim()).filter(Boolean); it.inputsEdited = true; break;
       case 'iIns': it.ins = Math.max(1, n); break; case 'iOuts': it.outsMax = Math.max(0, n); break;
       case 'iOutsUse': it.outs = Math.max(0, n); break;
+      case 'iOutlets': it.outlets = clamp(n, 1, 12); break;
       case 'iCirc': it.circuits = Math.max(1, n); break; case 'iAmps': it.amps = Math.max(1, n); break; case 'iVolts': it.volts = Math.max(1, n); break;
     }
   });
@@ -2406,9 +2495,11 @@ $('inspector').addEventListener('change', e => {
 $('inspector').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.selc) { sel = { kind: 'cable', id: t.dataset.selc }; renderPlot(); renderInspector(); return; }
+  if (t.dataset.level) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.level = t.dataset.level === 'ceiling' ? 'ceiling' : undefined; c.auto = false; }); return; }
   if (t.dataset.route) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.route = t.dataset.route === 'direct' ? 'direct' : undefined; }); return; }
   if (t.dataset.chkind) { const ch = chans().find(x => x.id === sel.id); mutate(() => { ch.kind = t.dataset.chkind; }); return; }
   if (t.id === 'chDel') { deleteSelected(); return; }
+  if (t.dataset.chextbtn) { startExtend(sel.id, t.dataset.chextbtn === '1'); return; }
   if (t.dataset.settype) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.type = t.dataset.settype; c.auto = false; }); return; }
   if (t.dataset.legend) { const k = t.dataset.legend; setCableView(() => { if (!cableView.all) { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(x => x !== k)); } else cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
   if (t.dataset.go === 'team') { railTab = 'team'; renderRail(); $('pcoStart')?.focus(); return; }
@@ -2678,11 +2769,11 @@ $('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = 
    Cable visibility (per browser)
    =================================================================== */
 const cableView = { all: true, hidden: new Set(), menu: false };
-try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); } } catch { /* ignore */ }
-const cableShown = c => cableView.all && !cableView.hidden.has(c.type);
+try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; } } catch { /* ignore */ }
+const cableShown = c => cableView.all && !cableView.hidden.has(c.type) && !(c.level === 'ceiling' && cableView.hideCeil);
 function setCableView(fn) {
   fn();
-  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden] })); } catch { /* ignore */ }
+  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil })); } catch { /* ignore */ }
   if (sel?.kind === 'cable') { const c = plan.cables.find(x => x.id === sel.id); if (c && !cableShown(c)) sel = null; }
   renderPlot(); renderInspector();
 }
@@ -2693,6 +2784,8 @@ function cableMenuHtml() {
   const menu = cableView.menu ? `<div class="cabmenu" role="menu">
       <label class="cm-row cm-all" for="cabAll"><span>Show cables</span><input type="checkbox" id="cabAll" class="switch" ${cableView.all ? 'checked' : ''}></label>
       ${Object.keys(CABLES).map(k => `<button class="cm-row" data-cabtype="${k}" aria-pressed="${!cableView.hidden.has(k)}" ${cableView.all ? '' : 'disabled'}><span class="sw bg-${k}"></span><span>${esc(CABLES[k].name)}</span><span class="hint">${counts[k] || 0}</span>${ic(cableView.hidden.has(k) ? 'eyeOff' : 'eye', 'sm')}</button>`).join('')}
+      <div class="ctx-sep"></div>
+      <button class="cm-row" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="hint">${plan.cables.filter(c => c.level === 'ceiling').length}</span>${ic(cableView.hideCeil ? 'eyeOff' : 'eye', 'sm')}</button>
       <div class="row" style="justify-content:space-between;padding:6px 8px 2px"><button class="btn quiet" id="cabShowAll" style="padding:4px 8px">Show all</button><button class="btn quiet" id="cabOnly" style="padding:4px 8px" title="Hide every type except power">Power only</button></div>
     </div>` : '';
   return `<div class="panel cabwrap">${btn}${menu}</div>`;
@@ -2858,7 +2951,9 @@ $('rackDlg').addEventListener('pointerdown', e => { if (e.target.id === 'rackDlg
 /* ===================================================================
    Cable channels (trenches, trays, ramps) and channel-aware routing
    =================================================================== */
-const CH_KINDS = { trench: { name: 'Floor trench', w: .3 }, tray: { name: 'Cable tray', w: .3 }, ramp: { name: 'Cable ramp', w: .5 } };
+const CH_KINDS = { trench: { name: 'Floor trench', w: .3 }, tray: { name: 'Cable tray', w: .3 }, ramp: { name: 'Cable ramp', w: .5 }, truss: { name: 'Overhead truss', w: .35, level: 'ceiling' }, ceiltray: { name: 'Ceiling tray', w: .3, level: 'ceiling' } };
+const chLevel = ch => (CH_KINDS[ch.kind] || CH_KINDS.trench).level || 'floor';
+let chDraftKind = 'trench';
 const chans = () => (plan.channels ||= []);
 let chDraft = null;   // { pts: [] } while drawing a channel
 function nearestOn(pts, x, y) {
@@ -2884,8 +2979,9 @@ function routeInfo(c) {
   const direct = { pts: [[a.x, a.y], ...c.points, [b.x, b.y]], straight: new Set(), via: null };
   if (c.points.length || c.route === 'direct' || !chans().length) return direct;
   let best = direct, bestCost = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  const lvl = c.level === 'ceiling' ? 'ceiling' : 'floor';
   for (const ch of chans()) {
-    if (ch.pts.length < 2) continue;
+    if (ch.pts.length < 2 || chLevel(ch) !== lvl) continue;   // floor cables use floor channels, ceiling cables use overhead ones
     const ea = nearestOn(ch.pts, a.x, a.y), eb = nearestOn(ch.pts, b.x, b.y);
     const cost = ea.dist + eb.dist + .25 * Math.abs(eb.s - ea.s);
     if (cost < bestCost - .5) {
@@ -2897,22 +2993,34 @@ function routeInfo(c) {
   return best;
 }
 function renderChannels(selId) {
-  let s = '', hits = '', handles = '';
+  let s = '', hits = '', handles = '', over = '';
   for (const ch of chans()) {
     if (ch.pts.length < 2) continue;
     const k = CH_KINDS[ch.kind] || CH_KINDS.trench, w = fromM(ch.w ?? k.w), ps = ch.pts.map(p => p.join(',')).join(' ');
     const isSel = ch.id === selId;
-    s += `<polyline class="ch-edge ch-${ch.kind}${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w + .14)}"/><polyline class="ch-band ch-${ch.kind}" points="${ps}" style="stroke-width:${f3(w)}"/>`;
-    const m = midpoint(ch.pts);
-    if (scale >= 11) s += `<text class="ch-label" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}</text>`;
+    const m = midpoint(ch.pts), lab = scale >= 11 ? `<text class="ch-label${k.level ? ' over' : ''}" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}</text>` : '';
+    if (k.level === 'ceiling') over += `<polyline class="ch-over${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;   // overhead: drawn above the gear
+    else s += `<polyline class="ch-edge ch-${ch.kind}${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w + .14)}"/><polyline class="ch-band ch-${ch.kind}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;
     hits += `<polyline class="chhit" data-chid="${ch.id}" points="${ps}" style="stroke-width:${f3(Math.max(w, .8))}"><title>${esc(ch.name || k.name)}</title></polyline>`;
-    if (isSel) ch.pts.forEach((p, i) => { handles += `<rect class="wp" data-chp="${ch.id}:${i}" x="${f3(p[0] - .3)}" y="${f3(p[1] - .3)}" width=".6" height=".6" rx=".12"/>`; });
+    if (isSel) {
+      const plus = (x, y, attr, r) => `<g class="chplus" ${attr}><circle cx="${f3(x)}" cy="${f3(y)}" r="${f3(r)}"/><path d="M${f3(x - r * .5)} ${f3(y)}H${f3(x + r * .5)}M${f3(x)} ${f3(y - r * .5)}V${f3(y + r * .5)}"/></g>`;
+      const r = Math.max(.28, 9 / scale);
+      for (let i = 1; i < ch.pts.length; i++) {   // + on each segment adds a bend
+        const a = ch.pts[i - 1], b = ch.pts[i];
+        if (Math.hypot(b[0] - a[0], b[1] - a[1]) > r * 5) handles += plus((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, `data-chins="${ch.id}:${i}"`, r * .8);
+      }
+      ch.pts.forEach((p, i) => { handles += `<rect class="wp" data-chp="${ch.id}:${i}" x="${f3(p[0] - .3)}" y="${f3(p[1] - .3)}" width=".6" height=".6" rx=".12"/>`; });
+      for (const end of [0, ch.pts.length - 1]) {   // + past each end extends the channel
+        const p = ch.pts[end], q = ch.pts[end === 0 ? 1 : end - 1], L = Math.hypot(p[0] - q[0], p[1] - q[1]) || 1, off = r * 2.6;
+        handles += plus(p[0] + (p[0] - q[0]) / L * off, p[1] + (p[1] - q[1]) / L * off, `data-chext="${ch.id}:${end === 0 ? 0 : 1}"`, r);
+      }
+    }
   }
   if (chDraft?.pts.length) {
     const pts = chDraft.pts.concat(cursorPt ? [cursorPt] : []);
     s += `<polyline class="ch-draft" points="${pts.map(p => p.join(',')).join(' ')}" style="stroke-width:${f3(fromM(.3))}"/>`;
   }
-  return { s, hits, handles };
+  return { s, hits, handles, over };
 }
 function chSnap(p, prev, free) {
   let x = snapTo(p.x, .25), y = snapTo(p.y, .25);
@@ -2920,11 +3028,24 @@ function chSnap(p, prev, free) {
   return [x, y];
 }
 function finishChannel() {
-  const pts = chDraft?.pts || [];
+  const d = chDraft, pts = d?.pts || [];
   chDraft = null; cursorPt = null;
   if (pts.length < 2) { renderPlot(); return; }
-  const n = chans().length + 1;
-  mutate(() => { const ch = { id: uid(), name: `Channel ${n}`, kind: 'trench', pts }; plan.channels.push(ch); sel = { kind: 'channel', id: ch.id }; mode = 'select'; }, 'Channel added. Cables nearby now route through it.');
+  if (d.extend) {
+    const ch = chans().find(x => x.id === d.extend.id); if (!ch) { renderPlot(); return; }
+    const add = pts.slice(1);
+    mutate(() => { ch.pts = d.extend.atStart ? [...add.reverse(), ...ch.pts] : [...ch.pts, ...add]; sel = { kind: 'channel', id: ch.id }; mode = 'select'; }, `${ch.name} extended`);
+    return;
+  }
+  const k = CH_KINDS[chDraftKind] || CH_KINDS.trench, n = chans().filter(x => x.kind === chDraftKind).length + 1;
+  mutate(() => { const ch = { id: uid(), name: `${k.name} ${n}`, kind: chDraftKind, pts }; plan.channels.push(ch); sel = { kind: 'channel', id: ch.id }; mode = 'select'; },
+    k.level ? 'Overhead path added. Ceiling runs nearby route along it.' : 'Channel added. Cables nearby now route through it.');
+}
+function startExtend(id, atEnd) {
+  const ch = chans().find(x => x.id === id); if (!ch) return;
+  mode = 'channel'; cursorPt = null;
+  chDraft = { pts: [ch.pts[atEnd ? ch.pts.length - 1 : 0].slice()], extend: { id, atStart: !atEnd } };
+  renderPlot();
 }
 
 /* ===================================================================
@@ -3035,6 +3156,7 @@ svg.addEventListener('contextmenu', e => {
     m.innerHTML = `<div class="ctx-h">${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</div>
       <button data-ctx="edit">${ic('panelR', 'sm')}Edit details</button>
       ${c.points.length ? `<button data-ctx="straighten">${ic('fit', 'sm')}Straighten</button>` : ''}
+      <button data-ctx="level">${ic('cable', 'sm')}${c.level === 'ceiling' ? 'Run along the floor' : 'Run along the ceiling'}</button>
       <button data-ctx="hidetype">${ic('eyeOff', 'sm')}Hide all ${esc(SHORT[c.type])} cables</button>
       <div class="ctx-sep"></div>
       <button data-ctx="del" class="danger">${ic('trash', 'sm')}Delete cable</button>`;
@@ -3054,6 +3176,7 @@ $('ctxMenu').addEventListener('click', e => {
     case 'rotate': rotateSelected(90); break;
     case 'dup': duplicateSelected(); break;
     case 'straighten': { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.points = []; }); break; }
+    case 'level': { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.level = c.level === 'ceiling' ? undefined : 'ceiling'; c.auto = false; }); break; }
     case 'hidetype': { const c = plan.cables.find(x => x.id === sel.id); setCableView(() => { cableView.all = true; cableView.hidden.add(c.type); }); toast(`${SHORT[c.type]} cables hidden · H shows all`); break; }
     case 'del': deleteSelected(); break;
   }
