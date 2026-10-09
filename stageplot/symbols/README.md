@@ -23,6 +23,7 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Drum shield](drum_shield.svg) | `drum_shield` | Drum shield | 2.44 × 0.12 m |
 | ![Guitar amp (miked)](gtr_amp.svg) | `gtr_amp` | Guitar amp (miked) | 0.61 × 0.30 m |
 | ![Bass amp](bass_amp.svg) | `bass_amp` | Bass amp | 0.61 × 0.46 m |
+| ![MIDI keyboard controller](midi_keys.svg) | `midi_keys` | MIDI keyboard controller | 1.52 × 0.61 m |
 | ![Keyboard rig](keys.svg) | `keys` | Keyboard rig | 1.52 × 0.61 m |
 | ![iPad stand](ipad_stand.svg) | `ipad_stand` | iPad stand | 0.30 × 0.24 m |
 | ![Acoustic preamp pedal](ac_preamp.svg) | `ac_preamp` | Acoustic preamp pedal | 0.24 × 0.17 m |

@@ -779,7 +779,8 @@ const CAT = {
   ipad_stand:  { name: 'iPad stand', short: 'iPad', cat: 'infra', w: 1, d: .8, shape: 'rect' },
   ac_preamp:   { name: 'Acoustic preamp pedal', short: 'Ac preamp', cat: 'inst', w: .8, d: .55, shape: 'rect', inputs: ['Ac Gtr'], watts: 5 },
   midi_fs:     { name: 'MIDI footswitch controller', short: 'MIDI footswitch', cat: 'inst', w: 1.7, d: .55, shape: 'rect' },
-  usb_if:      { name: 'USB audio interface (2 in / 2 out)', short: 'USB interface', cat: 'audio', w: .75, d: .55, shape: 'rect', inputs: ['USB L', 'USB R'] },
+  midi_keys:   { name: 'MIDI keyboard controller', short: 'MIDI keys', cat: 'inst', w: 5, d: 2, shape: 'keys' },
+  usb_if:      { name: 'USB audio interface (2 in / 2 out)', short: 'USB interface', cat: 'audio', w: .75, d: .55, shape: 'rect', inputs: ['Keys L', 'Keys R'] },
   mt_ipad:     { name: 'MultiTracks iPad', short: 'MultiTracks', cat: 'inst', w: 1, d: .8, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 20 },
   edrums:      { name: 'Electronic drum kit', short: 'E-kit', cat: 'inst', w: 5, d: 4.5, shape: 'kit', inputs: ['E-kit L', 'E-kit R'], watts: 40 },
   music_stand: { name: 'Music stand', short: 'Stand', cat: 'staging', w: 1.5, d: .8, shape: 'rect' },
@@ -800,8 +801,8 @@ const CAT = {
 };
 /* CAT:END */
 const GEAR_GROUPS = [
-  ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'usb_if', 'wedge', 'iem', 'main_spk', 'sub']],
-  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'keys', 'pedalboard', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
+  ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
+  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
   ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
@@ -825,7 +826,7 @@ const ROLES = {
   'Acoustic Guitar': { anchor: [.32, .6], spread: [0, -4, 4], gear: [['person', 0, 0], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['iem', -1, -.3], ['ipad_stand', 0, 1.4]] },
   'Electric Guitar': { anchor: [.74, .38], spread: [0, 4, -4], gear: [['person', 0, 0], ['gtr_amp', 0, -2.2], ['pedalboard', 0, 1.2], ['iem', -1.3, -.3]] },
   'Bass':            { anchor: [.27, .36], spread: [0, -4], gear: [['person', 0, 0], ['bass_amp', 0, -2.4], ['di_mono', 1.2, -1.2, { inputs: ['Bass DI'] }], ['iem', -1.2, -.3]] },
-  'Keys':            { anchor: [.13, .52], spread: [0, 0], gear: [['person', 0, -1.4], ['keys', 0, 0], ['iem', -2.2, -1.4]] },
+  'Keys':            { anchor: [.13, .52], spread: [0, 0], gear: [['person', 0, -1.4], ['midi_keys', 0, 0], ['usb_if', 2.95, -.7], ['iem', -2.2, -1.4]] },
   'Drums':           { anchor: [.5, .22], spread: [0, 9], gear: [['drum_riser', 0, 0], ['drum_kit', 0, .4], ['drum_shield', 0, 4.3], ['person', 0, -.9], ['iem', 2.2, -2.2]] },
   'Tracks / MD':     { anchor: [.8, .14], spread: [0, 4], gear: [['person', 0, -1], ['laptop', 0, 0], ['iem', 1.4, -1]] },
   'Strings':         { anchor: [.86, .58], spread: [0, -3.5], gear: [['person', 0, 0], ['inst_mic', 0, .9], ['iem', -1, -.3], ['ipad_stand', 0, 1.6]] },
@@ -1550,6 +1551,7 @@ const SYM = (() => {
     drum_shield: [-3.2, -1.6, 0, 1.6, 3.2].map(x => rect(x - .78, -.2, 1.56, .4, 's-acrylic', .05)).join('') + [-2.4, -.8, .8, 2.4].map(x => circ(x, 0, .07, 's-white')).join(''),
     gtr_amp: box(2, 1, 'inst') + rect(-.92, .1, 1.84, .32, 's-grille', .04) + rect(-.35, -.22, .7, .14, 's-dark', .07) + grid(-.75, -.34, 6, 1, .12, 0, .035, 's-white') + circ(.82, -.34, .035, 's-red'),
     bass_amp: box(2, 1.5, 'inst') + rect(-.92, .25, 1.84, .42, 's-grille', .04) + rect(-.85, -.68, 1.7, .6, 'body c-infra s-edge', .05) + grid(-.65, -.38, 7, 1, .16, 0, .04, 's-white') + rect(-.25, -.62, .5, .1, 's-dark', .05) + circ(.72, -.38, .04, 's-led'),
+    get midi_keys() { return this.keys; },
     keys: line(-2.1, -.9, -1.6, .9, 's-thin') + line(-1.6, -.9, -2.1, .9, 's-thin') + line(2.1, -.9, 1.6, .9, 's-thin') + line(1.6, -.9, 2.1, .9, 's-thin') +
       rect(-2.5, -.75, 5, 1.5, 'body c-inst s-edge', .1) + rect(-2.35, -.68, 4.7, .58, 's-white', .03) +
       Array.from({ length: 35 }, (_, i) => -2.35 + (i + 1) * 4.7 / 36).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
