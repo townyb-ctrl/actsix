@@ -9,8 +9,8 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Vocal mic (wireless)](vox_wl.svg) | `vox_wl` | Vocal mic (wireless) | 0.27 × 0.27 m |
 | ![Headset (wireless)](headset.svg) | `headset` | Headset (wireless) | 0.27 × 0.27 m |
 | ![Instrument mic](inst_mic.svg) | `inst_mic` | Instrument mic | 0.27 × 0.27 m |
-| ![DI box (mono)](di_mono.svg) | `di_mono` | DI box (mono) | 0.24 × 0.18 m |
-| ![DI box (stereo)](di_stereo.svg) | `di_stereo` | DI box (stereo) | 0.30 × 0.18 m |
+| ![Mono DI box](di_mono.svg) | `di_mono` | Mono DI box | 0.24 × 0.18 m |
+| ![Stereo DI box](di_stereo.svg) | `di_stereo` | Stereo DI box | 0.30 × 0.18 m |
 | ![Wedge monitor](wedge.svg) | `wedge` | Wedge monitor | 0.61 × 0.43 m |
 | ![IEM pack](iem.svg) | `iem` | IEM pack | 0.18 × 0.18 m |
 | ![IEM transmitter rack](iem_rack.svg) | `iem_rack` | IEM transmitter rack | 0.61 × 0.61 m |

@@ -757,8 +757,8 @@ const CAT = {
   vox_wl:      { name: 'Vocal mic (wireless)', short: 'RF mic', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Vox RF'], wireless: true },
   headset:     { name: 'Headset (wireless)', short: 'Headset', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Headset RF'], wireless: true },
   inst_mic:    { name: 'Instrument mic', short: 'Inst mic', cat: 'audio', w: .9, d: .9, shape: 'round', inputs: ['Inst'] },
-  di_mono:     { name: 'DI box (mono)', short: 'DI', cat: 'audio', w: .8, d: .6, shape: 'rect', inputs: ['DI'] },
-  di_stereo:   { name: 'DI box (stereo)', short: 'Stereo DI', cat: 'audio', w: 1, d: .6, shape: 'rect', inputs: ['DI L', 'DI R'] },
+  di_mono:     { name: 'Mono DI box', short: 'DI', cat: 'audio', w: .8, d: .6, shape: 'rect', inputs: ['DI'] },
+  di_stereo:   { name: 'Stereo DI box', short: 'Stereo DI', cat: 'audio', w: 1, d: .6, shape: 'rect', inputs: ['DI L', 'DI R'] },
   wedge:       { name: 'Wedge monitor', short: 'Wedge', cat: 'audio', w: 2, d: 1.4, shape: 'wedge', outs: 1, watts: 300 },
   iem:         { name: 'IEM pack', short: 'IEM', cat: 'audio', w: .6, d: .6, shape: 'rect', wireless: true, iem: true },
   iem_rack:    { name: 'IEM transmitter rack', short: 'IEM rack', cat: 'infra', w: 2, d: 2, shape: 'rack', outs: 8, watts: 120 },
@@ -802,7 +802,7 @@ const CAT = {
 /* CAT:END */
 const GEAR_GROUPS = [
   ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
-  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
+  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'di_mono', 'di_stereo', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
   ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
@@ -1457,6 +1457,11 @@ const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? '
 const longDate = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); } catch { return iso; } };
 const plural = (n, a, b = a + 's') => `${n} ${n === 1 ? a : b}`;
 const sortedWeekIds = () => Object.keys(db.plans).sort((a, b) => db.plans[a].date.localeCompare(db.plans[b].date));
+// search matches the start of any word in the gear's name ("di" finds DI boxes, not "MIDI"); longer queries match anywhere
+function gearMatch(t, q) {
+  const n = `${CAT[t].name} ${CAT[t].short || ''}`.toLowerCase();
+  return n.split(/[^a-z0-9]+/).some(w => w.startsWith(q)) || (q.length > 3 && n.includes(q));
+}
 function gearMeta(type) {
   const c = CAT[type], bits = [];
   if (c.inputs) bits.push(plural(c.inputs.length, 'input'));
@@ -2009,7 +2014,8 @@ function renderRail() {
   } else if (railTab === 'gear') {
     const q = gearQuery.trim().toLowerCase();
     // searching looks across every category; otherwise show the chosen tab
-    const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => !q || CAT[t].name.toLowerCase().includes(q) || g.toLowerCase().includes(q))]).filter(([, t]) => t.length);
+    const seen = new Set();
+    const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => (!q || gearMatch(t, q)) && (!q || !seen.has(t)) && seen.add(t))]).filter(([, t]) => t.length);
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
       <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}<span>${types.length}</span></button>`).join('')}</div>
       <p class="hint">${q ? `Results across all categories.` : 'Drag onto the stage, or click to drop it centre stage.'}</p>` +
