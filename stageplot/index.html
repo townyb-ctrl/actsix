@@ -34,7 +34,7 @@
   --ok: #23875a; --ok-soft: rgba(35,135,90,.12);
   --warn: #b86e00; --warn-soft: rgba(214,138,0,.14);
   --bad: #c8372d; --bad-soft: rgba(200,55,45,.12);
-  --k-xlr: #3b8ad9; --k-cat: #9a5ee6; --k-pow: #ee6f1f; --k-inst: #2ea25a; --k-spk: #0f9f9b; --k-vid: #de4379;
+  --k-xlr: #3b8ad9; --k-cat: #9a5ee6; --k-pow: #ee6f1f; --k-inst: #2ea25a; --k-spk: #0f9f9b; --k-vid: #de4379; --k-usb: #6f7f91;
   --shadow-1: 0 1px 2px rgba(16,24,32,.06), 0 1px 1px rgba(16,24,32,.04);
   --shadow-2: 0 8px 24px rgba(16,24,32,.10), 0 2px 6px rgba(16,24,32,.06);
   --shadow-3: 0 24px 60px rgba(16,24,32,.22), 0 6px 18px rgba(16,24,32,.10);
@@ -49,7 +49,7 @@
     --line: #242a30; --line-2: #323a42; --accent: #f5bd3a; --accent-ink: #1b1505; --accent-text: #f5c24d; --accent-soft: rgba(245,189,58,.14);
     --deck: #2b343c; --deck-edge: #000; --house: #0f1316; --house-dot: rgba(255,255,255,.07); --house-ink: #8a96a0;
     --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
-    --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0;
+    --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0; --k-usb: #b3c0cf;
     --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 10px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3); --shadow-3: 0 28px 70px rgba(0,0,0,.6);
     --glass: rgba(24,29,34,.86);
     color-scheme: dark;
@@ -60,7 +60,7 @@
   --line: #242a30; --line-2: #323a42; --accent: #f5bd3a; --accent-ink: #1b1505; --accent-text: #f5c24d; --accent-soft: rgba(245,189,58,.14);
   --deck: #2b343c; --deck-edge: #000; --house: #0f1316; --house-dot: rgba(255,255,255,.07); --house-ink: #8a96a0;
   --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
-  --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0;
+  --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0; --k-usb: #b3c0cf;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 10px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3); --shadow-3: 0 28px 70px rgba(0,0,0,.6);
   --glass: rgba(24,29,34,.86);
   color-scheme: dark;
@@ -415,9 +415,9 @@ svg text { font-family: var(--f-ui); }
 .cab.sel { stroke-width: .3; opacity: 1; }
 .cabhit { fill: none; stroke: transparent; stroke-width: .8; cursor: pointer; }
 .k-xlr { stroke: var(--k-xlr); } .k-cat6 { stroke: var(--k-cat); } .k-power { stroke: var(--k-pow); }
-.k-inst { stroke: var(--k-inst); } .k-speakon { stroke: var(--k-spk); } .k-video { stroke: var(--k-vid); }
+.k-inst { stroke: var(--k-inst); } .k-speakon { stroke: var(--k-spk); } .k-video { stroke: var(--k-vid); } .k-usb { stroke: var(--k-usb); }
 .bg-xlr { background: var(--k-xlr); } .bg-cat6 { background: var(--k-cat); } .bg-power { background: var(--k-pow); }
-.bg-inst { background: var(--k-inst); } .bg-speakon { background: var(--k-spk); } .bg-video { background: var(--k-vid); }
+.bg-inst { background: var(--k-inst); } .bg-speakon { background: var(--k-spk); } .bg-video { background: var(--k-vid); } .bg-usb { background: var(--k-usb); }
 .cablen { font: 600 var(--lab, .46px) var(--f-mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.8); stroke-width: .14px; pointer-events: none; }
 .wp { fill: var(--accent); stroke: #000; stroke-width: .05; cursor: move; touch-action: none; }
 .pending { fill: none; stroke: var(--accent); stroke-width: .16; stroke-dasharray: .45 .2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; opacity: .95; }
@@ -835,6 +835,7 @@ const CABLES = {
   inst:    { name: 'Jack instrument', stock: [1, 3, 5, 6, 10] },
   speakon: { name: 'Speakon', stock: [5, 10, 15, 20, 30] },
   video:   { name: 'SDI / HDMI', stock: [2, 5, 10, 20, 30, 50] },
+  usb:     { name: 'USB (MIDI / data)', stock: [1, 2, 3, 5] },
 };
 /* Roles: anchor = [fraction of stage width, fraction of stage depth] where depth 0 is upstage.
    spread = x offsets (ft) used when several people share a role. gear = [type, dx, dy, opts]. */
@@ -1197,6 +1198,12 @@ function autoCable() {
     const k = loads.indexOf(Math.min(...loads));
     addCable('power', it.id, src.id, { auto: true, circuit: k + 1 });
   }
+  const usbHosts = plan.items.filter(i => ['usb_if', 'mt_ipad', 'laptop'].includes(i.type));
+  for (const it of plan.items.filter(i => ['midi_keys', 'midi_fs'].includes(i.type))) {
+    if (!usbHosts.length || has(it, 'usb')) continue;
+    const host = nearest(it, usbHosts);
+    addCable('usb', it.id, host.id, { auto: true });
+  }
   for (const b of boxes) for (const d of desks) if (!plan.cables.some(c => c.type === 'cat6' && touches(c, b.id) && touches(c, d.id))) addCable('cat6', b.id, d.id, { auto: true });
   // speaker and sub feeds fly overhead unless the room setting says otherwise
   if (plan.settings.overheadSpk !== false) for (const c of plan.cables) if (c.auto && [itemById(c.from), itemById(c.to)].some(i => i && OVERHEAD_TYPES.includes(i.type))) c.level = 'ceiling';
@@ -1469,8 +1476,8 @@ const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hid
    =================================================================== */
 let railOpen = true, inspOpen = true;
 let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', gearTab = 'Audio', themePref = 'system';
-const SHORT = { xlr: 'XLR', cat6: 'Cat6', power: 'Power', inst: 'Jack', speakon: 'Speakon', video: 'Video' };
-const KVAR = { xlr: '--k-xlr', cat6: '--k-cat', power: '--k-pow', inst: '--k-inst', speakon: '--k-spk', video: '--k-vid' };
+const SHORT = { xlr: 'XLR', cat6: 'Cat6', power: 'Power', inst: 'Jack', speakon: 'Speakon', video: 'Video', usb: 'USB' };
+const KVAR = { xlr: '--k-xlr', cat6: '--k-cat', power: '--k-pow', inst: '--k-inst', speakon: '--k-spk', video: '--k-vid', usb: '--k-usb' };
 const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? 'word' : /Engineer|Lighting|Producer|Camera/.test(r) ? 'tech' : r ? 'band' : '';
 const longDate = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); } catch { return iso; } };
 const plural = (n, a, b = a + 's') => `${n} ${n === 1 ? a : b}`;
