@@ -301,6 +301,7 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .chplus circle { fill: var(--surface); stroke: var(--accent); stroke-width: .05; }
 .chplus path { stroke: var(--accent-text); stroke-width: .06; stroke-linecap: round; }
 .fl { pointer-events: none; }
+.item.inchan .sym, .item.inchan .body { opacity: .8; }
 .chport { stroke: #fff; stroke-width: .05; pointer-events: none; }
 .chport.dim { opacity: .2; }
 .cab-inside { fill: none; stroke-width: .12; stroke-dasharray: .2 .25; opacity: .55; pointer-events: none; }
@@ -776,6 +777,17 @@ const CAT = {
   keys:        { name: 'Keyboard rig', short: 'Keys', cat: 'inst', w: 5, d: 2, shape: 'keys', inputs: ['Keys L', 'Keys R'], watts: 150 },
   pedalboard:  { name: 'Pedalboard', short: 'Pedals', cat: 'inst', w: 2.5, d: 1.2, shape: 'rect', watts: 30 },
   laptop:      { name: 'Tracks laptop', short: 'Tracks rig', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
+  ac_guitar:   { name: 'Acoustic guitar (on stand)', short: 'Acoustic', cat: 'inst', w: 1.4, d: 3.4, shape: 'rect' },
+  el_guitar:   { name: 'Electric guitar (on stand)', short: 'Electric', cat: 'inst', w: 1.2, d: 3.2, shape: 'rect' },
+  bass_guitar: { name: 'Bass guitar (on stand)', short: 'Bass', cat: 'inst', w: 1.2, d: 3.9, shape: 'rect' },
+  violin:      { name: 'Violin', short: 'Violin', cat: 'inst', w: .7, d: 2, shape: 'rect', inputs: ['Violin'] },
+  cello:       { name: 'Cello', short: 'Cello', cat: 'inst', w: 1.5, d: 4, shape: 'rect', inputs: ['Cello'] },
+  saxophone:   { name: 'Saxophone', short: 'Sax', cat: 'inst', w: 1, d: 1.6, shape: 'rect', inputs: ['Sax'] },
+  trumpet:     { name: 'Trumpet', short: 'Trumpet', cat: 'inst', w: .8, d: 1.7, shape: 'rect', inputs: ['Trumpet'] },
+  cajon:       { name: 'Cajón', short: 'Cajón', cat: 'inst', w: 1.1, d: 1.1, shape: 'rect', inputs: ['Cajón'] },
+  congas:      { name: 'Congas', short: 'Congas', cat: 'inst', w: 2.6, d: 1.6, shape: 'rect', inputs: ['Conga L', 'Conga R'] },
+  up_piano:    { name: 'Upright piano', short: 'Piano', cat: 'inst', w: 5, d: 2, shape: 'rect', inputs: ['Piano L', 'Piano R'] },
+  grand_piano: { name: 'Grand piano', short: 'Grand', cat: 'inst', w: 5, d: 6.5, shape: 'rect', inputs: ['Piano L', 'Piano R'] },
   ipad_stand:  { name: 'iPad stand', short: 'iPad', cat: 'infra', w: 1, d: .8, shape: 'rect' },
   ac_preamp:   { name: 'Acoustic preamp pedal', short: 'Ac preamp', cat: 'inst', w: .8, d: .55, shape: 'rect', inputs: ['Ac Gtr'], watts: 5 },
   midi_fs:     { name: 'MIDI footswitch controller', short: 'MIDI footswitch', cat: 'inst', w: 1.7, d: .55, shape: 'rect' },
@@ -806,6 +818,7 @@ const GEAR_GROUPS = [
   ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
+  ['Instruments', ['ac_guitar', 'el_guitar', 'bass_guitar', 'violin', 'cello', 'saxophone', 'trumpet', 'cajon', 'congas', 'up_piano', 'grand_piano']],
   ['Video & light', ['camera', 'conf_mon', 'light_stand']],
 ];
 const OVERHEAD_TYPES = ['main_spk', 'sub'];
@@ -1500,6 +1513,7 @@ const SYM_CSS = `
 .s-beam{fill:rgba(255,214,110,.16)}
 .s-ped1{fill:#3fb6a8}.s-ped2{fill:#e2833a}.s-ped3{fill:#d8d24a}.s-ped4{fill:#8a73d6}
 .s-deck{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.45);stroke-width:.07;stroke-dasharray:.3 .2}
+.s-wood{fill:#c08a4e}.s-wood2{fill:#7a5232}.s-red2{fill:#b5413a}.s-blk{fill:#26292d}.s-brass{fill:#d6b04a}
 .c-audio{fill:#2e6a99}.c-inst{fill:#6b51a3}.c-power{fill:#b85a22}.c-infra{fill:#44535e}.c-video{fill:#a3426b}
 `;
 const SYM = (() => {
@@ -1512,6 +1526,13 @@ const SYM = (() => {
   const grid = (x0, y0, cols, rows, dx, dy, r, cls) => { let s = ''; for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) s += circ(x0 + i * dx, y0 + j * dy, r, cls); return s; };
   const drum = (cx, cy, r) => circ(cx, cy, r, 'body c-inst s-edge') + circ(cx, cy, r * .82, 's-head') + circ(cx, cy, r * .08, 's-thin');
   const cymbal = (cx, cy, r) => circ(cx, cy, r, 's-metal') + circ(cx, cy, r * .55, 's-thin') + circ(cx, cy, r * .14, 's-metal');
+  // guitar-family outline, neck pointing upstage: bw = body width, len = overall length
+  const guitar = (bw, len, cls, hole) => {
+    const r2 = bw / 2, r1 = bw * .38, y2 = len / 2 - r2, y1 = y2 - r2 * 1.25, top = -len / 2;
+    return rect(-bw * .07, top + len * .1, bw * .14, y1 - top - len * .1, 's-wood2', .02) + rect(-bw * .13, top, bw * .26, len * .12, 's-blk', .04) +
+      circ(0, y2, r2, `${cls} s-edge`) + circ(0, y1, r1, `${cls} s-edge`) + (hole ? circ(0, y1 + r1 * .55, r1 * .38, 's-blk') : rect(-r2 * .5, y2 - r2 * .45, r2, r2 * .14, 's-white', .02) + rect(-r2 * .5, y2 - r2 * .05, r2, r2 * .14, 's-white', .02)) +
+      rect(-r2 * .45, y2 + r2 * .45, r2 * .9, r2 * .12, 's-blk', .02);
+  };
   const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
   function console_(w, d) {
     const hw = w / 2, hd = d / 2;
@@ -1561,6 +1582,17 @@ const SYM = (() => {
       rect(-2.5, -.75, 5, 1.5, 'body c-inst s-edge', .1) + rect(-2.35, -.68, 4.7, .58, 's-white', .03) +
       Array.from({ length: 35 }, (_, i) => -2.35 + (i + 1) * 4.7 / 36).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
       grid(-2.1, .25, 10, 1, .2, 0, .045, 's-thin') + rect(.6, .12, 1.3, .3, 's-glass', .03),
+    ac_guitar: guitar(1.3, 3.3, 's-wood', true),
+    el_guitar: guitar(1.1, 3.1, 's-red2', false),
+    bass_guitar: guitar(1.1, 3.8, 's-wood2', false),
+    violin: guitar(.62, 1.9, 's-wood', false) + line(-.06, .55, .06, .55, 's-thin'),
+    cello: guitar(1.4, 3.9, 's-wood2', false) + line(0, 1.9, 0, 2, 's-line'),
+    saxophone: tripod(.5, 's-thin') + '<path class="s-brass" d="M-.12 -.75 Q.35 -.55 .1 .1 Q-.1 .55 .3 .7 L.42 .55 Q.1 .45 .25 .05 Q.45 -.7 -.05 -.8 Z"/>' + circ(.36, .62, .14, 's-brass') + circ(.36, .62, .08, 's-blk'),
+    trumpet: '<path class="s-brass" d="M-.12 -.8 L.12 -.8 L.1 .25 Q.38 .5 .38 .85 L-.38 .85 Q-.38 .5 -.1 .25 Z"/>' + circ(0, .85, .38, 's-brass') + circ(0, .85, .26, 's-blk') + grid(-.12, -.3, 3, 1, .12, 0, .045, 's-white'),
+    cajon: rect(-.55, -.55, 1.1, 1.1, 's-wood s-edge', .08) + rect(-.45, -.45, .9, .9, 's-wood2', .05) + circ(0, .2, .15, 's-blk'),
+    congas: circ(-.6, 0, .72, 's-wood s-edge') + circ(-.6, 0, .6, 's-white') + circ(.65, .05, .62, 's-wood s-edge') + circ(.65, .05, .52, 's-white'),
+    up_piano: rect(-2.5, -1, 5, 2, 's-blk s-edge', .08) + rect(-2.3, -1, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -1, .08, .32, 's-blk', .01) : '').join('') + rect(-2.4, .5, 4.8, .3, 's-thin', .03),
+    grand_piano: '<path class="s-blk s-edge" d="M-2.5 -3.25 L2.5 -3.25 L2.5 -.6 Q2.4 1.4 .9 2.3 Q-.6 3.25 -1.6 3.25 L-2.5 3.25 Z"/>' + rect(-2.3, -3.25, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -3.25, .08, .32, 's-blk', .01) : '').join('') + '<path class="s-thin" d="M-2.2 -2.4 L2.2 -2.4 L2.2 -.7 Q2.1 1.2 .8 2 Q-.6 2.9 -1.5 2.9 L-2.2 2.9 Z"/>',
     ipad_stand: tripod(.38, 's-thin') + rect(-.42, -.32, .84, .6, 's-dark', .07) + rect(-.36, -.26, .72, .48, 's-glass', .04) + circ(0, .3, .025, 's-white') + rect(-.5, .2, 1, .08, 's-line', .03),
     ac_preamp: rect(-.4, -.27, .8, .55, 'body c-inst s-edge', .06) + grid(-.25, -.12, 4, 1, .17, 0, .05, 's-white') + rect(-.22, .06, .44, .14, 's-dark', .03) + circ(.3, .16, .03, 's-led') + rect(-.36, -.25, .14, .06, 's-white', .01),
     midi_fs: rect(-.85, -.27, 1.7, .55, 's-dark', .06) + rect(-.85, -.27, 1.7, .55, 's-line', .06) + [-.6, -.2, .2, .6].map(x => circ(x, .06, .11, 's-white') + circ(x, -.16, .03, 's-led')).join('') + rect(-.3, -.24, .6, .08, 's-glass', .02),
@@ -1770,13 +1802,14 @@ function renderPlot() {
   s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
 
   const selItem = sel?.kind === 'item' ? sel.id : null;
-  const sorted = plan.items.slice().sort((a, c) => layerOf(a) - layerOf(c));
+  syncChanItems();
+  const sorted = plan.items.filter(it => !(cableView.hideInCh && it.chan && it.id !== selItem)).sort((a, c) => layerOf(a) - layerOf(c));
   const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
   s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}</title>${shapeSvg(it, iw, id)}</g>`;
+    const g = `<g class="item${it.chan ? ' inchan' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}</title>${shapeSvg(it, iw, id)}</g>`;
     if (L < 3) s += g; else top += g;
     const isSel = it.id === selItem, big = Math.min(iw, id) >= 1.6 && C.shape !== 'person';
     const person = C.shape === 'person';
@@ -1839,6 +1872,7 @@ function renderPlot() {
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
   s += top + chv.over + ceil + labels + selb + lens + wps + chv.handles;
+  if (drag?.kind === 'item' && drag.hoverCh) s += `<circle class="pend-target" cx="${f3(drag.hoverCh.pt[0])}" cy="${f3(drag.hoverCh.pt[1])}" r="${f3(Math.max(.4, 10 / scale))}"/><text class="cablen" x="${f3(drag.hoverCh.pt[0] + 12 / scale)}" y="${f3(drag.hoverCh.pt[1] - 12 / scale)}">Drop inside ${esc(drag.hoverCh.ch.name)}</text>`;
   if (drag?.kind === 'item') {
     if (drag.gx != null) s += `<line class="guide" x1="${drag.gx}" x2="${drag.gx}" y1="${b.y0}" y2="${b.y0 + b.vh}"/>`;
     if (drag.gy != null) s += `<line class="guide" y1="${drag.gy}" y2="${drag.gy}" x1="${b.x0}" x2="${b.x0 + b.vw}"/>`;
@@ -2092,6 +2126,7 @@ function renderInspector() {
       <section class="isec"><h3>Details</h3>
         ${field('iLabel', 'Label', it.label || '', 'text', `placeholder="${esc(C.short || C.name)}"`)}
         <div class="field"><label for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>
+        ${it.chan ? `<div class="flowline" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Sits inside ${esc(chans().find(c => c.id === it.chan.id)?.name || 'a channel')}<button class="btn" id="iOutCh" style="padding:4px 10px">Take out</button></div>` : ''}
         ${it.gen ? `<p class="hint">Placed from the team. Rebuilding keeps where you put it.</p>` : ''}
       </section>
       <section class="isec"><h3>Position &amp; size</h3>
@@ -2403,7 +2438,8 @@ svg.addEventListener('pointermove', e => {
   if (drag.kind === 'item') {
     const it = itemById(drag.id); if (!it) return;
     let nx = snapTo(p.x - drag.ox), ny = snapTo(p.y - drag.oy);
-    drag.gx = drag.gy = null;
+    drag.gx = drag.gy = null; drag.alt = e.altKey;
+    drag.hoverCh = !e.altKey && canSitInChannel(it) ? channelAt({ x: p.x - drag.ox, y: p.y - drag.oy }) : null;
     if (!e.altKey) {   // snap to other items' centres and the stage centreline
       const tol = 7 / scale; let bx = tol, by = tol;
       const xs = [plan.stage.w / 2], ys = [];
@@ -2425,6 +2461,12 @@ function endDrag() {
   const d = drag; drag = null;
   if (!d) return;
   if (d.kind === 'pan') { if (!d.moved && sel) { sel = null; renderPlot(); renderInspector(); } return; }
+  if (d.moved && d.kind === 'item') {   // dropped on a channel: it sits inside; dragged off: it doesn't
+    const it = itemById(d.id), hit = !d.alt && canSitInChannel(it) && channelAt({ x: it.x, y: it.y });
+    const was = it.chan?.id;
+    if (hit) { placeInChannel(it, hit); if (was !== hit.ch.id) toast(`${itemName(it)} sits inside ${hit.ch.name}`); }
+    else if (it.chan) { delete it.chan; toast(`${itemName(it)} taken out of the channel`); }
+  }
   if (d.moved) { history.push(d.snap); future = []; save(); renderAll(); }
   else if (d.kind === 'item') renderPlot();
 }
@@ -2444,17 +2486,29 @@ $('canvas').addEventListener('drop', e => {
   e.preventDefault();
   const type = v.slice(10); if (!CAT[type]) return;
   const p = toFt(e);
-  addGear(type, snapTo(p.x), snapTo(p.y));
+  addGear(type, snapTo(p.x), snapTo(p.y), e.altKey ? null : channelAt(p));
 });
-function addGear(type, x, y) {
+function placeInChannel(it, hit) { it.chan = { id: hit.ch.id, s: r2(hit.s) }; it.x = r2(hit.pt[0]); it.y = r2(hit.pt[1]); }
+// gear that sits inside a channel follows it when the channel is reshaped
+function syncChanItems() {
+  for (const it of plan.items) {
+    if (!it.chan || (drag?.kind === 'item' && drag.id === it.id)) continue;
+    const ch = chans().find(c => c.id === it.chan.id);
+    if (!ch || ch.pts.length < 2) { delete it.chan; continue; }
+    const q = chLenAt(ch.pts, Math.min(it.chan.s, runLen(ch.pts))).pt; it.x = r2(q[0]); it.y = r2(q[1]);
+  }
+}
+const canSitInChannel = it => it && cableEnd(it) && it.type !== 'rack';
+function addGear(type, x, y, hit) {
   mutate(() => {
     const n = plan.items.filter(i => i.type === type).length;
     const it = addItem(type, x, y);
+    if (hit && canSitInChannel(it)) placeInChannel(it, hit);
     if (type === 'stagebox') it.label = `Stage box ${String.fromCharCode(65 + n)}`;
     if (type === 'distro') it.label = `Distro ${n + 1}`;
     if (type === 'rack') { it.label = `Rack ${n + 1}`; it.rackU = 8; it.devices = []; }
     sel = { kind: 'item', id: it.id };
-  }, `${CAT[type].name} added`);
+  }, hit && canSitInChannel({ type }) ? `${CAT[type].name} placed inside ${hit.ch.name} · Alt-drop to place on top` : `${CAT[type].name} added`);
   if (type === 'rack') openRack(sel.id);
 }
 $('ftools').addEventListener('click', e => {
@@ -2576,7 +2630,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === '0') fit('stage');
   else if (e.key.startsWith('Arrow') && sel?.kind === 'item') {
     e.preventDefault(); const it = itemById(sel.id), s = fromM(e.shiftKey ? .5 : .05);
-    mutate(() => { if (e.key === 'ArrowLeft') it.x -= s; if (e.key === 'ArrowRight') it.x += s; if (e.key === 'ArrowUp') it.y -= s; if (e.key === 'ArrowDown') it.y += s; });
+    mutate(() => { delete it.chan; if (e.key === 'ArrowLeft') it.x -= s; if (e.key === 'ArrowRight') it.x += s; if (e.key === 'ArrowUp') it.y -= s; if (e.key === 'ArrowDown') it.y += s; });
   }
 });
 
@@ -2692,7 +2746,7 @@ $('inspector').addEventListener('change', e => {
     switch (t.id) {
       case 'iLabel': it.label = t.value; it.labelEdited = !!t.value; break;
       case 'iPerson': it.personId = t.value || undefined; break;
-      case 'iX': it.x = fromM(n); break; case 'iY': it.y = fromM(n); break;
+      case 'iX': it.x = fromM(n); delete it.chan; break; case 'iY': it.y = fromM(n); delete it.chan; break;
       case 'iW': if (n > 0) it.w = fromM(n); break; case 'iD': if (n > 0) it.d = fromM(n); break;
       case 'iRot': it.rot = ((n % 360) + 360) % 360; break;
       case 'iWatts': it.watts = Math.max(0, n); break;
@@ -2732,6 +2786,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.go === 'paper') { openPaper(warnings().length ? 'sec-checks' : null); return; }
   if (t.id === 'iClose') { sel = null; renderPlot(); renderInspector(); return; }
   if (t.id === 'openRack') { openRack(sel.id); return; }
+  if (t.id === 'iOutCh') { const it = itemById(sel.id); mutate(() => { delete it.chan; it.y = r2(it.y + fromM(.5)); }, `${itemName(it)} taken out of the channel`); return; }
   if (t.id === 'iRotate') rotateSelected(90);
   if (t.id === 'iDel' || t.id === 'cDel') deleteSelected();
   if (t.id === 'iDup') duplicateSelected();
@@ -3011,7 +3066,7 @@ function cableMenuHtml() {
       <div class="ctx-sep"></div>
       <button class="cm-row" id="cabFlow" aria-pressed="${!cableView.noFlow}"><span class="sw" style="background:none;display:grid;place-items:center"><svg viewBox="-6 -6 12 12" width="12" height="12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg></span><span>Signal flow arrows</span><span></span>${ic(cableView.noFlow ? 'eyeOff' : 'eye', 'sm')}</button>
       <button class="cm-row" id="cabAnim" aria-pressed="${!!cableView.anim}" ${cableView.noFlow ? 'disabled' : ''}><span></span><span>Animate the flow</span><span></span><input type="checkbox" class="switch" tabindex="-1" ${cableView.anim ? 'checked' : ''} style="pointer-events:none;transform:scale(.8)"></button>
-      <button class="cm-row" id="cabInCh" aria-pressed="${!cableView.hideInCh}" ${cableView.all ? '' : 'disabled'}><span class="sw" style="background:#11161a;height:8px;border:1px solid var(--line-2)"></span><span>Inside channels</span><span class="hint">${plan.cables.filter(c => routeInfo(c)?.via).length}</span>${ic(cableView.hideInCh ? 'eyeOff' : 'eye', 'sm')}</button>
+      <button class="cm-row" id="cabInCh" aria-pressed="${!cableView.hideInCh}" ${cableView.all ? '' : 'disabled'}><span class="sw" style="background:#11161a;height:8px;border:1px solid var(--line-2)"></span><span>Inside channels <small class="hint">cables &amp; gear</small></span><span class="hint">${plan.cables.filter(c => routeInfo(c)?.via).length}</span>${ic(cableView.hideInCh ? 'eyeOff' : 'eye', 'sm')}</button>
       <button class="cm-row" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="hint">${plan.cables.filter(c => c.level === 'ceiling').length}</span>${ic(cableView.hideCeil ? 'eyeOff' : 'eye', 'sm')}</button>
       <div class="row" style="justify-content:space-between;padding:6px 8px 2px"><button class="btn quiet" id="cabShowAll" style="padding:4px 8px">Show all</button><button class="btn quiet" id="cabOnly" style="padding:4px 8px" title="Hide every type except power">Power only</button></div>
     </div>` : '';
@@ -3264,8 +3319,8 @@ function renderChannels(selId) {
     if (ch.pts.length < 2) continue;
     const k = CH_KINDS[ch.kind] || CH_KINDS.trench, w = fromM(ch.w ?? k.w), ps = ch.pts.map(p => p.join(',')).join(' ');
     const isSel = ch.id === selId;
-    const nIn = counts.get(ch.id) || 0;
-    const m = midpoint(ch.pts), lab = scale >= 11 ? `<text class="ch-label${k.level ? ' over' : ''}" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}${nIn ? ` · ${nIn} cable${nIn === 1 ? '' : 's'}` : ''}</text>` : '';
+    const nIn = counts.get(ch.id) || 0, nGear = plan.items.filter(i => i.chan?.id === ch.id).length;
+    const m = midpoint(ch.pts), lab = scale >= 11 ? `<text class="ch-label${k.level ? ' over' : ''}" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}${nIn ? ` · ${nIn} cable${nIn === 1 ? '' : 's'}` : ''}${nGear ? ` · ${nGear} item${nGear === 1 ? '' : 's'}` : ''}</text>` : '';
     if (k.level === 'ceiling') over += `<polyline class="ch-over${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;   // overhead: drawn above the gear
     else s += `<polyline class="ch-edge ch-${ch.kind}${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w + .14)}"/><polyline class="ch-band ch-${ch.kind}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;
     hits += `<polyline class="chhit" data-chid="${ch.id}" points="${ps}" style="stroke-width:${f3(Math.max(w, .8))}"><title>${esc(ch.name || k.name)}</title></polyline>`;
@@ -3366,6 +3421,7 @@ svg.addEventListener('pointerover', e => {
     if (ins) rows.push(['Inputs', `${ins} · ${patch?.kind === 'rf' ? 'wireless' : patch?.box ? itemName(patch.box) : 'not patched'}`]);
     if (watts && !C.wireless) rows.push(['Power', `${watts} W`]);
     if (conns) rows.push(['Cables', String(conns)]);
+    if (it.chan) rows.push(['Placed', `Inside ${chans().find(c => c.id === it.chan.id)?.name || 'a channel'}`]);
     rows.push(['Size', `${mVal(prop(it, 'w'))} × ${mVal(prop(it, 'd'))} m`]);
     const h = $('hoverCard');
     h.innerHTML = `<div class="eyebrow">${esc(C.shape === 'person' ? 'Performer' : C.name)}</div><b>${esc(C.shape === 'person' ? (owner?.name || it.label) : itemName(it))}</b>

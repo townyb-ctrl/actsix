@@ -25,6 +25,17 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Bass amp](bass_amp.svg) | `bass_amp` | Bass amp | 0.61 × 0.46 m |
 | ![MIDI keyboard controller](midi_keys.svg) | `midi_keys` | MIDI keyboard controller | 1.52 × 0.61 m |
 | ![Keyboard rig](keys.svg) | `keys` | Keyboard rig | 1.52 × 0.61 m |
+| ![Acoustic guitar (on stand)](ac_guitar.svg) | `ac_guitar` | Acoustic guitar (on stand) | 0.43 × 1.04 m |
+| ![Electric guitar (on stand)](el_guitar.svg) | `el_guitar` | Electric guitar (on stand) | 0.37 × 0.98 m |
+| ![Bass guitar (on stand)](bass_guitar.svg) | `bass_guitar` | Bass guitar (on stand) | 0.37 × 1.19 m |
+| ![Violin](violin.svg) | `violin` | Violin | 0.21 × 0.61 m |
+| ![Cello](cello.svg) | `cello` | Cello | 0.46 × 1.22 m |
+| ![Saxophone](saxophone.svg) | `saxophone` | Saxophone | 0.30 × 0.49 m |
+| ![Trumpet](trumpet.svg) | `trumpet` | Trumpet | 0.24 × 0.52 m |
+| ![Cajón](cajon.svg) | `cajon` | Cajón | 0.34 × 0.34 m |
+| ![Congas](congas.svg) | `congas` | Congas | 0.79 × 0.49 m |
+| ![Upright piano](up_piano.svg) | `up_piano` | Upright piano | 1.52 × 0.61 m |
+| ![Grand piano](grand_piano.svg) | `grand_piano` | Grand piano | 1.52 × 1.98 m |
 | ![iPad stand](ipad_stand.svg) | `ipad_stand` | iPad stand | 0.30 × 0.24 m |
 | ![Acoustic preamp pedal](ac_preamp.svg) | `ac_preamp` | Acoustic preamp pedal | 0.24 × 0.17 m |
 | ![MIDI footswitch controller](midi_fs.svg) | `midi_fs` | MIDI footswitch controller | 0.52 × 0.17 m |
