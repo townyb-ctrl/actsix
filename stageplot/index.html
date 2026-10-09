@@ -301,6 +301,10 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .chplus circle { fill: var(--surface); stroke: var(--accent); stroke-width: .05; }
 .chplus path { stroke: var(--accent-text); stroke-width: .06; stroke-linecap: round; }
 .fl { pointer-events: none; }
+.ch-ghost { fill: none; stroke: rgba(255,255,255,.2); stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
+.ch-ghost.over { stroke: rgba(170,210,255,.35); stroke-dasharray: .3 .2; }
+.ch-ghost-in { fill: none; stroke: var(--deck); stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
+.ch-label.faint { opacity: .45; }
 .item.inchan .sym, .item.inchan .body { opacity: .8; }
 .chport { stroke: #fff; stroke-width: .05; pointer-events: none; }
 .chport.dim { opacity: .2; }
@@ -775,6 +779,7 @@ const CAT = {
   gtr_amp:     { name: 'Guitar amp (miked)', short: 'Gtr amp', cat: 'inst', w: 2, d: 1, shape: 'rect', inputs: ['Gtr Amp'], watts: 120 },
   bass_amp:    { name: 'Bass amp', short: 'Bass amp', cat: 'inst', w: 2, d: 1.5, shape: 'rect', watts: 400 },
   keys:        { name: 'Keyboard rig', short: 'Keys', cat: 'inst', w: 5, d: 2, shape: 'keys', inputs: ['Keys L', 'Keys R'], watts: 150 },
+  multifx:     { name: 'Multi-effects floor unit (Helix style)', short: 'Multi-FX', cat: 'inst', w: 2.1, d: 1, shape: 'rect', inputs: ['Gtr FX L', 'Gtr FX R'], watts: 50 },
   pedalboard:  { name: 'Pedalboard', short: 'Pedals', cat: 'inst', w: 2.5, d: 1.2, shape: 'rect', watts: 30 },
   laptop:      { name: 'Tracks laptop', short: 'Tracks rig', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
   ac_guitar:   { name: 'Acoustic guitar (on stand)', short: 'Acoustic', cat: 'inst', w: 1.4, d: 3.4, shape: 'rect' },
@@ -814,7 +819,7 @@ const CAT = {
 /* CAT:END */
 const GEAR_GROUPS = [
   ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
-  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'di_mono', 'di_stereo', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
+  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'di_mono', 'di_stereo', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'multifx', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
   ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
@@ -1513,6 +1518,8 @@ const SYM_CSS = `
 .s-beam{fill:rgba(255,214,110,.16)}
 .s-ped1{fill:#3fb6a8}.s-ped2{fill:#e2833a}.s-ped3{fill:#d8d24a}.s-ped4{fill:#8a73d6}
 .s-deck{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.45);stroke-width:.07;stroke-dasharray:.3 .2}
+.s-spruce{fill:#d8ad6c}.s-burst{fill:#3b1d10}.s-burstin{fill:#cf7a2b}.s-navy{fill:#33507c}.s-maple{fill:#e3c389}.s-rose{fill:#2b1c13}.s-varnish{fill:#a24f25}.s-pg{fill:#f2efe8}.s-cream{fill:#efe6d2}.s-chrome{fill:#cfd5da}
+.s-str{fill:none;stroke:rgba(255,255,255,.45);stroke-width:.006}.s-bind{fill:none;stroke:#2a1a10;stroke-width:.018}.s-fret{fill:none;stroke:rgba(255,255,255,.35);stroke-width:.008}
 .s-wood{fill:#c08a4e}.s-wood2{fill:#7a5232}.s-red2{fill:#b5413a}.s-blk{fill:#26292d}.s-brass{fill:#d6b04a}
 .c-audio{fill:#2e6a99}.c-inst{fill:#6b51a3}.c-power{fill:#b85a22}.c-infra{fill:#44535e}.c-video{fill:#a3426b}
 `;
@@ -1533,6 +1540,38 @@ const SYM = (() => {
       circ(0, y2, r2, `${cls} s-edge`) + circ(0, y1, r1, `${cls} s-edge`) + (hole ? circ(0, y1 + r1 * .55, r1 * .38, 's-blk') : rect(-r2 * .5, y2 - r2 * .45, r2, r2 * .14, 's-white', .02) + rect(-r2 * .5, y2 - r2 * .05, r2, r2 * .14, 's-white', .02)) +
       rect(-r2 * .45, y2 + r2 * .45, r2 * .9, r2 * .12, 's-blk', .02);
   };
+  /* instruments drawn in "body widths" (u) and scaled to the catalog size; neck points upstage */
+  const ACOUSTIC_BODY = 'M0 0C.22 0 .37 .06 .37 .24C.37 .38 .29 .43 .3 .53C.31 .63 .5 .71 .5 .95C.5 1.17 .3 1.27 0 1.27C-.3 1.27 -.5 1.17 -.5 .95C-.5 .71 -.31 .63 -.3 .53C-.29 .43 -.37 .38 -.37 .24C-.37 .06 -.22 0 0 0Z';
+  const SOLID_BODY = 'M.12 .15C.14 .02 .2 -.12 .28 -.12C.36 -.12 .38 0 .36 .12C.34 .25 .4 .35 .47 .48C.55 .65 .5 .95 .25 1C.1 1.03 -.1 1.03 -.25 1C-.5 .95 -.55 .65 -.47 .46C-.4 .33 -.36 .2 -.38 .05C-.4 -.12 -.36 -.24 -.3 -.24C-.22 -.24 -.14 -.05 -.12 .15Z';
+  const PICKGUARD = 'M.1 .2C.25 .15 .38 .3 .4 .45C.42 .6 .3 .75 .1 .8L-.15 .82C-.3 .8 -.35 .6 -.3 .45C-.26 .32 -.2 .22 -.1 .2Z';
+  const VIOLIN_BODY = 'M0 0C.24 0 .4 .1 .4 .3C.4 .44 .35 .52 .3 .55L.27 .56C.22 .66 .21 .92 .27 1.03L.31 1.05C.4 1.1 .5 1.18 .5 1.33C.5 1.55 .3 1.65 0 1.65C-.3 1.65 -.5 1.55 -.5 1.33C-.5 1.18 -.4 1.1 -.31 1.05L-.27 1.03C-.21 .92 -.22 .66 -.27 .56L-.3 .55C-.35 .52 -.4 .44 -.4 .3C-.4 .1 -.24 0 0 0Z';
+  const ug = (u, dy, inner) => `<g transform="translate(0 ${f(dy)}) scale(${u})">${inner}</g>`;
+  const P = (d, cls) => `<path class="${cls}" d="${d}"/>`;
+  const R_ = (x, y, w, h, cls, rx = .01) => `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}"/>`;
+  const C_ = (x, y, r, cls) => `<circle class="${cls}" cx="${x}" cy="${y}" r="${r}"/>`;
+  const frets = (y0, y1, n, hw) => Array.from({ length: n }, (_, i) => { const y = y0 + (y1 - y0) * (1 - Math.pow(.94, i + 1)) / (1 - Math.pow(.94, n)); return `<path class="s-fret" d="M${-hw} ${f(y)}H${hw}"/>`; }).join('');
+  const strings = (n, y0, y1, hw) => Array.from({ length: n }, (_, i) => `<path class="s-str" d="M${f(-hw + (2 * hw) * i / (n - 1))} ${y0}V${y1}"/>`).join('');
+  const acoustic = u => ug(u, u * .09, R_(-.055, -1.16, .11, 1.3, 's-wood2') + R_(-.05, -1.16, .1, 1.05, 's-rose') + frets(-1.16, -.1, 14, .05) +
+    P('M-.08 -1.15L-.11 -1.45L.11 -1.45L.08 -1.15Z', 's-wood2') + [-1.21, -1.3, -1.39].map(y => C_(-.135, y, .028, 's-chrome') + C_(.135, y, .028, 's-chrome')).join('') +
+    P(ACOUSTIC_BODY, 's-spruce') + P(ACOUSTIC_BODY, 's-bind') + C_(0, .45, .17, 's-bind') + C_(0, .45, .13, 's-rose') +
+    P('M.1 .52C.24 .52 .3 .63 .26 .72C.2 .8 .09 .74 .1 .52Z', 's-burst') + R_(-.17, .92, .34, .07, 's-rose', .02) + strings(6, -1.15, .95, .035));
+  const solid = (u, dy, neckTop, headD, tuners, bodyCls, inner, pickups, nStr) => ug(u, dy,
+    R_(-.05, neckTop, .1, .3 - neckTop, 's-maple') + frets(neckTop, .1, 20, .05) + [.25, .45, .62, .78].map(t => C_(0, f(neckTop + (.1 - neckTop) * t), .012, 's-rose')).join('') +
+    P(headD, 's-maple') + tuners +
+    P(SOLID_BODY, bodyCls) + (inner ? `<g transform="translate(0 .4) scale(.84) translate(0 -.4)">${P(SOLID_BODY, inner)}</g>` : '') + P(SOLID_BODY, 's-bind') +
+    P(PICKGUARD, 's-pg') + pickups + R_(-.17, .72, .34, .07, 's-chrome', .015) +
+    C_(.24, .62, .035, 's-blk') + C_(.29, .71, .035, 's-blk') + C_(.22, .79, .035, 's-blk') + strings(nStr, neckTop, .76, .032));
+  const strat = u => solid(u, u * .345, -1.4, 'M-.05 -1.4L-.05 -1.72C-.05 -1.78 .02 -1.8 .06 -1.76L.14 -1.62C.16 -1.58 .12 -1.5 .05 -1.45L.05 -1.4Z',
+    [-1.46, -1.51, -1.56, -1.61, -1.66, -1.71].map(y => C_(-.085, y, .02, 's-chrome')).join(''), 's-burst', 's-burstin',
+    [.32, .46, .6].map(y => R_(-.15, y, .3, .055, 's-cream', .025) + `<rect x="-.15" y="${y}" width=".3" height=".055" rx=".025" style="fill:none;stroke:#8f8672;stroke-width:.012"/>` + [-.1, -.06, -.02, .02, .06, .1].map(x => C_(x, f(y + .0275), .008, 's-dark')).join('')).join(''), 6);
+  const pbass = u => solid(u, u * .66, -2, 'M-.06 -2L-.06 -2.3C-.06 -2.36 .02 -2.38 .07 -2.33L.16 -2.18C.18 -2.12 .13 -2.05 .06 -2.02L.06 -2Z',
+    [-2.06, -2.14, -2.22, -2.3].map(y => C_(-.1, y, .032, 's-chrome')).join(''), 's-navy', null,
+    R_(-.16, .36, .15, .06, 's-blk', .02) + R_(.01, .42, .15, .06, 's-blk', .02) + R_(-.15, .58, .3, .055, 's-blk', .02), 4);
+  const bowed = (u, dy, endpin, chin) => ug(u, dy, P(VIOLIN_BODY, 's-varnish') + `<g transform="translate(0 .82) scale(.93) translate(0 -.82)">${P(VIOLIN_BODY, 's-bind')}</g>` +
+    P('M.17 .78C.12 .86 .21 .96 .15 1.06', 's-bind') + P('M-.17 .78C-.12 .86 -.21 .96 -.15 1.06', 's-bind') +
+    R_(-.06, -.75, .12, 1.6, 's-rose', .04) + R_(-.05, -.95, .1, .22, 's-varnish', .03) + C_(0, -.99, .075, 's-varnish') + C_(0, -.99, .035, 's-rose') +
+    R_(-.16, 1.12, .32, .035, 's-spruce') + P('M-.07 1.2L.07 1.2L.1 1.55L-.1 1.55Z', 's-rose') + strings(4, -.8, 1.22, .03) +
+    (chin ? `<ellipse class="s-rose" cx="-.22" cy="1.5" rx=".13" ry=".07"/>` : '') + (endpin ? `<path class="s-bind" d="M0 1.65V1.88" style="stroke:#cfd5da;stroke-width:.03"/>` : ''));
   const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
   function console_(w, d) {
     const hw = w / 2, hd = d / 2;
@@ -1582,11 +1621,16 @@ const SYM = (() => {
       rect(-2.5, -.75, 5, 1.5, 'body c-inst s-edge', .1) + rect(-2.35, -.68, 4.7, .58, 's-white', .03) +
       Array.from({ length: 35 }, (_, i) => -2.35 + (i + 1) * 4.7 / 36).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
       grid(-2.1, .25, 10, 1, .2, 0, .045, 's-thin') + rect(.6, .12, 1.3, .3, 's-glass', .03),
-    ac_guitar: guitar(1.3, 3.3, 's-wood', true),
-    el_guitar: guitar(1.1, 3.1, 's-red2', false),
-    bass_guitar: guitar(1.1, 3.8, 's-wood2', false),
-    violin: guitar(.62, 1.9, 's-wood', false) + line(-.06, .55, .06, .55, 's-thin'),
-    cello: guitar(1.4, 3.9, 's-wood2', false) + line(0, 1.9, 0, 2, 's-line'),
+    multifx: rect(-1.05, -.5, 2.1, 1, 's-blk s-edge', .08) + rect(-1.05, -.5, 2.1, 1, 's-line', .08) +
+      rect(-.42, -.42, .84, .26, 's-glass', .03) + rect(-.36, -.37, .25, .16, 's-ped1', .01) + rect(-.08, -.37, .2, .16, 's-ped4', .01) + rect(.15, -.37, .2, .16, 's-ped2', .01) +
+      grid(-.8, -.32, 3, 1, .13, 0, .04, 's-white') + grid(.54, -.32, 3, 1, .13, 0, .04, 's-white') +
+      ['s-ped2', 's-ped1', 's-ped3', 's-ped4', 's-red'].map((c, i) => { const x = -.82 + i * .29; return circ(x, -.02, .085, c) + circ(x, -.02, .06, 's-chrome') + circ(x, .3, .085, ['s-ped4', 's-ped3', 's-ped1', 's-ped2', 's-led'][i]) + circ(x, .3, .06, 's-chrome'); }).join('') +
+      rect(.58, -.08, .4, .52, 's-dark', .05) + rect(.62, -.04, .32, .44, 's-grille', .04) + rect(.66, .02, .24, .06, 's-line', .02),
+    ac_guitar: acoustic(1.25),
+    el_guitar: strat(1.1),
+    bass_guitar: pbass(1.1),
+    violin: bowed(.68, -.68 * .29, false, true),
+    cello: bowed(1.45, -1.45 * .405, true, false),
     saxophone: tripod(.5, 's-thin') + '<path class="s-brass" d="M-.12 -.75 Q.35 -.55 .1 .1 Q-.1 .55 .3 .7 L.42 .55 Q.1 .45 .25 .05 Q.45 -.7 -.05 -.8 Z"/>' + circ(.36, .62, .14, 's-brass') + circ(.36, .62, .08, 's-blk'),
     trumpet: '<path class="s-brass" d="M-.12 -.8 L.12 -.8 L.1 .25 Q.38 .5 .38 .85 L-.38 .85 Q-.38 .5 -.1 .25 Z"/>' + circ(0, .85, .38, 's-brass') + circ(0, .85, .26, 's-blk') + grid(-.12, -.3, 3, 1, .12, 0, .045, 's-white'),
     cajon: rect(-.55, -.55, 1.1, 1.1, 's-wood s-edge', .08) + rect(-.45, -.45, .9, .9, 's-wood2', .05) + circ(0, .2, .15, 's-blk'),
@@ -3321,7 +3365,12 @@ function renderChannels(selId) {
     const isSel = ch.id === selId;
     const nIn = counts.get(ch.id) || 0, nGear = plan.items.filter(i => i.chan?.id === ch.id).length;
     const m = midpoint(ch.pts), lab = scale >= 11 ? `<text class="ch-label${k.level ? ' over' : ''}" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}${nIn ? ` · ${nIn} cable${nIn === 1 ? '' : 's'}` : ''}${nGear ? ` · ${nGear} item${nGear === 1 ? '' : 's'}` : ''}</text>` : '';
-    if (k.level === 'ceiling') over += `<polyline class="ch-over${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;   // overhead: drawn above the gear
+    if (cableView.hideInCh && !isSel) {   // hidden with their contents: just a faint outline
+      if (k.level === 'ceiling') over += `<polyline class="ch-ghost over" points="${ps}" style="stroke-width:${f3(Math.max(.03, 1 / scale))}"/>`;
+      else s += `<polyline class="ch-ghost" points="${ps}" style="stroke-width:${f3(w + .1)}"/><polyline class="ch-ghost-in" points="${ps}" style="stroke-width:${f3(Math.max(.02, w + .1 - 2.4 / scale))}"/>`;
+      if (lab) s += lab.replace('class="ch-label', 'class="ch-label faint');
+    }
+    else if (k.level === 'ceiling') over += `<polyline class="ch-over${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;   // overhead: drawn above the gear
     else s += `<polyline class="ch-edge ch-${ch.kind}${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w + .14)}"/><polyline class="ch-band ch-${ch.kind}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;
     hits += `<polyline class="chhit" data-chid="${ch.id}" points="${ps}" style="stroke-width:${f3(Math.max(w, .8))}"><title>${esc(ch.name || k.name)}</title></polyline>`;
     if (isSel) {
