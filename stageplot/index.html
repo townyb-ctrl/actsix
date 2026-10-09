@@ -280,6 +280,46 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .cmdk-item small { display: block; color: var(--muted); font-size: 12px; }
 .cmdk-item[aria-selected="true"] { background: var(--accent-soft); }
 .cmdk-foot { display: flex; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.rh { fill: #fff; stroke: var(--accent); stroke-width: .06; cursor: nwse-resize; touch-action: none; }
+.ch-edge { fill: none; stroke: rgba(255,255,255,.28); stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
+.ch-edge.sel { stroke: var(--accent); }
+.ch-band { fill: none; stroke: #11161a; stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
+.ch-band.ch-ramp { stroke: #3a3f22; stroke-dasharray: .25 .12; }
+.ch-band.ch-tray { stroke: #2a3640; }
+.ch-label { fill: rgba(255,255,255,.55); font-size: var(--lab, .45px); font-weight: 650; letter-spacing: .02em; pointer-events: none; }
+.chhit { fill: none; stroke: transparent; cursor: pointer; }
+.ch-draft { fill: none; stroke: var(--accent); opacity: .45; stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
+/* rack builder */
+.rk { width: min(1180px, 100%); height: min(860px, 100%); background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--line); box-shadow: var(--shadow-3); display: grid; grid-template-rows: auto minmax(0,1fr); overflow: hidden; }
+.rk-body { display: grid; grid-template-columns: 290px minmax(0,1fr) 290px; min-height: 0; }
+.rk-lib, .rk-side { padding: 14px; display: grid; gap: 12px; align-content: start; overflow: auto; }
+.rk-lib { border-right: 1px solid var(--line); }
+.rk-side { border-left: 1px solid var(--line); }
+.rk-dev { display: grid; grid-template-columns: 6px 1fr auto; gap: 10px; align-items: center; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); padding: 7px 8px; cursor: pointer; }
+.rk-dev:hover { border-color: var(--accent); background: var(--accent-soft); }
+.rk-dev b { display: block; font-size: 12.5px; font-weight: 600; }
+.rk-dev small { display: block; color: var(--muted); font: 11px var(--f-mono); }
+.rk-sw { width: 6px; height: 26px; border-radius: 3px; }
+.rk-center { background: var(--house); overflow: auto; display: grid; justify-items: center; align-content: start; padding: 24px 16px; --u: 40px; }
+#rkRack { --u: 40px; user-select: none; -webkit-user-select: none; touch-action: none; }
+.rk-case { display: grid; grid-template-columns: 1fr; width: min(460px, 100%); min-width: 300px; background: #181d22; border-radius: 10px; padding: 10px 26px; box-shadow: var(--shadow-2), inset 0 0 0 2px #2b333a; position: relative; }
+.rk-slot { grid-column: 1; display: flex; justify-content: space-between; align-items: center; margin: 0 -22px; border-top: 1px dashed rgba(255,255,255,.07); font: 10px var(--f-mono); color: rgba(255,255,255,.35); pointer-events: none; }
+.rk-slot span { width: 16px; text-align: center; }
+.rk-unit { grid-column: 1; display: grid; grid-template-columns: 14px 1fr 14px; margin: 2px 0; border-radius: 4px; overflow: hidden; cursor: grab; position: relative; z-index: 1; box-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.rk-unit .ear { background: #3c454d; position: relative; }
+.rk-unit .ear::after { content: ""; position: absolute; left: 4px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: #20262b; }
+.rk-unit .face { padding: 0 10px; display: flex; flex-direction: column; justify-content: center; color: #fff; min-width: 0; }
+.rk-unit .face b { font-size: 13px; line-height: 1.2; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rk-unit .face small { font: 10.5px var(--f-mono); opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rk-unit.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rk-unit.dragging { cursor: grabbing; opacity: .9; }
+.k-snake { background: #2e6a99; } .k-iem { background: #6b51a3; } .k-rf { background: #a3426b; } .k-patch { background: #3d6e5b; }
+.k-amp { background: #8a5a2b; } .k-power { background: #b85a22; } .k-misc { background: #4a535b; }
+.rk-unit.k-misc .face { background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(255,255,255,.04) 10px 12px); }
+.rk-mini { display: grid; gap: 2px; background: #181d22; border-radius: 6px; padding: 6px 10px; }
+.rk-mini div { min-height: 12px; border-radius: 2px; font-size: 9.5px; color: #fff; padding: 0 6px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+.rk-mini .empty { background: rgba(255,255,255,.05); height: 12px; }
+@media (max-width: 900px) { .rk-body { grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto auto; overflow: auto; } .rk-lib, .rk-side { border: 0; border-top: 1px solid var(--line); } .rk-center { order: -1; } }
 .guide { stroke: #ff4fa3; stroke-width: .05; stroke-dasharray: .25 .15; pointer-events: none; }
 .f-tr { top: 60px; right: 12px; width: 260px; }
 .quick { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
@@ -624,6 +664,15 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   </div>
 </div>
 
+<div class="overlay designer" id="rackDlg" hidden>
+  <div class="rk" role="dialog" aria-labelledby="rkTitle">
+    <header class="dsg-head"><div class="row" style="gap:12px"><h2 id="rkTitle">Rack builder</h2>
+      <input id="rkName" type="text" aria-label="Rack name" placeholder="Rack name" style="font-weight:650;font-size:16px;min-width:200px">
+      <label class="row" for="rkSize" style="gap:6px"><span class="hint">Height</span><select id="rkSize"></select></label></div>
+      <button class="btn primary" id="rkDone">Done</button></header>
+    <div class="rk-body"><aside class="rk-lib" id="rkLib"></aside><div class="rk-center"><div id="rkRack"></div></div><aside class="rk-side" id="rkSide"></aside></div>
+  </div>
+</div>
 <div class="hovercard" id="hoverCard" hidden></div>
 <div class="ctxmenu" id="ctxMenu" role="menu" hidden></div>
 <div class="overlay cmdk" id="cmdk" hidden>
@@ -650,6 +699,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <dt><span class="kbd">Ctrl</span><span class="kbd">Z</span></dt><dd>Undo (add Shift to redo)</dd>
       <dt><span class="kbd">Ctrl</span><span class="kbd">K</span></dt><dd>Search actions, gear and people</dd>
       <dt><span class="kbd">H</span></dt><dd>Show / hide cables</dd>
+      <dt><span class="kbd">T</span></dt><dd>Draw a cable channel (Enter finishes)</dd>
       <dt>Hold <span class="kbd">Alt</span></dt><dd>Move without snapping to guides</dd>
       <dt><span class="kbd">[</span><span class="kbd">]</span></dt><dd>Hide left / right panel</dd>
       <dt><span class="kbd">\</span></dt><dd>Focus: hide both panels</dd>
@@ -693,6 +743,7 @@ const CAT = {
   laptop:      { name: 'Tracks laptop', short: 'Tracks rig', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
   music_stand: { name: 'Music stand', short: 'Stand', cat: 'staging', w: 1.5, d: .8, shape: 'rect' },
   pulpit:      { name: 'Pulpit', short: 'Pulpit', cat: 'staging', w: 2.5, d: 2, shape: 'rect' },
+  rack:        { name: 'Custom rack', short: 'Rack', cat: 'infra', w: 2, d: 2.4, shape: 'rack' },
   riser:       { name: 'Riser 2.4 × 2.4 m', short: 'Riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   drum_riser:  { name: 'Drum riser', short: 'Drum riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   // Power
@@ -706,7 +757,7 @@ const CAT = {
 /* CAT:END */
 const GEAR_GROUPS = [
   ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
-  ['Snakes & desks', ['stagebox', 'foh', 'mon_desk', 'iem_rack']],
+  ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet']],
   ['Band & staging', ['drum_kit', 'drum_riser', 'drum_shield', 'gtr_amp', 'bass_amp', 'keys', 'pedalboard', 'laptop', 'music_stand', 'pulpit', 'riser']],
   ['Video & lighting', ['camera', 'conf_mon', 'light_stand']],
@@ -793,7 +844,8 @@ async function copyText(text, fallbackEl) {
 
 /* item property lookups (per-item overrides fall back to catalog) */
 const cat = it => CAT[it.type] || { name: it.type, cat: 'infra', w: 1, d: 1, shape: 'rect' };
-const prop = (it, k) => (it[k] !== undefined && it[k] !== null && it[k] !== '') ? it[k] : cat(it)[k];
+const RACK_KEYS = new Set(['ins', 'outsMax', 'outs', 'watts']);
+const prop = (it, k) => (it.type === 'rack' && RACK_KEYS.has(k)) ? rackStat(it)[k] : (it[k] !== undefined && it[k] !== null && it[k] !== '') ? it[k] : cat(it)[k];
 const inputsOf = it => prop(it, 'inputs') || [];
 const isPowerSource = it => !!prop(it, 'circuits');
 const needsPower = it => (Number(prop(it, 'watts')) || 0) > 0 && !cat(it).wireless && !isPowerSource(it);
@@ -817,7 +869,7 @@ function blankPlan(date) {
     id: uid(), date: date || nextSunday(), name: 'Sunday service',
     stage: { w: fromM(10), d: fromM(6), house: fromM(12), houseW: fromM(16) },
     settings: { slack: 10, ends: fromM(1) },
-    team: [], items: [], cables: [], notes: '',
+    team: [], items: [], cables: [], channels: [], notes: '',
   };
 }
 function load() {
@@ -925,23 +977,21 @@ function buildFromTeam() {
 /* ===================================================================
    Cable geometry & auto-cabling
    =================================================================== */
-function routePts(c) {
-  const a = itemById(c.from), b = itemById(c.to);
-  if (!a || !b) return null;
-  return [[a.x, a.y], ...c.points, [b.x, b.y]];
-}
-function orth(pts) {
+function routePts(c) { return routeInfo(c)?.pts || null; }
+// floor runs go at right angles, except segments that follow a channel exactly
+function orth(pts, straight) {
   const out = [pts[0]];
   for (let i = 1; i < pts.length; i++) {
     const p = pts[i - 1], q = pts[i];
-    if (p[0] !== q[0] && p[1] !== q[1]) out.push([q[0], p[1]]);
+    if (p[0] !== q[0] && p[1] !== q[1] && !straight?.has(i)) out.push([q[0], p[1]]);
     out.push(q);
   }
   return out;
 }
-const runLen = pts => pts.reduce((s, p, i) => i ? s + Math.abs(p[0] - pts[i - 1][0]) + Math.abs(p[1] - pts[i - 1][1]) : 0, 0);
+const cableGeom = c => { const r = routeInfo(c); return r ? orth(r.pts, r.straight) : null; };
+const runLen = pts => pts.reduce((s, p, i) => i ? s + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
 function cableLen(c) {
-  const pts = routePts(c); if (!pts) return 0;
+  const pts = cableGeom(c); if (!pts) return 0;
   const slack = (c.slack ?? plan.settings.slack) / 100;
   return runLen(pts) * (1 + slack) + 2 * (Number(plan.settings.ends) || 0);   // feet
 }
@@ -956,7 +1006,7 @@ function stockFor(type, lenFt) {
 function cableQty(c) {
   if (c.type !== 'xlr') return 1;
   const a = itemById(c.from), b = itemById(c.to);
-  const src = [a, b].find(i => i && i.type !== 'stagebox' && !cat(i).desk);
+  const src = [a, b].find(i => i && !isBox(i) && !cat(i).desk);
   if (!src) return 1;
   return Math.max(1, inputsOf(src).length || Number(prop(src, 'outs')) || 1);
 }
@@ -978,14 +1028,14 @@ function circuitLoads(src) {
 
 function autoCable() {
   plan.cables = plan.cables.filter(c => !c.auto);
-  const boxes = plan.items.filter(i => i.type === 'stagebox');
+  const boxes = plan.items.filter(isBox);
   const sources = plan.items.filter(isPowerSource);
   const desks = plan.items.filter(i => cat(i).desk);
   const has = (it, type, pred) => plan.cables.some(c => c.type === type && touches(c, it.id) && (!pred || pred(other(c, it.id))));
   const portUse = new Map(boxes.map(b => [b.id, { ins: 0, outs: 0 }]));
   for (const c of plan.cables) { // count manual patches first
     if (c.type !== 'xlr') continue;
-    const b = [itemById(c.from), itemById(c.to)].find(i => i && i.type === 'stagebox'); if (!b) continue;
+    const b = [itemById(c.from), itemById(c.to)].find(isBox); if (!b) continue;
     const o = other(c, b.id); if (!o) continue;
     portUse.get(b.id).ins += inputsOf(o).length; portUse.get(b.id).outs += Number(prop(o, 'outs')) || 0;
   }
@@ -995,7 +1045,7 @@ function autoCable() {
   };
   const order = plan.items.slice().sort((a, b) => rankItem(a) - rankItem(b));
   for (const it of order) {
-    if (it.type === 'stagebox' || cat(it).desk) continue;
+    if (isBox(it) || cat(it).desk) continue;
     const ins = inputsOf(it).length, outs = Number(prop(it, 'outs')) || 0;
     if (boxes.length && ins && !cat(it).wireless && !has(it, 'xlr')) {
       const b = pickBox(it, ins, 'ins'); portUse.get(b.id).ins += ins; addCable('xlr', it.id, b.id, { auto: true });
@@ -1028,7 +1078,7 @@ function rankItem(it) {
 }
 function patchOf(it) {
   if (cat(it).wireless) return { kind: 'rf' };
-  const c = plan.cables.find(c => c.type === 'xlr' && touches(c, it.id) && (() => { const o = other(c, it.id); return o && (o.type === 'stagebox' || cat(o).desk); })());
+  const c = plan.cables.find(c => c.type === 'xlr' && touches(c, it.id) && (() => { const o = other(c, it.id); return o && (isBox(o) || cat(o).desk); })());
   if (!c) return null;
   return { kind: 'box', box: other(c, it.id) };
 }
@@ -1061,7 +1111,7 @@ function outputList() {
   const rows = [], counters = new Map();
   const outs = plan.items.filter(i => Number(prop(i, 'outs')) > 0).sort((a, b) => a.x - b.x);
   for (const it of outs) {
-    const patch = patchOf(it);
+    const patch = isBox(it) ? { kind: 'box', box: it } : patchOf(it);   // a rack with its own snake feeds its IEMs internally
     const n = Number(prop(it, 'outs'));
     for (let k = 1; k <= n; k++) {
       let port = '—', flag = !patch;
@@ -1098,7 +1148,7 @@ function pullList() {
 function warnings() {
   const out = [];
   const W = plan.stage.w, D = plan.stage.d, hw = Math.max(W, plan.stage.houseW);
-  for (const b of plan.items.filter(i => i.type === 'stagebox')) {
+  for (const b of plan.items.filter(isBox)) {
     const used = inputList().filter(r => r.port.startsWith(itemName(b) + ' · in')).length;
     if (used > Number(prop(b, 'ins'))) out.push({ lvl: 'bad', msg: `${itemName(b)}: ${used} inputs patched, only ${prop(b, 'ins')} available.` });
     const uo = outputList().filter(r => r.port.startsWith(itemName(b) + ' · out')).length;
@@ -1226,6 +1276,7 @@ function pcoApply() {
    Icons (stroke icons, 24px grid)
    =================================================================== */
 const ICONS = {
+  trench: '<path d="M3 8h18M3 16h18"/><path d="M6 12h3M11 12h3M16 12h3"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeOff: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 005.4-1.6"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/>',
   pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
@@ -1414,6 +1465,20 @@ function fitScale() {
 }
 function shapeSvg(it, w, d) {
   const c = cat(it), hw = w / 2, hd = d / 2, cls = `body c-${c.cat}`;
+  if (c.shape === 'platform') {   // drawn at its real size: 2 × 1 m deck panels and legs
+    const long = w >= d, px = fromM(long ? 2 : 1), py = fromM(long ? 1 : 2);
+    let g = `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><rect class="s-deck" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".1"/>`;
+    for (let x = -hw + px; x < hw - .05; x += px) g += `<line class="s-thin" x1="${f3(x)}" x2="${f3(x)}" y1="${-hd}" y2="${hd}"/>`;
+    for (let y = -hd + py; y < hd - .05; y += py) g += `<line class="s-thin" x1="${-hw}" x2="${hw}" y1="${f3(y)}" y2="${f3(y)}"/>`;
+    for (const [x, y] of [[-hw + .2, -hd + .2], [hw - .2, -hd + .2], [-hw + .2, hd - .2], [hw - .2, hd - .2]]) g += `<circle class="s-thin" cx="${f3(x)}" cy="${f3(y)}" r=".12"/>`;
+    return g;
+  }
+  if (it.type === 'rack') {
+    const N = it.rackU || 8;
+    return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><rect class="body c-infra s-edge" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".14"/><rect class="s-head" x="${-hw + .15}" y="${-hd + .15}" width="${w - .3}" height="${d - .3}" rx=".08"/>` +
+      `<rect class="s-dark" x="${-hw - .08}" y="${-hd * .35}" width=".16" height="${d * .35}" rx=".05"/><rect class="s-dark" x="${hw - .08}" y="${-hd * .35}" width=".16" height="${d * .35}" rx=".05"/>` +
+      `<text class="initials" style="fill:#fff" text-anchor="middle" dy=".2">${N}U</text>`;
+  }
   if (SYM[it.type]) {
     const sx = w / c.w, sy = d / c.d, sc = Math.abs(sx - 1) > .001 || Math.abs(sy - 1) > .001;
     return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="sym"${sc ? ` transform="scale(${f3(sx)} ${f3(sy)})"` : ''}>${SYM[it.type]}</g>`;
@@ -1446,7 +1511,7 @@ function glyph(type, extraCls = '') {
 function midpoint(pts) {
   const L = runLen(pts) / 2; let acc = 0;
   for (let i = 1; i < pts.length; i++) {
-    const p = pts[i - 1], q = pts[i], seg = Math.abs(q[0] - p[0]) + Math.abs(q[1] - p[1]);
+    const p = pts[i - 1], q = pts[i], seg = Math.hypot(q[0] - p[0], q[1] - p[1]);
     if (acc + seg >= L) { const t = seg ? (L - acc) / seg : 0; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; }
     acc += seg;
   }
@@ -1498,7 +1563,8 @@ function renderPlot() {
 
   const selItem = sel?.kind === 'item' ? sel.id : null;
   const sorted = plan.items.slice().sort((a, c) => layerOf(a) - layerOf(c));
-  s += '<!--HITS-->';
+  const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
+  s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
@@ -1514,17 +1580,24 @@ function renderPlot() {
       const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
       labels += `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${ly}" text-anchor="middle">${esc(text)}</text>`;
     } else if (C.shape === 'platform' && showBig) {
-      labels += `<text class="zone on-deck" x="${it.x}" y="${it.y + id / 2 - .35}" text-anchor="middle">${esc(itemName(it).toUpperCase())}</text>`;
+      labels += `<text class="zone on-deck" x="${it.x}" y="${it.y + id / 2 - .35}" text-anchor="middle">${esc(itemName(it).toUpperCase())} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM</text>`;
     }
-    if (isSel) {
+    if (isSel && C.shape === 'platform') {   // exact outline + corner handles to resize
+      const th = (it.rot || 0) * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th), hs = 6 / scale;
+      const corner = (sx, sy) => [it.x + sx * iw / 2 * cs - sy * id / 2 * sn, it.y + sx * iw / 2 * sn + sy * id / 2 * cs];
+      const cs4 = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => [sx, sy, ...corner(sx, sy)]);
+      selb += `<polygon class="selbox" points="${cs4.map(q => `${f3(q[2])},${f3(q[3])}`).join(' ')}"/>`;
+      for (const [sx, sy, x, y] of cs4) selb += `<rect class="rh" data-rh="${sx},${sy}" x="${f3(x - hs)}" y="${f3(y - hs)}" width="${f3(hs * 2)}" height="${f3(hs * 2)}" rx="${f3(hs * .3)}"/>`;
+      selb += `<text class="cablen" x="${it.x}" y="${f3(it.y + .2)}" text-anchor="middle">${mVal(iw)} × ${mVal(id)} m</text>`;
+    } else if (isSel) {
       const m = Math.max(iw, id) / 2 + .3;
       selb += `<rect class="selglow" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/><rect class="selbox" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/>`;
     }
   }
   let hits = '', lens = '', wps = '';
   for (const c of plan.cables) {
-    const pts = routePts(c); if (!pts) continue;
-    const o = orth(pts), isSel = sel?.kind === 'cable' && sel.id === c.id;
+    const o = cableGeom(c); if (!o) continue;
+    const isSel = sel?.kind === 'cable' && sel.id === c.id;
     if (!isSel && !cableShown(c)) continue;
     const rel = selItem ? (touches(c, selItem) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : '');
     const ps = o.map(p => p.join(',')).join(' ');
@@ -1536,8 +1609,8 @@ function renderPlot() {
     }
     if (isSel) c.points.forEach((p, k) => { wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
   }
-  s = s.replace('<!--HITS-->', hits);
-  s += top + labels + selb + lens + wps;
+  s = s.replace('<!--HITS-->', chv.hits + hits);
+  s += top + labels + selb + lens + wps + chv.handles;
   if (drag?.kind === 'item') {
     if (drag.gx != null) s += `<line class="guide" x1="${drag.gx}" x2="${drag.gx}" y1="${b.y0}" y2="${b.y0 + b.vh}"/>`;
     if (drag.gy != null) s += `<line class="guide" y1="${drag.gy}" y2="${drag.gy}" x1="${b.x0}" x2="${b.x0 + b.vw}"/>`;
@@ -1602,13 +1675,14 @@ function renderFloat() {
   $('ftools').innerHTML = `<div class="panel">
       <button class="tool" data-mode="select" aria-pressed="${mode === 'select'}" title="Move (V)">${ic('cursor', 'sm')}<span class="tl">Move</span></button>
       <button class="tool" data-mode="cable" aria-pressed="${mode === 'cable'}" title="Run cable (C)">${ic('cable', 'sm')}<span class="tl">Run cable</span></button>
+      <button class="tool" data-mode="channel" aria-pressed="${mode === 'channel'}" title="Draw a cable channel (T)">${ic('trench', 'sm')}<span class="tl">Channel</span></button>
       <span class="dock-sep"></span>${cab}<span class="dock-sep"></span>
       <button class="iconbtn" id="zOut" aria-label="Zoom out" title="Zoom out (−)">${ic('minus')}</button>
       <span class="zoomval" title="Zoom">${Math.round(scale / fitScale() * 100)}%</span>
       <button class="iconbtn" id="zIn" aria-label="Zoom in" title="Zoom in (+)">${ic('plus')}</button>
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
     </div>`;
-  $('fzoom').innerHTML = mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
+  $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel"><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
       <span class="dock-sep"></span><span class="toolhint">${pending ? 'Click the floor to bend · click the destination to finish' : 'Click where the cable starts'}</span></div>` : '';
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel statuspill">
@@ -1749,7 +1823,14 @@ function renderInspector() {
       extra = `<section class="isec"><h3>Power</h3><div class="grid3">${field('iCirc', 'Circuits', prop(it, 'circuits'), 'number', 'min="1" max="24"')}${field('iAmps', 'Amps', prop(it, 'amps'), 'number', 'min="1" max="100"', 'A')}${field('iVolts', 'Volts', prop(it, 'volts'), 'number', 'min="100" max="250"', 'V')}</div>
         <div style="display:grid;gap:6px">${loads.map((w, k) => { const pct = w / cap; return `<div class="circ"><span class="n">C${k + 1}</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(w)} W</span></div>`; }).join('')}</div></section>`;
     }
-    if (Number(prop(it, 'outs')) > 0 && it.type !== 'stagebox') extra += `<section class="isec"><h3>Outputs</h3>${field('iOutsUse', 'Outputs it uses', prop(it, 'outs'), 'number', 'min="0" max="64"')}</section>`;
+    if (it.type === 'rack') {
+      const rs = rackStat(it), N = it.rackU || 8;
+      extra = `<section class="isec"><h3>Rack <span>${rs.used}/${N}U</span></h3>
+        <div class="rk-mini">${Array.from({ length: N }, (_, k) => { const d = (it.devices || []).find(x => x.at === k); return d ? `<div class="k-${devSpec(d).kind}" style="height:${d.u * 14 - 2}px">${esc(d.name)}</div>` : (it.devices || []).some(x => k > x.at && k < x.at + x.u) ? '' : '<div class="empty"></div>'; }).join('')}</div>
+        <button class="btn primary block" id="openRack">${ic('box', 'sm')}Open rack builder</button>
+        ${rs.ins ? `<p class="hint">Works as a ${rs.ins}×${rs.outsMax} stage box.</p>` : ''}</section>`;
+    }
+    if (Number(prop(it, 'outs')) > 0 && it.type !== 'stagebox' && it.type !== 'rack') extra += `<section class="isec"><h3>Outputs</h3>${field('iOutsUse', 'Outputs it uses', prop(it, 'outs'), 'number', 'min="0" max="64"')}</section>`;
     const pOpts = `<option value="">Nobody</option>` + plan.team.map(p => `<option value="${p.id}" ${p.id === it.personId ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
     const conns = plan.cables.filter(x => touches(x, it.id));
     el.innerHTML = `<div class="insp">
@@ -1765,13 +1846,27 @@ function renderInspector() {
         <div class="grid2">
           ${field('iX', 'Across from SR', mVal(it.x), 'number', 'step=".05"', 'm')}${field('iY', 'Back from US', mVal(it.y), 'number', 'step=".05"', 'm')}
           ${field('iW', 'Width', mVal(prop(it, 'w')), 'number', 'step=".05" min=".05"', 'm')}${field('iD', 'Depth', mVal(prop(it, 'd')), 'number', 'step=".05" min=".05"', 'm')}
-          ${field('iRot', 'Rotation', it.rot || 0, 'number', 'step="15"', '°')}${C.wireless || isPowerSource(it) ? '' : field('iWatts', 'Power draw', prop(it, 'watts') || 0, 'number', 'step="10" min="0"', 'W')}
+          ${field('iRot', 'Rotation', it.rot || 0, 'number', 'step="15"', '°')}${C.shape === 'platform' ? field('iH', 'Height', mVal(it.h ?? fromM(.4)), 'number', 'step=".05" min="0"', 'm') : C.wireless || isPowerSource(it) || it.type === 'rack' ? '' : field('iWatts', 'Power draw', prop(it, 'watts') || 0, 'number', 'step="10" min="0"', 'W')}
         </div>
       </section>
       ${C.inputs || ins.length ? `<section class="isec"><h3>Inputs <span>${ins.length}</span></h3><div class="field"><label for="iInputs">Channel names, comma-separated</label><input id="iInputs" type="text" value="${esc(ins.join(', '))}"></div></section>` : ''}
       ${extra}
       <section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : '<p class="hint">Not connected yet. Choose Run cable, then tap this item.</p>'}</section>
       <section class="isec"><div class="actions"><button class="btn" id="iRotate">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iDup">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel">${ic('trash', 'sm')}Delete</button></div></section>
+    </div>`;
+  } else if (sel?.kind === 'channel' && chans().find(x => x.id === sel.id)) {
+    const ch = chans().find(x => x.id === sel.id), k = CH_KINDS[ch.kind] || CH_KINDS.trench;
+    const using = plan.cables.filter(x => routeInfo(x)?.via === ch);
+    el.innerHTML = `<div class="insp">
+      <div class="insp-head"><span class="swline" style="background:var(--house-ink);height:10px"></span><div><div class="eyebrow">${esc(k.name)}</div><h2>${esc(ch.name)}</h2></div>
+        <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
+      <section class="isec"><h3>Details</h3>
+        ${field('chName', 'Name', ch.name)}
+        <div class="field"><span>Type</span><div class="chips">${Object.entries(CH_KINDS).map(([key, v]) => `<button class="ctype" data-chkind="${key}" aria-pressed="${ch.kind === key}">${esc(v.name)}</button>`).join('')}</div></div>
+        <div class="grid2">${field('chW', 'Width', mVal(fromM(ch.w ?? k.w)), 'number', 'step=".05" min=".1"', 'm')}<div class="field"><span>Length</span><b style="font:500 14px var(--f-mono);padding:8px 0">${fmtLen(runLen(ch.pts))}</b></div></div>
+        <p class="hint">Drag the gold squares on the plot to reshape it.</p></section>
+      <section class="isec"><h3>Cables inside <span>${using.length}</span></h3>${using.length ? `<ul class="conns">${using.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(itemById(x.from)))} → ${esc(itemName(itemById(x.to)))}<small>${esc(CABLES[x.type].name)}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : '<p class="hint">No cables use it yet. Cables route through a channel when it keeps more of the run off the open floor.</p>'}</section>
+      <section class="isec"><div class="actions"><button class="btn danger" id="chDel">${ic('trash', 'sm')}Delete channel</button></div></section>
     </div>`;
   } else if (c) {
     const len = cableLen(c), st = stockFor(c.type, len), a = itemById(c.from), b = itemById(c.to);
@@ -1782,7 +1877,8 @@ function renderInspector() {
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       <section class="isec"><h3>Length</h3>
         <div class="tiles"><div class="tile"><b>${fmtLen(len)}</b><span>with slack</span></div><div class="tile"><b>${st.map(fmtStock).join(' + ')}</b><span>to pull${cableQty(c) > 1 ? ` · ×${cableQty(c)}` : ''}</span></div></div>
-        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(orth(routePts(c))))}</dd><dt>Bends</dt><dd>${c.points.length}</dd></dl>
+        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
+        ${chans().length && !c.points.length ? `<div class="field"><span>Route</span><div class="seg"><button data-route="auto" aria-pressed="${c.route !== 'direct'}">Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}">Direct</button></div></div>` : ''}
       </section>
       <section class="isec"><h3>Cable type</h3><div class="chips">${Object.keys(CABLES).map(k => `<button class="ctype" data-settype="${k}" aria-pressed="${k === c.type}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
         ${src ? `<div class="field"><label for="cCirc">${esc(itemName(src))} circuit</label><select id="cCirc">${circOpts}</select></div>` : ''}
@@ -1869,6 +1965,7 @@ function renderPaper() {
       <section class="sheet" id="sec-cables">${head('Cable pull list', 'pull', `Stock lengths to pull. Includes ${plan.settings.slack}% slack and ${mVal(plan.settings.ends)} m each end.`)}${table(pull, pullCols)}</section>
       <section class="sheet" id="sec-team">${head('Team', 'team')}${table(plan.team, teamCols)}</section>
     </div>
+    ${plan.items.some(i => i.type === 'rack') ? `<section class="sheet" id="sec-racks">${head('Racks', '', 'Top to bottom, as you face the front.')}${plan.items.filter(i => i.type === 'rack').map(r => `<div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(r))}</b><span class="hint">${rackStat(r).used}/${r.rackU || 8}U · ${rackStat(r).watts} W</span></div><div class="tablewrap"><table><thead><tr><th>U</th><th>Device</th><th>Details</th><th>Notes</th></tr></thead><tbody>${(r.devices || []).slice().sort((a, b) => a.at - b.at).map(d => `<tr><td><span class="ch">${(r.rackU || 8) - d.at}${d.u > 1 ? '–' + ((r.rackU || 8) - d.at - d.u + 1) : ''}</span></td><td>${esc(d.name)}</td><td class="mono">${esc(devMeta(d)) || '—'}</td><td>${esc(d.note || '')}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Empty rack.</td></tr>'}</tbody></table></div></div>`).join('')}</section>` : ''}
     <section class="sheet" id="sec-power">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it.')}${powerHtml}</section>
     <textarea id="copyFallback" rows="2" aria-label="Copied text" style="opacity:.01;height:1px;padding:0;border:0"></textarea>`;
 }
@@ -1922,6 +2019,26 @@ svg.addEventListener('pointerdown', e => {
   if (e.button > 0) return;
   const p = toFt(e);
   const g = e.target.closest('[data-id]'), ch = e.target.closest('[data-cid]'), wp = e.target.closest('[data-wp]');
+  const rh = e.target.closest('[data-rh]'), chp = e.target.closest('[data-chp]'), chh = e.target.closest('[data-chid]');
+  if (mode === 'channel') {
+    if (!chDraft) chDraft = { pts: [] };
+    const last = chDraft.pts[chDraft.pts.length - 1], q = chSnap(p, last, e.altKey);
+    if (last && Math.abs(last[0] - q[0]) + Math.abs(last[1] - q[1]) < .05) { finishChannel(); return; }   // click the last point again to finish
+    chDraft.pts.push(q); renderPlot(); return;
+  }
+  if (rh && sel?.kind === 'item') {
+    const it = itemById(sel.id), [sx, sy] = rh.dataset.rh.split(',').map(Number), th = (it.rot || 0) * Math.PI / 180;
+    const hw = prop(it, 'w') / 2, hd = prop(it, 'd') / 2, cs = Math.cos(th), sn = Math.sin(th);
+    drag = { kind: 'resize', id: it.id, sx, sy, cs, sn, fx: it.x - sx * hw * cs + sy * hd * sn, fy: it.y - sx * hw * sn - sy * hd * cs, snap: JSON.stringify(plan), moved: false };
+    try { svg.setPointerCapture(e.pointerId); } catch { /* ok */ }
+    e.preventDefault(); return;
+  }
+  if (chp) {
+    const [cid, k] = chp.dataset.chp.split(':');
+    drag = { kind: 'chp', cid, k: Number(k), snap: JSON.stringify(plan), moved: false };
+    try { svg.setPointerCapture(e.pointerId); } catch { /* ok */ }
+    e.preventDefault(); return;
+  }
   if (mode === 'cable') {
     if (g) {
       const id = g.dataset.id;
@@ -1952,6 +2069,8 @@ svg.addEventListener('pointerdown', e => {
     drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false };
   } else if (ch) {
     sel = { kind: 'cable', id: ch.dataset.cid };
+  } else if (chh) {
+    sel = { kind: 'channel', id: chh.dataset.chid };
   } else {
     drag = { kind: 'pan', x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop, moved: false };
   }
@@ -1961,6 +2080,20 @@ svg.addEventListener('pointerdown', e => {
 });
 svg.addEventListener('pointermove', e => {
   if (pending) { const p = toFt(e); cursorPt = [snapTo(p.x, .25), snapTo(p.y, .25)]; renderPlot(); return; }
+  if (mode === 'channel' && chDraft?.pts.length) { cursorPt = chSnap(toFt(e), chDraft.pts[chDraft.pts.length - 1], e.altKey); renderPlot(); return; }
+  if (drag?.kind === 'resize') {
+    const p = toFt(e), it = itemById(drag.id), { cs, sn, sx, sy, fx, fy } = drag;
+    const dx = p.x - fx, dy = p.y - fy, lx = dx * cs + dy * sn, ly = -dx * sn + dy * cs;
+    const snapLen = v => fromM(Math.max(.5, Math.round(toM(v) * 10) / 10));
+    const W = snapLen(lx * sx), D = snapLen(ly * sy);
+    const nx = fx + (sx * W / 2) * cs - (sy * D / 2) * sn, ny = fy + (sx * W / 2) * sn + (sy * D / 2) * cs;
+    if (W !== prop(it, 'w') || D !== prop(it, 'd')) { it.w = W; it.d = D; it.x = r2(nx); it.y = r2(ny); drag.moved = true; renderPlot(); }
+    return;
+  }
+  if (drag?.kind === 'chp') {
+    const ch = chans().find(x => x.id === drag.cid); if (!ch) return;
+    const p = toFt(e); ch.pts[drag.k] = [snapTo(p.x, .25), snapTo(p.y, .25)]; drag.moved = true; renderPlot(); return;
+  }
   if (!drag) return;
   if (drag.kind === 'pan') {
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
@@ -2018,8 +2151,10 @@ function addGear(type, x, y) {
     const it = addItem(type, x, y);
     if (type === 'stagebox') it.label = `Stage box ${String.fromCharCode(65 + n)}`;
     if (type === 'distro') it.label = `Distro ${n + 1}`;
+    if (type === 'rack') { it.label = `Rack ${n + 1}`; it.rackU = 8; it.devices = []; }
     sel = { kind: 'item', id: it.id };
   }, `${CAT[type].name} added`);
+  if (type === 'rack') openRack(sel.id);
 }
 $('ftools').addEventListener('click', e => {
   if (e.target.closest('#cabBtn')) { cableView.menu = !cableView.menu; renderFloat(); return; }
@@ -2033,7 +2168,11 @@ $('ftools').addEventListener('click', e => {
 });
 $('ftools').addEventListener('change', e => { if (e.target.id === 'cabAll') setCableView(() => { cableView.all = e.target.checked; }); });
 document.addEventListener('pointerdown', e => { if (cableView.menu && !e.target.closest('.cabwrap')) { cableView.menu = false; renderFloat(); } });
-$('fzoom').addEventListener('click', e => { const t = e.target.closest('[data-ctype]'); if (t) { cableType = t.dataset.ctype; renderFloat(); } });
+$('fzoom').addEventListener('click', e => {
+  const t = e.target.closest('[data-ctype]'); if (t) { cableType = t.dataset.ctype; renderFloat(); }
+  if (e.target.closest('#chFinish')) finishChannel();
+  const m = e.target.closest('[data-mode]'); if (m) setMode(m.dataset.mode);
+});
 $('ftools').addEventListener('click', e => {
   const f = e.target.closest('[data-fit]');
   if (f) fit(f.dataset.fit);
@@ -2048,9 +2187,10 @@ window.addEventListener('resize', () => { if (!zoom) { needFit = true; renderPlo
    =================================================================== */
 function deleteSelected() {
   if (!sel) return;
-  const name = sel.kind === 'item' ? itemName(itemById(sel.id)) : 'Cable';
+  const name = sel.kind === 'item' ? itemName(itemById(sel.id)) : sel.kind === 'channel' ? 'Channel' : 'Cable';
   mutate(() => {
-    if (sel.kind === 'item') { plan.items = plan.items.filter(i => i.id !== sel.id); plan.cables = plan.cables.filter(c => !touches(c, sel.id)); }
+    if (sel.kind === 'channel') plan.channels = chans().filter(x => x.id !== sel.id);
+    else if (sel.kind === 'item') { plan.items = plan.items.filter(i => i.id !== sel.id); plan.cables = plan.cables.filter(c => !touches(c, sel.id)); }
     else plan.cables = plan.cables.filter(c => c.id !== sel.id);
     sel = null;
   }, `${name} deleted`);
@@ -2060,7 +2200,7 @@ function duplicateSelected() {
   mutate(() => { const copy = { ...JSON.parse(JSON.stringify(it)), id: uid(), x: it.x + fromM(.3), y: it.y + fromM(.3) }; delete copy.gen; delete copy.genKey; plan.items.push(copy); sel = { kind: 'item', id: copy.id }; });
 }
 function rotateSelected(by) { const it = sel?.kind === 'item' && itemById(sel.id); if (it) mutate(() => { it.rot = ((it.rot || 0) + by + 360) % 360; }); }
-function setMode(m) { mode = m; pending = null; cursorPt = null; renderPlot(); }
+function setMode(m) { mode = m; pending = null; cursorPt = null; if (m !== 'channel') chDraft = null; renderPlot(); }
 function openPaper(anchor) {
   view = 'paper'; pending = null; renderAll();
   if (anchor) requestAnimationFrame(() => $(anchor)?.scrollIntoView({ block: 'start' }));
@@ -2090,6 +2230,12 @@ function closePops() { $('weekPop').hidden = true; $('weekBtn').setAttribute('ar
 
 document.addEventListener('keydown', e => {
   if (!$('cmdk').hidden) return;
+  if (!$('rackDlg').hidden) {
+    const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+    if (e.key === 'Escape') closeRack();
+    else if (!typing && (e.key === 'Delete' || e.key === 'Backspace') && rk.sel) { e.preventDefault(); rkMutate(i => { i.devices = i.devices.filter(x => x.id !== rk.sel); }); rk.sel = null; renderRack(); }
+    return;
+  }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openCmdk(); return; }
   if (!$('ctxMenu').hidden && e.key === 'Escape') { closeCtx(); return; }
   if (!$('stageDlg').hidden) { dsgKey(e); return; }
@@ -2104,12 +2250,15 @@ document.addEventListener('keydown', e => {
   if (typing || !$('dataDlg').hidden || !$('helpDlg').hidden) return;
   if (e.key === '?') { $('helpDlg').hidden = false; return; }
   if (view !== 'plot') return;
+  if (mode === 'channel' && e.key === 'Enter') { finishChannel(); return; }
+  if (mode === 'channel' && e.key === 'Escape') { if (chDraft?.pts.length) { chDraft.pts.pop(); cursorPt = null; renderPlot(); } else setMode('select'); return; }
   if (e.key === 'Escape') { if (pending) { pending = null; cursorPt = null; renderPlot(); } else if (mode === 'cable') setMode('select'); else if (sel) { sel = null; renderPlot(); renderInspector(); } }
   else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
   else if (k === 'r' && !e.ctrlKey && !e.metaKey) rotateSelected(e.shiftKey ? 45 : 90);
   else if (k === 'd' && !e.ctrlKey && !e.metaKey) duplicateSelected();
   else if (k === 'c' && !e.ctrlKey && !e.metaKey) setMode(mode === 'cable' ? 'select' : 'cable');
   else if (k === 'v') setMode('select');
+  else if (k === 't' && !e.ctrlKey && !e.metaKey) setMode(mode === 'channel' ? 'select' : 'channel');
   else if (k === 'h' && !e.ctrlKey && !e.metaKey) setCableView(() => { cableView.all = !cableView.all; });
   else if (e.key === '[') togglePanel('rail');
   else if (e.key === ']') togglePanel('insp');
@@ -2236,12 +2385,19 @@ $('inspector').addEventListener('change', e => {
       case 'iW': if (n > 0) it.w = fromM(n); break; case 'iD': if (n > 0) it.d = fromM(n); break;
       case 'iRot': it.rot = ((n % 360) + 360) % 360; break;
       case 'iWatts': it.watts = Math.max(0, n); break;
+      case 'iH': it.h = fromM(Math.max(0, n)); break;
       case 'iInputs': it.inputs = t.value.split(',').map(s => s.trim()).filter(Boolean); it.inputsEdited = true; break;
       case 'iIns': it.ins = Math.max(1, n); break; case 'iOuts': it.outsMax = Math.max(0, n); break;
       case 'iOutsUse': it.outs = Math.max(0, n); break;
       case 'iCirc': it.circuits = Math.max(1, n); break; case 'iAmps': it.amps = Math.max(1, n); break; case 'iVolts': it.volts = Math.max(1, n); break;
     }
   });
+  if (sel?.kind === 'channel') {
+    const ch = chans().find(x => x.id === sel.id);
+    if (ch && t.id === 'chName') mutate(() => { ch.name = t.value || ch.name; });
+    if (ch && t.id === 'chW') mutate(() => { ch.w = clamp(Number(t.value) || .3, .05, 3); });
+    return;
+  }
   if (c) mutate(() => {
     if (t.id === 'cCirc') { c.circuit = Number(t.value); c.auto = false; }
     if (t.id === 'cSlack') c.slack = t.value === '' ? undefined : Math.max(0, Number(t.value));
@@ -2250,6 +2406,9 @@ $('inspector').addEventListener('change', e => {
 $('inspector').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.selc) { sel = { kind: 'cable', id: t.dataset.selc }; renderPlot(); renderInspector(); return; }
+  if (t.dataset.route) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.route = t.dataset.route === 'direct' ? 'direct' : undefined; }); return; }
+  if (t.dataset.chkind) { const ch = chans().find(x => x.id === sel.id); mutate(() => { ch.kind = t.dataset.chkind; }); return; }
+  if (t.id === 'chDel') { deleteSelected(); return; }
   if (t.dataset.settype) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.type = t.dataset.settype; c.auto = false; }); return; }
   if (t.dataset.legend) { const k = t.dataset.legend; setCableView(() => { if (!cableView.all) { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(x => x !== k)); } else cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
   if (t.dataset.go === 'team') { railTab = 'team'; renderRail(); $('pcoStart')?.focus(); return; }
@@ -2257,6 +2416,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.go === 'cable') { mutate(autoCable, 'Cabling re-run'); return; }
   if (t.dataset.go === 'paper') { openPaper(warnings().length ? 'sec-checks' : null); return; }
   if (t.id === 'iClose') { sel = null; renderPlot(); renderInspector(); return; }
+  if (t.id === 'openRack') { openRack(sel.id); return; }
   if (t.id === 'iRotate') rotateSelected(90);
   if (t.id === 'iDel' || t.id === 'cDel') deleteSelected();
   if (t.id === 'iDup') duplicateSelected();
@@ -2539,6 +2699,235 @@ function cableMenuHtml() {
 }
 
 /* ===================================================================
+   Rack builder
+   =================================================================== */
+const RACK_KINDS = { snake: 'Digital snakes', iem: 'In-ear monitors', rf: 'Wireless', patch: 'Patch & network', amp: 'Amps & processing', power: 'Power', misc: 'Panels & storage' };
+const RACK_DEV = {
+  snake32: { name: 'Digital snake 32×16', u: 3, kind: 'snake', ins: 32, outs: 16, watts: 120 },
+  snake16: { name: 'Digital snake 16×8', u: 2, kind: 'snake', ins: 16, outs: 8, watts: 80 },
+  snake8: { name: 'I/O box 8×8 (Dante/AVB)', u: 1, kind: 'snake', ins: 8, outs: 8, watts: 40 },
+  iem1: { name: 'IEM transmitter', u: 1, kind: 'iem', mixes: 1, watts: 15 },
+  iem2: { name: 'IEM transmitter (dual)', u: 1, kind: 'iem', mixes: 2, watts: 25 },
+  combiner: { name: 'IEM antenna combiner', u: 1, kind: 'iem', watts: 15 },
+  rx2: { name: 'Wireless mic receiver (dual)', u: 1, kind: 'rf', ch: 2, watts: 20 },
+  rx4: { name: 'Wireless mic receiver (quad)', u: 1, kind: 'rf', ch: 4, watts: 35 },
+  antdist: { name: 'Antenna distribution', u: 1, kind: 'rf', watts: 15 },
+  patchxlr: { name: 'XLR patch bay (16)', u: 1, kind: 'patch' },
+  patchtrs: { name: 'TRS patch bay (48)', u: 1, kind: 'patch' },
+  switch: { name: 'Network switch', u: 1, kind: 'patch', watts: 20 },
+  amp: { name: 'Power amplifier', u: 2, kind: 'amp', watts: 600 },
+  dsp: { name: 'Speaker processor / DSP', u: 1, kind: 'amp', watts: 30 },
+  computer: { name: 'Playback computer', u: 2, kind: 'amp', watts: 150 },
+  conditioner: { name: 'Power conditioner', u: 1, kind: 'power' },
+  ups: { name: 'UPS battery backup', u: 2, kind: 'power', watts: 40 },
+  drawer: { name: 'Drawer', u: 2, kind: 'misc' },
+  shelf: { name: 'Shelf', u: 1, kind: 'misc' },
+  blank: { name: 'Blank panel', u: 1, kind: 'misc' },
+  vent: { name: 'Vent panel', u: 1, kind: 'misc' },
+};
+const RACK_SIZES = [2, 4, 6, 8, 10, 12, 14, 16, 20, 24];
+const devSpec = d => RACK_DEV[d.key] || { name: d.name, u: d.u, kind: 'misc' };
+function rackStat(it) {
+  const s = { ins: 0, outsMax: 0, outs: 0, watts: 0, rf: 0, used: 0 };
+  for (const d of it.devices || []) {
+    const sp = devSpec(d);
+    s.ins += sp.ins || 0; s.outsMax += sp.outs || 0; s.outs += sp.mixes || 0; s.rf += sp.ch || 0;
+    s.watts += d.watts ?? sp.watts ?? 0; s.used += d.u;
+  }
+  return s;
+}
+const isBox = it => it && (it.type === 'stagebox' || (it.type === 'rack' && rackStat(it).ins > 0));
+function devMeta(d) {
+  const sp = devSpec(d), b = [];
+  if (sp.ins) b.push(`${sp.ins} in · ${sp.outs} out`);
+  if (sp.mixes) b.push(plural(sp.mixes, 'mix', 'mixes'));
+  if (sp.ch) b.push(`${sp.ch} RF ch`);
+  if ((d.watts ?? sp.watts)) b.push(`${d.watts ?? sp.watts} W`);
+  return b.join(' · ');
+}
+function freeSlot(it, u, ignore) {
+  const N = it.rackU || 8, taken = Array(N).fill(false);
+  for (const d of it.devices || []) if (d.id !== ignore) for (let k = d.at; k < d.at + d.u; k++) taken[k] = true;
+  for (let top = 0; top + u <= N; top++) { let ok = true; for (let k = top; k < top + u; k++) if (taken[k]) { ok = false; break; } if (ok) return top; }
+  return -1;
+}
+function slotFree(it, at, u, ignore) {
+  const N = it.rackU || 8; if (at < 0 || at + u > N) return false;
+  return !(it.devices || []).some(d => d.id !== ignore && at < d.at + d.u && d.at < at + u);
+}
+const rk = { id: null, sel: null, drag: null, q: '' };
+function openRack(id) { rk.id = id; rk.sel = null; rk.q = ''; $('rackDlg').hidden = false; renderRack(); }
+function closeRack() {
+  const it = itemById(rk.id);
+  $('rackDlg').hidden = true; rk.id = null;
+  // a filled rack that isn't wired yet gets patched and powered like everything else
+  if (it?.devices?.length && !plan.cables.some(c => touches(c, it.id))) { mutate(autoCable); toast('Rack patched and powered', true); }
+  else renderAll();
+}
+function renderRack() {
+  const it = itemById(rk.id); if (!it) { closeRack(); return; }
+  it.devices ||= []; it.rackU ||= 8;
+  const N = it.rackU, st = rackStat(it), sd = it.devices.find(d => d.id === rk.sel);
+  const minU = Math.max(1, ...it.devices.map(d => d.at + d.u));
+  $('rkName').value = it.label || '';
+  $('rkSize').innerHTML = [...new Set([...RACK_SIZES, N])].sort((a, b) => a - b).map(n => `<option value="${n}" ${n === N ? 'selected' : ''} ${n < minU ? 'disabled' : ''}>${n}U</option>`).join('');
+  const q = rk.q.trim().toLowerCase();
+  $('rkLib').innerHTML = `<div class="search">${ic('search', 'sm')}<input id="rkSearch" type="search" placeholder="Search devices" value="${esc(rk.q)}" aria-label="Search devices"></div>` +
+    Object.entries(RACK_KINDS).map(([k, label]) => {
+      const list = Object.entries(RACK_DEV).filter(([, d]) => d.kind === k && (!q || d.name.toLowerCase().includes(q)));
+      return list.length ? `<div class="gearcat"><h3 class="eyebrow">${esc(label)}</h3>${list.map(([key, d]) => `<button class="rk-dev" data-rkadd="${key}"><span class="rk-sw k-${d.kind}"></span><span><b>${esc(d.name)}</b><small>${d.u}U${devMeta({ key }) ? ' · ' + esc(devMeta({ key })) : ''}</small></span>${ic('plus', 'sm')}</button>`).join('')}</div>` : '';
+    }).join('') +
+    `<div class="card soft" style="gap:8px"><b>Custom device</b><div class="grid2"><div class="field" style="grid-column:1/-1"><label for="rkCName">Name</label><input id="rkCName" type="text" placeholder="e.g. Click track interface"></div>
+      <div class="field"><label for="rkCU">Height</label><div class="unit" data-unit="U"><input id="rkCU" type="number" min="1" max="12" value="1"></div></div>
+      <div class="field"><label for="rkCW">Power</label><div class="unit" data-unit="W"><input id="rkCW" type="number" min="0" step="5" value="0"></div></div></div>
+      <button class="btn" id="rkCAdd">${ic('plus', 'sm')}Add custom device</button></div>`;
+  // elevation: slot 0 is the top; rack units are numbered from the bottom
+  let rows = '';
+  for (let k = 0; k < N; k++) rows += `<div class="rk-slot" style="grid-row:${k + 1}"><span>${N - k}</span><span>${N - k}</span></div>`;
+  const devs = it.devices.map(d => `<div class="rk-unit k-${devSpec(d).kind}${d.id === rk.sel ? ' sel' : ''}${rk.drag?.id === d.id ? ' dragging' : ''}" data-rkdev="${d.id}" style="grid-row:${d.at + 1} / span ${d.u}">
+      <span class="ear"></span><span class="face"><b>${esc(d.name)}</b><small>${d.u}U${devMeta(d) ? ' · ' + esc(devMeta(d)) : ''}</small></span><span class="ear"></span></div>`).join('');
+  $('rkRack').innerHTML = `<div class="rk-case" style="grid-template-rows:repeat(${N}, var(--u))">${rows}${devs}</div>`;
+  $('rkSide').innerHTML = `
+    <div class="tiles">
+      <div class="tile"><b>${st.used}/${N}U</b><span>${N - st.used} free</span></div>
+      <div class="tile"><b>${st.watts} W</b><span>power draw</span></div>
+      ${st.ins ? `<div class="tile"><b>${st.ins}×${st.outsMax}</b><span>stage box I/O</span></div>` : ''}
+      ${st.outs ? `<div class="tile"><b>${st.outs}</b><span>IEM mixes</span></div>` : ''}
+      ${st.rf ? `<div class="tile"><b>${st.rf}</b><span>RF channels</span></div>` : ''}
+    </div>
+    ${st.ins ? `<p class="hint">This rack works as a stage box: inputs patch into it on the plot.</p>` : ''}
+    ${sd ? `<div class="card" style="gap:10px"><div class="eyebrow">Selected</div>
+      ${field('rkDName', 'Name', sd.name)}
+      <div class="grid2">${field('rkDU', 'Height', sd.u, 'number', 'min="1" max="12"', 'U')}${field('rkDW', 'Power', sd.watts ?? devSpec(sd).watts ?? 0, 'number', 'min="0" step="5"', 'W')}</div>
+      ${field('rkDNote', 'Notes', sd.note || '', 'text', 'placeholder="Frequencies, IP address, patch notes…"')}
+      <div class="row"><button class="btn" data-rkmove="-1" title="Move up">${ic('chevL', 'sm')}Up</button><button class="btn" data-rkmove="1" title="Move down">Down${ic('chevR', 'sm')}</button><button class="btn danger" id="rkDel">${ic('trash', 'sm')}Remove</button></div></div>`
+      : `<p class="hint">Add devices from the library. Drag them in the rack to reorder, click one to edit it.</p>`}`;
+}
+function rkMutate(fn) { const it = itemById(rk.id); mutate(() => fn(it)); renderRack(); }
+function rkAdd(key, name, u, watts) {
+  const it = itemById(rk.id), sp = RACK_DEV[key], uu = sp ? sp.u : u;
+  const at = freeSlot(it, uu);
+  if (at < 0) { toast(`No room for ${uu}U. Make the rack taller or remove something.`); return; }
+  const d = { id: uid(), key: sp ? key : 'custom', name: sp ? sp.name : name, u: uu, at };
+  if (!sp && watts) d.watts = watts;
+  rkMutate(i => { i.devices.push(d); }); rk.sel = d.id; renderRack();
+}
+$('rkLib').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.rkadd) rkAdd(b.dataset.rkadd);
+  if (b.id === 'rkCAdd') { const n = $('rkCName').value.trim() || 'Custom device'; rkAdd(null, n, clamp(Number($('rkCU').value) || 1, 1, 12), Math.max(0, Number($('rkCW').value) || 0)); }
+});
+$('rkLib').addEventListener('input', e => { if (e.target.id === 'rkSearch') { rk.q = e.target.value; const pos = e.target.selectionStart; renderRack(); const s = $('rkSearch'); s.focus(); s.setSelectionRange(pos, pos); } });
+$('rkSide').addEventListener('change', e => {
+  const t = e.target, it = itemById(rk.id), d = it.devices.find(x => x.id === rk.sel); if (!d) return;
+  if (t.id === 'rkDName') rkMutate(() => { d.name = t.value || d.name; });
+  if (t.id === 'rkDNote') rkMutate(() => { d.note = t.value; });
+  if (t.id === 'rkDW') rkMutate(() => { d.watts = Math.max(0, Number(t.value) || 0); });
+  if (t.id === 'rkDU') { const u = clamp(Number(t.value) || 1, 1, 12); if (slotFree(it, d.at, u, d.id)) rkMutate(() => { d.u = u; }); else { toast('Not enough free space below it'); renderRack(); } }
+});
+$('rkSide').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const it = itemById(rk.id), d = it.devices.find(x => x.id === rk.sel); if (!d) return;
+  if (b.id === 'rkDel') { rkMutate(i => { i.devices = i.devices.filter(x => x.id !== d.id); }); rk.sel = null; renderRack(); }
+  if (b.dataset.rkmove) {
+    const dir = Number(b.dataset.rkmove); let at = d.at + dir;
+    while (at >= 0 && at + d.u <= it.rackU && !slotFree(it, at, d.u, d.id)) at += dir;
+    if (slotFree(it, at, d.u, d.id)) rkMutate(() => { d.at = at; });
+  }
+});
+$('rkRack').addEventListener('pointerdown', e => {
+  const el = e.target.closest('[data-rkdev]'); if (!el) { rk.sel = null; renderRack(); return; }
+  const it = itemById(rk.id), d = it.devices.find(x => x.id === el.dataset.rkdev);
+  rk.sel = d.id; rk.drag = { id: d.id, y: e.clientY, at0: d.at, snap: JSON.stringify(plan), moved: false };
+  try { $('rkRack').setPointerCapture(e.pointerId); } catch { /* ok */ }
+  renderRack();
+});
+$('rkRack').addEventListener('pointermove', e => {
+  if (!rk.drag) return;
+  const it = itemById(rk.id), d = it.devices.find(x => x.id === rk.drag.id);
+  const uPx = parseFloat(getComputedStyle($('rkRack')).getPropertyValue('--u')) || 40;
+  const at = rk.drag.at0 + Math.round((e.clientY - rk.drag.y) / uPx);
+  if (at !== d.at && slotFree(it, at, d.u, d.id)) { d.at = at; rk.drag.moved = true; renderRack(); }
+});
+$('rkRack').addEventListener('pointerup', () => { if (rk.drag?.moved) { history.push(rk.drag.snap); future = []; save(); } rk.drag = null; renderRack(); });
+$('rkName').addEventListener('change', e => { const it = itemById(rk.id); mutate(() => { it.label = e.target.value; it.labelEdited = !!e.target.value; }); renderRack(); });
+$('rkSize').addEventListener('change', e => { const it = itemById(rk.id); mutate(() => { it.rackU = Number(e.target.value); }); renderRack(); });
+$('rkDone').onclick = closeRack;
+$('rackDlg').addEventListener('pointerdown', e => { if (e.target.id === 'rackDlg') closeRack(); });
+
+/* ===================================================================
+   Cable channels (trenches, trays, ramps) and channel-aware routing
+   =================================================================== */
+const CH_KINDS = { trench: { name: 'Floor trench', w: .3 }, tray: { name: 'Cable tray', w: .3 }, ramp: { name: 'Cable ramp', w: .5 } };
+const chans = () => (plan.channels ||= []);
+let chDraft = null;   // { pts: [] } while drawing a channel
+function nearestOn(pts, x, y) {
+  let best = null, acc = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, L = Math.sqrt(L2);
+    const t = L2 ? clamp(((x - a[0]) * dx + (y - a[1]) * dy) / L2, 0, 1) : 0;
+    const p = [a[0] + dx * t, a[1] + dy * t], dist = Math.abs(p[0] - x) + Math.abs(p[1] - y);
+    if (!best || dist < best.dist) best = { pt: p, s: acc + L * t, i, dist };
+    acc += L;
+  }
+  return best;
+}
+function subpath(pts, a, b) {   // channel points strictly between two projections, in travel order
+  const out = [];
+  if (a.s <= b.s) for (let k = a.i; k < b.i; k++) out.push(pts[k]);
+  else for (let k = a.i - 1; k >= b.i; k--) out.push(pts[k]);
+  return out;
+}
+function routeInfo(c) {
+  const a = itemById(c.from), b = itemById(c.to);
+  if (!a || !b) return null;
+  const direct = { pts: [[a.x, a.y], ...c.points, [b.x, b.y]], straight: new Set(), via: null };
+  if (c.points.length || c.route === 'direct' || !chans().length) return direct;
+  let best = direct, bestCost = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  for (const ch of chans()) {
+    if (ch.pts.length < 2) continue;
+    const ea = nearestOn(ch.pts, a.x, a.y), eb = nearestOn(ch.pts, b.x, b.y);
+    const cost = ea.dist + eb.dist + .25 * Math.abs(eb.s - ea.s);
+    if (cost < bestCost - .5) {
+      const mid = subpath(ch.pts, ea, eb), pts = [[a.x, a.y], ea.pt, ...mid, eb.pt, [b.x, b.y]];
+      const straight = new Set(); for (let k = 2; k <= mid.length + 2; k++) straight.add(k);   // segments inside the channel follow it exactly
+      best = { pts, straight, via: ch }; bestCost = cost;
+    }
+  }
+  return best;
+}
+function renderChannels(selId) {
+  let s = '', hits = '', handles = '';
+  for (const ch of chans()) {
+    if (ch.pts.length < 2) continue;
+    const k = CH_KINDS[ch.kind] || CH_KINDS.trench, w = fromM(ch.w ?? k.w), ps = ch.pts.map(p => p.join(',')).join(' ');
+    const isSel = ch.id === selId;
+    s += `<polyline class="ch-edge ch-${ch.kind}${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w + .14)}"/><polyline class="ch-band ch-${ch.kind}" points="${ps}" style="stroke-width:${f3(w)}"/>`;
+    const m = midpoint(ch.pts);
+    if (scale >= 11) s += `<text class="ch-label" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}</text>`;
+    hits += `<polyline class="chhit" data-chid="${ch.id}" points="${ps}" style="stroke-width:${f3(Math.max(w, .8))}"><title>${esc(ch.name || k.name)}</title></polyline>`;
+    if (isSel) ch.pts.forEach((p, i) => { handles += `<rect class="wp" data-chp="${ch.id}:${i}" x="${f3(p[0] - .3)}" y="${f3(p[1] - .3)}" width=".6" height=".6" rx=".12"/>`; });
+  }
+  if (chDraft?.pts.length) {
+    const pts = chDraft.pts.concat(cursorPt ? [cursorPt] : []);
+    s += `<polyline class="ch-draft" points="${pts.map(p => p.join(',')).join(' ')}" style="stroke-width:${f3(fromM(.3))}"/>`;
+  }
+  return { s, hits, handles };
+}
+function chSnap(p, prev, free) {
+  let x = snapTo(p.x, .25), y = snapTo(p.y, .25);
+  if (prev && !free) { if (Math.abs(x - prev[0]) >= Math.abs(y - prev[1])) y = prev[1]; else x = prev[0]; }
+  return [x, y];
+}
+function finishChannel() {
+  const pts = chDraft?.pts || [];
+  chDraft = null; cursorPt = null;
+  if (pts.length < 2) { renderPlot(); return; }
+  const n = chans().length + 1;
+  mutate(() => { const ch = { id: uid(), name: `Channel ${n}`, kind: 'trench', pts }; plan.channels.push(ch); sel = { kind: 'channel', id: ch.id }; mode = 'select'; }, 'Channel added. Cables nearby now route through it.');
+}
+
+/* ===================================================================
    Friendliness layer: saved indicator, empty state, hover cards,
    context menu, command palette
    =================================================================== */
@@ -2677,6 +3066,8 @@ function cmdItems() {
   const acts = [
     ['Build stage from team', 'wand', () => buildNow()],
     ['Run a cable', 'cable', () => setMode('cable')],
+    ['Draw a cable channel', 'trench', () => setMode('channel')],
+    ['Add a custom rack', 'box', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } addGear('rack', snapTo(plan.stage.w - fromM(1)), snapTo(fromM(1))); }],
     [cableView.all ? 'Hide all cables' : 'Show cables', 'eye', () => setCableView(() => { cableView.all = !cableView.all; })],
     ['Open paperwork', 'sheet', () => openPaper()],
     ['Draw or edit stage shape', 'pen', () => openDesigner(false)],
