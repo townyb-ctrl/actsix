@@ -771,6 +771,8 @@ const CAT = {
   foh:         { name: 'FOH console', short: 'FOH', cat: 'infra', w: 6, d: 3, shape: 'desk', watts: 250, desk: true },
   mon_desk:    { name: 'Monitor console', short: 'Monitors', cat: 'infra', w: 4, d: 2.5, shape: 'desk', watts: 200, desk: true },
   main_spk:    { name: 'Main speaker (powered)', short: 'Main', cat: 'audio', w: 2, d: 2, shape: 'speaker', outs: 1, watts: 600 },
+  la_main:     { name: 'Line array hang (8 boxes)', short: 'Line array', cat: 'audio', w: 3.6, d: 1.8, shape: 'speaker', outs: 1, watts: 2400 },
+  la_sub:      { name: 'Line array sub (flown)', short: 'LA sub', cat: 'audio', w: 4.2, d: 2.4, shape: 'speaker', outs: 1, watts: 1600 },
   sub:         { name: 'Subwoofer (powered)', short: 'Sub', cat: 'audio', w: 3, d: 3, shape: 'speaker', outs: 1, watts: 1000 },
   // Instruments & staging
   drum_kit:    { name: 'Drum kit', short: 'Kit', cat: 'inst', w: 6.5, d: 5.5, shape: 'kit',
@@ -785,12 +787,8 @@ const CAT = {
   ac_guitar:   { name: 'Acoustic guitar (on stand)', short: 'Acoustic', cat: 'inst', w: 1.4, d: 3.4, shape: 'rect' },
   el_guitar:   { name: 'Electric guitar (on stand)', short: 'Electric', cat: 'inst', w: 1.2, d: 3.2, shape: 'rect' },
   bass_guitar: { name: 'Bass guitar (on stand)', short: 'Bass', cat: 'inst', w: 1.2, d: 3.9, shape: 'rect' },
-  violin:      { name: 'Violin', short: 'Violin', cat: 'inst', w: .7, d: 2, shape: 'rect', inputs: ['Violin'] },
-  cello:       { name: 'Cello', short: 'Cello', cat: 'inst', w: 1.5, d: 4, shape: 'rect', inputs: ['Cello'] },
-  saxophone:   { name: 'Saxophone', short: 'Sax', cat: 'inst', w: 1, d: 1.6, shape: 'rect', inputs: ['Sax'] },
   trumpet:     { name: 'Trumpet', short: 'Trumpet', cat: 'inst', w: .8, d: 1.7, shape: 'rect', inputs: ['Trumpet'] },
   cajon:       { name: 'Cajón', short: 'Cajón', cat: 'inst', w: 1.1, d: 1.1, shape: 'rect', inputs: ['Cajón'] },
-  congas:      { name: 'Congas', short: 'Congas', cat: 'inst', w: 2.6, d: 1.6, shape: 'rect', inputs: ['Conga L', 'Conga R'] },
   up_piano:    { name: 'Upright piano', short: 'Piano', cat: 'inst', w: 5, d: 2, shape: 'rect', inputs: ['Piano L', 'Piano R'] },
   grand_piano: { name: 'Grand piano', short: 'Grand', cat: 'inst', w: 5, d: 6.5, shape: 'rect', inputs: ['Piano L', 'Piano R'] },
   ipad_stand:  { name: 'iPad stand', short: 'iPad', cat: 'infra', w: 1, d: .8, shape: 'rect' },
@@ -818,15 +816,15 @@ const CAT = {
 };
 /* CAT:END */
 const GEAR_GROUPS = [
-  ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
+  ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub', 'la_main', 'la_sub']],
   ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'di_mono', 'di_stereo', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'multifx', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
   ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
-  ['Instruments', ['ac_guitar', 'el_guitar', 'bass_guitar', 'violin', 'cello', 'saxophone', 'trumpet', 'cajon', 'congas', 'up_piano', 'grand_piano']],
+  ['Instruments', ['ac_guitar', 'el_guitar', 'bass_guitar', 'trumpet', 'cajon', 'up_piano', 'grand_piano']],
   ['Video & light', ['camera', 'conf_mon', 'light_stand']],
 ];
-const OVERHEAD_TYPES = ['main_spk', 'sub'];
+const OVERHEAD_TYPES = ['main_spk', 'sub', 'la_main', 'la_sub'];
 const CABLES = {
   // stock lengths in metres
   xlr:     { name: 'XLR (mic / line)', stock: [1, 2, 3, 5, 10, 15, 20, 30] },
@@ -938,13 +936,22 @@ function blankPlan(date) {
     team: [], items: [], cables: [], channels: [], notes: '',
   };
 }
+// Bring plans saved by older versions up to date: renamed gear, and gear that no longer exists (with its cables).
+function tidyPlan(p) {
+  p.items ||= []; p.cables ||= [];
+  for (const i of p.items) if (i.type === 'reel') i.type = 'pboard4';
+  const gone = new Set(p.items.filter(i => !CAT[i.type]).map(i => i.id));
+  if (!gone.size) return;
+  p.items = p.items.filter(i => !gone.has(i.id));
+  p.cables = p.cables.filter(c => !gone.has(c.from) && !gone.has(c.to));
+}
 function load() {
   try {
     const raw = localStorage.getItem(STORE);
     if (raw) {
       const d = JSON.parse(raw);
       if (d && d.plans && Object.keys(d.plans).length) {
-        for (const p of Object.values(d.plans)) for (const i of p.items || []) if (i.type === 'reel') i.type = 'pboard4';
+        for (const p of Object.values(d.plans)) tidyPlan(p);
         return d;
       }
     }
@@ -1527,6 +1534,7 @@ const SYM_CSS = `
 .s-deck{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.45);stroke-width:.07;stroke-dasharray:.3 .2}
 .s-spruce{fill:#d8ad6c}.s-burst{fill:#3b1d10}.s-burstin{fill:#cf7a2b}.s-navy{fill:#33507c}.s-maple{fill:#e3c389}.s-rose{fill:#2b1c13}.s-varnish{fill:#a24f25}.s-pg{fill:#f2efe8}.s-cream{fill:#efe6d2}.s-chrome{fill:#cfd5da}
 .s-str{fill:none;stroke:rgba(255,255,255,.45);stroke-width:.006}.s-bind{fill:none;stroke:#2a1a10;stroke-width:.018}.s-fret{fill:none;stroke:rgba(255,255,255,.35);stroke-width:.008}
+.s-cab{fill:#2b3640}.s-cabtop{fill:#36434f}.s-mesh{fill:#14181c}.s-cone{fill:#5d6a77}.s-dot{fill:rgba(255,255,255,.2)}.s-txt{fill:rgba(255,255,255,.55);font:700 .3px Archivo,Arial,sans-serif;letter-spacing:.02px}
 .s-wood{fill:#c08a4e}.s-wood2{fill:#7a5232}.s-red2{fill:#b5413a}.s-blk{fill:#26292d}.s-brass{fill:#d6b04a}
 .c-audio{fill:#2e6a99}.c-inst{fill:#6b51a3}.c-power{fill:#b85a22}.c-infra{fill:#44535e}.c-video{fill:#a3426b}
 `;
@@ -1551,7 +1559,6 @@ const SYM = (() => {
   const ACOUSTIC_BODY = 'M0 0C.22 0 .37 .06 .37 .24C.37 .38 .29 .43 .3 .53C.31 .63 .5 .71 .5 .95C.5 1.17 .3 1.27 0 1.27C-.3 1.27 -.5 1.17 -.5 .95C-.5 .71 -.31 .63 -.3 .53C-.29 .43 -.37 .38 -.37 .24C-.37 .06 -.22 0 0 0Z';
   const SOLID_BODY = 'M.12 .15C.14 .02 .2 -.12 .28 -.12C.36 -.12 .38 0 .36 .12C.34 .25 .4 .35 .47 .48C.55 .65 .5 .95 .25 1C.1 1.03 -.1 1.03 -.25 1C-.5 .95 -.55 .65 -.47 .46C-.4 .33 -.36 .2 -.38 .05C-.4 -.12 -.36 -.24 -.3 -.24C-.22 -.24 -.14 -.05 -.12 .15Z';
   const PICKGUARD = 'M.1 .2C.25 .15 .38 .3 .4 .45C.42 .6 .3 .75 .1 .8L-.15 .82C-.3 .8 -.35 .6 -.3 .45C-.26 .32 -.2 .22 -.1 .2Z';
-  const VIOLIN_BODY = 'M0 0C.24 0 .4 .1 .4 .3C.4 .44 .35 .52 .3 .55L.27 .56C.22 .66 .21 .92 .27 1.03L.31 1.05C.4 1.1 .5 1.18 .5 1.33C.5 1.55 .3 1.65 0 1.65C-.3 1.65 -.5 1.55 -.5 1.33C-.5 1.18 -.4 1.1 -.31 1.05L-.27 1.03C-.21 .92 -.22 .66 -.27 .56L-.3 .55C-.35 .52 -.4 .44 -.4 .3C-.4 .1 -.24 0 0 0Z';
   const ug = (u, dy, inner) => `<g transform="translate(0 ${f(dy)}) scale(${u})">${inner}</g>`;
   const P = (d, cls) => `<path class="${cls}" d="${d}"/>`;
   const R_ = (x, y, w, h, cls, rx = .01) => `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}"/>`;
@@ -1574,11 +1581,6 @@ const SYM = (() => {
   const pbass = u => solid(u, u * .66, -2, 'M-.06 -2L-.06 -2.3C-.06 -2.36 .02 -2.38 .07 -2.33L.16 -2.18C.18 -2.12 .13 -2.05 .06 -2.02L.06 -2Z',
     [-2.06, -2.14, -2.22, -2.3].map(y => C_(-.1, y, .032, 's-chrome')).join(''), 's-navy', null,
     R_(-.16, .36, .15, .06, 's-blk', .02) + R_(.01, .42, .15, .06, 's-blk', .02) + R_(-.15, .58, .3, .055, 's-blk', .02), 4);
-  const bowed = (u, dy, endpin, chin) => ug(u, dy, P(VIOLIN_BODY, 's-varnish') + `<g transform="translate(0 .82) scale(.93) translate(0 -.82)">${P(VIOLIN_BODY, 's-bind')}</g>` +
-    P('M.17 .78C.12 .86 .21 .96 .15 1.06', 's-bind') + P('M-.17 .78C-.12 .86 -.21 .96 -.15 1.06', 's-bind') +
-    R_(-.06, -.75, .12, 1.6, 's-rose', .04) + R_(-.05, -.95, .1, .22, 's-varnish', .03) + C_(0, -.99, .075, 's-varnish') + C_(0, -.99, .035, 's-rose') +
-    R_(-.16, 1.12, .32, .035, 's-spruce') + P('M-.07 1.2L.07 1.2L.1 1.55L-.1 1.55Z', 's-rose') + strings(4, -.8, 1.22, .03) +
-    (chin ? `<ellipse class="s-rose" cx="-.22" cy="1.5" rx=".13" ry=".07"/>` : '') + (endpin ? `<path class="s-bind" d="M0 1.65V1.88" style="stroke:#cfd5da;stroke-width:.03"/>` : ''));
   const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
   function console_(w, d) {
     const hw = w / 2, hd = d / 2;
@@ -1603,14 +1605,40 @@ const SYM = (() => {
     inst_mic: circ(0, 0, .45, 'body c-audio s-bg') + tripod(.38) + `<g transform="rotate(-35)">${line(0, 0, 0, -.25, 's-boom')}${rect(-.05, -.38, .1, .18, 's-dark', .04)}${circ(0, -.4, .06, 's-white')}</g>` + circ(0, 0, .05, 's-dark'),
     di_mono: box(.8, .6, 'audio') + rect(-.32, -.22, .64, .44, 's-head', .04) + circ(-.22, 0, .08, 's-white') + circ(-.22, 0, .035, 's-dark') + circ(.2, 0, .11, 's-port') + rect(-.06, -.17, .1, .06, 's-white', .02),
     di_stereo: box(1, .6, 'audio') + rect(-.42, -.22, .84, .44, 's-head', .04) + circ(-.3, -.09, .07, 's-white') + circ(-.3, .1, .07, 's-white') + circ(.28, -.09, .09, 's-port') + circ(.28, .1, .09, 's-port') + rect(-.05, -.17, .1, .06, 's-white', .02),
-    wedge: '<polygon class="body c-audio s-edge" points="-1,.7 1,.7 .65,-.7 -.65,-.7"/>' + '<polygon class="s-grille" points="-.86,.28 .86,.28 .58,-.6 -.58,-.6"/>' + circ(-.22, -.15, .3, 's-line') + circ(-.22, -.15, .09, 's-line') + rect(.22, -.42, .36, .28, 's-line', .04) + line(-.85, .52, .85, .52, 's-thin'),
+    // speakers, top-down: cabinet top with handles, grille band on the face that points where the sound goes, faint coverage
+    wedge: '<path class="s-beam" d="M-.75 -.7L-1.35 -1.55Q0 -1.9 1.35 -1.55L.75 -.7Z"/>' +
+      '<path class="s-cab s-edge" d="M-.86 -.7H.86Q1 -.7 1 -.56V.56Q1 .7 .86 .7H-.86Q-1 .7 -1 .56V-.56Q-1 -.7 -.86 -.7Z"/>' +
+      '<path class="s-mesh" d="M-.9 -.6H.9V.28H-.9Z"/>' + grid(-.82, -.52, 18, 8, .096, .1, .018, 's-dot') +
+      circ(-.38, -.16, .34, 's-cone') + circ(-.38, -.16, .27, 's-mesh') + circ(-.38, -.16, .2, 's-cone') + circ(-.38, -.16, .08, 's-mesh') +
+      '<path class="s-mesh" d="M.12 -.46H.74L.6 .1H.26Z"/>' + '<path class="s-line" d="M.12 -.46H.74L.6 .1H.26Z"/>' + rect(.38, -.1, .1, .1, 's-cone', .02) +
+      rect(-.32, .42, .64, .14, 's-mesh', .07) + rect(-.12, .32, .24, .04, 's-white', .02),
+    main_spk: '<path class="s-beam" d="M-.8 1L-1.95 2.35Q0 2.85 1.95 2.35L.8 1Z"/>' +
+      '<path class="s-cab s-edge" d="M-.78 -1H.78Q.95 -1 .96 -.83L1 .86Q1 1 .86 1H-.86Q-1 1 -1 .86L-.96 -.83Q-.95 -1 -.78 -1Z"/>' +
+      rect(-.82, -.86, 1.64, 1.38, 's-cabtop', .1) + rect(-.58, -.62, .42, .13, 's-mesh', .065) + rect(.16, -.62, .42, .13, 's-mesh', .065) +
+      rect(.5, .36, .22, .05, 's-white', .025) +
+      '<path class="s-mesh" d="M-.97 .58H.97V.86Q.97 .97 .86 .97H-.86Q-.97 .97 -.97 .86Z"/>' + grid(-.88, .64, 19, 3, .098, .1, .02, 's-dot'),
+    sub: '<path class="s-cab s-edge" d="M-1.32 -1.5H1.32Q1.5 -1.5 1.5 -1.32V1.32Q1.5 1.5 1.32 1.5H-1.32Q-1.5 1.5 -1.5 1.32V-1.32Q-1.5 -1.5 -1.32 -1.5Z"/>' +
+      rect(-1.32, -1.32, 2.64, 2.2, 's-cabtop', .14) + [[-.9, -1], [.45, -1], [-.9, .45], [.45, .45]].map(([x, y]) => rect(x, y, .45, .14, 's-mesh', .07)).join('') +
+      '<text class="s-txt" x="0" y=".05" text-anchor="middle">SUB</text>' +
+      '<path class="s-mesh" d="M-1.47 .95H1.47V1.32Q1.47 1.47 1.32 1.47H-1.32Q-1.47 1.47 -1.47 1.32Z"/>' + grid(-1.38, 1.03, 28, 4, .102, .11, .022, 's-dot') +
+      rect(-1.2, 1.06, .62, .3, 's-blk', .05) + rect(.58, 1.06, .62, .3, 's-blk', .05),
+    la_main: '<path class="s-beam" d="M-1.75 .9L-3.6 2.7Q0 3.6 3.6 2.7L1.75 .9Z"/>' +
+      rect(-1.42, -1.05, 2.84, .16, 's-chrome', .04) + rect(-1.62, -.95, .14, 1.6, 's-chrome', .03) + rect(1.48, -.95, .14, 1.6, 's-chrome', .03) +
+      '<path class="s-cab s-edge" d="M-1.45 -.9H1.45L1.78 .74Q1.8 .9 1.62 .9H-1.62Q-1.8 .9 -1.78 .74Z"/>' +
+      '<path class="s-cabtop" d="M-1.32 -.78H1.32L1.56 .4H-1.56Z"/>' + [-1, -.5, 0, .5, 1].map(x => rect(x - .16, -.6, .32, .1, 's-mesh', .05)).join('') +
+      '<text class="s-txt" x="0" y=".22" text-anchor="middle">LINE ARRAY ×8</text>' +
+      '<path class="s-mesh" d="M-1.68 .5H1.68L1.74 .8Q1.74 .87 1.65 .87H-1.65Q-1.74 .87 -1.74 .8Z"/>' + grid(-1.6, .58, 33, 3, .1, .1, .02, 's-dot'),
+    la_sub: rect(-1.75, -1.32, 3.5, .14, 's-chrome', .04) +
+      '<path class="s-cab s-edge" d="M-1.9 -1.2H1.9Q2.1 -1.2 2.1 -1V1Q2.1 1.2 1.9 1.2H-1.9Q-2.1 1.2 -2.1 1V-1Q-2.1 -1.2 -1.9 -1.2Z"/>' +
+      rect(-1.9, -1.02, 3.8, 1.55, 's-cabtop', .12) + [-1.4, -.45, .45, 1.4].map(x => rect(x - .2, -.8, .4, .13, 's-mesh', .065)).join('') +
+      '<text class="s-txt" x="0" y=".1" text-anchor="middle">LINE ARRAY SUB</text>' +
+      '<path class="s-mesh" d="M-2.07 .62H2.07V1Q2.07 1.17 1.9 1.17H-1.9Q-2.07 1.17 -2.07 1Z"/>' + grid(-1.98, .7, 40, 4, .1, .11, .022, 's-dot') +
+      rect(-1.8, .72, .7, .34, 's-blk', .05) + rect(1.1, .72, .7, .34, 's-blk', .05),
     iem: rect(-.18, -.26, .36, .52, 'body c-audio s-edge', .06) + line(.1, -.26, .1, -.4, 's-boom') + rect(-.11, -.16, .22, .13, 's-glass', .02) + circ(0, .12, .05, 's-white') + '<path class="s-line" d="M-.12 .26q-.05 .12 -.16 .08"/>',
     iem_rack: box(2, 2, 'infra') + rect(-.85, -.85, 1.7, 1.7, 's-head', .05) + rect(-.75, -.55, 1.5, .45, 's-grille', .04) + rect(-.75, .1, 1.5, .45, 's-grille', .04) + rect(-.6, -.45, .5, .2, 's-glass', .02) + rect(-.6, .2, .5, .2, 's-glass', .02) + circ(.45, -.33, .07, 's-led') + circ(.45, .33, .07, 's-led') + line(-.85, .85, -1.1, 1.1, 's-boom') + line(.85, .85, 1.1, 1.1, 's-boom') + circ(-1.1, 1.1, .06, 's-white') + circ(1.1, 1.1, .06, 's-white'),
     stagebox: box(2, 1.4, 'infra') + rect(-.92, -.62, 1.84, 1.24, 's-head', .05) + grid(-.75, -.45, 8, 3, .214, .2, .07, 's-port') + grid(-.75, .2, 8, 1, .214, 0, .055, 's-white') + rect(-.82, .38, .16, .14, 's-port', .02) + rect(-.6, .38, .16, .14, 's-port', .02) + circ(.78, .45, .045, 's-led'),
     foh: console_(6, 3),
     mon_desk: console_(4, 2.5),
-    main_spk: box(2, 2, 'audio') + rect(-.85, .45, 1.7, .4, 's-grille', .04) + '<polygon class="s-line" points="-.5,.45 .5,.45 .2,-.35 -.2,-.35"/>' + rect(-.35, -.8, .7, .14, 's-dark', .07),
-    sub: box(3, 3, 'audio') + rect(-1.35, .9, 2.7, .45, 's-grille', .05) + rect(-1.1, 1, .7, .25, 's-port', .05) + rect(.4, 1, .7, .25, 's-port', .05) + circ(0, -.2, .9, 's-line') + circ(0, -.2, .3, 's-line') + rect(-.4, -1.35, .8, .16, 's-dark', .08),
     drum_kit: rect(-3.25, -2.75, 6.5, 5.5, 's-deck', .3) +
       circ(0, -1.85, .55, 's-dark') + circ(0, -1.85, .4, 's-line') +            // throne
       rect(-.92, -.05, 1.84, 1.5, 'body c-inst s-edge', .2) + rect(-.8, .05, 1.6, .2, 's-head', .05) + rect(-.8, 1.15, 1.6, .2, 's-head', .05) + // kick on its side
@@ -1636,12 +1664,8 @@ const SYM = (() => {
     ac_guitar: acoustic(1.25),
     el_guitar: strat(1.1),
     bass_guitar: pbass(1.1),
-    violin: bowed(.68, -.68 * .29, false, true),
-    cello: bowed(1.45, -1.45 * .405, true, false),
-    saxophone: tripod(.5, 's-thin') + '<path class="s-brass" d="M-.12 -.75 Q.35 -.55 .1 .1 Q-.1 .55 .3 .7 L.42 .55 Q.1 .45 .25 .05 Q.45 -.7 -.05 -.8 Z"/>' + circ(.36, .62, .14, 's-brass') + circ(.36, .62, .08, 's-blk'),
     trumpet: '<path class="s-brass" d="M-.12 -.8 L.12 -.8 L.1 .25 Q.38 .5 .38 .85 L-.38 .85 Q-.38 .5 -.1 .25 Z"/>' + circ(0, .85, .38, 's-brass') + circ(0, .85, .26, 's-blk') + grid(-.12, -.3, 3, 1, .12, 0, .045, 's-white'),
     cajon: rect(-.55, -.55, 1.1, 1.1, 's-wood s-edge', .08) + rect(-.45, -.45, .9, .9, 's-wood2', .05) + circ(0, .2, .15, 's-blk'),
-    congas: circ(-.6, 0, .72, 's-wood s-edge') + circ(-.6, 0, .6, 's-white') + circ(.65, .05, .62, 's-wood s-edge') + circ(.65, .05, .52, 's-white'),
     up_piano: rect(-2.5, -1, 5, 2, 's-blk s-edge', .08) + rect(-2.3, -1, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -1, .08, .32, 's-blk', .01) : '').join('') + rect(-2.4, .5, 4.8, .3, 's-thin', .03),
     grand_piano: '<path class="s-blk s-edge" d="M-2.5 -3.25 L2.5 -3.25 L2.5 -.6 Q2.4 1.4 .9 2.3 Q-.6 3.25 -1.6 3.25 L-2.5 3.25 Z"/>' + rect(-2.3, -3.25, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -3.25, .08, .32, 's-blk', .01) : '').join('') + '<path class="s-thin" d="M-2.2 -2.4 L2.2 -2.4 L2.2 -.7 Q2.1 1.2 .8 2 Q-.6 2.9 -1.5 2.9 L-2.2 2.9 Z"/>',
     ipad_stand: tripod(.38, 's-thin') + rect(-.42, -.32, .84, .6, 's-dark', .07) + rect(-.36, -.26, .72, .48, 's-glass', .04) + circ(0, .3, .025, 's-white') + rect(-.5, .2, 1, .08, 's-line', .03),
@@ -2871,7 +2895,7 @@ function importJson(text) {
   let n = 0, last = null;
   for (const [id, p] of Object.entries(plans)) {
     if (!p?.stage || !Array.isArray(p.items)) continue;
-    p.id = id; p.team ||= []; p.cables ||= []; p.settings ||= { slack: 10, ends: fromM(1) };
+    p.id = id; p.team ||= []; p.settings ||= { slack: 10, ends: fromM(1) }; tidyPlan(p);
     db.plans[id] = p; n++; last = p;
   }
   if (!n) { toast('No weeks found in that backup'); return; }

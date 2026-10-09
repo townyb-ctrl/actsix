@@ -12,13 +12,15 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Mono DI box](di_mono.svg) | `di_mono` | Mono DI box | 0.24 × 0.18 m |
 | ![Stereo DI box](di_stereo.svg) | `di_stereo` | Stereo DI box | 0.30 × 0.18 m |
 | ![Wedge monitor](wedge.svg) | `wedge` | Wedge monitor | 0.61 × 0.43 m |
+| ![Main speaker (powered)](main_spk.svg) | `main_spk` | Main speaker (powered) | 0.61 × 0.61 m |
+| ![Subwoofer (powered)](sub.svg) | `sub` | Subwoofer (powered) | 0.91 × 0.91 m |
+| ![Line array hang (8 boxes)](la_main.svg) | `la_main` | Line array hang (8 boxes) | 1.10 × 0.55 m |
+| ![Line array sub (flown)](la_sub.svg) | `la_sub` | Line array sub (flown) | 1.28 × 0.73 m |
 | ![IEM pack](iem.svg) | `iem` | IEM pack | 0.18 × 0.18 m |
 | ![IEM transmitter rack](iem_rack.svg) | `iem_rack` | IEM transmitter rack | 0.61 × 0.61 m |
 | ![Stage box / digital snake](stagebox.svg) | `stagebox` | Stage box / digital snake | 0.61 × 0.43 m |
 | ![FOH console](foh.svg) | `foh` | FOH console | 1.83 × 0.91 m |
 | ![Monitor console](mon_desk.svg) | `mon_desk` | Monitor console | 1.22 × 0.76 m |
-| ![Main speaker (powered)](main_spk.svg) | `main_spk` | Main speaker (powered) | 0.61 × 0.61 m |
-| ![Subwoofer (powered)](sub.svg) | `sub` | Subwoofer (powered) | 0.91 × 0.91 m |
 | ![Drum kit](drum_kit.svg) | `drum_kit` | Drum kit | 1.98 × 1.68 m |
 | ![Drum shield](drum_shield.svg) | `drum_shield` | Drum shield | 2.44 × 0.12 m |
 | ![Guitar amp (miked)](gtr_amp.svg) | `gtr_amp` | Guitar amp (miked) | 0.61 × 0.30 m |
@@ -29,12 +31,8 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Acoustic guitar (on stand)](ac_guitar.svg) | `ac_guitar` | Acoustic guitar (on stand) | 0.43 × 1.04 m |
 | ![Electric guitar (on stand)](el_guitar.svg) | `el_guitar` | Electric guitar (on stand) | 0.37 × 0.98 m |
 | ![Bass guitar (on stand)](bass_guitar.svg) | `bass_guitar` | Bass guitar (on stand) | 0.37 × 1.19 m |
-| ![Violin](violin.svg) | `violin` | Violin | 0.21 × 0.61 m |
-| ![Cello](cello.svg) | `cello` | Cello | 0.46 × 1.22 m |
-| ![Saxophone](saxophone.svg) | `saxophone` | Saxophone | 0.30 × 0.49 m |
 | ![Trumpet](trumpet.svg) | `trumpet` | Trumpet | 0.24 × 0.52 m |
 | ![Cajón](cajon.svg) | `cajon` | Cajón | 0.34 × 0.34 m |
-| ![Congas](congas.svg) | `congas` | Congas | 0.79 × 0.49 m |
 | ![Upright piano](up_piano.svg) | `up_piano` | Upright piano | 1.52 × 0.61 m |
 | ![Grand piano](grand_piano.svg) | `grand_piano` | Grand piano | 1.52 × 1.98 m |
 | ![iPad stand](ipad_stand.svg) | `ipad_stand` | iPad stand | 0.30 × 0.24 m |
