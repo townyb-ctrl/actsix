@@ -14,7 +14,7 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Wedge monitor](wedge.svg) | `wedge` | Wedge monitor | 0.61 × 0.43 m |
 | ![Main speaker (powered)](main_spk.svg) | `main_spk` | Main speaker (powered) | 0.61 × 0.61 m |
 | ![Subwoofer (powered)](sub.svg) | `sub` | Subwoofer (powered) | 0.91 × 0.91 m |
-| ![Line array hang (8 boxes)](la_main.svg) | `la_main` | Line array hang (8 boxes) | 1.10 × 0.55 m |
+| ![Line array hang](la_main.svg) | `la_main` | Line array hang | 1.10 × 0.55 m |
 | ![Line array sub (flown)](la_sub.svg) | `la_sub` | Line array sub (flown) | 1.28 × 0.73 m |
 | ![IEM pack](iem.svg) | `iem` | IEM pack | 0.18 × 0.18 m |
 | ![IEM transmitter rack](iem_rack.svg) | `iem_rack` | IEM transmitter rack | 0.61 × 0.61 m |

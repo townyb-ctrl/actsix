@@ -771,7 +771,7 @@ const CAT = {
   foh:         { name: 'FOH console', short: 'FOH', cat: 'infra', w: 6, d: 3, shape: 'desk', watts: 250, desk: true },
   mon_desk:    { name: 'Monitor console', short: 'Monitors', cat: 'infra', w: 4, d: 2.5, shape: 'desk', watts: 200, desk: true },
   main_spk:    { name: 'Main speaker (powered)', short: 'Main', cat: 'audio', w: 2, d: 2, shape: 'speaker', outs: 1, watts: 600 },
-  la_main:     { name: 'Line array hang (8 boxes)', short: 'Line array', cat: 'audio', w: 3.6, d: 1.8, shape: 'speaker', outs: 1, watts: 2400 },
+  la_main:     { name: 'Line array hang', short: 'Line array', cat: 'audio', w: 3.6, d: 1.8, shape: 'speaker', outs: 1, watts: 2400 },
   la_sub:      { name: 'Line array sub (flown)', short: 'LA sub', cat: 'audio', w: 4.2, d: 2.4, shape: 'speaker', outs: 1, watts: 1600 },
   sub:         { name: 'Subwoofer (powered)', short: 'Sub', cat: 'audio', w: 3, d: 3, shape: 'speaker', outs: 1, watts: 1000 },
   // Instruments & staging
@@ -825,6 +825,9 @@ const GEAR_GROUPS = [
   ['Video & light', ['camera', 'conf_mon', 'light_stand']],
 ];
 const OVERHEAD_TYPES = ['main_spk', 'sub', 'la_main', 'la_sub'];
+// Line arrays: boxes in the hang are editable; power draw scales per box unless typed in by hand.
+const LA_BOXES = { la_main: { def: 8, max: 24 }, la_sub: { def: 4, max: 16 } };
+const laBoxes = it => LA_BOXES[it.type] ? clamp(Math.round(it.boxes || LA_BOXES[it.type].def), 1, LA_BOXES[it.type].max) : 0;
 const CABLES = {
   // stock lengths in metres
   xlr:     { name: 'XLR (mic / line)', stock: [1, 2, 3, 5, 10, 15, 20, 30] },
@@ -909,13 +912,14 @@ async function copyText(text, fallbackEl) {
 /* item property lookups (per-item overrides fall back to catalog) */
 const cat = it => CAT[it.type] || { name: it.type, cat: 'infra', w: 1, d: 1, shape: 'rect' };
 const RACK_KEYS = new Set(['ins', 'outsMax', 'outs', 'watts']);
-const prop = (it, k) => (it.type === 'rack' && RACK_KEYS.has(k)) ? rackStat(it)[k] : (it[k] !== undefined && it[k] !== null && it[k] !== '') ? it[k] : cat(it)[k];
+const prop = (it, k) => (it.type === 'rack' && RACK_KEYS.has(k)) ? rackStat(it)[k] : (it[k] !== undefined && it[k] !== null && it[k] !== '') ? it[k]
+  : (k === 'watts' && LA_BOXES[it.type]) ? Math.round(cat(it).watts / LA_BOXES[it.type].def * laBoxes(it)) : cat(it)[k];
 const inputsOf = it => prop(it, 'inputs') || [];
 const isPowerSource = it => !!prop(it, 'circuits');
 const needsPower = it => (Number(prop(it, 'watts')) || 0) > 0 && !cat(it).wireless && !isPowerSource(it);
 const itemById = id => plan.items.find(i => i.id === id);
 const personById = id => plan.team.find(p => p.id === id);
-const itemName = it => it.label || cat(it).short || cat(it).name;
+const itemName = it => it.label || (LA_BOXES[it.type] ? `${cat(it).short} ×${laBoxes(it)}` : cat(it).short || cat(it).name);
 
 /* ===================================================================
    Persistence & state
@@ -1631,7 +1635,7 @@ const SYM = (() => {
     la_sub: rect(-1.75, -1.32, 3.5, .14, 's-chrome', .04) +
       '<path class="s-cab s-edge" d="M-1.9 -1.2H1.9Q2.1 -1.2 2.1 -1V1Q2.1 1.2 1.9 1.2H-1.9Q-2.1 1.2 -2.1 1V-1Q-2.1 -1.2 -1.9 -1.2Z"/>' +
       rect(-1.9, -1.02, 3.8, 1.55, 's-cabtop', .12) + [-1.4, -.45, .45, 1.4].map(x => rect(x - .2, -.8, .4, .13, 's-mesh', .065)).join('') +
-      '<text class="s-txt" x="0" y=".1" text-anchor="middle">LINE ARRAY SUB</text>' +
+      '<text class="s-txt" x="0" y=".1" text-anchor="middle">LA SUB ×4</text>' +
       '<path class="s-mesh" d="M-2.07 .62H2.07V1Q2.07 1.17 1.9 1.17H-1.9Q-2.07 1.17 -2.07 1Z"/>' + grid(-1.98, .7, 40, 4, .1, .11, .022, 's-dot') +
       rect(-1.8, .72, .7, .34, 's-blk', .05) + rect(1.1, .72, .7, .34, 's-blk', .05),
     iem: rect(-.18, -.26, .36, .52, 'body c-audio s-edge', .06) + line(.1, -.26, .1, -.4, 's-boom') + rect(-.11, -.16, .22, .13, 's-glass', .02) + circ(0, .12, .05, 's-white') + '<path class="s-line" d="M-.12 .26q-.05 .12 -.16 .08"/>',
@@ -1734,7 +1738,8 @@ function shapeSvg(it, w, d) {
   }
   if (SYM[it.type]) {
     const sx = w / c.w, sy = d / c.d, sc = Math.abs(sx - 1) > .001 || Math.abs(sy - 1) > .001;
-    return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="sym"${sc ? ` transform="scale(${f3(sx)} ${f3(sy)})"` : ''}>${SYM[it.type]}</g>`;
+    const art = LA_BOXES[it.type] ? SYM[it.type].replace(/×\d+/, '×' + laBoxes(it)) : SYM[it.type];
+    return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="sym"${sc ? ` transform="scale(${f3(sx)} ${f3(sy)})"` : ''}>${art}</g>`;
   }
   switch (c.shape) {
     case 'person': return `<circle class="${cls}" r="${hw}"/><text class="initials" text-anchor="middle" dy=".21">${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
@@ -2190,6 +2195,12 @@ function renderInspector() {
         <div class="rk-mini">${Array.from({ length: N }, (_, k) => { const d = (it.devices || []).find(x => x.at === k); return d ? `<div class="k-${devSpec(d).kind}" style="height:${d.u * 14 - 2}px">${esc(d.name)}</div>` : (it.devices || []).some(x => k > x.at && k < x.at + x.u) ? '' : '<div class="empty"></div>'; }).join('')}</div>
         <button class="btn primary block" id="openRack">${ic('box', 'sm')}Open rack builder</button>
         ${rs.ins ? `<p class="hint">Works as a ${rs.ins}×${rs.outsMax} stage box.</p>` : ''}</section>`;
+    }
+    if (LA_BOXES[it.type]) {
+      const n = laBoxes(it), mx = LA_BOXES[it.type].max;
+      extra += `<section class="isec"><h3>Line array <span>${plural(n, 'box', 'boxes')}</span></h3>
+        <div class="field"><label for="iBoxes">Boxes in the hang</label><div class="row" style="gap:6px"><button class="btn" data-boxes="-1" aria-label="One box fewer" ${n <= 1 ? 'disabled' : ''}>${ic('minus', 'sm')}</button><input id="iBoxes" type="number" min="1" max="${mx}" step="1" value="${n}" style="text-align:center;flex:1"><button class="btn" data-boxes="1" aria-label="One box more" ${n >= mx ? 'disabled' : ''}>${ic('plus', 'sm')}</button></div></div>
+        <p class="hint">Power draw follows the box count (${Math.round(cat(it).watts / LA_BOXES[it.type].def)} W a box).</p></section>`;
     }
     if (Number(prop(it, 'outs')) > 0 && it.type !== 'stagebox' && it.type !== 'rack') extra += `<section class="isec"><h3>Outputs</h3>${field('iOutsUse', 'Outputs it uses', prop(it, 'outs'), 'number', 'min="0" max="64"')}</section>`;
     const pOpts = `<option value="">Nobody</option>` + plan.team.map(p => `<option value="${p.id}" ${p.id === it.personId ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
@@ -2829,6 +2840,7 @@ $('inspector').addEventListener('change', e => {
       case 'iInputs': it.inputs = t.value.split(',').map(s => s.trim()).filter(Boolean); it.inputsEdited = true; break;
       case 'iIns': it.ins = Math.max(1, n); break; case 'iOuts': it.outsMax = Math.max(0, n); break;
       case 'iOutsUse': it.outs = Math.max(0, n); break;
+      case 'iBoxes': if (n > 0) { it.boxes = clamp(Math.round(n), 1, LA_BOXES[it.type]?.max || 24); delete it.watts; } break;
       case 'iOutlets': it.outlets = clamp(n, 1, 12); break;
       case 'iCirc': it.circuits = Math.max(1, n); break; case 'iAmps': it.amps = Math.max(1, n); break; case 'iVolts': it.volts = Math.max(1, n); break;
     }
@@ -2849,6 +2861,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.selc) { sel = { kind: 'cable', id: t.dataset.selc }; renderPlot(); renderInspector(); return; }
   if (t.dataset.level) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.level = t.dataset.level === 'ceiling' ? 'ceiling' : undefined; c.auto = false; }); return; }
   if (t.dataset.route) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.route = t.dataset.route === 'direct' ? 'direct' : undefined; }); return; }
+  if (t.dataset.boxes) { const it = itemById(sel.id); mutate(() => { it.boxes = clamp(laBoxes(it) + Number(t.dataset.boxes), 1, LA_BOXES[it.type].max); delete it.watts; }); return; }
   if (t.dataset.chkind) { const ch = chans().find(x => x.id === sel.id); mutate(() => { ch.kind = t.dataset.chkind; }); return; }
   if (t.id === 'chDel') { deleteSelected(); return; }
   if (t.id === 'chToggleIn') { setCableView(() => { cableView.hideInCh = !cableView.hideInCh; }); return; }
