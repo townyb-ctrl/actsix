@@ -24,6 +24,12 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Guitar amp (miked)](gtr_amp.svg) | `gtr_amp` | Guitar amp (miked) | 0.61 × 0.30 m |
 | ![Bass amp](bass_amp.svg) | `bass_amp` | Bass amp | 0.61 × 0.46 m |
 | ![Keyboard rig](keys.svg) | `keys` | Keyboard rig | 1.52 × 0.61 m |
+| ![iPad stand](ipad_stand.svg) | `ipad_stand` | iPad stand | 0.30 × 0.24 m |
+| ![Acoustic preamp pedal](ac_preamp.svg) | `ac_preamp` | Acoustic preamp pedal | 0.24 × 0.17 m |
+| ![MIDI footswitch controller](midi_fs.svg) | `midi_fs` | MIDI footswitch controller | 0.52 × 0.17 m |
+| ![USB audio interface (2 in / 2 out)](usb_if.svg) | `usb_if` | USB audio interface (2 in / 2 out) | 0.23 × 0.17 m |
+| ![MultiTracks iPad](mt_ipad.svg) | `mt_ipad` | MultiTracks iPad | 0.30 × 0.24 m |
+| ![Electronic drum kit](edrums.svg) | `edrums` | Electronic drum kit | 1.52 × 1.37 m |
 | ![Pedalboard](pedalboard.svg) | `pedalboard` | Pedalboard | 0.76 × 0.37 m |
 | ![Tracks laptop](laptop.svg) | `laptop` | Tracks laptop | 0.61 × 0.46 m |
 | ![Music stand](music_stand.svg) | `music_stand` | Music stand | 0.46 × 0.24 m |

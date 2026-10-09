@@ -220,6 +220,12 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .search .ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
 .search input { width: 100%; padding-left: 34px; }
 .gearcat { display: grid; gap: 8px; }
+.geartabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.geartabs button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 5px 11px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.geartabs button span { font: 10.5px var(--f-mono); color: var(--muted); }
+.geartabs button:hover { border-color: var(--line-2); color: var(--ink); }
+.geartabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.geartabs button[aria-selected="true"] span { color: inherit; opacity: .7; }
 .gearlist { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .gear { display: grid; grid-template-columns: 34px 1fr; gap: 9px; align-items: center; text-align: left; border: 1px solid var(--line); border-radius: var(--r-md); padding: 7px; background: var(--surface); cursor: grab; transition: border-color .15s, box-shadow .15s, transform .1s; }
 .gear:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); transform: translateY(-1px); }
@@ -770,6 +776,12 @@ const CAT = {
   keys:        { name: 'Keyboard rig', short: 'Keys', cat: 'inst', w: 5, d: 2, shape: 'keys', inputs: ['Keys L', 'Keys R'], watts: 150 },
   pedalboard:  { name: 'Pedalboard', short: 'Pedals', cat: 'inst', w: 2.5, d: 1.2, shape: 'rect', watts: 30 },
   laptop:      { name: 'Tracks laptop', short: 'Tracks rig', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
+  ipad_stand:  { name: 'iPad stand', short: 'iPad', cat: 'infra', w: 1, d: .8, shape: 'rect' },
+  ac_preamp:   { name: 'Acoustic preamp pedal', short: 'Ac preamp', cat: 'inst', w: .8, d: .55, shape: 'rect', inputs: ['Ac Gtr'], watts: 5 },
+  midi_fs:     { name: 'MIDI footswitch controller', short: 'MIDI footswitch', cat: 'inst', w: 1.7, d: .55, shape: 'rect' },
+  usb_if:      { name: 'USB audio interface (2 in / 2 out)', short: 'USB interface', cat: 'audio', w: .75, d: .55, shape: 'rect', inputs: ['USB L', 'USB R'] },
+  mt_ipad:     { name: 'MultiTracks iPad', short: 'MultiTracks', cat: 'inst', w: 1, d: .8, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 20 },
+  edrums:      { name: 'Electronic drum kit', short: 'E-kit', cat: 'inst', w: 5, d: 4.5, shape: 'kit', inputs: ['E-kit L', 'E-kit R'], watts: 40 },
   music_stand: { name: 'Music stand', short: 'Stand', cat: 'staging', w: 1.5, d: .8, shape: 'rect' },
   pulpit:      { name: 'Pulpit', short: 'Pulpit', cat: 'staging', w: 2.5, d: 2, shape: 'rect' },
   rack:        { name: 'Custom rack', short: 'Rack', cat: 'infra', w: 2, d: 2.4, shape: 'rack' },
@@ -788,11 +800,12 @@ const CAT = {
 };
 /* CAT:END */
 const GEAR_GROUPS = [
-  ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub']],
+  ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'usb_if', 'wedge', 'iem', 'main_spk', 'sub']],
+  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'keys', 'pedalboard', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
+  ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
-  ['Band & staging', ['drum_kit', 'drum_riser', 'drum_shield', 'gtr_amp', 'bass_amp', 'keys', 'pedalboard', 'laptop', 'music_stand', 'pulpit', 'riser']],
-  ['Video & lighting', ['camera', 'conf_mon', 'light_stand']],
+  ['Video & light', ['camera', 'conf_mon', 'light_stand']],
 ];
 const OVERHEAD_TYPES = ['main_spk', 'sub'];
 const CABLES = {
@@ -807,15 +820,15 @@ const CABLES = {
 /* Roles: anchor = [fraction of stage width, fraction of stage depth] where depth 0 is upstage.
    spread = x offsets (ft) used when several people share a role. gear = [type, dx, dy, opts]. */
 const ROLES = {
-  'Worship Leader':  { anchor: [.5, .64], spread: [0, -5, 5], gear: [['person', 0, 0], ['vox_mic', 0, .9], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['iem', -1, -.3], ['music_stand', 1.4, 1.3]] },
+  'Worship Leader':  { anchor: [.5, .64], spread: [0, -5, 5], gear: [['person', 0, 0], ['vox_mic', 0, .9], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['iem', -1, -.3], ['ipad_stand', 1.4, 1.3]] },
   'Vocalist':        { anchor: [.5, .8], spread: [-4.5, 4.5, -8.5, 8.5, -12, 12], gear: [['person', 0, 0], ['vox_mic', 0, .9], ['iem', -1, -.3]] },
-  'Acoustic Guitar': { anchor: [.32, .6], spread: [0, -4, 4], gear: [['person', 0, 0], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['iem', -1, -.3], ['music_stand', 0, 1.4]] },
+  'Acoustic Guitar': { anchor: [.32, .6], spread: [0, -4, 4], gear: [['person', 0, 0], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['iem', -1, -.3], ['ipad_stand', 0, 1.4]] },
   'Electric Guitar': { anchor: [.74, .38], spread: [0, 4, -4], gear: [['person', 0, 0], ['gtr_amp', 0, -2.2], ['pedalboard', 0, 1.2], ['iem', -1.3, -.3]] },
   'Bass':            { anchor: [.27, .36], spread: [0, -4], gear: [['person', 0, 0], ['bass_amp', 0, -2.4], ['di_mono', 1.2, -1.2, { inputs: ['Bass DI'] }], ['iem', -1.2, -.3]] },
   'Keys':            { anchor: [.13, .52], spread: [0, 0], gear: [['person', 0, -1.4], ['keys', 0, 0], ['iem', -2.2, -1.4]] },
   'Drums':           { anchor: [.5, .22], spread: [0, 9], gear: [['drum_riser', 0, 0], ['drum_kit', 0, .4], ['drum_shield', 0, 4.3], ['person', 0, -.9], ['iem', 2.2, -2.2]] },
   'Tracks / MD':     { anchor: [.8, .14], spread: [0, 4], gear: [['person', 0, -1], ['laptop', 0, 0], ['iem', 1.4, -1]] },
-  'Strings':         { anchor: [.86, .58], spread: [0, -3.5], gear: [['person', 0, 0], ['inst_mic', 0, .9], ['iem', -1, -.3], ['music_stand', 0, 1.6]] },
+  'Strings':         { anchor: [.86, .58], spread: [0, -3.5], gear: [['person', 0, 0], ['inst_mic', 0, .9], ['iem', -1, -.3], ['ipad_stand', 0, 1.6]] },
   'Pastor / Speaker':{ anchor: [.86, .86], spread: [0, -4], gear: [['person', 0, -1.3], ['pulpit', 0, 0], ['headset', 1.2, -1.3]] },
   'Host':            { anchor: [.14, .86], spread: [0, 3], gear: [['person', 0, 0], ['vox_wl', .9, 0]] },
   'Camera':          { anchor: [.5, 1.7], spread: [-12, 12, 0], gear: [['person', 0, 1.6], ['camera', 0, 0]] },
@@ -1436,7 +1449,7 @@ const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hid
    UI state & small helpers
    =================================================================== */
 let railOpen = true, inspOpen = true;
-let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', themePref = 'system';
+let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', gearTab = 'Audio', themePref = 'system';
 const SHORT = { xlr: 'XLR', cat6: 'Cat6', power: 'Power', inst: 'Jack', speakon: 'Speakon', video: 'Video' };
 const KVAR = { xlr: '--k-xlr', cat6: '--k-cat', power: '--k-pow', inst: '--k-inst', speakon: '--k-spk', video: '--k-vid' };
 const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? 'word' : /Engineer|Lighting|Producer|Camera/.test(r) ? 'tech' : r ? 'band' : '';
@@ -1541,6 +1554,17 @@ const SYM = (() => {
       rect(-2.5, -.75, 5, 1.5, 'body c-inst s-edge', .1) + rect(-2.35, -.68, 4.7, .58, 's-white', .03) +
       Array.from({ length: 35 }, (_, i) => -2.35 + (i + 1) * 4.7 / 36).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
       grid(-2.1, .25, 10, 1, .2, 0, .045, 's-thin') + rect(.6, .12, 1.3, .3, 's-glass', .03),
+    ipad_stand: tripod(.38, 's-thin') + rect(-.42, -.32, .84, .6, 's-dark', .07) + rect(-.36, -.26, .72, .48, 's-glass', .04) + circ(0, .3, .025, 's-white') + rect(-.5, .2, 1, .08, 's-line', .03),
+    ac_preamp: rect(-.4, -.27, .8, .55, 'body c-inst s-edge', .06) + grid(-.25, -.12, 4, 1, .17, 0, .05, 's-white') + rect(-.22, .06, .44, .14, 's-dark', .03) + circ(.3, .16, .03, 's-led') + rect(-.36, -.25, .14, .06, 's-white', .01),
+    midi_fs: rect(-.85, -.27, 1.7, .55, 's-dark', .06) + rect(-.85, -.27, 1.7, .55, 's-line', .06) + [-.6, -.2, .2, .6].map(x => circ(x, .06, .11, 's-white') + circ(x, -.16, .03, 's-led')).join('') + rect(-.3, -.24, .6, .08, 's-glass', .02),
+    usb_if: rect(-.37, -.27, .75, .55, 'body c-audio s-edge', .06) + circ(-.18, -.05, .09, 's-port') + circ(.06, -.05, .09, 's-port') + circ(.26, -.05, .06, 's-white') + grid(-.2, .16, 3, 1, .14, 0, .025, 's-led'),
+    mt_ipad: tripod(.38, 's-thin') + rect(-.45, -.35, .9, .66, 's-dark', .08) + rect(-.39, -.29, .78, .54, 's-glass', .04) + rect(-.33, -.2, .66, .07, 's-ped1', .02) + rect(-.33, -.08, .45, .07, 's-ped4', .02) + rect(-.33, .04, .55, .07, 's-ped2', .02) + circ(.25, .17, .05, 's-white'),
+    edrums: rect(-2.5, -2.25, 5, 4.5, 's-deck', .3) + line(-2.1, -1.3, 2.1, -1.3, 's-line') + circ(0, -1.7, .45, 's-dark') +
+      rect(-.55, -.1, 1.1, .8, 's-dark', .08) + rect(-.45, 0, .9, .6, 's-grille', .05) +            // kick tower
+      circ(.75, -.6, .45, 'body c-inst s-edge') + circ(.75, -.6, .38, 's-grille') +                   // mesh snare
+      circ(.3, .3, .35, 'body c-inst s-edge') + circ(-.4, .3, .35, 'body c-inst s-edge') + circ(-1.1, -.4, .45, 'body c-inst s-edge') +
+      circ(1.55, -.5, .45, 's-metal') + circ(1.4, .9, .55, 's-metal') + circ(-1.5, .7, .6, 's-metal') +
+      rect(-1.95, -1.55, .7, .45, 'body c-infra s-edge', .05) + rect(-1.88, -1.48, .56, .2, 's-glass', .02),   // module
     pedalboard: rect(-1.25, -.6, 2.5, 1.2, 's-dark', .08) + rect(-1.25, -.6, 2.5, 1.2, 's-line', .08) +
       [['s-ped1', -1.05], ['s-ped2', -.6], ['s-ped3', -.15], ['s-ped4', .3], ['s-ped1', .75]].map(([c, x]) => rect(x, -.35, .34, .6, c, .04) + circ(x + .17, -.2, .05, 's-dark') + circ(x + .17, .12, .07, 's-white')).join('') + line(-1.2, -.5, 1.2, -.5, 's-thin'),
     laptop: rect(-1, -.75, 2, 1.5, 'body c-infra s-bg', .08) + rect(-.65, -.45, 1.1, .75, 'body c-inst s-edge', .04) + rect(-.58, -.38, .96, .45, 's-head', .02) + rect(-.65, .3, 1.1, .08, 's-glass', .02) + rect(.55, -.3, .38, .55, 'body c-infra s-edge', .04) + circ(.74, -.12, .06, 's-white') + circ(.74, .1, .06, 's-white'),
@@ -1982,9 +2006,11 @@ function renderRail() {
       <p class="hint" style="text-align:center">Places everyone's gear, then patches and powers it. Spots you've moved stay put.</p>`;
   } else if (railTab === 'gear') {
     const q = gearQuery.trim().toLowerCase();
-    const groups = GEAR_GROUPS.map(([g, types]) => [g, types.filter(t => !q || CAT[t].name.toLowerCase().includes(q) || g.toLowerCase().includes(q))]).filter(([, t]) => t.length);
-    pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
-      <p class="hint">Drag onto the stage, or click to drop it centre stage.</p>` +
+    // searching looks across every category; otherwise show the chosen tab
+    const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => !q || CAT[t].name.toLowerCase().includes(q) || g.toLowerCase().includes(q))]).filter(([, t]) => t.length);
+    pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
+      <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}<span>${types.length}</span></button>`).join('')}</div>
+      <p class="hint">${q ? `Results across all categories.` : 'Drag onto the stage, or click to drop it centre stage.'}</p>` +
       (groups.map(([g, types]) => `<div class="gearcat"><h3 class="eyebrow">${esc(g)}</h3><div class="gearlist">
         ${types.map(t => `<button class="gear" data-add="${t}" draggable="true">${glyph(t)}<span><b>${esc(CAT[t].name)}</b><small>${esc(gearMeta(t))}</small></span></button>`).join('')}
       </div></div>`).join('') || `<p class="hint">Nothing matches “${esc(gearQuery)}”.</p>`);
@@ -2608,6 +2634,7 @@ $('railPane').addEventListener('click', e => {
       }
     }, `Added ${plural(lines.length, 'person', 'people')}`);
   }
+  else if (t.dataset.geartab) { gearTab = t.dataset.geartab; gearQuery = ''; renderRail(); }
   else if (t.dataset.add) addGear(t.dataset.add, snapTo(plan.stage.w / 2), snapTo(plan.stage.d / 2));
   else if (t.id === 'editStage') openDesigner(false);
   else if (t.id === 'autoBtn') mutate(autoCable, 'Cabling re-run');
