@@ -295,6 +295,9 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .chplus circle { fill: var(--surface); stroke: var(--accent); stroke-width: .05; }
 .chplus path { stroke: var(--accent-text); stroke-width: .06; stroke-linecap: round; }
 .fl { pointer-events: none; }
+.chport { stroke: #fff; stroke-width: .05; pointer-events: none; }
+.chport.dim { opacity: .2; }
+.cab-inside { fill: none; stroke-width: .12; stroke-dasharray: .2 .25; opacity: .55; pointer-events: none; }
 .fl-out { fill: var(--deck); stroke-width: .07; stroke-linejoin: round; }
 .flowg.dim { opacity: .18; }
 .flowanim { fill: none; stroke-width: .2; stroke-linecap: round; pointer-events: none; opacity: .9; animation: flowmove 1.1s linear infinite; }
@@ -1762,10 +1765,22 @@ function renderPlot() {
     if (!isSel && !cableShown(c)) continue;
     const rel = selItem ? (touches(c, selItem) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : '');
     const ps = o.map(p => p.join(',')).join(' ');
-    const marks = flowMarks(c, o, isSel ? '' : rel);
-    if (c.level === 'ceiling') ceil += `<polyline class="cab ceil k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>` + marks;
-    else s += `<polyline class="cab k-${c.type}${isSel ? ' sel' : rel}" points="${ps}"/>` + marks;
-    hits += `<polyline class="cabhit" data-cid="${c.id}" points="${ps}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
+    // with "inside channels" hidden, only the stretches on the open stage are drawn (a selected cable still shows all of it)
+    const parts = cableView.hideInCh ? cableParts(c) : null;
+    const segs = parts?.inside && !isSel ? parts.exposed : [o];
+    let out = '';
+    for (const seg of segs) {
+      if (seg.length < 2) continue;
+      const sp = seg.map(p => p.join(',')).join(' ');
+      out += `<polyline class="cab${c.level === 'ceiling' ? ' ceil' : ''} k-${c.type}${isSel ? ' sel' : rel}" points="${sp}"/>` + flowMarks(c, seg, isSel ? '' : rel);
+      hits += `<polyline class="cabhit" data-cid="${c.id}" points="${sp}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
+    }
+    if (parts?.inside) {
+      if (isSel) out += `<polyline class="cab-inside" points="${parts.inside.map(p => p.join(',')).join(' ')}" style="stroke:var(${KVAR[c.type]})"/>`;
+      const r = Math.max(.12, 3.2 / scale);
+      for (const q of [parts.entry, parts.exit]) out += `<circle class="chport${rel}" cx="${f3(q[0])}" cy="${f3(q[1])}" r="${f3(r)}" style="fill:var(${KVAR[c.type]})"/>`;
+    }
+    if (c.level === 'ceiling') ceil += out; else s += out;
     if (isSel || (selItem && touches(c, selItem))) {
       const m = midpoint(o);
       lens += `<text class="cablen" x="${m[0]}" y="${m[1] - .3}" text-anchor="middle">${fmtLen(cableLen(c))}${cableQty(c) > 1 ? ` ×${cableQty(c)}` : ''}</text>`;
@@ -2052,6 +2067,7 @@ function renderInspector() {
         <div class="field"><span>Type</span><div class="chips">${Object.entries(CH_KINDS).map(([key, v]) => `<button class="ctype" data-chkind="${key}" aria-pressed="${ch.kind === key}">${esc(v.name)}</button>`).join('')}</div></div>
         <div class="grid2">${field('chW', 'Width', mVal(fromM(ch.w ?? k.w)), 'number', 'step=".05" min=".1"', 'm')}<div class="field"><span>Length</span><b style="font:500 14px var(--f-mono);padding:8px 0">${fmtLen(runLen(ch.pts))}</b></div></div>
         <p class="hint">${k.level ? 'Overhead: only ceiling runs use it. ' : ''}Drag the gold squares to reshape it. Click a + on an edge to add a bend, or past an end to extend it.</p>
+        <button class="btn" id="chToggleIn">${ic(cableView.hideInCh ? 'eye' : 'eyeOff', 'sm')}${cableView.hideInCh ? 'Show cables inside channels' : 'Hide cables inside channels'}</button>
         <div class="grid2"><button class="btn" data-chextbtn="0">${ic('plus', 'sm')}Extend start</button><button class="btn" data-chextbtn="1">${ic('plus', 'sm')}Extend end</button></div></section>
       <section class="isec"><h3>Cables inside <span>${using.length}</span></h3>${using.length ? `<ul class="conns">${using.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(itemById(x.from)))} → ${esc(itemName(itemById(x.to)))}<small>${esc(CABLES[x.type].name)}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : '<p class="hint">No cables use it yet. Cables route through a channel when it keeps more of the run off the open floor.</p>'}</section>
       <section class="isec"><div class="actions"><button class="btn danger" id="chDel">${ic('trash', 'sm')}Delete channel</button></div></section>
@@ -2386,6 +2402,7 @@ $('ftools').addEventListener('click', e => {
   if (ct) { const k = ct.dataset.cabtype; setCableView(() => { cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
   if (e.target.closest('#cabFlow')) { setCableView(() => { cableView.noFlow = !cableView.noFlow; }); return; }
   if (e.target.closest('#cabAnim')) { setCableView(() => { cableView.anim = !cableView.anim; }); return; }
+  if (e.target.closest('#cabInCh')) { setCableView(() => { cableView.hideInCh = !cableView.hideInCh; }); return; }
   if (e.target.closest('#cabCeil')) { setCableView(() => { cableView.hideCeil = !cableView.hideCeil; }); return; }
   if (e.target.closest('#cabShowAll')) { setCableView(() => { cableView.all = true; cableView.hidden.clear(); cableView.hideCeil = false; }); return; }
   if (e.target.closest('#cabOnly')) { setCableView(() => { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(k => k !== 'power')); }); return; }
@@ -2643,6 +2660,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.route) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.route = t.dataset.route === 'direct' ? 'direct' : undefined; }); return; }
   if (t.dataset.chkind) { const ch = chans().find(x => x.id === sel.id); mutate(() => { ch.kind = t.dataset.chkind; }); return; }
   if (t.id === 'chDel') { deleteSelected(); return; }
+  if (t.id === 'chToggleIn') { setCableView(() => { cableView.hideInCh = !cableView.hideInCh; }); return; }
   if (t.dataset.chextbtn) { startExtend(sel.id, t.dataset.chextbtn === '1'); return; }
   if (t.dataset.settype) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.type = t.dataset.settype; c.auto = false; }); return; }
   if (t.dataset.legend) { const k = t.dataset.legend; setCableView(() => { if (!cableView.all) { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(x => x !== k)); } else cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
@@ -2913,11 +2931,11 @@ $('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = 
    Cable visibility (per browser)
    =================================================================== */
 const cableView = { all: true, hidden: new Set(), menu: false };
-try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; } } catch { /* ignore */ }
+try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; cableView.hideInCh = !!v.hideInCh; } } catch { /* ignore */ }
 const cableShown = c => cableView.all && !cableView.hidden.has(c.type) && !(c.level === 'ceiling' && cableView.hideCeil);
 function setCableView(fn) {
   fn();
-  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim })); } catch { /* ignore */ }
+  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim, hideInCh: !!cableView.hideInCh })); } catch { /* ignore */ }
   if (sel?.kind === 'cable') { const c = plan.cables.find(x => x.id === sel.id); if (c && !cableShown(c)) sel = null; }
   renderPlot(); renderInspector();
 }
@@ -2931,6 +2949,7 @@ function cableMenuHtml() {
       <div class="ctx-sep"></div>
       <button class="cm-row" id="cabFlow" aria-pressed="${!cableView.noFlow}"><span class="sw" style="background:none;display:grid;place-items:center"><svg viewBox="-6 -6 12 12" width="12" height="12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg></span><span>Signal flow arrows</span><span></span>${ic(cableView.noFlow ? 'eyeOff' : 'eye', 'sm')}</button>
       <button class="cm-row" id="cabAnim" aria-pressed="${!!cableView.anim}" ${cableView.noFlow ? 'disabled' : ''}><span></span><span>Animate the flow</span><span></span><input type="checkbox" class="switch" tabindex="-1" ${cableView.anim ? 'checked' : ''} style="pointer-events:none;transform:scale(.8)"></button>
+      <button class="cm-row" id="cabInCh" aria-pressed="${!cableView.hideInCh}" ${cableView.all ? '' : 'disabled'}><span class="sw" style="background:#11161a;height:8px;border:1px solid var(--line-2)"></span><span>Inside channels</span><span class="hint">${plan.cables.filter(c => routeInfo(c)?.via).length}</span>${ic(cableView.hideInCh ? 'eyeOff' : 'eye', 'sm')}</button>
       <button class="cm-row" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="hint">${plan.cables.filter(c => c.level === 'ceiling').length}</span>${ic(cableView.hideCeil ? 'eyeOff' : 'eye', 'sm')}</button>
       <div class="row" style="justify-content:space-between;padding:6px 8px 2px"><button class="btn quiet" id="cabShowAll" style="padding:4px 8px">Show all</button><button class="btn quiet" id="cabOnly" style="padding:4px 8px" title="Hide every type except power">Power only</button></div>
     </div>` : '';
@@ -3138,13 +3157,23 @@ function routeInfo(c) {
   }
   return best;
 }
+// split a channel-routed cable into its open-stage stretches and the stretch inside the channel
+function cableParts(c) {
+  const r = routeInfo(c);
+  if (!r || !r.via) return { inside: null };
+  const p = r.pts, n = p.length;
+  return { exposed: [orth(p.slice(0, 2)), orth(p.slice(n - 2))], inside: p.slice(1, n - 1), entry: p[1], exit: p[n - 2] };
+}
 function renderChannels(selId) {
+  const counts = new Map();
+  for (const c of plan.cables) { const v = routeInfo(c)?.via; if (v && cableShown(c)) counts.set(v.id, (counts.get(v.id) || 0) + 1); }
   let s = '', hits = '', handles = '', over = '';
   for (const ch of chans()) {
     if (ch.pts.length < 2) continue;
     const k = CH_KINDS[ch.kind] || CH_KINDS.trench, w = fromM(ch.w ?? k.w), ps = ch.pts.map(p => p.join(',')).join(' ');
     const isSel = ch.id === selId;
-    const m = midpoint(ch.pts), lab = scale >= 11 ? `<text class="ch-label${k.level ? ' over' : ''}" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}</text>` : '';
+    const nIn = counts.get(ch.id) || 0;
+    const m = midpoint(ch.pts), lab = scale >= 11 ? `<text class="ch-label${k.level ? ' over' : ''}" x="${f3(m[0])}" y="${f3(m[1] - w / 2 - .25)}" text-anchor="middle">${esc(ch.name || k.name)}${nIn ? ` · ${nIn} cable${nIn === 1 ? '' : 's'}` : ''}</text>` : '';
     if (k.level === 'ceiling') over += `<polyline class="ch-over${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;   // overhead: drawn above the gear
     else s += `<polyline class="ch-edge ch-${ch.kind}${isSel ? ' sel' : ''}" points="${ps}" style="stroke-width:${f3(w + .14)}"/><polyline class="ch-band ch-${ch.kind}" points="${ps}" style="stroke-width:${f3(w)}"/>` + lab;
     hits += `<polyline class="chhit" data-chid="${ch.id}" points="${ps}" style="stroke-width:${f3(Math.max(w, .8))}"><title>${esc(ch.name || k.name)}</title></polyline>`;
