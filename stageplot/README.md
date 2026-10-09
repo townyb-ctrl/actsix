@@ -26,6 +26,10 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Using it
 
+- **Search or jump to (Ctrl+K)**: run any action, add any gear by name, or find a person or item on stage.
+- **Right-click** gear or a cable for quick actions (edit, run a cable from here, rotate, duplicate, assign to someone, hide that cable type, delete). **Double-click** gear to edit its details. Hover for a quick info card.
+- Dragging gear snaps to line up with other gear and the stage centreline (pink guides). Hold Alt to move freely.
+- The bottom dock holds Move, Run cable, the Cables menu, zoom and fit. A "Saved" tick in the header confirms every change is stored.
 - **Cables** menu on the canvas hides all cables or single types (also `H`, or click a colour in the right panel's legend). Hidden types stay hidden in your browser until you show them again.
 - Hide the left or right panel with the header buttons, `[` and `]`, or press `\` for focus mode (both hidden). The left panel shrinks to an icon strip; with the right panel hidden, a small card over the plot keeps rotate / duplicate / delete for whatever you select.
 - Drag the floor to pan; pinch or Ctrl+scroll to zoom. **Stage** / **Room** buttons refit the view.
