@@ -220,18 +220,21 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .search .ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
 .search input { width: 100%; padding-left: 34px; }
 .gearcat { display: grid; gap: 8px; }
-.geartabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.geartabs { display: flex; flex-wrap: nowrap; gap: 6px; flex: none; min-height: 34px; align-items: center; overflow-y: hidden; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 24px), transparent); }
+.geartabs::-webkit-scrollbar { display: none; }
+.geartabs button { flex: none; }
 .geartabs button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 5px 11px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
 .geartabs button span { font: 10.5px var(--f-mono); color: var(--muted); }
 .geartabs button:hover { border-color: var(--line-2); color: var(--ink); }
 .geartabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .geartabs button[aria-selected="true"] span { color: inherit; opacity: .7; }
-.gearlist { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.gear { display: grid; grid-template-columns: 34px 1fr; gap: 9px; align-items: center; text-align: left; border: 1px solid var(--line); border-radius: var(--r-md); padding: 7px; background: var(--surface); cursor: grab; transition: border-color .15s, box-shadow .15s, transform .1s; }
+.gearlist { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.gear { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: center; text-align: left; border: 1px solid var(--line); border-radius: var(--r-md); padding: 5px 10px 5px 5px; background: var(--surface); cursor: grab; transition: border-color .15s, box-shadow .15s, transform .1s; }
 .gear:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); transform: translateY(-1px); }
 .gear:active { cursor: grabbing; }
-.gear b { display: block; font-weight: 600; font-size: 12.5px; line-height: 1.2; }
-.gear small { display: block; color: var(--muted); font-size: 11px; font-family: var(--f-mono); margin-top: 2px; }
+.gear > span { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.gear b { font-weight: 600; font-size: 13px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gear small { flex: none; color: var(--muted); font-size: 11px; font-family: var(--f-mono); }
 .glyph { width: 34px; height: 34px; border-radius: 8px; background: var(--deck); padding: 3px; display: block; }
 
 /* ---------- canvas ---------- */
@@ -271,6 +274,11 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .ctxmenu .kbd { font-size: 10.5px; color: var(--muted); }
 .ctx-h { font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 8px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ctx-sep { height: 1px; background: var(--line); margin: 4px 0; }
+.ctx-owner > summary { list-style: none; display: grid; grid-template-columns: 18px auto 1fr auto; gap: 10px; align-items: center; padding: 7px 8px; border-radius: var(--r-sm); cursor: pointer; font-size: 13.5px; color: var(--ink); }
+.ctx-owner > summary::-webkit-details-marker { display: none; }
+.ctx-owner > summary:hover { background: var(--surface-2); }
+.ctx-owner .ctx-val { color: var(--muted); font-size: 12.5px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctx-owner[open] > summary .ic:last-child { transform: rotate(90deg); }
 .ctx-people { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 6px 6px; }
 .ctx-people button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 3px 9px; font-size: 12px; cursor: pointer; }
 .ctx-people button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
@@ -2449,7 +2457,7 @@ function renderRail() {
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
       <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}</button>`).join('')}</div>
       ${!q && recentGear.length ? `<div class="recent"><h3 class="eyebrow">Recently used</h3><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
-      <p class="hint">${q ? `Results across all categories.` : 'Drag onto the stage, or click to drop it centre stage.'}</p>` +
+      ${q ? '<p class="hint">Results across all categories.</p>' : recentGear.length ? '' : '<p class="hint">Drag onto the stage, or click to drop it centre stage.</p>'}` +
       (groups.map(([g, types]) => `<div class="gearcat"><h3 class="eyebrow">${esc(g)}</h3><div class="gearlist">
         ${types.map(t => `<button class="gear" data-add="${t}" draggable="true">${glyph(t)}<span><b>${esc(CAT[t].name)}</b><small>${esc(gearMeta(t))}</small></span></button>`).join('')}
       </div></div>`).join('') || `<p class="hint">Nothing matches “${esc(gearQuery)}”.</p>`);
@@ -2634,7 +2642,6 @@ function renderInspector() {
         ${field('iLabel', 'Label', it.label || '', 'text', `placeholder="${esc(C.short || C.name)}"`)}
         <div class="field"><label for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>
         ${it.chan ? `<div class="flowline" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Sits inside ${esc(chans().find(c => c.id === it.chan.id)?.name || 'a channel')}<button class="btn" id="iOutCh" style="padding:4px 10px">Take out</button></div>` : ''}
-        ${it.gen ? `<p class="hint">Placed from the team. Rebuilding keeps where you put it.</p>` : ''}
       </section>
       ${basic}
       <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div></section>
@@ -4228,13 +4235,13 @@ svg.addEventListener('contextmenu', e => {
   } else if (g) {
     const it = itemById(g.dataset.id), isPerson = cat(it).shape === 'person';
     m.innerHTML = `<div class="ctx-h">${esc(isPerson ? personById(it.personId)?.name || it.label : itemName(it))}</div>
-      <button data-ctx="edit">${ic('panelR', 'sm')}Edit details<span class="kbd">Dbl-click</span></button>
+      ${inspOpen ? '' : `<button data-ctx="edit">${ic('panelR', 'sm')}Edit details<span class="kbd">Dbl-click</span></button>`}
       <button data-ctx="cable">${ic('cable', 'sm')}Run a cable from here</button>
       <button data-ctx="rotate">${ic('rotate', 'sm')}Rotate 90°<span class="kbd">R</span></button>
       <button data-ctx="dup">${ic('copy', 'sm')}Duplicate<span class="kbd">D</span></button>
       <button data-ctx="copy">${ic('clip', 'sm')}Copy<span class="kbd">Ctrl C</span></button>
       <button data-ctx="lock">${ic(it.locked ? 'unlock' : 'lock', 'sm')}${it.locked ? 'Unlock' : 'Lock in place'}<span class="kbd">L</span></button>
-      ${!isPerson && plan.team.length ? `<div class="ctx-sep"></div><div class="ctx-h">Belongs to</div><div class="ctx-people">${plan.team.slice(0, 12).map(p => `<button data-ctx-person="${p.id}" aria-pressed="${p.id === it.personId}">${esc(p.name || 'Unnamed')}</button>`).join('')}${it.personId ? `<button data-ctx-person="">Nobody</button>` : ''}</div>` : ''}
+      ${!isPerson && plan.team.length ? `<details class="ctx-owner"><summary>${ic('person', 'sm')}<span>Belongs to</span><span class="ctx-val">${esc(personById(it.personId)?.name || 'Nobody')}</span>${ic('chevR', 'sm')}</summary><div class="ctx-people">${plan.team.slice(0, 16).map(p => `<button data-ctx-person="${p.id}" aria-pressed="${p.id === it.personId}">${esc(p.name || 'Unnamed')}</button>`).join('')}${it.personId ? `<button data-ctx-person="">Nobody</button>` : ''}</div></details>` : ''}
       <div class="ctx-sep"></div>
       <button data-ctx="del" class="danger">${ic('trash', 'sm')}Delete<span class="kbd">Del</span></button>`;
   } else {
@@ -4252,6 +4259,7 @@ svg.addEventListener('contextmenu', e => {
   m.style.left = `${Math.min(innerWidth - r.width - 8, e.clientX)}px`;
   m.style.top = `${Math.min(innerHeight - r.height - 8, e.clientY)}px`;
 });
+$('ctxMenu').addEventListener('toggle', () => { const m = $('ctxMenu'), r = m.getBoundingClientRect(); if (r.bottom > innerHeight - 8) m.style.top = `${Math.max(8, innerHeight - r.height - 8)}px`; }, true);
 $('ctxMenu').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   closeCtx();
