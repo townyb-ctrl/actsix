@@ -2400,15 +2400,15 @@ function renderWeekPop() {
       <div class="field" style="grid-column:1/-1"><label for="planDate">Date</label><input id="planDate" type="date" value="${esc(plan.date)}"></div>
     </div>
     <div class="field"><span>Saved weeks</span><div class="weeklist">${ids.map(id => `<button data-week="${id}" aria-current="${id === plan.id}"><span class="d">${esc(db.plans[id].date)}</span><span class="n">${esc(db.plans[id].name || 'Untitled')}</span></button>`).join('')}</div></div>
-    <div class="field"><span>Setups <small class="hint" style="font-weight:400">stage layouts to reuse, like “Full band” or “Acoustic”</small></span>
+    <div class="field"><span>Setups <small class="hint" style="font-weight:400">reusable layouts</small></span>
       ${Object.keys(setups()).length ? `<div class="setuplist">${Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, su]) => `<div class="setuprow"><button class="setupuse" data-setup="${id}" title="Lay out this week's stage like this"><b>${esc(su.name)}</b><small>${plural(su.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(su.saved || '')}</small><span class="go">Use</span></button><button class="iconbtn" data-setupdel="${id}" aria-label="Delete setup ${esc(su.name)}" title="Delete setup">${ic('x', 'sm')}</button></div>`).join('')}</div>` : ''}
       <div class="row" style="gap:6px;flex-wrap:nowrap"><input id="setupName" type="text" placeholder="Name this stage, e.g. Full band" style="flex:1;min-width:0"><button class="btn" id="setupSave">${ic('save', 'sm')}Save</button></div>
     </div>
-    <div class="pop-actions">
-      <button class="btn quiet" id="newCopy">${ic('copy', 'sm')}New week from this one</button>
-      <button class="btn quiet" id="newStage">${ic('room', 'sm')}New week, same stage, no team</button>
-      <button class="btn quiet danger" id="delWeek">${ic('trash', 'sm')}${delArmed ? 'Click again to delete this week' : 'Delete this week'}</button>
-    </div>`;
+    <div class="field"><span>Start next week</span><div class="grid2">
+      <button class="btn" id="newCopy" title="Copy everything, team included">${ic('copy', 'sm')}Copy this week</button>
+      <button class="btn" id="newStage" title="Same stage and infrastructure, no team">${ic('room', 'sm')}Stage only</button>
+    </div></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn quiet danger" id="delWeek" style="padding:4px 8px;font-size:12.5px">${ic('trash', 'sm')}${delArmed ? 'Click again to delete this week' : 'Delete this week'}</button></div>`;
 }
 function roleOptions(cur) {
   const groups = [['Band', ['Drums', 'Bass', 'Electric Guitar', 'Acoustic Guitar', 'Keys', 'Tracks / MD', 'Strings']], ['Voices', ['Worship Leader', 'Vocalist', 'Host', 'Pastor / Speaker']], ['Tech', ['FOH Engineer', 'Monitor Engineer', 'Lighting', 'Camera', 'Producer']]];
@@ -2448,7 +2448,7 @@ function renderRail() {
         <p class="hint">Name, then position. “BGV”, “Keys / Vox” and similar are understood.</p></div></details>`;
     const built = plan.items.some(i => i.gen);
     foot.innerHTML = `<button class="btn primary lg block" id="buildBtn" ${plan.team.length ? '' : 'disabled'}>${ic('wand', 'sm')}${built ? 'Rebuild stage from team' : 'Build stage from team'}</button>
-      <p class="hint" style="text-align:center">Places everyone's gear, then patches and powers it. Spots you've moved stay put.</p>`;
+      ${built ? '' : `<p class="hint" style="text-align:center">Places everyone's gear, then patches and powers it.</p>`}`;
   } else if (railTab === 'gear') {
     const q = gearQuery.trim().toLowerCase();
     // searching looks across every category; otherwise show the chosen tab
@@ -2465,15 +2465,14 @@ function renderRail() {
     const st = plan.stage, se = plan.settings;
     const num = (id, label, v, attrs) => `<div class="field"><label for="${id}">${label}</label><div class="unit" data-unit="m"><input id="${id}" type="number" value="${v}" ${attrs}></div></div>`;
     pane.innerHTML = `${detailSeg()}
-      <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage</h3><p>${plan.stage.poly ? `Custom shape · ${plan.stage.poly.length} corners` : 'Rectangle'}, measured from upstage right.</p></div></div>
+      <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage</h3><p>${plan.stage.poly ? `Custom shape · ${plan.stage.poly.length} corners` : 'Rectangle'}</p></div></div>
         <svg class="stage-thumb" viewBox="${-fromM(.6)} ${-fromM(.6)} ${st.w + fromM(1.2)} ${st.d + fromM(1.2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="th-deck" d="${polyPath(stagePoly())}"/></svg>
         <button class="btn" id="editStage">${ic('pen', 'sm')}Draw or edit stage shape</button>
         <div class="grid2">${num('sw', 'Width', mVal(st.w), 'min="3" max="60" step=".1"')}${num('sd', 'Depth', mVal(st.d), 'min="2" max="40" step=".1"')}</div>
-        <p class="hint">50 cm grid, heavier every metre (2 × 1 m deck panels).</p></div>
-      ${ui.adv ? '' : `<button class="btn block" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button>`}
-      <div class="card"><div class="card-head"><span class="badge">${ic('clip', 'sm')}</span><div><h3>Notes for the crew</h3><p>Shows at the top of the paperwork.</p></div></div>
-        <textarea id="notes" rows="4" aria-label="Notes for the crew" placeholder="Load-in time, changeovers, anything special this week" style="font-family:var(--f-ui);font-size:14px">${esc(plan.notes)}</textarea></div>
-      ${ui.adv ? '' : `<details class="more card more-room" data-fold="room"${moreOpen.room ? ' open' : ''}><summary>${ic('sliders', 'sm')}<span><b>More room settings</b><small>House size, ceiling, cable slack, clearing gear</small></span>${ic('chevD', 'sm')}</summary><div style="display:grid;gap:12px;padding:0 12px 12px">`}
+        ${ui.adv ? '<p class="hint">50 cm grid, heavier every metre (2 × 1 m deck panels). Measured from upstage right.</p>' : ''}</div>
+      <div class="card"><div class="card-head"><span class="badge">${ic('clip', 'sm')}</span><div><h3>Notes for the crew</h3></div></div>
+        <textarea id="notes" rows="4" aria-label="Notes for the crew" placeholder="Load-in time, changeovers, anything special. Shows on the paperwork" style="font-family:var(--f-ui);font-size:14px">${esc(plan.notes)}</textarea></div>
+      ${ui.adv ? '' : `<details class="more card more-room" data-fold="room"${moreOpen.room ? ' open' : ''}><summary>${ic('sliders', 'sm')}<span><b>More room settings</b><small>House size, ceiling, cable slack, re-run or clear cabling</small></span>${ic('chevD', 'sm')}</summary><div style="display:grid;gap:12px;padding:0 12px 12px">`}
       <div class="card"><div class="card-head"><span class="badge">${ic('users', 'sm')}</span><div><h3>House</h3><p>Room in front of the stage, where FOH sits.</p></div></div>
         <div class="grid2">${num('shd', 'Depth', mVal(st.house), 'min="2" max="100" step=".5"')}${num('shw', 'Width', mVal(st.houseW), 'min="3" max="100" step=".5"')}</div></div>
       <div class="card"><div class="card-head"><span class="badge">${ic('cable', 'sm')}</span><div><h3>Cable maths</h3><p>Runs follow the floor at right angles.</p></div></div>
@@ -2481,7 +2480,7 @@ function renderRail() {
         ${num('ends', 'Drop each end', mVal(se.ends), 'min="0" max="6" step=".1"')}</div>
         <div class="grid2">${num('ceilH', 'Ceiling height', mVal(se.ceilH ?? fromM(4.5)), 'min="2" max="30" step=".1"')}</div>
         <label class="row" for="overheadSpk" style="gap:8px;flex-wrap:nowrap"><input type="checkbox" id="overheadSpk" ${se.overheadSpk !== false ? 'checked' : ''} style="accent-color:var(--accent)"><span>Run speaker &amp; sub feeds along the ceiling</span></label>
-        <div class="grid2">${ui.adv ? `<button class="btn" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button>` : ''}<button class="btn" id="clearAuto">Clear auto runs</button></div></div>
+        <div class="grid2"><button class="btn" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button><button class="btn" id="clearAuto">Clear auto runs</button></div></div>
       <button class="btn danger" id="clearGen">${ic('trash', 'sm')}Remove all team gear</button>
       ${ui.adv ? '' : '</div></details>'}`;
   }
