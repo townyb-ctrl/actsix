@@ -651,6 +651,16 @@ td.num { text-align: right; font: 12.5px var(--f-mono); }
 .ch { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 6px; border-radius: 6px; background: var(--surface-3); font: 600 12px var(--f-mono); }
 tr.flag td { color: var(--bad); }
 tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
+.sheetgrid { display: grid; gap: 22px; }
+.sheetgrid:not([data-tab="all"]) .sheet { display: none; }
+.sheetgrid[data-tab="overview"] [data-sheet="overview"], .sheetgrid[data-tab="inputs"] [data-sheet="inputs"], .sheetgrid[data-tab="outputs"] [data-sheet="outputs"], .sheetgrid[data-tab="mixes"] [data-sheet="mixes"],
+.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"] { display: grid; }
+.sheetgrid:not([data-tab="all"]) .sheets2 { display: contents; }
+.docnav button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.docnav button[aria-selected="true"] .hint { color: inherit; opacity: .7; }
+.snapwrap { border-radius: var(--r-md); overflow: hidden; background: var(--house); }
+.snap { display: block; pointer-events: none; }
+@media print { .sheetgrid .sheet { display: grid !important; } .docnav { display: none; } }
 .sheets2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 22px; }
 
 /* ---------- overlays ---------- */
@@ -2705,6 +2715,17 @@ function renderInspector() {
    =================================================================== */
 function tsv(rows, cols) { return [cols.map(c => c[0]).join('\t'), ...rows.map(r => cols.map(c => typeof c[1] === 'function' ? c[1](r) : r[c[1]]).join('\t'))].join('\n'); }
 let paperData = {};
+let paperTab = 'overview';      // one sheet at a time; 'all' shows the lot for printing or scrolling
+// a clean, selection-free drawing of the plot for the overview sheet
+function plotSnapshot() {
+  const keep = { sel, group, mode, pending, view, measure, compare, zoom, needFit };
+  sel = null; group = null; mode = 'select'; pending = null; measure = null; compare = null; view = 'plot';
+  zoom = Math.max(8, Math.min(60, (($('paperInner')?.clientWidth || 1000) - 42) / bounds().vw));   // labels sized for the width it's shown at
+  let html = '';
+  try { renderPlot(); html = `<svg class="snap" viewBox="${svg.getAttribute('viewBox')}" style="${svg.getAttribute('style') || ''};width:100%;height:auto" role="img" aria-label="Stage plot">${svg.innerHTML.replace(/ id="[^"]*"/g, '').replace(/<polyline class="cabhit[^>]*>(<title>[^<]*<\/title>)?<\/polyline>/g, '')}</svg>`; }
+  finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); }
+  return html;
+}
 function renderPaper() {
   if (view !== 'paper') return;
   const ins = inputList(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
@@ -2732,24 +2753,27 @@ function renderPaper() {
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
-  const nav = [['checks', 'Checks', w.length], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length]].filter(n => n[0] !== 'checks' || w.length);
+  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
     <header class="doc-head"><div class="eyebrow">${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <nav class="docnav" aria-label="Sections">${nav.map(([id, l, n]) => `<button data-jump="sec-${id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav>
-    ${w.length ? `<section class="sheet" id="sec-checks">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
-    <section class="sheet" id="sec-inputs">${head('Input list', 'inputs', `${plural(ins.length, 'channel')} in band order. Stage box ports fill in the same order.`)}${table(ins, inCols, 'flag')}</section>
+    <nav class="docnav" role="tablist" aria-label="Sheets">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav>
+    <div class="sheetgrid" data-tab="${paperTab}">
+    <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${plotSnapshot()}</div></section>
+    ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
+    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', 'inputs', `${plural(ins.length, 'channel')} in band order. Stage box ports fill in the same order.`)}${table(ins, inCols, 'flag')}</section>
     <div class="sheets2">
-      <section class="sheet" id="sec-outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag')}</section>
-      <section class="sheet" id="sec-mixes">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols)}</section>
+      <section class="sheet" id="sec-outputs" data-sheet="outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag')}</section>
+      <section class="sheet" id="sec-mixes" data-sheet="mixes">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols)}</section>
     </div>
     <div class="sheets2">
-      <section class="sheet" id="sec-cables">${head('Cable pull list', 'pull', `Stock lengths to pull. Includes ${plan.settings.slack}% slack and ${mVal(plan.settings.ends)} m each end.`)}${table(pull, pullCols)}</section>
-      <section class="sheet" id="sec-team">${head('Team', 'team')}${table(plan.team, teamCols)}</section>
+      <section class="sheet" id="sec-cables" data-sheet="cables">${head('Cable pull list', 'pull', `Stock lengths to pull. Includes ${plan.settings.slack}% slack and ${mVal(plan.settings.ends)} m each end.`)}${table(pull, pullCols)}</section>
+      <section class="sheet" id="sec-team" data-sheet="team">${head('Team', 'team')}${table(plan.team, teamCols)}</section>
     </div>
-    ${plan.items.some(i => i.type === 'rack') ? `<section class="sheet" id="sec-racks">${head('Racks', '', 'Top to bottom, as you face the front.')}${plan.items.filter(i => i.type === 'rack').map(r => `<div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(r))}</b><span class="hint">${rackStat(r).used}/${r.rackU || 8}U · ${rackStat(r).watts} W</span></div><div class="tablewrap"><table><thead><tr><th>U</th><th>Device</th><th>Details</th><th>Notes</th></tr></thead><tbody>${(r.devices || []).slice().sort((a, b) => a.at - b.at).map(d => `<tr><td><span class="ch">${(r.rackU || 8) - d.at}${d.u > 1 ? '–' + ((r.rackU || 8) - d.at - d.u + 1) : ''}</span></td><td>${esc(d.name)}</td><td class="mono">${esc(devMeta(d)) || '—'}</td><td>${esc(d.note || '')}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Empty rack.</td></tr>'}</tbody></table></div></div>`).join('')}</section>` : ''}
-    <section class="sheet" id="sec-power">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it.')}${powerHtml}</section>
+    ${plan.items.some(i => i.type === 'rack') ? `<section class="sheet" id="sec-racks" data-sheet="racks">${head('Racks', '', 'Top to bottom, as you face the front.')}${plan.items.filter(i => i.type === 'rack').map(r => `<div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(r))}</b><span class="hint">${rackStat(r).used}/${r.rackU || 8}U · ${rackStat(r).watts} W</span></div><div class="tablewrap"><table><thead><tr><th>U</th><th>Device</th><th>Details</th><th>Notes</th></tr></thead><tbody>${(r.devices || []).slice().sort((a, b) => a.at - b.at).map(d => `<tr><td><span class="ch">${(r.rackU || 8) - d.at}${d.u > 1 ? '–' + ((r.rackU || 8) - d.at - d.u + 1) : ''}</span></td><td>${esc(d.name)}</td><td class="mono">${esc(devMeta(d)) || '—'}</td><td>${esc(d.note || '')}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Empty rack.</td></tr>'}</tbody></table></div></div>`).join('')}</section>` : ''}
+    <section class="sheet" id="sec-power" data-sheet="power">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it.')}${powerHtml}</section>
+    </div>
     <textarea id="copyFallback" rows="2" aria-label="Copied text" style="opacity:.01;height:1px;padding:0;border:0"></textarea>`;
 }
 function renderAll() { renderHeader(); renderRail(); renderPlot(); renderInspector(); renderPaper(); }
@@ -3208,6 +3232,7 @@ function toggleLock(ids) {
 }
 function setMode(m) { mode = m; measure = null; pending = null; cursorPt = null; pendHover = null; pendChan = null; if (m !== 'channel') chDraft = null; renderPlot(); }
 function openPaper(anchor) {
+  if (anchor) paperTab = anchor === 'sec-checks' ? 'overview' : anchor.replace(/^sec-/, '');
   view = 'paper'; pending = null; renderAll();
   if (anchor) requestAnimationFrame(() => $(anchor)?.scrollIntoView({ block: 'start' }));
   else $('paperView').scrollTop = 0;
@@ -3496,6 +3521,7 @@ $('inspector').addEventListener('click', e => {
 $('paperInner').addEventListener('click', e => {
   const t = e.target.closest('[data-copy]'); if (t) { copyText(paperData[t.dataset.copy], $('copyFallback')); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
+  const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
 });
 
 /* backup & restore */
