@@ -2097,11 +2097,12 @@ function laneGeoms(list) {
 }
 const r2x = n => Math.round(n * 1000) / 1000;
 // keep the most useful labels when they'd overlap: the selection, then people, then big gear, then the rest
-function placeLabels(cands) {
-  const placed = [];
+function placeLabels(cands, obstacles = []) {
+  const placed = [], hit = (b, q) => b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1];
   return cands.sort((a, b) => a.pri - b.pri).filter(l => {
-    const box = [l.x - l.w / 2, l.y - l.h, l.x + l.w / 2, l.y + l.h * .25];
-    if (l.pri > 0 && placed.some(q => box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1])) return false;
+    const box = l.box || [l.x - l.w / 2, l.y - l.h, l.x + l.w / 2, l.y + l.h * .25];
+    if (l.pri > 0 && placed.some(q => hit(box, q))) return false;
+    if (l.avoid && obstacles.some(q => hit(box, q))) return false;   // stage words and riser captions give way to gear
     placed.push(box); return true;
   }).map(l => l.svg).join('');
 }
@@ -2142,10 +2143,13 @@ function renderPlot() {
     if (i % 2 === 0 && i) s += `<text x="-1.45" y="${y + .18}" text-anchor="end">${i} m</text>`;
   }
   s += '</g>';
-  s += `<text class="zone on-deck" x="${w / 2}" y=".85" text-anchor="middle">UPSTAGE</text>`;
-  s += `<text class="zone on-deck" x="${w / 2}" y="${d - .45}" text-anchor="middle">DOWNSTAGE</text>`;
-  s += `<text class="zone on-deck" x=".5" y="${d / 2}" transform="rotate(-90 .5 ${d / 2})" text-anchor="middle" dy=".45">STAGE RIGHT</text>`;
-  s += `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".45">STAGE LEFT</text>`;
+  const zw = t => t.length * .53;   // .62 ft caps plus letter spacing
+  const zoneCands = [
+    { pri: 9, avoid: true, box: [w / 2 - zw('UPSTAGE') / 2, .3, w / 2 + zw('UPSTAGE') / 2, 1], svg: `<text class="zone on-deck" x="${w / 2}" y=".85" text-anchor="middle">UPSTAGE</text>` },
+    { pri: 9, avoid: true, box: [w / 2 - zw('DOWNSTAGE') / 2, d - 1, w / 2 + zw('DOWNSTAGE') / 2, d - .3], svg: `<text class="zone on-deck" x="${w / 2}" y="${d - .45}" text-anchor="middle">DOWNSTAGE</text>` },
+    { pri: 9, avoid: true, box: [.3, d / 2 - zw('STAGE RIGHT') / 2, 1.1, d / 2 + zw('STAGE RIGHT') / 2], svg: `<text class="zone on-deck" x=".5" y="${d / 2}" transform="rotate(-90 .5 ${d / 2})" text-anchor="middle" dy=".45">STAGE RIGHT</text>` },
+    { pri: 9, avoid: true, box: [w - 1.1, d / 2 - zw('STAGE LEFT') / 2, w - .3, d / 2 + zw('STAGE LEFT') / 2], svg: `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".45">STAGE LEFT</text>` },
+  ];
   s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
 
   const selItem = sel?.kind === 'item' ? sel.id : null, selSet = new Set(selIds()), solo = selSet.size === 1;
@@ -2154,11 +2158,12 @@ function renderPlot() {
   const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
   s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
-  const labCands = [];
+  const labCands = [...zoneCands], obstacles = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
     const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}</title>${shapeSvg(it, iw, id)}</g>`;
     if (L < 1) s += g; else top += g;   // cables run under the gear, so plugs disappear beneath it instead of crossing it
+    if (C.shape !== 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; obstacles.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
     const isSel = selSet.has(it.id), big = Math.min(iw, id) >= 1.6 && C.shape !== 'person';
     const person = C.shape === 'person';
     const visible = isSel || (person ? showBig : big ? showBig : showSmall);
@@ -2171,7 +2176,9 @@ function renderPlot() {
       labCands.push({ x: it.x, y: ly, w: String(text).length * fs * .58 + fs * .4, h: fs * 1.05, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
         svg: `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${ly}" text-anchor="middle">${esc(text)}</text>` });
     } else if (C.shape === 'platform' && showBig) {
-      labels += `<text class="zone on-deck" x="${it.x}" y="${it.y + id / 2 - .35}" text-anchor="middle">${esc(itemName(it).toUpperCase())} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM</text>`;
+      const own = it.personId && personById(it.personId), fnr = own && firstName(own.name), nm = fnr && itemName(it).startsWith(fnr + ' ') ? itemName(it).slice(fnr.length + 1) : itemName(it);
+      const cap = `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = it.y + id / 2 - .35;
+      labCands.push({ pri: selSet.has(it.id) ? 0 : 6, avoid: !selSet.has(it.id), box: [it.x - zw(cap) / 2, cy - .55, it.x + zw(cap) / 2, cy + .1], svg: `<text class="zone on-deck" x="${it.x}" y="${cy}" text-anchor="middle">${esc(cap)}</text>` });
     }
     if (isSel && it.locked) {   // padlock on the corner of a locked selection
       const m = C.shape === 'platform' ? 0 : Math.max(iw, id) / 2 + .3, k = 11 / scale / 12, bx = it.x + (C.shape === 'platform' ? iw / 2 : m), by = it.y - (C.shape === 'platform' ? id / 2 : m);
@@ -2236,7 +2243,7 @@ function renderPlot() {
     if (isSel) c.points.forEach((p, k) => { if (isHop(p)) return; wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
-  s += top + chv.over + ceil + labels + selb + placeLabels(labCands) + lens + wps + chv.handles;
+  s += top + chv.over + ceil + labels + selb + placeLabels(labCands, obstacles) + lens + wps + chv.handles;
   if (drag?.kind === 'box') {
     const x = Math.min(drag.x0, drag.x1), y = Math.min(drag.y0, drag.y1);
     s += `<rect class="marquee" x="${f3(x)}" y="${f3(y)}" width="${f3(Math.abs(drag.x1 - drag.x0))}" height="${f3(Math.abs(drag.y1 - drag.y0))}" rx=".1"/>`;
@@ -2343,8 +2350,8 @@ function renderFloat() {
   $('fstats').innerHTML = `<div class="panel statuspill">
       <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}" aria-expanded="${checksOpen}">${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${plural(w.length, 'check')}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
       <span class="stat"><b>${t.ins}</b> inputs</span>
-      <span class="stat optional"><b>${fmtLen(t.cab, 0)}</b> cable</span>
-      <span class="stat optional"><b>${(t.watts / 1000).toFixed(1)}</b> kW</span>
+      ${ui.adv ? `<span class="stat optional"><b>${fmtLen(t.cab, 0)}</b> cable</span>
+      <span class="stat optional"><b>${(t.watts / 1000).toFixed(1)}</b> kW</span>` : ''}
     </div>${checksPopHtml()}`;
 }
 
