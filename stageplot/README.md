@@ -32,6 +32,9 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Using it
 
+- **Simple and Advanced views**: Simple (the default) keeps everyday controls up front: label, owner, rotate/lock/duplicate/delete, connections, riser size, line-array boxes, power load meters, cable type and floor/ceiling, stage size and crew notes. Exact positions, sizes, power draw, input names, ports, circuit ratings, cable slack and routing fold away under **More settings** (folds you open stay open as you click around). The Channel tool and the cable menu's flow, animation, inside-channel and ceiling toggles appear in Advanced. Switch with the sliders button in the header, the View switch in the Room tab or the right panel, or Ctrl+K. The choice is remembered.
+- **Run a cable from here**: unconnected gear offers a button to start a cable from it straight away.
+- **Tablets**: on iPad-sized screens the plot fills the screen when the details panel is tucked away, and the tool dock drops its labels when the canvas is narrow.
 - **Select several**: Shift-click gear (or Ctrl/Cmd-click) to add or remove it, Shift-drag the floor to box-select, Ctrl+A for all gear (risers left out). Drag any selected item to move the lot; nudge, rotate, duplicate, delete or reassign them together, and line them up (left, centre, right, upstage, downstage) or space them evenly from the panel. A plain click on one narrows the selection to it.
 - **Select tool** (`S`): for touch and trackpads, no Shift needed. Tap gear to pick or drop it, drag a box over the floor, drag any picked item to move them all; tap empty floor to clear.
 - **Measure** (`M`): drag (or click, then click) between two points for the distance in metres, with across / up-and-down parts for diagonals. Gear snaps to its centre; Shift keeps the line level. It stays until Esc or another tool.

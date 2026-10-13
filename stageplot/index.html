@@ -423,7 +423,7 @@ svg text { font-family: var(--f-ui); }
 .cmp-tag { font: 600 var(--lab, .46px) var(--f-mono); fill: #ff9a9d; paint-order: stroke; stroke: rgba(0,0,0,.85); stroke-width: var(--labs, .1px); }
 .cmpbar { display: flex; align-items: center; }
 .cmpbar .toolhint { white-space: nowrap; }
-@media (max-width: 560px) { .cmpbar .toolhint b { display: none; } }
+@media (max-width: 560px) { .cmpbar .toolhint b { display: none; } #helpBtn { display: none; } .detailseg button { padding: 5px 7px; font-size: 12px; } }
 .cmpdot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin: 0 5px 0 10px; vertical-align: -1px; }
 .roth { fill: var(--surface); stroke: var(--accent); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: grab; }
 .rotstem { stroke: var(--accent); stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
@@ -473,6 +473,22 @@ svg text { font-family: var(--f-ui); }
 .conns small { display: block; color: var(--muted); font-size: 11.5px; }
 .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .actions .btn { flex: 1; }
+.actions4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.actions4 .btn { flex-direction: column; gap: 3px; padding: 8px 4px; font-size: 12px; }
+.actions4 .btn[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+details.more { border-top: 1px solid var(--line); }
+details.more > summary { list-style: none; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 12px 16px; cursor: pointer; color: var(--ink-2); }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary:hover { background: var(--surface-2); }
+details.more > summary > span { display: grid; gap: 1px; }
+details.more > summary b { color: var(--ink); font-weight: 600; font-size: 13.5px; }
+details.more > summary small { color: var(--muted); font-size: 12px; }
+details.more[open] > summary > .ic:last-child { transform: rotate(180deg); }
+details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
+.card.more-room { padding: 0; }
+.detailseg button { padding: 5px 12px; font-size: 12.5px; }
+.detailrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12.5px; }
+@media (max-width: 720px) { .detailseg button { padding: 5px 8px; } }
 .steps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .steps li { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; padding: 8px 0; }
 .steps .mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line-2); color: var(--muted); font: 600 11px var(--f-mono); }
@@ -614,6 +630,11 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   .work.rail-collapsed { grid-template-columns: 56px minmax(0,1fr); }
   .insp-collapsed .inspector { display: none; }
 }
+@media (min-width: 761px) and (max-width: 1180px) {   /* tablets: with the details panel tucked away, the plot fills the screen */
+  .work.insp-collapsed { flex: 1 1 0; }
+  .work.insp-collapsed .canvas { height: auto; }
+  .work.insp-collapsed .rail { max-height: none; min-height: 0; }
+}
 @media (max-width: 1320px) { .brand span { display: none; } .searchbtn { min-width: 0; } .searchbtn span:not(.kbd) { display: none; } .saved span { display: none; } }
 @media (max-width: 760px) {
   .work, .work.rail-collapsed { grid-template-columns: minmax(0,1fr); }
@@ -634,6 +655,9 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   .f-dock .panel { gap: 2px; }
   .brand span { display: none; }
 }
+/* the canvas, not the window, decides when the tool dock drops its labels (iPad portrait, panels open) */
+.canvas { container-type: inline-size; }
+@container (max-width: 780px) { .tool .tl, .zoomval { display: none; } .f-dock .panel { gap: 2px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -664,6 +688,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
     <button class="iconbtn" id="undoBtn" aria-label="Undo" title="Undo (Ctrl+Z)"></button>
     <button class="iconbtn" id="redoBtn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)"></button>
     <span class="vsep"></span>
+    <button class="iconbtn" id="lvBtn" aria-label="Advanced view"></button>
     <button class="iconbtn" id="themeBtn" aria-label="Theme"></button>
     <button class="iconbtn" id="helpBtn" aria-label="Keyboard shortcuts" title="Shortcuts (?)"></button>
     <button class="iconbtn" id="dataBtn" aria-label="Backup and restore" title="Backup & restore"></button>
@@ -773,7 +798,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <dt><span class="kbd">Ctrl</span><span class="kbd">Z</span></dt><dd>Undo (add Shift to redo)</dd>
       <dt><span class="kbd">Ctrl</span><span class="kbd">K</span></dt><dd>Search actions, gear and people</dd>
       <dt><span class="kbd">H</span></dt><dd>Show / hide cables</dd>
-      <dt><span class="kbd">T</span></dt><dd>Draw a cable channel (Enter finishes)</dd>
+      <dt><span class="kbd">T</span></dt><dd>Draw a cable channel (Enter finishes; Advanced view)</dd>
       <dt>Hold <span class="kbd">Alt</span></dt><dd>Move without snapping to guides</dd>
       <dt><span class="kbd">[</span><span class="kbd">]</span></dt><dd>Hide left / right panel</dd>
       <dt><span class="kbd">\</span></dt><dd>Focus: hide both panels</dd>
@@ -971,6 +996,23 @@ function setGroup(ids) {
   group = ids.length > 1 ? { anchor: ids[0], ids: new Set(ids) } : null;
 }
 // Compare with another week: gear matched by id (copied weeks and rebuilds keep ids)
+// Detail level: Simple keeps the everyday controls up front and folds the fine-grained ones away; Advanced shows everything
+const ui = { adv: false };
+try { ui.adv = localStorage.getItem('stageplot.detail') === 'adv'; } catch { /* storage blocked */ }
+const moreOpen = {};            // which "More settings" folds are open, by panel
+function setDetail(adv) {
+  ui.adv = adv; try { localStorage.setItem('stageplot.detail', adv ? 'adv' : 'simple'); } catch { /* memory only */ }
+  if (!adv && mode === 'channel') setMode('select');
+  renderAll();
+  toast(adv ? 'Advanced: every setting and tool is showing' : 'Simple: everyday controls up front. Fine settings sit under “More settings”');
+}
+const detailSeg = () => `<div class="detailrow"><span>View</span><div class="seg detailseg" role="group" aria-label="How much detail to show"><button data-detail="simple" aria-pressed="${!ui.adv}">Simple</button><button data-detail="adv" aria-pressed="${ui.adv}">Advanced</button></div></div>`;
+function moreFold(parts, what, key = 'insp') {
+  const inner = parts.filter(Boolean).join('');
+  if (!inner) return '';
+  if (ui.adv) return inner;
+  return `<details class="more" data-fold="${key}"${moreOpen[key] ? ' open' : ''}><summary>${ic('sliders', 'sm')}<span><b>More settings</b>${what ? `<small>${esc(what[0].toUpperCase() + what.slice(1))}</small>` : ''}</span>${ic('chevD', 'sm')}</summary>${inner}</details>`;
+}
 let compare = null;             // week id being compared against
 const prevWeekId = () => { const ids = sortedWeekIds().filter(id => id !== plan.id && db.plans[id].date <= plan.date); return ids[ids.length - 1] || null; };
 function weekDiff() {
@@ -1550,6 +1592,7 @@ const ICONS = {
   redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 000 11H13"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  sliders: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
   boxsel: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M10 10l7 3-3 1-1 3z"/>',
   ruler: '<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>',
   diff: '<path d="M7 4v16M17 4v16M3 8l4-4 4 4M13 16l4 4 4-4"/>',
@@ -2164,7 +2207,7 @@ function renderFloat() {
       <button class="tool" data-mode="select" aria-pressed="${mode === 'select'}" title="Move (V)">${ic('cursor', 'sm')}<span class="tl">Move</span></button>
       <button class="tool" data-mode="box" aria-pressed="${mode === 'box'}" title="Select several (S)">${ic('boxsel', 'sm')}<span class="tl">Select</span></button>
       <button class="tool" data-mode="cable" aria-pressed="${mode === 'cable'}" title="Run cable (C)">${ic('cable', 'sm')}<span class="tl">Run cable</span></button>
-      <button class="tool" data-mode="channel" aria-pressed="${mode === 'channel'}" title="Draw a cable channel (T)">${ic('trench', 'sm')}<span class="tl">Channel</span></button>
+      ${ui.adv || mode === 'channel' ? `<button class="tool" data-mode="channel" aria-pressed="${mode === 'channel'}" title="Draw a cable channel (T)">${ic('trench', 'sm')}<span class="tl">Channel</span></button>` : ''}
       <button class="tool" data-mode="measure" aria-pressed="${mode === 'measure'}" title="Measure (M)">${ic('ruler', 'sm')}<span class="tl">Measure</span></button>
       <span class="dock-sep"></span>${cab}<span class="dock-sep"></span>
       <button class="iconbtn" id="zOut" aria-label="Zoom out" title="Zoom out (−)">${ic('minus')}</button>
@@ -2202,6 +2245,8 @@ function renderHeader() {
   $('plotView').hidden = view !== 'plot'; $('paperView').hidden = view !== 'paper';
   $('undoBtn').innerHTML = ic('undo'); $('redoBtn').innerHTML = ic('redo');
   $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length;
+  $('lvBtn').innerHTML = ic('sliders'); $('lvBtn').setAttribute('aria-pressed', ui.adv);
+  $('lvBtn').title = ui.adv ? 'Advanced view: every setting and tool. Click for Simple' : 'Simple view: everyday controls. Click for Advanced';
   $('themeBtn').innerHTML = ic(themePref === 'dark' ? 'moon' : themePref === 'light' ? 'sun' : 'auto');
   $('themeBtn').title = `Theme: ${themePref === 'system' ? 'match system' : themePref}`;
   $('railToggle').innerHTML = ic('panelL'); $('inspToggle').innerHTML = ic('panelR');
@@ -2277,12 +2322,16 @@ function renderRail() {
   } else {
     const st = plan.stage, se = plan.settings;
     const num = (id, label, v, attrs) => `<div class="field"><label for="${id}">${label}</label><div class="unit" data-unit="m"><input id="${id}" type="number" value="${v}" ${attrs}></div></div>`;
-    pane.innerHTML = `
+    pane.innerHTML = `${detailSeg()}
       <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage</h3><p>${plan.stage.poly ? `Custom shape · ${plan.stage.poly.length} corners` : 'Rectangle'}, measured from upstage right.</p></div></div>
         <svg class="stage-thumb" viewBox="${-fromM(.6)} ${-fromM(.6)} ${st.w + fromM(1.2)} ${st.d + fromM(1.2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="th-deck" d="${polyPath(stagePoly())}"/></svg>
         <button class="btn" id="editStage">${ic('pen', 'sm')}Draw or edit stage shape</button>
         <div class="grid2">${num('sw', 'Width', mVal(st.w), 'min="3" max="60" step=".1"')}${num('sd', 'Depth', mVal(st.d), 'min="2" max="40" step=".1"')}</div>
         <p class="hint">50 cm grid, heavier every metre (2 × 1 m deck panels).</p></div>
+      ${ui.adv ? '' : `<button class="btn block" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button>`}
+      <div class="card"><div class="card-head"><span class="badge">${ic('clip', 'sm')}</span><div><h3>Notes for the crew</h3><p>Shows at the top of the paperwork.</p></div></div>
+        <textarea id="notes" rows="4" aria-label="Notes for the crew" placeholder="Load-in time, changeovers, anything special this week" style="font-family:var(--f-ui);font-size:14px">${esc(plan.notes)}</textarea></div>
+      ${ui.adv ? '' : `<details class="more card more-room" data-fold="room"${moreOpen.room ? ' open' : ''}><summary>${ic('sliders', 'sm')}<span><b>More room settings</b><small>House size, ceiling, cable slack, clearing gear</small></span>${ic('chevD', 'sm')}</summary><div style="display:grid;gap:12px;padding:0 12px 12px">`}
       <div class="card"><div class="card-head"><span class="badge">${ic('users', 'sm')}</span><div><h3>House</h3><p>Room in front of the stage, where FOH sits.</p></div></div>
         <div class="grid2">${num('shd', 'Depth', mVal(st.house), 'min="2" max="100" step=".5"')}${num('shw', 'Width', mVal(st.houseW), 'min="3" max="100" step=".5"')}</div></div>
       <div class="card"><div class="card-head"><span class="badge">${ic('cable', 'sm')}</span><div><h3>Cable maths</h3><p>Runs follow the floor at right angles.</p></div></div>
@@ -2290,10 +2339,9 @@ function renderRail() {
         ${num('ends', 'Drop each end', mVal(se.ends), 'min="0" max="6" step=".1"')}</div>
         <div class="grid2">${num('ceilH', 'Ceiling height', mVal(se.ceilH ?? fromM(4.5)), 'min="2" max="30" step=".1"')}</div>
         <label class="row" for="overheadSpk" style="gap:8px;flex-wrap:nowrap"><input type="checkbox" id="overheadSpk" ${se.overheadSpk !== false ? 'checked' : ''} style="accent-color:var(--accent)"><span>Run speaker &amp; sub feeds along the ceiling</span></label>
-        <div class="grid2"><button class="btn" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button><button class="btn" id="clearAuto">Clear auto runs</button></div></div>
-      <div class="card"><div class="card-head"><span class="badge">${ic('clip', 'sm')}</span><div><h3>Notes for the crew</h3><p>Shows at the top of the paperwork.</p></div></div>
-        <textarea id="notes" rows="4" aria-label="Notes for the crew" placeholder="Load-in time, changeovers, anything special this week" style="font-family:var(--f-ui);font-size:14px">${esc(plan.notes)}</textarea></div>
-      <button class="btn danger" id="clearGen">${ic('trash', 'sm')}Remove all team gear</button>`;
+        <div class="grid2">${ui.adv ? `<button class="btn" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button>` : ''}<button class="btn" id="clearAuto">Clear auto runs</button></div></div>
+      <button class="btn danger" id="clearGen">${ic('trash', 'sm')}Remove all team gear</button>
+      ${ui.adv ? '' : '</div></details>'}`;
   }
   pane.scrollTop = keepScroll;
 }
@@ -2337,33 +2385,46 @@ function renderInspector() {
   const c = sel?.kind === 'cable' ? plan.cables.find(x => x.id === sel.id) : null;
   if (it) {
     const C = cat(it), ins = inputsOf(it), owner = it.personId ? personById(it.personId) : null;
-    let extra = '';
-    if (it.type === 'stagebox') extra = `<section class="isec"><h3>Ports</h3><div class="grid2">${field('iIns', 'Inputs', prop(it, 'ins'), 'number', 'min="1" max="128"')}${field('iOuts', 'Outputs', prop(it, 'outsMax'), 'number', 'min="0" max="64"')}</div></section>`;
+    const isRiser = C.shape === 'platform';
+    let basic = '';
+    const adv = [];   // fine-grained settings: inline in Advanced, folded under "More settings" in Simple
+    const meter = (n, w, cap) => { const pct = w / cap; return `<div class="circ"><span class="n">${n}</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(w)} W</span></div>`; };
+    if (it.type === 'stagebox') adv.push(`<section class="isec"><h3>Ports</h3><div class="grid2">${field('iIns', 'Inputs', prop(it, 'ins'), 'number', 'min="1" max="128"')}${field('iOuts', 'Outputs', prop(it, 'outsMax'), 'number', 'min="0" max="64"')}</div></section>`);
     if (isExt(it)) {
-      const f = feedOf(it), load = extLoad(it), cap = (Number(prop(it, 'amps')) || 10) * (Number(prop(it, 'volts')) || 230), pct = load / cap;
-      extra = `<section class="isec"><h3>Extension lead <span>${extUsed(it)}/${prop(it, 'outlets')} used</span></h3>
-        <div class="grid2">${field('iOutlets', 'Outlets', prop(it, 'outlets'), 'number', 'min="1" max="12"')}${field('iAmps', 'Rating', prop(it, 'amps'), 'number', 'min="1" max="32"', 'A')}</div>
-        <div class="circ"><span class="n">Load</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(load)} W</span></div>
+      const f = feedOf(it), load = extLoad(it), cap = (Number(prop(it, 'amps')) || 10) * (Number(prop(it, 'volts')) || 230);
+      basic += `<section class="isec"><h3>Extension lead <span>${extUsed(it)}/${prop(it, 'outlets')} used</span></h3>${meter('Load', load, cap)}
         <p class="hint">${f ? `Plugged into ${esc(itemName(other(f, it.id)))}${f.circuit ? ` · circuit ${f.circuit}` : ''}.` : 'Not plugged in yet. Run an extension lead from a power point or distro, or press Re-run cabling.'}</p></section>`;
+      adv.push(`<section class="isec"><h3>Lead rating</h3><div class="grid2">${field('iOutlets', 'Outlets', prop(it, 'outlets'), 'number', 'min="1" max="12"')}${field('iAmps', 'Rating', prop(it, 'amps'), 'number', 'min="1" max="32"', 'A')}</div></section>`);
     } else if (isPowerSource(it)) {
       const { loads, cap } = circuitLoads(it);
-      extra = `<section class="isec"><h3>Power <span style="text-transform:none;letter-spacing:0;font-weight:500">fed from the DB board</span></h3><div class="grid3">${field('iCirc', 'Circuits', prop(it, 'circuits'), 'number', 'min="1" max="24"')}${field('iAmps', 'Amps', prop(it, 'amps'), 'number', 'min="1" max="100"', 'A')}${field('iVolts', 'Volts', prop(it, 'volts'), 'number', 'min="100" max="250"', 'V')}</div>
-        <div style="display:grid;gap:6px">${loads.map((w, k) => { const pct = w / cap; return `<div class="circ"><span class="n">C${k + 1}</span><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div><span class="w">${Math.round(w)} W</span></div>`; }).join('')}</div></section>`;
+      basic += `<section class="isec"><h3>Power <span style="text-transform:none;letter-spacing:0;font-weight:500">fed from the DB board</span></h3><div style="display:grid;gap:6px">${loads.map((w, k) => meter(`C${k + 1}`, w, cap)).join('')}</div></section>`;
+      adv.push(`<section class="isec"><h3>Circuits</h3><div class="grid3">${field('iCirc', 'Circuits', prop(it, 'circuits'), 'number', 'min="1" max="24"')}${field('iAmps', 'Amps', prop(it, 'amps'), 'number', 'min="1" max="100"', 'A')}${field('iVolts', 'Volts', prop(it, 'volts'), 'number', 'min="100" max="250"', 'V')}</div></section>`);
     }
     if (it.type === 'rack') {
       const rs = rackStat(it), N = it.rackU || 8;
-      extra = `<section class="isec"><h3>Rack <span>${rs.used}/${N}U</span></h3>
+      basic += `<section class="isec"><h3>Rack <span>${rs.used}/${N}U</span></h3>
         <div class="rk-mini">${Array.from({ length: N }, (_, k) => { const d = (it.devices || []).find(x => x.at === k); return d ? `<div class="k-${devSpec(d).kind}" style="height:${d.u * 14 - 2}px">${esc(d.name)}</div>` : (it.devices || []).some(x => k > x.at && k < x.at + x.u) ? '' : '<div class="empty"></div>'; }).join('')}</div>
         <button class="btn primary block" id="openRack">${ic('box', 'sm')}Open rack builder</button>
         ${rs.ins ? `<p class="hint">Works as a ${rs.ins}×${rs.outsMax} stage box.</p>` : ''}</section>`;
     }
     if (LA_BOXES[it.type]) {
       const n = laBoxes(it), mx = LA_BOXES[it.type].max;
-      extra += `<section class="isec"><h3>Line array <span>${plural(n, 'box', 'boxes')}</span></h3>
+      basic += `<section class="isec"><h3>Line array <span>${plural(n, 'box', 'boxes')}</span></h3>
         <div class="field"><label for="iBoxes">Boxes in the hang</label><div class="row" style="gap:6px"><button class="btn" data-boxes="-1" aria-label="One box fewer" ${n <= 1 ? 'disabled' : ''}>${ic('minus', 'sm')}</button><input id="iBoxes" type="number" min="1" max="${mx}" step="1" value="${n}" style="text-align:center;flex:1"><button class="btn" data-boxes="1" aria-label="One box more" ${n >= mx ? 'disabled' : ''}>${ic('plus', 'sm')}</button></div></div>
         <p class="hint">Power draw follows the box count (${Math.round(cat(it).watts / LA_BOXES[it.type].def)} W a box).</p></section>`;
     }
-    if (Number(prop(it, 'outs')) > 0 && it.type !== 'stagebox' && it.type !== 'rack') extra += `<section class="isec"><h3>Outputs</h3>${field('iOutsUse', 'Outputs it uses', prop(it, 'outs'), 'number', 'min="0" max="64"')}</section>`;
+    // risers are sized by hand, so their size stays up front; everything else is set by its type
+    if (isRiser) basic += `<section class="isec"><h3>Riser size</h3><div class="grid3">${field('iW', 'Width', mVal(prop(it, 'w')), 'number', 'step=".1" min=".5"', 'm')}${field('iD', 'Depth', mVal(prop(it, 'd')), 'number', 'step=".1" min=".5"', 'm')}${field('iH', 'Height', mVal(it.h ?? fromM(.4)), 'number', 'step=".05" min="0"', 'm')}</div><p class="hint">Or drag a corner on the plot.</p></section>`;
+    adv.push(`<section class="isec"><h3>Position${isRiser ? '' : ' &amp; size'}</h3>
+        <div class="grid2">
+          ${field('iX', 'Across from SR', mVal(it.x), 'number', 'step=".05"', 'm')}${field('iY', 'Back from US', mVal(it.y), 'number', 'step=".05"', 'm')}
+          ${isRiser ? '' : field('iW', 'Width', mVal(prop(it, 'w')), 'number', 'step=".05" min=".05"', 'm') + field('iD', 'Depth', mVal(prop(it, 'd')), 'number', 'step=".05" min=".05"', 'm')}
+          ${field('iRot', 'Rotation', it.rot || 0, 'number', 'step="15"', '°')}${isRiser || C.wireless || isPowerSource(it) || it.type === 'rack' ? '' : field('iWatts', 'Power draw', prop(it, 'watts') || 0, 'number', 'step="10" min="0"', 'W')}
+        </div>
+      </section>`);
+    if (C.inputs || ins.length) adv.push(`<section class="isec"><h3>Inputs <span>${ins.length}</span></h3><div class="field"><label for="iInputs">Channel names, comma-separated</label><input id="iInputs" type="text" value="${esc(ins.join(', '))}"></div></section>`);
+    if (Number(prop(it, 'outs')) > 0 && it.type !== 'stagebox' && it.type !== 'rack') adv.push(`<section class="isec"><h3>Outputs</h3>${field('iOutsUse', 'Outputs it uses', prop(it, 'outs'), 'number', 'min="0" max="64"')}</section>`);
+    const moreWhat = ['position', isRiser ? '' : 'size', C.wireless || isPowerSource(it) || isRiser ? '' : 'power draw', ins.length || C.inputs ? 'input names' : '', isExt(it) || isPowerSource(it) ? 'ratings' : '', it.type === 'stagebox' ? 'ports' : ''].filter(Boolean).join(', ');
     const pOpts = `<option value="">Nobody</option>` + plan.team.map(p => `<option value="${p.id}" ${p.id === it.personId ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
     const conns = plan.cables.filter(x => touches(x, it.id));
     el.innerHTML = `<div class="insp">
@@ -2374,20 +2435,12 @@ function renderInspector() {
         ${field('iLabel', 'Label', it.label || '', 'text', `placeholder="${esc(C.short || C.name)}"`)}
         <div class="field"><label for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>
         ${it.chan ? `<div class="flowline" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Sits inside ${esc(chans().find(c => c.id === it.chan.id)?.name || 'a channel')}<button class="btn" id="iOutCh" style="padding:4px 10px">Take out</button></div>` : ''}
-        <button class="btn block lockbtn" id="iLock" aria-pressed="${!!it.locked}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked in place · click to unlock' : 'Lock in place'}</button>
         ${it.gen ? `<p class="hint">Placed from the team. Rebuilding keeps where you put it.</p>` : ''}
       </section>
-      <section class="isec"><h3>Position &amp; size</h3>
-        <div class="grid2">
-          ${field('iX', 'Across from SR', mVal(it.x), 'number', 'step=".05"', 'm')}${field('iY', 'Back from US', mVal(it.y), 'number', 'step=".05"', 'm')}
-          ${field('iW', 'Width', mVal(prop(it, 'w')), 'number', 'step=".05" min=".05"', 'm')}${field('iD', 'Depth', mVal(prop(it, 'd')), 'number', 'step=".05" min=".05"', 'm')}
-          ${field('iRot', 'Rotation', it.rot || 0, 'number', 'step="15"', '°')}${C.shape === 'platform' ? field('iH', 'Height', mVal(it.h ?? fromM(.4)), 'number', 'step=".05" min="0"', 'm') : C.wireless || isPowerSource(it) || it.type === 'rack' ? '' : field('iWatts', 'Power draw', prop(it, 'watts') || 0, 'number', 'step="10" min="0"', 'W')}
-        </div>
-      </section>
-      ${C.inputs || ins.length ? `<section class="isec"><h3>Inputs <span>${ins.length}</span></h3><div class="field"><label for="iInputs">Channel names, comma-separated</label><input id="iInputs" type="text" value="${esc(ins.join(', '))}"></div></section>` : ''}
-      ${extra}
-      <section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : '<p class="hint">Not connected yet. Choose Run cable, then tap this item.</p>'}</section>
-      <section class="isec"><div class="actions"><button class="btn" id="iRotate">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iDup">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel">${ic('trash', 'sm')}Delete</button></div></section>
+      ${basic}
+      <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div></section>
+      <section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>
+      ${moreFold(adv, moreWhat)}
     </div>`;
   } else if (sel?.kind === 'channel' && chans().find(x => x.id === sel.id)) {
     const ch = chans().find(x => x.id === sel.id), k = CH_KINDS[ch.kind] || CH_KINDS.trench;
@@ -2409,22 +2462,24 @@ function renderInspector() {
     const len = cableLen(c), st = stockFor(c.type, len), a = itemById(c.from), b = itemById(c.to);
     const src = isPowerSource(a) ? a : isPowerSource(b) ? b : null;
     const circOpts = src ? Array.from({ length: Number(prop(src, 'circuits')) || 1 }, (_, k) => `<option ${c.circuit === k + 1 ? 'selected' : ''} value="${k + 1}">Circuit ${k + 1}</option>`).join('') : '';
+    const adv = [`<section class="isec"><h3>Routing</h3>
+        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.filter(q => !isHop(q)).length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
+        ${chans().length && !c.points.length ? `<div class="field"><span>Route</span><div class="seg"><button data-route="auto" aria-pressed="${c.route !== 'direct'}">Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}">Direct</button></div></div>` : ''}
+        ${src ? `<div class="field"><label for="cCirc">${esc(itemName(src))} circuit</label><select id="cCirc">${circOpts}</select></div>` : ''}
+        ${field('cSlack', 'Slack for this run', c.slack ?? '', 'number', `min="0" max="200" placeholder="${plan.settings.slack} (default)"`, '%')}</section>`];
     el.innerHTML = `<div class="insp">
       <div class="insp-head"><span class="swline bg-${c.type}"></span><div><div class="eyebrow">${esc(CABLES[c.type].name)}${c.auto ? ' · auto' : ''}</div><h2>${esc(itemName(a))} → ${esc(itemName(b))}</h2></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       <section class="isec"><h3>Length</h3>
         <div class="tiles"><div class="tile"><b>${fmtLen(len)}</b><span>with slack</span></div><div class="tile"><b>${st.map(fmtStock).join(' + ')}</b><span>to pull${cableQty(c) > 1 ? ` · ×${cableQty(c)}` : ''}</span></div></div>
         <p class="flowline flow-${flowOf(c).kind}">${esc(flowText(c))}</p>
-        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.filter(q => !isHop(q)).length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
         <div class="field"><span>Runs along</span><div class="seg"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}">Floor</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}">Ceiling</button></div>${c.level === 'ceiling' ? `<span class="hint">Includes ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end.</span>` : ''}</div>
-        ${chans().length && !c.points.length ? `<div class="field"><span>Route</span><div class="seg"><button data-route="auto" aria-pressed="${c.route !== 'direct'}">Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}">Direct</button></div></div>` : ''}
       </section>
       <section class="isec"><h3>Cable type</h3><div class="chips">${Object.keys(CABLES).map(k => `<button class="ctype" data-settype="${k}" aria-pressed="${k === c.type}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
-        ${src ? `<div class="field"><label for="cCirc">${esc(itemName(src))} circuit</label><select id="cCirc">${circOpts}</select></div>` : ''}
-        ${field('cSlack', 'Slack for this run', c.slack ?? '', 'number', `min="0" max="200" placeholder="${plan.settings.slack} (default)"`, '%')}
         <p class="hint">Drag the gold dots on the plot to reroute around risers or along walls.</p>
       </section>
       <section class="isec"><div class="actions">${c.points.length ? `<button class="btn" id="cClear">Straighten</button>` : ''}<button class="btn danger" id="cDel">${ic('trash', 'sm')}Delete cable</button></div></section>
+      ${moreFold(adv, ['bends', chans().length ? 'channel route' : '', src ? 'circuit' : '', 'slack'].filter(Boolean).join(', '))}
     </div>`;
   } else {
     const t = totals(), w = warnings();
@@ -2455,6 +2510,7 @@ function renderInspector() {
       <section class="isec"><h3>Cable colours <span style="text-transform:none;letter-spacing:0;font-weight:500">dashed = overhead</span></h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
         <div class="flowlegend"><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg>Input / power</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3 0L-4 3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Output</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)" fill="currentColor"/></svg>Digital link</span></div>
         <p class="hint">Arrows point the way the signal travels. Click anything on the plot to edit it; Shift-click or Shift-drag to pick several and move, line up or lock them together. Press <span class="kbd">?</span> for shortcuts.</p></section>
+      <section class="isec">${detailSeg()}<p class="hint">${ui.adv ? 'Every setting and tool is showing, including cable channels, slack and signal-flow options.' : 'Everyday controls up front. Exact positions, power ratings, slack and channels sit under “More settings” or in Advanced.'}</p></section>
     </div>`;
   }
 }
@@ -3046,6 +3102,9 @@ $('vPlot').onclick = () => { view = 'plot'; needFit = !zoom; renderAll(); };
 $('vPaper').onclick = () => openPaper();
 $('undoBtn').onclick = undo;
 $('redoBtn').onclick = redo;
+$('lvBtn').onclick = () => setDetail(!ui.adv);
+document.addEventListener('click', e => { const b = e.target.closest('[data-detail]'); if (b) setDetail(b.dataset.detail === 'adv'); });
+document.addEventListener('click', e => { const sm = e.target.closest('details.more > summary'); if (sm) moreOpen[sm.parentElement.dataset.fold] = !sm.parentElement.open; }, true);   // a fold you opened stays open as you click around
 $('themeBtn').onclick = () => setTheme(themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system');
 $('helpBtn').onclick = () => { $('helpDlg').hidden = false; };
 $('helpClose').onclick = () => { $('helpDlg').hidden = true; };
@@ -3192,6 +3251,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.legend) { const k = t.dataset.legend; setCableView(() => { if (!cableView.all) { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(x => x !== k)); } else cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
   if (t.dataset.go === 'team') { railTab = 'team'; renderRail(); $('pcoStart')?.focus(); return; }
   if (t.dataset.go === 'build') { buildNow(); return; }
+  if (t.dataset.ctxCable) { const id = t.dataset.ctxCable; setMode('cable'); pending = { from: id, points: [] }; renderPlot(); toast('Now click the gear it runs to'); return; }
   if (t.dataset.go === 'compare') { toggleCompare(); return; }
   if (t.dataset.go === 'cable') { mutate(autoCable, 'Cabling re-run'); return; }
   if (t.dataset.go === 'paper') { openPaper(warnings().length ? 'sec-checks' : null); return; }
@@ -3477,11 +3537,11 @@ function cableMenuHtml() {
   const menu = cableView.menu ? `<div class="cabmenu" role="menu">
       <label class="cm-row cm-all" for="cabAll"><span>Show cables</span><input type="checkbox" id="cabAll" class="switch" ${cableView.all ? 'checked' : ''}></label>
       ${Object.keys(CABLES).map(k => `<button class="cm-row" data-cabtype="${k}" aria-pressed="${!cableView.hidden.has(k)}" ${cableView.all ? '' : 'disabled'}><span class="sw bg-${k}"></span><span>${esc(CABLES[k].name)}</span><span class="hint">${counts[k] || 0}</span>${ic(cableView.hidden.has(k) ? 'eyeOff' : 'eye', 'sm')}</button>`).join('')}
-      <div class="ctx-sep"></div>
+      ${ui.adv ? `<div class="ctx-sep"></div>
       <button class="cm-row" id="cabFlow" aria-pressed="${!cableView.noFlow}"><span class="sw" style="background:none;display:grid;place-items:center"><svg viewBox="-6 -6 12 12" width="12" height="12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg></span><span>Signal flow arrows</span><span></span>${ic(cableView.noFlow ? 'eyeOff' : 'eye', 'sm')}</button>
       <button class="cm-row" id="cabAnim" aria-pressed="${!!cableView.anim}" ${cableView.noFlow ? 'disabled' : ''}><span></span><span>Animate the flow</span><span></span><input type="checkbox" class="switch" tabindex="-1" ${cableView.anim ? 'checked' : ''} style="pointer-events:none;transform:scale(.8)"></button>
       <button class="cm-row" id="cabInCh" aria-pressed="${!cableView.hideInCh}" ${cableView.all ? '' : 'disabled'}><span class="sw" style="background:#11161a;height:8px;border:1px solid var(--line-2)"></span><span>Inside channels <small class="hint">cables &amp; gear</small></span><span class="hint">${plan.cables.filter(c => routeInfo(c)?.via).length}</span>${ic(cableView.hideInCh ? 'eyeOff' : 'eye', 'sm')}</button>
-      <button class="cm-row" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="hint">${plan.cables.filter(c => c.level === 'ceiling').length}</span>${ic(cableView.hideCeil ? 'eyeOff' : 'eye', 'sm')}</button>
+      <button class="cm-row" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="hint">${plan.cables.filter(c => c.level === 'ceiling').length}</span>${ic(cableView.hideCeil ? 'eyeOff' : 'eye', 'sm')}</button>` : ''}
       <div class="row" style="justify-content:space-between;padding:6px 8px 2px"><button class="btn quiet" id="cabShowAll" style="padding:4px 8px">Show all</button><button class="btn quiet" id="cabOnly" style="padding:4px 8px" title="Hide every type except power">Power only</button></div>
     </div>` : '';
   return `<div class="panel cabwrap">${btn}${menu}</div>`;
@@ -3959,6 +4019,7 @@ function cmdItems() {
     [compare ? 'Hide changes since last week' : 'What changed since last week', 'diff', () => toggleCompare()],
     ['Measure a distance', 'ruler', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } setMode('measure'); }],
     ['Select several items', 'boxsel', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } setMode('box'); }],
+    [ui.adv ? 'Switch to Simple view' : 'Switch to Advanced view (every setting)', 'sliders', () => setDetail(!ui.adv)],
     ['Fit stage to screen', 'fit', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } fit('stage'); }],
     ['Re-run cabling', 'wand', () => mutate(autoCable, 'Cabling re-run')],
     ['Switch theme', 'auto', () => $('themeBtn').click()],
