@@ -409,6 +409,15 @@ svg text { font-family: var(--f-ui); }
 .initials { fill: var(--accent-ink); font-size: .58px; font-weight: 800; pointer-events: none; }
 .selbox { fill: none; stroke: var(--accent); stroke-width: .1; pointer-events: none; }
 .selglow { fill: var(--accent); opacity: .16; pointer-events: none; }
+.marquee { fill: var(--accent); fill-opacity: .08; stroke: var(--accent); stroke-width: .06; stroke-dasharray: .3 .2; pointer-events: none; }
+.lockbadge circle { fill: var(--surface); stroke: var(--accent); stroke-width: 1.6; }
+.lockbadge path, .lockbadge rect { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.item.locked { cursor: default; }
+.alignbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.alignbar .sepv { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+.grpcount { display: grid; place-items: center; background: var(--accent); color: var(--accent-ink, #1a1a1a); font: 700 16px var(--f-mono, monospace); border-radius: 12px; }
+.grpchips { max-height: 140px; overflow: auto; }
+.grpchips .ic { width: 12px; height: 12px; }
 .cab { fill: none; stroke-width: .14; stroke-linejoin: round; stroke-linecap: round; opacity: .88; pointer-events: none; transition: opacity .15s; }
 .cab.dim { opacity: .18; }
 .cab.hl { stroke-width: .22; opacity: 1; }
@@ -732,6 +741,11 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <dt><span class="kbd">Esc</span></dt><dd>Cancel / deselect</dd>
       <dt><span class="kbd">R</span></dt><dd>Rotate 90° (Shift: 45°)</dd>
       <dt><span class="kbd">D</span></dt><dd>Duplicate</dd>
+      <dt>Shift-click</dt><dd>Add to / remove from the selection</dd>
+      <dt>Shift-drag floor</dt><dd>Box-select; drag any selected item to move them all</dd>
+      <dt><span class="kbd">Ctrl</span><span class="kbd">A</span></dt><dd>Select all gear</dd>
+      <dt><span class="kbd">Ctrl</span><span class="kbd">C</span> <span class="kbd">V</span></dt><dd>Copy and paste (at the pointer, or into another week)</dd>
+      <dt><span class="kbd">L</span></dt><dd>Lock / unlock in place</dd>
       <dt><span class="kbd">Del</span></dt><dd>Delete</dd>
       <dt><span class="kbd">←</span><span class="kbd">→</span></dt><dd>Nudge 5 cm (Shift: 50 cm)</dd>
       <dt><span class="kbd">+</span><span class="kbd">−</span></dt><dd>Zoom</dd>
@@ -927,10 +941,19 @@ const itemName = it => it.label || (LA_BOXES[it.type] ? `${cat(it).short} ×${la
 const STORE = 'stageplot.v1';
 let db, plan;
 let sel = null;                 // {kind:'item'|'cable', id}
+// Multi-select: extra items ride along with the selected one. Only counts while `sel` is still the anchor item,
+// so anything that selects something else drops the group without having to know about it.
+let group = null;               // {anchor, ids:Set}
+const selIds = () => sel?.kind === 'item' ? (group && group.anchor === sel.id ? [...group.ids].filter(itemById) : [sel.id]) : [];
+function setGroup(ids) {
+  ids = [...new Set(ids)].filter(itemById);
+  sel = ids.length ? { kind: 'item', id: ids[0] } : null;
+  group = ids.length > 1 ? { anchor: ids[0], ids: new Set(ids) } : null;
+}
 let mode = 'select', cableType = 'xlr', pending = null, cursorPt = null;
 let zoom = null;                // px per internal unit, null = fit
 let view = 'plot', railTab = 'team';
-let history = [], future = [], drag = null, delArmed = false;
+let history = [], future = [], drag = null, delArmed = false, hoverPt = null;
 
 function blankPlan(date) {
   return {
@@ -1051,7 +1074,7 @@ function buildFromTeam() {
       if (prev?.labelEdited && prev.personId === person.id) extra.labelEdited = true;
       const base = o.inputs || CAT[type].inputs;
       if (base) extra.inputs = base.map(n => `${fn} ${n}`);
-      if (prev) { for (const kk of ['w', 'd', 'watts', 'ins', 'outsMax', 'outs']) if (prev[kk] !== undefined) extra[kk] = prev[kk]; if (prev.inputsEdited && prev.personId === person.id) { extra.inputs = prev.inputs; extra.inputsEdited = true; } }
+      if (prev) { for (const kk of ['w', 'd', 'watts', 'ins', 'outsMax', 'outs', 'locked']) if (prev[kk] !== undefined) extra[kk] = prev[kk]; if (prev.inputsEdited && prev.personId === person.id) { extra.inputs = prev.inputs; extra.inputsEdited = true; } }
       const it = addItem(type, x, y, extra);
       if (prev) { it.id = prev.id; keepIds.add(prev.id); }
     });
@@ -1452,6 +1475,16 @@ const ICONS = {
   redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 000 11H13"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.8"/>',
+  alignL: '<path d="M4 3v18M8 6h11v4H8zM8 14h6v4H8z"/>',
+  alignCH: '<path d="M12 3v18M5 6h14v4H5zM8 14h8v4H8z"/>',
+  alignR: '<path d="M20 3v18M5 6h11v4H5zM10 14h6v4h-6z"/>',
+  alignT: '<path d="M3 4h18M6 8h4v11H6zM14 8h4v6h-4z"/>',
+  alignCV: '<path d="M3 12h18M6 5h4v14H6zM14 8h4v8h-4z"/>',
+  alignB: '<path d="M3 20h18M6 5h4v11H6zM14 10h4v6h-4z"/>',
+  distH: '<path d="M4 4v16M20 4v16M10 8h4v8h-4z"/>',
+  distV: '<path d="M4 4h16M4 20h16M8 10h8v4H8z"/>',
   fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
   chevL: '<path d="M15 18l-6-6 6-6"/>',
   chevR: '<path d="M9 18l6-6-6-6"/>',
@@ -1881,17 +1914,17 @@ function renderPlot() {
   s += `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".45">STAGE LEFT</text>`;
   s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
 
-  const selItem = sel?.kind === 'item' ? sel.id : null;
+  const selItem = sel?.kind === 'item' ? sel.id : null, selSet = new Set(selIds()), solo = selSet.size === 1;
   syncChanItems();
-  const sorted = plan.items.filter(it => !(cableView.hideInCh && it.chan && it.id !== selItem)).sort((a, c) => layerOf(a) - layerOf(c));
+  const sorted = plan.items.filter(it => !(cableView.hideInCh && it.chan && !selSet.has(it.id))).sort((a, c) => layerOf(a) - layerOf(c));
   const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
   s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${it.chan ? ' inchan' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}</title>${shapeSvg(it, iw, id)}</g>`;
+    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}</title>${shapeSvg(it, iw, id)}</g>`;
     if (L < 3) s += g; else top += g;
-    const isSel = it.id === selItem, big = Math.min(iw, id) >= 1.6 && C.shape !== 'person';
+    const isSel = selSet.has(it.id), big = Math.min(iw, id) >= 1.6 && C.shape !== 'person';
     const person = C.shape === 'person';
     const visible = isSel || (person ? showBig : big ? showBig : showSmall);
     if (visible && C.shape !== 'platform') {
@@ -1903,13 +1936,21 @@ function renderPlot() {
     } else if (C.shape === 'platform' && showBig) {
       labels += `<text class="zone on-deck" x="${it.x}" y="${it.y + id / 2 - .35}" text-anchor="middle">${esc(itemName(it).toUpperCase())} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM</text>`;
     }
-    if (isSel && C.shape === 'platform') {   // exact outline + corner handles to resize
+    if (isSel && it.locked) {   // padlock on the corner of a locked selection
+      const m = C.shape === 'platform' ? 0 : Math.max(iw, id) / 2 + .3, k = 11 / scale / 12, bx = it.x + (C.shape === 'platform' ? iw / 2 : m), by = it.y - (C.shape === 'platform' ? id / 2 : m);
+      selb += `<g class="lockbadge" transform="translate(${f3(bx)} ${f3(by)}) scale(${f3(k)})"><circle r="12"/><g transform="translate(-12 -12) scale(1)">${ICONS.lock}</g></g>`;
+    }
+    if (isSel && C.shape === 'platform' && solo && !it.locked) {   // exact outline + corner handles to resize
       const th = (it.rot || 0) * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th), hs = 6 / scale;
       const corner = (sx, sy) => [it.x + sx * iw / 2 * cs - sy * id / 2 * sn, it.y + sx * iw / 2 * sn + sy * id / 2 * cs];
       const cs4 = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => [sx, sy, ...corner(sx, sy)]);
       selb += `<polygon class="selbox" points="${cs4.map(q => `${f3(q[2])},${f3(q[3])}`).join(' ')}"/>`;
       for (const [sx, sy, x, y] of cs4) selb += `<rect class="rh" data-rh="${sx},${sy}" x="${f3(x - hs)}" y="${f3(y - hs)}" width="${f3(hs * 2)}" height="${f3(hs * 2)}" rx="${f3(hs * .3)}"/>`;
       selb += `<text class="cablen" x="${it.x}" y="${f3(it.y + .2)}" text-anchor="middle">${mVal(iw)} × ${mVal(id)} m</text>`;
+    } else if (isSel && C.shape === 'platform') {
+      const th = (it.rot || 0) * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
+      const q = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => [it.x + sx * iw / 2 * cs - sy * id / 2 * sn, it.y + sx * iw / 2 * sn + sy * id / 2 * cs]);
+      selb += `<polygon class="selbox" points="${q.map(v => `${f3(v[0])},${f3(v[1])}`).join(' ')}"/>`;
     } else if (isSel) {
       const m = Math.max(iw, id) / 2 + .3;
       selb += `<rect class="selglow" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/><rect class="selbox" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/>`;
@@ -1920,7 +1961,7 @@ function renderPlot() {
     const o = cableGeom(c); if (!o) continue;
     const isSel = sel?.kind === 'cable' && sel.id === c.id;
     if (!isSel && !cableShown(c)) continue;
-    const rel = selItem ? (touches(c, selItem) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : '');
+    const rel = selItem ? (selSet.has(c.from) || selSet.has(c.to) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : '');
     const ps = o.map(p => p.join(',')).join(' ');
     // with "inside channels" hidden, only the stretches on the open stage are drawn (a selected cable still shows all of it)
     const parts = cableView.hideInCh ? cableParts(c) : null;
@@ -1938,7 +1979,7 @@ function renderPlot() {
       for (const q of parts.ports) out += `<circle class="chport${rel}" cx="${f3(q[0])}" cy="${f3(q[1])}" r="${f3(r)}" style="fill:var(${KVAR[c.type]})"/>`;
     }
     if (c.level === 'ceiling') ceil += out; else s += out;
-    if (isSel || (selItem && touches(c, selItem))) {
+    if (isSel || (solo && touches(c, selItem))) {
       const m = midpoint(o);
       lens += `<text class="cablen" x="${m[0]}" y="${m[1] - .3}" text-anchor="middle">${fmtLen(cableLen(c))}${cableQty(c) > 1 ? ` ×${cableQty(c)}` : ''}</text>`;
       const pr = portRange(c);
@@ -1952,6 +1993,10 @@ function renderPlot() {
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
   s += top + chv.over + ceil + labels + selb + lens + wps + chv.handles;
+  if (drag?.kind === 'box') {
+    const x = Math.min(drag.x0, drag.x1), y = Math.min(drag.y0, drag.y1);
+    s += `<rect class="marquee" x="${f3(x)}" y="${f3(y)}" width="${f3(Math.abs(drag.x1 - drag.x0))}" height="${f3(Math.abs(drag.y1 - drag.y0))}" rx=".1"/>`;
+  }
   if (drag?.kind === 'item' && drag.hoverCh) s += `<circle class="pend-target" cx="${f3(drag.hoverCh.pt[0])}" cy="${f3(drag.hoverCh.pt[1])}" r="${f3(Math.max(.4, 10 / scale))}"/><text class="cablen" x="${f3(drag.hoverCh.pt[0] + 12 / scale)}" y="${f3(drag.hoverCh.pt[1] - 12 / scale)}">Drop inside ${esc(drag.hoverCh.ch.name)}</text>`;
   if (drag?.kind === 'item') {
     if (drag.gx != null) s += `<line class="guide" x1="${drag.gx}" x2="${drag.gx}" y1="${b.y0}" y2="${b.y0 + b.vh}"/>`;
@@ -2172,6 +2217,29 @@ const warnItem = x => `<li class="${x.lvl}">${ic('alert', 'sm')}<span>${esc(x.ms
 
 function renderInspector() {
   const el = $('inspector');
+  // commit a half-typed field first: replacing a focused input mid-blur throws, and the edit would be lost
+  if (el.contains(document.activeElement) && document.activeElement !== el) { document.activeElement.blur(); if (!el.isConnected) return; }
+  const gids = selIds();
+  if (gids.length > 1) {
+    const its = gids.map(itemById), locked = its.filter(i => i.locked).length, owners = new Set(its.map(i => i.personId || ''));
+    const pOpts = `${owners.size > 1 ? '<option value="*" selected>Mixed</option>' : ''}<option value="" ${owners.size === 1 && owners.has('') ? 'selected' : ''}>Nobody</option>` + plan.team.map(p => `<option value="${p.id}" ${owners.size === 1 && owners.has(p.id) ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+    const ab = (k, icon, label) => `<button class="iconbtn" data-align="${k}" aria-label="${label}" title="${label}">${ic(icon, 'sm')}</button>`;
+    el.innerHTML = `<div class="insp">
+      <div class="insp-head"><span class="avatar grpcount" style="width:44px;height:44px">${gids.length}</span>
+        <div><div class="eyebrow">Selection</div><h2>${plural(gids.length, 'item')}</h2></div>
+        <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
+      <section class="isec"><h3>Selected <span>click one to edit it alone</span></h3><div class="chips grpchips">${its.map(i => `<button class="ctype" data-selone="${i.id}">${i.locked ? ic('lock', 'sm') : ''}${esc(itemName(i))}</button>`).join('')}</div></section>
+      <section class="isec"><h3>Line up</h3>
+        <div class="alignbar">${ab('l', 'alignL', 'Align left edges')}${ab('ch', 'alignCH', 'Centre across')}${ab('r', 'alignR', 'Align right edges')}<span class="sepv"></span>${ab('t', 'alignT', 'Align upstage edges')}${ab('cv', 'alignCV', 'Centre up and down')}${ab('b', 'alignB', 'Align downstage edges')}<span class="sepv"></span>${ab('dh', 'distH', 'Space evenly across')}${ab('dv', 'distV', 'Space evenly up and down')}</div>
+        <p class="hint">${locked ? `${plural(locked, 'locked item')} stay${locked === 1 ? 's' : ''} put. ` : ''}Spacing evenly needs three or more.</p></section>
+      <section class="isec"><h3>Details</h3><div class="field"><label for="gPerson">Belongs to</label><select id="gPerson">${pOpts}</select></div></section>
+      <section class="isec"><div class="actions">
+        <button class="btn" id="gLock">${ic(locked === its.length ? 'unlock' : 'lock', 'sm')}${locked === its.length ? 'Unlock' : 'Lock'}</button>
+        <button class="btn" id="iRotate">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iDup">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel">${ic('trash', 'sm')}Delete</button></div>
+        <p class="hint">Drag any of them to move them together. Shift-click adds or removes; Shift-drag the floor to box-select.</p></section>
+    </div>`;
+    return;
+  }
   const it = sel?.kind === 'item' ? itemById(sel.id) : null;
   const c = sel?.kind === 'cable' ? plan.cables.find(x => x.id === sel.id) : null;
   if (it) {
@@ -2213,6 +2281,7 @@ function renderInspector() {
         ${field('iLabel', 'Label', it.label || '', 'text', `placeholder="${esc(C.short || C.name)}"`)}
         <div class="field"><label for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>
         ${it.chan ? `<div class="flowline" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Sits inside ${esc(chans().find(c => c.id === it.chan.id)?.name || 'a channel')}<button class="btn" id="iOutCh" style="padding:4px 10px">Take out</button></div>` : ''}
+        <button class="btn block lockbtn" id="iLock" aria-pressed="${!!it.locked}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked in place · click to unlock' : 'Lock in place'}</button>
         ${it.gen ? `<p class="hint">Placed from the team. Rebuilding keeps where you put it.</p>` : ''}
       </section>
       <section class="isec"><h3>Position &amp; size</h3>
@@ -2291,7 +2360,7 @@ function renderInspector() {
       ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 6).map(warnItem).join('')}</ul>${w.length > 6 ? `<button class="btn quiet" data-go="paper">See all ${w.length} in the paperwork</button>` : ''}</section>` : ''}
       <section class="isec"><h3>Cable colours <span style="text-transform:none;letter-spacing:0;font-weight:500">dashed = overhead</span></h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
         <div class="flowlegend"><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg>Input / power</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3 0L-4 3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Output</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)" fill="currentColor"/></svg>Digital link</span></div>
-        <p class="hint">Arrows point the way the signal travels. Click anything on the plot to edit it. Press <span class="kbd">?</span> for shortcuts.</p></section>
+        <p class="hint">Arrows point the way the signal travels. Click anything on the plot to edit it; Shift-click or Shift-drag to pick several and move, line up or lock them together. Press <span class="kbd">?</span> for shortcuts.</p></section>
     </div>`;
   }
 }
@@ -2477,13 +2546,21 @@ svg.addEventListener('pointerdown', e => {
     const [cid, k] = wp.dataset.wp.split(':');
     drag = { kind: 'wp', cid, k: Number(k), snap: JSON.stringify(plan), moved: false };
   } else if (g) {
-    const it = itemById(g.dataset.id);
-    sel = { kind: 'item', id: it.id };
-    drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false };
+    const it = itemById(g.dataset.id), ids = selIds();
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {   // add to / take out of the selection
+      setGroup(ids.includes(it.id) ? ids.filter(x => x !== it.id) : [...ids, it.id]);
+    } else {
+      const keep = ids.length > 1 && ids.includes(it.id);   // grabbing one of a group moves the lot
+      if (!keep) { sel = { kind: 'item', id: it.id }; group = null; }
+      const others = keep ? ids.filter(x => x !== it.id).map(itemById).filter(o => !o.locked).map(o => ({ id: o.id, dx: o.x - it.x, dy: o.y - it.y })) : [];
+      drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false, others, keep, locked: !!it.locked };
+    }
   } else if (ch) {
     sel = { kind: 'cable', id: ch.dataset.cid };
   } else if (chh) {
     sel = { kind: 'channel', id: chh.dataset.chid };
+  } else if (e.shiftKey && mode === 'select') {   // Shift-drag the floor: box-select
+    drag = { kind: 'box', x0: p.x, y0: p.y, x1: p.x, y1: p.y, base: selIds(), moved: false };
   } else {
     drag = { kind: 'pan', x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop, moved: false };
   }
@@ -2492,6 +2569,7 @@ svg.addEventListener('pointerdown', e => {
   if (drag?.kind !== 'pan') { renderPlot(); renderInspector(); }
 });
 svg.addEventListener('pointermove', e => {
+  hoverPt = toFt(e);
   if (pending) {
     const p = toFt(e), g = e.target.closest('[data-id]');
     pendHover = g && g.dataset.id !== pending.from && cableEnd(itemById(g.dataset.id)) ? g.dataset.id : null;
@@ -2521,19 +2599,30 @@ svg.addEventListener('pointermove', e => {
     scroller.scrollLeft = drag.sl - dx; scroller.scrollTop = drag.st - dy; return;
   }
   const p = toFt(e);
+  if (drag.kind === 'box') { drag.x1 = p.x; drag.y1 = p.y; drag.moved = true; renderPlot(); return; }
   if (drag.kind === 'item') {
     const it = itemById(drag.id); if (!it) return;
+    if (drag.locked) {
+      if (!drag.warned && Math.hypot(p.x - drag.ox - it.x, p.y - drag.oy - it.y) > .4) { drag.warned = true; toast(`${itemName(it)} is locked. Unlock it from the panel or right-click`); }
+      return;
+    }
+    const grp = drag.others.length > 0;
     let nx = snapTo(p.x - drag.ox), ny = snapTo(p.y - drag.oy);
     drag.gx = drag.gy = null; drag.alt = e.altKey;
-    drag.hoverCh = !e.altKey && canSitInChannel(it) ? channelAt({ x: p.x - drag.ox, y: p.y - drag.oy }) : null;
+    drag.hoverCh = !e.altKey && !grp && canSitInChannel(it) ? channelAt({ x: p.x - drag.ox, y: p.y - drag.oy }) : null;
     if (!e.altKey) {   // snap to other items' centres and the stage centreline
       const tol = 7 / scale; let bx = tol, by = tol;
       const xs = [plan.stage.w / 2], ys = [];
-      for (const o of plan.items) if (o.id !== it.id && cat(o).shape !== 'platform') { xs.push(o.x); ys.push(o.y); }
+      const moving = new Set([it.id, ...drag.others.map(o => o.id)]);
+      for (const o of plan.items) if (!moving.has(o.id) && cat(o).shape !== 'platform') { xs.push(o.x); ys.push(o.y); }
       for (const x of xs) { const dd = Math.abs(x - (p.x - drag.ox)); if (dd < bx) { bx = dd; nx = x; drag.gx = x; } }
       for (const y of ys) { const dd = Math.abs(y - (p.y - drag.oy)); if (dd < by) { by = dd; ny = y; drag.gy = y; } }
     }
-    if (nx !== it.x || ny !== it.y || drag.gx !== drag.pgx || drag.gy !== drag.pgy) { it.x = nx; it.y = ny; drag.moved = true; drag.pgx = drag.gx; drag.pgy = drag.gy; renderPlot(); }
+    if (nx !== it.x || ny !== it.y || drag.gx !== drag.pgx || drag.gy !== drag.pgy) {
+      it.x = nx; it.y = ny; drag.moved = true; drag.pgx = drag.gx; drag.pgy = drag.gy;
+      for (const o of drag.others) { const q = itemById(o.id); if (q) { q.x = r2(nx + o.dx); q.y = r2(ny + o.dy); delete q.chan; } }
+      renderPlot();
+    }
   } else {
     const c = plan.cables.find(x => x.id === drag.cid); if (!c) return;
     const all = [[itemById(c.from).x, itemById(c.from).y], ...c.points, [itemById(c.to).x, itemById(c.to).y]], k = drag.k + 1, tol = 9 / scale;
@@ -2547,16 +2636,33 @@ function endDrag() {
   const d = drag; drag = null;
   if (!d) return;
   if (d.kind === 'pan') { if (!d.moved && sel) { sel = null; renderPlot(); renderInspector(); } return; }
-  if (d.moved && d.kind === 'item') {   // dropped on a channel: it sits inside; dragged off: it doesn't
+  if (d.kind === 'box') {
+    const x0 = Math.min(d.x0, d.x1), x1 = Math.max(d.x0, d.x1), y0 = Math.min(d.y0, d.y1), y1 = Math.max(d.y0, d.y1);
+    const inside = (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+    const hit = plan.items.filter(it => {   // risers only when the box takes in all of them, so a sweep over the band doesn't grab the deck
+      if (cableView.hideInCh && it.chan) return false;
+      if (cat(it).shape !== 'platform') return inside(it.x, it.y);
+      const w = Number(prop(it, 'w')) / 2, dd = Number(prop(it, 'd')) / 2;
+      return inside(it.x - w, it.y - dd) && inside(it.x + w, it.y + dd);
+    }).map(it => it.id);
+    setGroup([...d.base, ...hit]); renderPlot(); renderInspector();
+    if (hit.length) toast(`${plural(selIds().length, 'item')} selected · drag one to move them all`);
+    return;
+  }
+  if (d.moved && d.kind === 'item' && !d.others?.length) {   // dropped on a channel: it sits inside; dragged off: it doesn't
     const it = itemById(d.id), hit = !d.alt && canSitInChannel(it) && channelAt({ x: it.x, y: it.y });
     const was = it.chan?.id;
     if (hit) { placeInChannel(it, hit); if (was !== hit.ch.id) toast(`${itemName(it)} sits inside ${hit.ch.name}`); }
     else if (it.chan) { delete it.chan; toast(`${itemName(it)} taken out of the channel`); }
   }
   if (d.moved) { history.push(d.snap); future = []; save(); renderAll(); }
-  else if (d.kind === 'item') renderPlot();
+  else if (d.kind === 'item') {   // a plain click on one of a group narrows to it
+    if (d.keep) { sel = { kind: 'item', id: d.id }; group = null; renderInspector(); }
+    renderPlot();
+  }
 }
 svg.addEventListener('pointerup', endDrag);
+svg.addEventListener('pointerleave', () => { hoverPt = null; });
 svg.addEventListener('pointercancel', endDrag);
 scroller.addEventListener('wheel', e => {
   if (!(e.ctrlKey || e.metaKey)) return;
@@ -2633,19 +2739,90 @@ window.addEventListener('resize', () => { if (!zoom) { needFit = true; renderPlo
    =================================================================== */
 function deleteSelected() {
   if (!sel) return;
-  const name = sel.kind === 'item' ? itemName(itemById(sel.id)) : sel.kind === 'channel' ? 'Channel' : 'Cable';
+  const ids = selIds();
+  const name = ids.length > 1 ? plural(ids.length, 'item') : sel.kind === 'item' ? itemName(itemById(sel.id)) : sel.kind === 'channel' ? 'Channel' : 'Cable';
   mutate(() => {
     if (sel.kind === 'channel') plan.channels = chans().filter(x => x.id !== sel.id);
-    else if (sel.kind === 'item') { plan.items = plan.items.filter(i => i.id !== sel.id); plan.cables = plan.cables.filter(c => !touches(c, sel.id)); }
+    else if (sel.kind === 'item') { const gone = new Set(ids); plan.items = plan.items.filter(i => !gone.has(i.id)); plan.cables = plan.cables.filter(c => !gone.has(c.from) && !gone.has(c.to)); }
     else plan.cables = plan.cables.filter(c => c.id !== sel.id);
-    sel = null;
+    sel = null; group = null;
   }, `${name} deleted`);
 }
-function duplicateSelected() {
-  const it = sel?.kind === 'item' && itemById(sel.id); if (!it) return;
-  mutate(() => { const copy = { ...JSON.parse(JSON.stringify(it)), id: uid(), x: it.x + fromM(.3), y: it.y + fromM(.3) }; delete copy.gen; delete copy.genKey; plan.items.push(copy); sel = { kind: 'item', id: copy.id }; });
+// Copies of items plus the cables that run between them, with fresh ids; offset in feet.
+function cloneItems(items, cables, dx, dy) {
+  const map = new Map(), team = new Set(plan.team.map(p => p.id));
+  const its = items.map(it => {
+    const c = JSON.parse(JSON.stringify(it)); map.set(it.id, c.id = uid());
+    c.x = r2(it.x + dx); c.y = r2(it.y + dy); delete c.gen; delete c.genKey; delete c.chan; delete c.locked;
+    if (c.personId && !team.has(c.personId)) delete c.personId;
+    return c;
+  });
+  const cabs = cables.filter(c => map.has(c.from) && map.has(c.to)).map(c => ({ ...JSON.parse(JSON.stringify(c)), id: uid(), from: map.get(c.from), to: map.get(c.to), auto: false, points: (c.points || []).filter(q => !isHop(q)).map(q => [r2(q[0] + dx), r2(q[1] + dy)]) }));
+  return { its, cabs };
 }
-function rotateSelected(by) { const it = sel?.kind === 'item' && itemById(sel.id); if (it) mutate(() => { it.rot = ((it.rot || 0) + by + 360) % 360; }); }
+function duplicateSelected() {
+  const ids = selIds(); if (!ids.length) return;
+  const its = ids.map(itemById), set = new Set(ids), d = fromM(.3);
+  mutate(() => {
+    const n = cloneItems(its, plan.cables.filter(c => set.has(c.from) && set.has(c.to)), d, d);
+    plan.items.push(...n.its); plan.cables.push(...n.cabs); setGroup(n.its.map(i => i.id));
+  }, ids.length > 1 ? `${plural(ids.length, 'item')} duplicated` : null);
+}
+function rotateSelected(by) {
+  const its = selIds().map(itemById).filter(i => !i.locked);
+  if (!its.length) { if (selIds().length) toast('Locked. Unlock it to rotate'); return; }
+  mutate(() => { for (const it of its) it.rot = ((it.rot || 0) + by + 360) % 360; });
+}
+// clipboard: survives switching weeks (and reloads, where storage allows)
+let clip = null;
+try { clip = JSON.parse(localStorage.getItem('stageplot.clip') || 'null'); } catch { /* ignore */ }
+function copySelected(cut) {
+  const ids = selIds(); if (!ids.length) return;
+  const set = new Set(ids), items = ids.map(itemById);
+  const cx = items.reduce((a, i) => a + i.x, 0) / items.length, cy = items.reduce((a, i) => a + i.y, 0) / items.length;
+  clip = { items: JSON.parse(JSON.stringify(items)), cables: JSON.parse(JSON.stringify(plan.cables.filter(c => set.has(c.from) && set.has(c.to)))), cx, cy, from: plan.id };
+  try { localStorage.setItem('stageplot.clip', JSON.stringify(clip)); } catch { /* memory only */ }
+  if (cut) { mutate(() => { plan.items = plan.items.filter(i => !set.has(i.id)); plan.cables = plan.cables.filter(c => !set.has(c.from) && !set.has(c.to)); sel = null; group = null; }, `Cut ${plural(ids.length, 'item')} · Ctrl+V pastes`); }
+  else toast(`Copied ${plural(ids.length, 'item')} · Ctrl+V pastes, here or in another week`);
+}
+function pasteClip() {
+  if (!clip?.items?.length) { toast('Nothing copied yet. Select gear and press Ctrl+C'); return; }
+  // lands under the pointer when it's over the plot; otherwise just off the originals (or in the same spot in another week)
+  const off = clip.from === plan.id ? fromM(.3) : 0;
+  const dx = hoverPt ? snapTo(hoverPt.x - clip.cx) : off, dy = hoverPt ? snapTo(hoverPt.y - clip.cy) : off;
+  mutate(() => { const n = cloneItems(clip.items, clip.cables, dx, dy); plan.items.push(...n.its); plan.cables.push(...n.cabs); setGroup(n.its.map(i => i.id)); }, `Pasted ${plural(clip.items.length, 'item')}`);
+}
+function selectAll() {
+  const ids = plan.items.filter(i => cat(i).shape !== 'platform' && !(cableView.hideInCh && i.chan)).map(i => i.id);
+  if (!ids.length) return;
+  setGroup(ids); renderPlot(); renderInspector(); toast(`${plural(ids.length, 'item')} selected · risers left out`);
+}
+function alignSelected(k) {
+  const its = selIds().map(itemById), mov = its.filter(i => !i.locked);
+  if (!mov.length) return;
+  const ext = i => { const r = (i.rot || 0) % 180 === 90, w = Number(prop(i, 'w')), d = Number(prop(i, 'd')); return { hw: (r ? d : w) / 2, hd: (r ? w : d) / 2 }; };
+  const L = Math.min(...its.map(i => i.x - ext(i).hw)), R = Math.max(...its.map(i => i.x + ext(i).hw));
+  const T = Math.min(...its.map(i => i.y - ext(i).hd)), B = Math.max(...its.map(i => i.y + ext(i).hd));
+  const spread = (axis) => {
+    const s = its.slice().sort((a, b) => a[axis] - b[axis]); if (s.length < 3) { toast('Pick three or more to space evenly'); return; }
+    const a = s[0][axis], b = s[s.length - 1][axis];
+    s.forEach((i, n) => { if (!i.locked) i[axis] = r2(a + (b - a) * n / (s.length - 1)); });
+  };
+  mutate(() => {
+    for (const i of mov) {
+      const e = ext(i);
+      if (k === 'l') i.x = r2(L + e.hw); if (k === 'r') i.x = r2(R - e.hw); if (k === 'ch') i.x = r2((L + R) / 2);
+      if (k === 't') i.y = r2(T + e.hd); if (k === 'b') i.y = r2(B - e.hd); if (k === 'cv') i.y = r2((T + B) / 2);
+      delete i.chan;
+    }
+    if (k === 'dh') spread('x'); if (k === 'dv') spread('y');
+  });
+}
+function toggleLock(ids) {
+  const its = ids.map(itemById).filter(Boolean); if (!its.length) return;
+  const lock = !its.every(i => i.locked);
+  mutate(() => { for (const i of its) { if (lock) i.locked = true; else delete i.locked; } }, `${its.length > 1 ? plural(its.length, 'item') : itemName(its[0])} ${lock ? 'locked in place' : 'unlocked'}`);
+}
 function setMode(m) { mode = m; pending = null; cursorPt = null; pendHover = null; pendChan = null; if (m !== 'channel') chDraft = null; renderPlot(); }
 function openPaper(anchor) {
   view = 'paper'; pending = null; renderAll();
@@ -2689,6 +2866,10 @@ document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase(), typing = ['input', 'textarea', 'select'].includes(tag);
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && !typing && (k === 'z' || k === 'y')) { e.preventDefault(); (k === 'y' || e.shiftKey) ? redo() : undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && !typing && view === 'plot' && $('dataDlg').hidden && $('helpDlg').hidden && !e.altKey && !getSelection()?.toString()) {
+    const act = { c: () => copySelected(false), x: () => copySelected(true), v: pasteClip, a: selectAll, d: duplicateSelected }[k];
+    if (act && (k === 'v' || k === 'a' || selIds().length)) { e.preventDefault(); act(); return; }
+  }
   if (e.key === 'Escape') {
     if (!$('dataDlg').hidden || !$('helpDlg').hidden) { $('dataDlg').hidden = true; $('helpDlg').hidden = true; return; }
     if (!$('weekPop').hidden) { closePops(); $('weekBtn').focus(); return; }
@@ -2715,9 +2896,11 @@ document.addEventListener('keydown', e => {
   else if (e.key === '-' || e.key === '_') zoomCenter(1 / 1.25);
   else if (e.key === '0') fit('stage');
   else if (e.key.startsWith('Arrow') && sel?.kind === 'item') {
-    e.preventDefault(); const it = itemById(sel.id), s = fromM(e.shiftKey ? .5 : .05);
-    mutate(() => { delete it.chan; if (e.key === 'ArrowLeft') it.x -= s; if (e.key === 'ArrowRight') it.x += s; if (e.key === 'ArrowUp') it.y -= s; if (e.key === 'ArrowDown') it.y += s; });
+    e.preventDefault(); const its = selIds().map(itemById).filter(i => !i.locked), s = fromM(e.shiftKey ? .5 : .05);
+    if (!its.length) { toast('Locked. Unlock it to move'); return; }
+    mutate(() => { for (const it of its) { delete it.chan; if (e.key === 'ArrowLeft') it.x = r2(it.x - s); if (e.key === 'ArrowRight') it.x = r2(it.x + s); if (e.key === 'ArrowUp') it.y = r2(it.y - s); if (e.key === 'ArrowDown') it.y = r2(it.y + s); } });
   }
+  else if (k === 'l' && !e.ctrlKey && !e.metaKey && selIds().length) toggleLock(selIds());
 });
 
 /* header */
@@ -2827,6 +3010,7 @@ $('inspector').addEventListener('change', e => {
   const t = e.target;
   const it = sel?.kind === 'item' ? itemById(sel.id) : null;
   const c = sel?.kind === 'cable' ? plan.cables.find(x => x.id === sel.id) : null;
+  if (t.id === 'gPerson') { if (t.value !== '*') mutate(() => { for (const i of selIds().map(itemById)) i.personId = t.value || undefined; }); return; }
   if (it) mutate(() => {
     const n = Number(t.value);
     switch (t.id) {
@@ -2876,6 +3060,9 @@ $('inspector').addEventListener('click', e => {
   if (t.id === 'openRack') { openRack(sel.id); return; }
   if (t.id === 'iOutCh') { const it = itemById(sel.id); mutate(() => { delete it.chan; it.y = r2(it.y + fromM(.5)); }, `${itemName(it)} taken out of the channel`); return; }
   if (t.id === 'iRotate') rotateSelected(90);
+  if (t.id === 'iLock' || t.id === 'gLock') toggleLock(selIds());
+  if (t.dataset.align) alignSelected(t.dataset.align);
+  if (t.dataset.selone) { sel = { kind: 'item', id: t.dataset.selone }; group = null; renderPlot(); renderInspector(); return; }
   if (t.id === 'iDel' || t.id === 'cDel') deleteSelected();
   if (t.id === 'iDup') duplicateSelected();
   if (t.id === 'cClear') { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.points = []; }); }
@@ -3533,8 +3720,10 @@ scroller.addEventListener('scroll', () => { hideHover(); closeCtx(); });
 // each click re-renders the plot, so remember which item the clicks landed on
 let lastDown = { id: null, t: 0 };
 svg.addEventListener('pointerdown', e => {
+  // finish a half-typed inspector field against the item it belongs to, before the click changes the selection
+  if ($('inspector').contains(document.activeElement)) document.activeElement.blur();
   const id = e.target.closest('[data-id]')?.dataset.id || null, now = Date.now();
-  const dbl = id && id === lastDown.id && now - lastDown.t < 420 && e.button === 0;
+  const dbl = id && id === lastDown.id && now - lastDown.t < 420 && e.button === 0 && !e.shiftKey;
   lastDown = { id, t: dbl ? 0 : now };
   if (dbl) setTimeout(() => openDetails(id), 0);
 }, true);
@@ -3554,16 +3743,28 @@ svg.addEventListener('contextmenu', e => {
   if (!g && !ch) return;
   e.preventDefault(); hideHover();
   pending = null; mode = 'select';
-  sel = g ? { kind: 'item', id: g.dataset.id } : { kind: 'cable', id: ch.dataset.cid };
+  const grp = g && selIds().length > 1 && selIds().includes(g.dataset.id);
+  if (!grp) { sel = g ? { kind: 'item', id: g.dataset.id } : { kind: 'cable', id: ch.dataset.cid }; group = null; }
   renderPlot(); renderInspector();
   const m = $('ctxMenu');
-  if (g) {
+  if (grp) {
+    const n = selIds().length, allLocked = selIds().every(id => itemById(id).locked);
+    m.innerHTML = `<div class="ctx-h">${plural(n, 'item')} selected</div>
+      <button data-ctx="rotate">${ic('rotate', 'sm')}Rotate each 90°<span class="kbd">R</span></button>
+      <button data-ctx="dup">${ic('copy', 'sm')}Duplicate<span class="kbd">Ctrl D</span></button>
+      <button data-ctx="copy">${ic('clip', 'sm')}Copy<span class="kbd">Ctrl C</span></button>
+      <button data-ctx="lock">${ic(allLocked ? 'unlock' : 'lock', 'sm')}${allLocked ? 'Unlock all' : 'Lock all in place'}<span class="kbd">L</span></button>
+      <div class="ctx-sep"></div>
+      <button data-ctx="del" class="danger">${ic('trash', 'sm')}Delete ${n}<span class="kbd">Del</span></button>`;
+  } else if (g) {
     const it = itemById(g.dataset.id), isPerson = cat(it).shape === 'person';
     m.innerHTML = `<div class="ctx-h">${esc(isPerson ? personById(it.personId)?.name || it.label : itemName(it))}</div>
       <button data-ctx="edit">${ic('panelR', 'sm')}Edit details<span class="kbd">Dbl-click</span></button>
       <button data-ctx="cable">${ic('cable', 'sm')}Run a cable from here</button>
       <button data-ctx="rotate">${ic('rotate', 'sm')}Rotate 90°<span class="kbd">R</span></button>
       <button data-ctx="dup">${ic('copy', 'sm')}Duplicate<span class="kbd">D</span></button>
+      <button data-ctx="copy">${ic('clip', 'sm')}Copy<span class="kbd">Ctrl C</span></button>
+      <button data-ctx="lock">${ic(it.locked ? 'unlock' : 'lock', 'sm')}${it.locked ? 'Unlock' : 'Lock in place'}<span class="kbd">L</span></button>
       ${!isPerson && plan.team.length ? `<div class="ctx-sep"></div><div class="ctx-h">Belongs to</div><div class="ctx-people">${plan.team.slice(0, 12).map(p => `<button data-ctx-person="${p.id}" aria-pressed="${p.id === it.personId}">${esc(p.name || 'Unnamed')}</button>`).join('')}${it.personId ? `<button data-ctx-person="">Nobody</button>` : ''}</div>` : ''}
       <div class="ctx-sep"></div>
       <button data-ctx="del" class="danger">${ic('trash', 'sm')}Delete<span class="kbd">Del</span></button>`;
@@ -3591,6 +3792,8 @@ $('ctxMenu').addEventListener('click', e => {
     case 'cable': mode = 'cable'; pending = { from: sel.id, points: [] }; renderPlot(); break;
     case 'rotate': rotateSelected(90); break;
     case 'dup': duplicateSelected(); break;
+    case 'copy': copySelected(false); break;
+    case 'lock': toggleLock(selIds()); break;
     case 'straighten': { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.points = []; }); break; }
     case 'level': { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.level = c.level === 'ceiling' ? undefined : 'ceiling'; c.auto = false; }); break; }
     case 'hidetype': { const c = plan.cables.find(x => x.id === sel.id); setCableView(() => { cableView.all = true; cableView.hidden.add(c.type); }); toast(`${SHORT[c.type]} cables hidden · H shows all`); break; }

@@ -32,6 +32,9 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Using it
 
+- **Select several**: Shift-click gear (or Ctrl/Cmd-click) to add or remove it, Shift-drag the floor to box-select, Ctrl+A for all gear (risers left out). Drag any selected item to move the lot; nudge, rotate, duplicate, delete or reassign them together, and line them up (left, centre, right, upstage, downstage) or space them evenly from the panel. A plain click on one narrows the selection to it.
+- **Lock in place**: lock gear that never moves (FOH, distros, risers, stage boxes) from its details, the right-click menu or `L`. Locked gear can't be dragged, nudged, rotated or lined up by accident, shows a padlock when selected, and stays locked when you rebuild from the team.
+- **Copy and paste**: Ctrl+C / Ctrl+X / Ctrl+V copies gear with the cables between it; pastes land under the pointer, and work across weeks (copy a band setup from one Sunday into another).
 - **Search or jump to (Ctrl+K)**: run any action, add any gear by name, or find a person or item on stage.
 - **Right-click** gear or a cable for quick actions (edit, run a cable from here, rotate, duplicate, assign to someone, hide that cable type, delete). **Double-click** gear to edit its details. Hover for a quick info card.
 - Dragging gear snaps to line up with other gear and the stage centreline (pink guides). Hold Alt to move freely.
