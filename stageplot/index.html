@@ -487,6 +487,18 @@ details.more[open] > summary > .ic:last-child { transform: rotate(180deg); }
 details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .card.more-room { padding: 0; }
 .detailseg button { padding: 5px 12px; font-size: 12.5px; }
+.menuwrap { position: relative; }
+.moremenu { left: auto; right: 0; width: min(300px, calc(100vw - 24px)); gap: 12px; }
+.mm-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--ink-2); }
+.mm-list { display: grid; gap: 2px; border-top: 1px solid var(--line); padding-top: 8px; }
+.mm-list button { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 8px; border-radius: var(--r-sm); cursor: pointer; color: var(--ink); font-size: 13.5px; text-align: left; }
+.mm-list button:hover { background: var(--surface-2); }
+.mm-list .kbd { margin-left: auto; }
+.allset { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); background: var(--ok-soft, rgba(48,164,108,.12)); }
+.allset .mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ok, #30a46c); color: #fff; }
+.allset small { display: block; color: var(--muted); font-size: 12px; }
+.pcoline { display: flex; align-items: center; gap: 8px; width: 100%; border: 1px dashed var(--line-2, var(--line)); background: transparent; border-radius: var(--r-md); padding: 8px 10px; cursor: pointer; color: var(--ink-2); font-size: 13px; text-align: left; }
+.pcoline:hover { border-color: var(--accent); color: var(--ink); }
 .detailrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12.5px; }
 @media (max-width: 720px) { .detailseg button { padding: 5px 8px; } }
 .steps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
@@ -703,10 +715,11 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
     <button class="iconbtn" id="undoBtn" aria-label="Undo" title="Undo (Ctrl+Z)"></button>
     <button class="iconbtn" id="redoBtn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)"></button>
     <span class="vsep"></span>
-    <button class="iconbtn" id="lvBtn" aria-label="Advanced view"></button>
-    <button class="iconbtn" id="themeBtn" aria-label="Theme"></button>
-    <button class="iconbtn" id="helpBtn" aria-label="Keyboard shortcuts" title="Shortcuts (?)"></button>
-    <button class="iconbtn" id="dataBtn" aria-label="Backup and restore" title="Backup & restore"></button>
+    <div class="menuwrap">
+      <button class="iconbtn" id="moreBtn" aria-label="View, theme and backup" title="View, theme, shortcuts and backup" aria-haspopup="menu" aria-expanded="false"></button>
+      <div class="popover moremenu" id="moreMenu" role="menu" hidden></div>
+    </div>
+    <span hidden><button id="lvBtn"></button><button id="themeBtn"></button><button id="helpBtn"></button><button id="dataBtn"></button></span>
   </div>
 </header>
 
@@ -1607,6 +1620,7 @@ const ICONS = {
   redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 000 11H13"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  dots: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   sliders: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
   boxsel: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M10 10l7 3-3 1-1 3z"/>',
   ruler: '<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>',
@@ -2260,6 +2274,8 @@ function renderHeader() {
   $('plotView').hidden = view !== 'plot'; $('paperView').hidden = view !== 'paper';
   $('undoBtn').innerHTML = ic('undo'); $('redoBtn').innerHTML = ic('redo');
   $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length;
+  $('moreBtn').innerHTML = ic('dots');
+  if (!$('moreMenu').hidden) renderMoreMenu();
   $('lvBtn').innerHTML = ic('sliders'); $('lvBtn').setAttribute('aria-pressed', ui.adv);
   $('lvBtn').title = ui.adv ? 'Advanced view: every setting and tool. Click for Simple' : 'Simple view: everyday controls. Click for Advanced';
   $('themeBtn').innerHTML = ic(themePref === 'dark' ? 'moon' : themePref === 'light' ? 'sun' : 'auto');
@@ -2306,8 +2322,9 @@ function renderRail() {
   const keepScroll = pane.scrollTop;
   foot.hidden = railTab !== 'team';
   if (railTab === 'team') {
+    const pcoBusy = pco.types.length || pco.busy || pco.err;
     pane.innerHTML = `
-      ${pcoHtml()}
+      ${plan.team.length && !pcoBusy ? (window.claude?.use && pco.mcp ? `<button class="pcoline" id="pcoStart">${ic('calendar', 'sm')}Update the team from Planning Center</button>` : '') : pcoHtml()}
       <div class="sechead"><h2>This week's team</h2><span class="hint">${plural(plan.team.length, 'person', 'people')}</span></div>
       ${plan.team.length ? `<div class="people">${plan.team.map(p => `
         <div class="person" data-pid="${p.id}">
@@ -2333,7 +2350,7 @@ function renderRail() {
     const seen = new Set();
     const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => (!q || gearMatch(t, q)) && (!q || !seen.has(t)) && seen.add(t))]).filter(([, t]) => t.length);
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
-      <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}<span>${types.length}</span></button>`).join('')}</div>
+      <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}</button>`).join('')}</div>
       ${!q && recentGear.length ? `<div class="recent"><h3 class="eyebrow">Recently used</h3><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
       <p class="hint">${q ? `Results across all categories.` : 'Drag onto the stage, or click to drop it centre stage.'}</p>` +
       (groups.map(([g, types]) => `<div class="gearcat"><h3 class="eyebrow">${esc(g)}</h3><div class="gearlist">
@@ -2581,7 +2598,8 @@ function renderInspector() {
     el.innerHTML = `<div class="insp">
       <div class="insp-head" style="grid-template-columns:1fr auto"><div><div class="eyebrow">${esc(longDate(plan.date))}</div><h2>${esc(plan.name || 'Untitled service')}</h2></div><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button></div>
       <section class="isec"><h3>This week <span>${steps.filter(s => s.done).length}/${steps.length}</span></h3>
-        <ol class="steps">${steps.map((s, i) => `<li class="${s.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${s.done ? ic('check', 'sm') : i + 1}</span><div><b>${esc(s.t)}</b><span class="sub">${esc(s.sub)}</span>${i === nowIdx ? `<div>${s.act}</div>` : ''}</div></li>`).join('')}</ol>
+        ${nowIdx < 0 ? `<div class="allset"><span class="mark">${ic('check', 'sm')}</span><div><b>All set for ${esc(new Date(plan.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'long' }))}</b><small>Team placed, every input patched and powered.</small></div></div>`
+          : `<ol class="steps">${steps.map((s, i) => `<li class="${s.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${s.done ? ic('check', 'sm') : i + 1}</span><div><b>${esc(s.t)}</b><span class="sub">${esc(s.sub)}</span>${i === nowIdx ? `<div>${s.act}</div>` : ''}</div></li>`).join('')}</ol>`}
         ${nowIdx < 0 ? `<button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button>` : ''}
         ${prevWeekId() ? `<button class="btn block" data-go="compare" aria-pressed="${!!compare}" style="margin-top:8px">${ic('diff', 'sm')}${compare ? 'Hide changes' : `What changed since ${esc(longDate(db.plans[prevWeekId()].date))}`}</button>` : ''}
       </section>
@@ -2591,11 +2609,13 @@ function renderInspector() {
         <div class="tile"><b>${fmtLen(t.cab, 0)}</b><span>${plural(plan.cables.length, 'run')}</span></div>
         <div class="tile"><b>${(t.watts / 1000).toFixed(1)} kW</b><span>stage power</span></div>
       </div></section>
-      ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 6).map(warnItem).join('')}</ul>${w.length > 6 ? `<button class="btn quiet" data-go="paper">See all ${w.length} in the paperwork</button>` : ''}</section>` : ''}
+      ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
+      ${ui.adv ? '' : `<details class="more" data-fold="legend"${moreOpen.legend ? ' open' : ''}><summary>${ic('cable', 'sm')}<span><b>Cable colours</b><small>Tap a colour to show or hide that type</small></span>${ic('chevD', 'sm')}</summary>`}
       <section class="isec"><h3>Cable colours <span style="text-transform:none;letter-spacing:0;font-weight:500">dashed = overhead</span></h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
         <div class="flowlegend"><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg>Input / power</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3 0L-4 3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Output</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)" fill="currentColor"/></svg>Digital link</span></div>
-        <p class="hint">Arrows point the way the signal travels. Click anything on the plot to edit it; Shift-click or Shift-drag to pick several and move, line up or lock them together. Press <span class="kbd">?</span> for shortcuts.</p></section>
-      <section class="isec">${detailSeg()}<p class="hint">${ui.adv ? 'Every setting and tool is showing, including cable channels, slack and signal-flow options.' : 'Everyday controls up front. Exact positions, power ratings, slack and channels sit under “More settings” or in Advanced.'}</p></section>
+        <p class="hint">Arrows point the way the signal travels.</p></section>
+      ${ui.adv ? '' : '</details>'}
+      <section class="isec"><p class="hint">Click anything on the plot to edit it. Shift-click or the Select tool picks several. Press <span class="kbd">?</span> for shortcuts.</p></section>
     </div>`;
   }
 }
@@ -3153,6 +3173,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (!$('dataDlg').hidden || !$('helpDlg').hidden) { $('dataDlg').hidden = true; $('helpDlg').hidden = true; return; }
     if (!$('weekPop').hidden) { closePops(); $('weekBtn').focus(); return; }
+    if (!$('moreMenu').hidden) { toggleMoreMenu(false); $('moreBtn').focus(); return; }
   }
   if (typing || !$('dataDlg').hidden || !$('helpDlg').hidden) return;
   if (e.key === '?') { $('helpDlg').hidden = false; return; }
@@ -3194,6 +3215,30 @@ $('vPaper').onclick = () => openPaper();
 $('undoBtn').onclick = undo;
 $('redoBtn').onclick = redo;
 $('lvBtn').onclick = () => setDetail(!ui.adv);
+function renderMoreMenu() {
+  const th = (k, label) => `<button data-theme-set="${k}" aria-pressed="${themePref === k}">${label}</button>`;
+  $('moreMenu').innerHTML = `
+    <div class="mm-row"><span>View</span><div class="seg detailseg"><button data-detail="simple" aria-pressed="${!ui.adv}">Simple</button><button data-detail="adv" aria-pressed="${ui.adv}">Advanced</button></div></div>
+    <p class="hint" style="margin:-8px 0 0">${ui.adv ? 'Every setting and tool is showing.' : 'Everyday controls up front; fine settings under “More settings”.'}</p>
+    <div class="mm-row"><span>Theme</span><div class="seg detailseg">${th('system', 'Auto')}${th('light', 'Light')}${th('dark', 'Dark')}</div></div>
+    <div class="mm-list">
+      <button data-mm="help">${ic('keyboard', 'sm')}Keyboard shortcuts<span class="kbd">?</span></button>
+      <button data-mm="data">${ic('save', 'sm')}Backup &amp; restore</button>
+    </div>`;
+}
+function toggleMoreMenu(open = $('moreMenu').hidden) {
+  $('moreMenu').hidden = !open; $('moreBtn').setAttribute('aria-expanded', open);
+  if (open) renderMoreMenu();
+}
+$('moreBtn').onclick = () => toggleMoreMenu();
+$('moreMenu').addEventListener('click', e => {
+  const t = e.target.closest('[data-theme-set]'); if (t) { setTheme(t.dataset.themeSet); renderMoreMenu(); return; }
+  const m = e.target.closest('[data-mm]'); if (!m) return;
+  toggleMoreMenu(false);
+  if (m.dataset.mm === 'help') $('helpBtn').click();
+  if (m.dataset.mm === 'data') $('dataBtn').click();
+});
+document.addEventListener('pointerdown', e => { if (!$('moreMenu').hidden && !e.target.closest('.menuwrap')) toggleMoreMenu(false); });
 document.addEventListener('click', e => { const b = e.target.closest('[data-detail]'); if (b) setDetail(b.dataset.detail === 'adv'); });
 document.addEventListener('click', e => { const sm = e.target.closest('details.more > summary'); if (sm) moreOpen[sm.parentElement.dataset.fold] = !sm.parentElement.open; }, true);   // a fold you opened stays open as you click around
 $('themeBtn').onclick = () => setTheme(themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system');
@@ -3349,6 +3394,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.go === 'build') { buildNow(); return; }
   if (t.dataset.ctxCable) { const id = t.dataset.ctxCable; setMode('cable'); pending = { from: id, points: [] }; renderPlot(); toast('Now click the gear it runs to'); return; }
   if (t.dataset.go === 'compare') { toggleCompare(); return; }
+  if (t.dataset.go === 'checks') { checksOpen = true; renderFloat(); return; }
   if (t.dataset.go === 'cable') { mutate(autoCable, 'Cabling re-run'); return; }
   if (t.dataset.go === 'paper') { openPaper(warnings().length ? 'sec-checks' : null); return; }
   if (t.id === 'iClose') { sel = null; renderPlot(); renderInspector(); return; }
