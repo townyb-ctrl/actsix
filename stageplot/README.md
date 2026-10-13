@@ -51,7 +51,7 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 - **Right-click** gear or a cable for quick actions (edit, run a cable from here, rotate, duplicate, assign to someone, hide that cable type, delete). **Double-click** gear to edit its details. Hover for a quick info card.
 - Dragging gear snaps to line up with other gear and the stage centreline (pink guides). Hold Alt to move freely.
 - The bottom dock holds Move, Run cable, the Cables menu, zoom and fit. A "Saved" tick in the header confirms every change is stored.
-- **Cables** menu on the canvas hides all cables or single types (also `H`, or click a colour in the right panel's legend). Hidden types stay hidden in your browser until you show them again.
+- **Cables** menu on the canvas: one switch shows or hides every cable (also `H`), *All / Audio / Power* quick views, then only the cable types this plot actually uses, each with its count and an eye to hide it (or click a colour in the right panel's legend). *Display* holds *Quiet until selected*; Advanced adds flow arrows, flow animation, ceiling runs, and cables inside channels (when the plot has channels). Animated flow pulses move in step on every cable, and keep moving while cables are quiet. Your choices stay in your browser.
 - Hide the left or right panel with the header buttons, `[` and `]`, or press `\` for focus mode (both hidden). The left panel shrinks to an icon strip; with the right panel hidden, a small card over the plot keeps rotate / duplicate / delete for whatever you select.
 - Drag the floor to pan; pinch or Ctrl+scroll to zoom. **Stage** / **Room** buttons refit the view.
 - Drag gear from the Gear tab onto the stage, or click it to drop centre stage.
