@@ -506,6 +506,21 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .warnlist li { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 8px 10px; border-radius: var(--r-sm); background: var(--warn-soft); color: var(--ink); font-size: 13px; }
 .warnlist li .ic { color: var(--warn); margin-top: 1px; }
 .warnlist li.bad { background: var(--bad-soft); }
+.warnlist .wacts { grid-column: 2; display: flex; gap: 6px; flex-wrap: wrap; }
+.warnlist .wacts .btn { padding: 3px 10px; font-size: 12px; }
+.checkswrap { flex-basis: 100%; display: flex; }
+.checkspop { flex: 0 0 auto; width: min(400px, calc(100vw - 40px)); background: var(--surface); backdrop-filter: none; display: grid; gap: 10px; padding: 12px; max-height: min(60vh, 520px); overflow: auto; }
+.recent { display: grid; gap: 6px; }
+.recentrow { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.recentchip { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 10px 3px 3px; cursor: grab; font-size: 12.5px; color: var(--ink); }
+.recentchip:hover { border-color: var(--accent); }
+.recentchip svg.glyph, .recentchip .glyph { width: 24px; height: 24px; }
+.setuplist { display: grid; gap: 4px; margin-bottom: 6px; }
+.setuprow { display: grid; grid-template-columns: 1fr auto; gap: 4px; align-items: center; }
+.setupuse { display: grid; grid-template-columns: 1fr auto; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-sm); padding: 6px 10px; cursor: pointer; color: var(--ink); }
+.setupuse small { grid-column: 1; color: var(--muted); font-size: 11.5px; }
+.setupuse .go { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 12px; font-weight: 600; color: var(--accent-ink, var(--ink)); background: var(--accent); border-radius: 6px; padding: 3px 9px; }
+.setupuse:hover { border-color: var(--accent); }
 .warnlist li.bad .ic { color: var(--bad); }
 .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 12.5px; }
 .legend div, .legend button { display: flex; align-items: center; gap: 8px; }
@@ -1446,32 +1461,32 @@ function warnings() {
   const W = plan.stage.w, D = plan.stage.d, hw = Math.max(W, plan.stage.houseW);
   for (const b of plan.items.filter(isBox)) {
     const used = inputList().filter(r => r.port.startsWith(itemName(b) + ' · in')).length;
-    if (used > Number(prop(b, 'ins'))) out.push({ lvl: 'bad', msg: `${itemName(b)}: ${used} inputs patched, only ${prop(b, 'ins')} available.` });
+    if (used > Number(prop(b, 'ins'))) out.push({ lvl: 'bad', id: b.id, msg: `${itemName(b)}: ${used} inputs patched, only ${prop(b, 'ins')} available.` });
     const uo = outputList().filter(r => r.port.startsWith(itemName(b) + ' · out')).length;
-    if (uo > Number(prop(b, 'outsMax'))) out.push({ lvl: 'bad', msg: `${itemName(b)}: ${uo} outputs used, only ${prop(b, 'outsMax')} available.` });
+    if (uo > Number(prop(b, 'outsMax'))) out.push({ lvl: 'bad', id: b.id, msg: `${itemName(b)}: ${uo} outputs used, only ${prop(b, 'outsMax')} available.` });
   }
   for (const src of plan.items.filter(isPowerSource)) {
     const { loads, cap } = circuitLoads(src);
     loads.forEach((w, k) => {
-      if (w > cap) out.push({ lvl: 'bad', msg: `${itemName(src)} circuit ${k + 1}: ${Math.round(w)} W is over the ${cap} W breaker.` });
-      else if (w > cap * .8) out.push({ lvl: 'warn', msg: `${itemName(src)} circuit ${k + 1}: ${Math.round(w)} W is above 80% of ${cap} W.` });
+      if (w > cap) out.push({ lvl: 'bad', id: src.id, msg: `${itemName(src)} circuit ${k + 1}: ${Math.round(w)} W is over the ${cap} W breaker.` });
+      else if (w > cap * .8) out.push({ lvl: 'warn', id: src.id, msg: `${itemName(src)} circuit ${k + 1}: ${Math.round(w)} W is above 80% of ${cap} W.` });
     });
   }
   for (const e of plan.items.filter(isExt)) {
     const f = feedOf(e), n = extUsed(e), max = Number(prop(e, 'outlets')) || 4;
-    if (!f) out.push({ lvl: 'warn', msg: `${itemName(e)} isn't plugged into a power point or distro.` });
-    else if (isExt(other(f, e.id))) out.push({ lvl: 'warn', msg: `${itemName(e)} is plugged into another extension lead. Plug it into a power point or distro instead.` });
-    if (n > max) out.push({ lvl: 'bad', msg: `${itemName(e)}: ${n} plugs but only ${max} outlets.` });
+    if (!f) out.push({ lvl: 'warn', id: e.id, fix: 'cable', msg: `${itemName(e)} isn't plugged into a power point or distro.` });
+    else if (isExt(other(f, e.id))) out.push({ lvl: 'warn', id: e.id, msg: `${itemName(e)} is plugged into another extension lead. Plug it into a power point or distro instead.` });
+    if (n > max) out.push({ lvl: 'bad', id: e.id, msg: `${itemName(e)}: ${n} plugs but only ${max} outlets.` });
   }
   const unp = plan.items.filter(i => inputsOf(i).length && !patchOf(i));
-  for (const i of unp) out.push({ lvl: 'warn', msg: `${itemName(i)} isn't patched to a stage box or desk.` });
+  for (const i of unp) out.push({ lvl: 'warn', id: i.id, fix: 'cable', msg: `${itemName(i)} isn't patched to a stage box or desk.` });
   for (const i of plan.items.filter(i => needsPower(i) && !plan.cables.some(c => c.type === 'power' && touches(c, i.id))))
-    out.push({ lvl: 'warn', msg: `${itemName(i)} needs power (${prop(i, 'watts')} W) and has no power run.` });
+    out.push({ lvl: 'warn', id: i.id, fix: 'cable', msg: `${itemName(i)} needs power (${prop(i, 'watts')} W) and has no power run.` });
   for (const i of plan.items) {
     const hx0 = Math.min(0, (W - hw) / 2) - 10, hx1 = Math.max(W, (W + hw) / 2) + 10;
-    if (i.x < hx0 || i.x > hx1 || i.y < -6 || i.y > D + plan.stage.house + 4) out.push({ lvl: 'warn', msg: `${itemName(i)} is outside the drawing.` });
+    if (i.x < hx0 || i.x > hx1 || i.y < -6 || i.y > D + plan.stage.house + 4) out.push({ lvl: 'warn', id: i.id, fix: 'home', msg: `${itemName(i)} is outside the drawing.` });
   }
-  for (const p of plan.team) if (!ROLES[p.role]) out.push({ lvl: 'warn', msg: `${p.name || 'A team member'} has no position.` });
+  for (const p of plan.team) if (!ROLES[p.role]) out.push({ lvl: 'warn', pid: p.id, fix: 'role', msg: `${p.name || 'A team member'} has no position.` });
   return out;
 }
 
@@ -2222,11 +2237,11 @@ function renderFloat() {
     : compare && db.plans[compare] ? (() => { const d = weekDiff(); return `<div class="panel cmpbar"><span class="toolhint"><b>Since ${esc(longDate(d.old.date))}</b><span class="cmpdot" style="background:#30a46c"></span>${d.added.length} new<span class="cmpdot" style="background:#f5a524"></span>${d.moved.length} moved<span class="cmpdot" style="background:#e5484d"></span>${d.removed.length} removed</span><button class="iconbtn" id="cmpClose" aria-label="Hide changes" title="Hide changes (Esc)">${ic('x', 'sm')}</button></div>`; })() : '';
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel statuspill">
-      <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}">${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${plural(w.length, 'check')}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
+      <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}" aria-expanded="${checksOpen}">${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${plural(w.length, 'check')}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
       <span class="stat"><b>${t.ins}</b> inputs</span>
       <span class="stat optional"><b>${fmtLen(t.cab, 0)}</b> cable</span>
       <span class="stat optional"><b>${(t.watts / 1000).toFixed(1)}</b> kW</span>
-    </div>`;
+    </div>${checksPopHtml()}`;
 }
 
 /* ===================================================================
@@ -2264,6 +2279,10 @@ function renderWeekPop() {
       <div class="field" style="grid-column:1/-1"><label for="planDate">Date</label><input id="planDate" type="date" value="${esc(plan.date)}"></div>
     </div>
     <div class="field"><span>Saved weeks</span><div class="weeklist">${ids.map(id => `<button data-week="${id}" aria-current="${id === plan.id}"><span class="d">${esc(db.plans[id].date)}</span><span class="n">${esc(db.plans[id].name || 'Untitled')}</span></button>`).join('')}</div></div>
+    <div class="field"><span>Setups <small class="hint" style="font-weight:400">stage layouts to reuse, like “Full band” or “Acoustic”</small></span>
+      ${Object.keys(setups()).length ? `<div class="setuplist">${Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, su]) => `<div class="setuprow"><button class="setupuse" data-setup="${id}" title="Lay out this week's stage like this"><b>${esc(su.name)}</b><small>${plural(su.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(su.saved || '')}</small><span class="go">Use</span></button><button class="iconbtn" data-setupdel="${id}" aria-label="Delete setup ${esc(su.name)}" title="Delete setup">${ic('x', 'sm')}</button></div>`).join('')}</div>` : ''}
+      <div class="row" style="gap:6px;flex-wrap:nowrap"><input id="setupName" type="text" placeholder="Name this stage, e.g. Full band" style="flex:1;min-width:0"><button class="btn" id="setupSave">${ic('save', 'sm')}Save</button></div>
+    </div>
     <div class="pop-actions">
       <button class="btn quiet" id="newCopy">${ic('copy', 'sm')}New week from this one</button>
       <button class="btn quiet" id="newStage">${ic('room', 'sm')}New week, same stage, no team</button>
@@ -2315,6 +2334,7 @@ function renderRail() {
     const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => (!q || gearMatch(t, q)) && (!q || !seen.has(t)) && seen.add(t))]).filter(([, t]) => t.length);
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
       <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}<span>${types.length}</span></button>`).join('')}</div>
+      ${!q && recentGear.length ? `<div class="recent"><h3 class="eyebrow">Recently used</h3><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
       <p class="hint">${q ? `Results across all categories.` : 'Drag onto the stage, or click to drop it centre stage.'}</p>` +
       (groups.map(([g, types]) => `<div class="gearcat"><h3 class="eyebrow">${esc(g)}</h3><div class="gearlist">
         ${types.map(t => `<button class="gear" data-add="${t}" draggable="true">${glyph(t)}<span><b>${esc(CAT[t].name)}</b><small>${esc(gearMeta(t))}</small></span></button>`).join('')}
@@ -2354,7 +2374,72 @@ function totals() {
 }
 const field = (id, label, value, type = 'text', attrs = '', unit = '') =>
   `<div class="field"><label for="${id}">${label}</label>${unit ? `<div class="unit" data-unit="${unit}">` : ''}<input id="${id}" type="${type}" value="${esc(value)}" ${attrs}>${unit ? '</div>' : ''}</div>`;
-const warnItem = x => `<li class="${x.lvl}">${ic('alert', 'sm')}<span>${esc(x.msg)}</span></li>`;
+/* ---------- checks you can act on ---------- */
+const FIX_LABEL = { cable: 'Patch & power it', home: 'Bring it back', role: 'Pick a position' };
+const warnItem = x => `<li class="${x.lvl}">${ic('alert', 'sm')}<span>${esc(x.msg)}</span>${x.id || x.fix ? `<span class="wacts">${x.id ? `<button class="btn quiet" data-wshow="${x.id}">Show</button>` : ''}${x.fix ? `<button class="btn" data-wfix="${x.fix}" data-wid="${x.id || x.pid || ''}">${FIX_LABEL[x.fix]}</button>` : ''}</span>` : ''}</li>`;
+function runFix(kind, id) {
+  if (kind === 'cable') { mutate(autoCable, 'Cabling re-run: everything that can be patched and powered is'); return; }
+  if (kind === 'home') {
+    const it = itemById(id); if (!it) return;
+    mutate(() => { it.x = r2(plan.stage.w / 2); it.y = r2(plan.stage.d + fromM(1)); delete it.chan; sel = { kind: 'item', id }; group = null; }, `${itemName(it)} moved back in front of the stage`);
+    focusItem(id); return;
+  }
+  if (kind === 'role') {
+    if (view !== 'plot') { view = 'plot'; }
+    railTab = 'team'; togglePanel('rail', true); renderAll();
+    setTimeout(() => { const s = $('pr-' + id); if (s) { s.focus(); s.scrollIntoView({ block: 'center' }); } }, 80);
+  }
+}
+let checksOpen = false;
+function checksPopHtml() {
+  const w = warnings();
+  if (!checksOpen || !w.length) return '';
+  const fixable = w.some(x => x.fix === 'cable');
+  return `<div class="checkswrap"><div class="panel checkspop" role="dialog" aria-label="Checks">
+    <div class="row" style="justify-content:space-between"><b>${plural(w.length, 'thing')} to check</b><button class="iconbtn" id="checksClose" aria-label="Close">${ic('x', 'sm')}</button></div>
+    <ul class="warnlist">${w.slice(0, 12).map(warnItem).join('')}</ul>
+    <div class="row" style="justify-content:space-between">${fixable ? `<button class="btn primary" data-wfix="cable" data-wid="">${ic('wand', 'sm')}Patch &amp; power everything</button>` : '<span></span>'}<button class="btn quiet" id="checksPaper">${w.length > 12 ? `All ${w.length} in paperwork` : 'Open paperwork'}</button></div>
+  </div></div>`;
+}
+document.addEventListener('click', e => {
+  const sh = e.target.closest('[data-wshow]'), fx = e.target.closest('[data-wfix]');
+  if (!sh && !fx) return;
+  checksOpen = false;
+  if (sh) { if (view !== 'plot') { view = 'plot'; renderAll(); } focusItem(sh.dataset.wshow); renderFloat(); return; }
+  runFix(fx.dataset.wfix, fx.dataset.wid);
+});
+
+/* ---------- recently used gear ---------- */
+let recentGear = [];
+try { recentGear = JSON.parse(localStorage.getItem('stageplot.recent') || '[]').filter(t => CAT[t]); } catch { /* ignore */ }
+function noteRecent(type) {
+  if (!CAT[type] || CAT[type].shape === 'person') return;
+  recentGear = [type, ...recentGear.filter(t => t !== type)].slice(0, 8);
+  try { localStorage.setItem('stageplot.recent', JSON.stringify(recentGear)); } catch { /* memory only */ }
+}
+
+/* ---------- setups: named stage layouts to reuse on any week ---------- */
+const setups = () => (db.setups ||= {});
+function saveSetup(name) {
+  name = (name || '').trim() || `Setup ${Object.keys(setups()).length + 1}`;
+  const existing = Object.entries(setups()).find(([, s]) => s.name.toLowerCase() === name.toLowerCase());
+  const id = existing ? existing[0] : uid();
+  // team gear keeps its role slot (genKey) but not the person, so the next team drops into the same spots
+  const items = JSON.parse(JSON.stringify(plan.items)).map(i => { if (i.gen) delete i.personId; return i; });
+  setups()[id] = { name, saved: plan.date, stage: JSON.parse(JSON.stringify(plan.stage)), settings: JSON.parse(JSON.stringify(plan.settings)), channels: JSON.parse(JSON.stringify(chans())), items, cables: JSON.parse(JSON.stringify(plan.cables.filter(c => !c.auto))) };
+  save(); renderWeekPop();
+  toast(`${existing ? 'Updated' : 'Saved'} setup “${name}”`);
+}
+function applySetup(id) {
+  const s = setups()[id]; if (!s) return;
+  mutate(() => {
+    plan.stage = JSON.parse(JSON.stringify(s.stage)); plan.settings = JSON.parse(JSON.stringify(s.settings));
+    plan.channels = JSON.parse(JSON.stringify(s.channels || [])); plan.items = JSON.parse(JSON.stringify(s.items)); plan.cables = JSON.parse(JSON.stringify(s.cables || []));
+    if (plan.team.length) buildFromTeam();
+    autoCable(); sel = null; group = null; needFit = true;
+  }, `Stage set up as “${s.name}”`);
+  closePops();
+}
 
 function renderInspector() {
   const el = $('inspector');
@@ -2879,6 +2964,7 @@ function syncChanItems() {
 }
 const canSitInChannel = it => it && cableEnd(it) && it.type !== 'rack';
 function addGear(type, x, y, hit) {
+  noteRecent(type);
   mutate(() => {
     const n = plan.items.filter(i => i.type === type).length;
     const it = addItem(type, x, y);
@@ -2920,7 +3006,12 @@ $('ftools').addEventListener('click', e => {
   if (e.target.closest('#zIn')) zoomCenter(1.25);
   if (e.target.closest('#zOut')) zoomCenter(1 / 1.25);
 });
-$('fstats').addEventListener('click', e => { if (e.target.closest('#checksBtn')) openPaper(warnings().length ? 'sec-checks' : null); });
+$('fstats').addEventListener('click', e => {
+  if (e.target.closest('#checksBtn')) { if (warnings().length) { checksOpen = !checksOpen; renderFloat(); } else openPaper(); return; }
+  if (e.target.closest('#checksClose')) { checksOpen = false; renderFloat(); return; }
+  if (e.target.closest('#checksPaper')) { checksOpen = false; openPaper('sec-checks'); }
+});
+document.addEventListener('pointerdown', e => { if (checksOpen && !e.target.closest('.checkspop, #checksBtn')) { checksOpen = false; renderFloat(); } });
 window.addEventListener('resize', () => { if (!zoom) { needFit = true; renderPlot(); } });
 
 /* ===================================================================
@@ -3121,11 +3212,16 @@ $('nextWeekBtn').onclick = () => { const ids = sortedWeekIds(), i = ids.indexOf(
 $('weekPop').addEventListener('input', e => { if (e.target.id === 'planName') { plan.name = e.target.value; save(); $('wkName').textContent = plan.name || 'Untitled service'; } });
 $('weekPop').addEventListener('change', e => {
   if (e.target.id === 'planName') { renderAll(); }
+  if (e.target.id === 'setupName') return;
   if (e.target.id === 'planDate' && e.target.value) { plan.date = e.target.value; save(); renderAll(); }
 });
+$('weekPop').addEventListener('keydown', e => { if (e.target.id === 'setupName' && e.key === 'Enter') { e.preventDefault(); saveSetup(e.target.value); } });
 $('weekPop').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.week) { switchWeek(b.dataset.week); closePops(); }
+  else if (b.dataset.setup) applySetup(b.dataset.setup);
+  else if (b.dataset.setupdel) { const n = setups()[b.dataset.setupdel]?.name; delete setups()[b.dataset.setupdel]; save(); renderWeekPop(); toast(`Setup “${n}” deleted`); }
+  else if (b.id === 'setupSave') saveSetup($('setupName').value);
   else if (b.id === 'newCopy') newWeek(false);
   else if (b.id === 'newStage') newWeek(true);
   else if (b.id === 'delWeek') {
@@ -3277,7 +3373,7 @@ $('paperInner').addEventListener('click', e => {
 $('dataBtn').onclick = () => { $('dataText').value = ''; $('dataDlg').hidden = false; };
 $('dataClose').onclick = () => { $('dataDlg').hidden = true; };
 $('dataDlg').addEventListener('click', e => { if (e.target.id === 'dataDlg') $('dataDlg').hidden = true; });
-const backup = all => JSON.stringify({ app: 'stageplot', version: 1, plans: all ? db.plans : { [plan.id]: plan } }, null, 1);
+const backup = all => JSON.stringify({ app: 'stageplot', version: 1, plans: all ? db.plans : { [plan.id]: plan }, ...(all && db.setups ? { setups: db.setups } : {}) }, null, 1);
 $('copyAll').onclick = () => { const s = backup(true); $('dataText').value = s; copyText(s, $('dataText')); };
 $('copyOne').onclick = () => { const s = backup(false); $('dataText').value = s; copyText(s, $('dataText')); };
 if ($('dlAll')) $('dlAll').onclick = () => {
@@ -3297,6 +3393,7 @@ function importJson(text) {
     p.id = id; p.team ||= []; p.settings ||= { slack: 10, ends: fromM(1) }; tidyPlan(p);
     db.plans[id] = p; n++; last = p;
   }
+  if (d?.setups && typeof d.setups === 'object') Object.assign(setups(), d.setups);
   if (!n) { toast('No weeks found in that backup'); return; }
   $('dataDlg').hidden = true; switchWeek(last.id); toast(`Restored ${plural(n, 'week')}`);
 }
@@ -4015,6 +4112,8 @@ function cmdItems() {
     ['Import team from Planning Center', 'calendar', () => { railTab = 'team'; togglePanel('rail', true); setTimeout(() => $('pcoStart')?.click(), 60); }],
     ['Add a person to the team', 'users', () => { railTab = 'team'; togglePanel('rail', true); setTimeout(() => $('addPerson')?.click(), 60); }],
     ['New week from this one', 'copy', () => newWeek(false)],
+    ['Save this stage as a setup', 'save', () => { $('weekBtn').click(); setTimeout(() => $('setupName')?.focus(), 60); }],
+    ...Object.entries(setups()).map(([id, su]) => [`Lay out the stage as “${su.name}”`, 'room', () => applySetup(id)]),
     ['New week, same stage, no team', 'room', () => newWeek(true)],
     [compare ? 'Hide changes since last week' : 'What changed since last week', 'diff', () => toggleCompare()],
     ['Measure a distance', 'ruler', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } setMode('measure'); }],
