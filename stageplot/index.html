@@ -510,6 +510,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .mm-list button { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 8px; border-radius: var(--r-sm); cursor: pointer; color: var(--ink); font-size: 13.5px; text-align: left; }
 .mm-list button:hover { background: var(--surface-2); }
 .mm-list .kbd { margin-left: auto; }
+.glance { margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.5; }
 .allset { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); background: var(--ok-soft, rgba(48,164,108,.12)); }
 .allset .mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ok, #30a46c); color: #fff; }
 .allset small { display: block; color: var(--muted); font-size: 12px; }
@@ -1067,7 +1068,10 @@ function setGroup(ids) {
 // Detail level: Simple keeps the everyday controls up front and folds the fine-grained ones away; Advanced shows everything
 const ui = { adv: false };
 try { ui.adv = localStorage.getItem('stageplot.detail') === 'adv'; } catch { /* storage blocked */ }
-const moreOpen = {};            // which "More settings" folds are open, by panel
+const moreOpen = {};
+let showAllConns = null;        // item whose full connection list is open
+let tipsSeen = false;
+try { tipsSeen = localStorage.getItem('stageplot.tips') === '1'; } catch { /* ignore */ }            // which "More settings" folds are open, by panel
 function setDetail(adv) {
   ui.adv = adv; try { localStorage.setItem('stageplot.detail', adv ? 'adv' : 'simple'); } catch { /* memory only */ }
   if (!adv && mode === 'channel') setMode('select');
@@ -2570,6 +2574,7 @@ function applySetup(id) {
 
 function renderInspector() {
   const el = $('inspector');
+  if (sel && !tipsSeen) { tipsSeen = true; try { localStorage.setItem('stageplot.tips', '1'); } catch { /* ignore */ } }
   // commit a half-typed field first: replacing a focused input mid-blur throws, and the edit would be lost
   if (el.contains(document.activeElement) && document.activeElement !== el) { document.activeElement.blur(); if (!el.isConnected) return; }
   const gids = selIds();
@@ -2649,7 +2654,7 @@ function renderInspector() {
       </section>
       ${basic}
       <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div></section>
-      <section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>
+      <section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.slice(0, showAllConns === it.id ? conns.length : 4).map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>${conns.length > 4 && showAllConns !== it.id ? `<button class="btn quiet" data-allconns="${it.id}">Show all ${conns.length}</button>` : ''}` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>
       ${moreFold(adv, moreWhat)}
     </div>`;
   } else if (sel?.kind === 'channel' && chans().find(x => x.id === sel.id)) {
@@ -2711,19 +2716,20 @@ function renderInspector() {
         ${nowIdx < 0 ? `<button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button>` : ''}
         ${prevWeekId() ? `<button class="btn block" data-go="compare" aria-pressed="${!!compare}" style="margin-top:8px">${ic('diff', 'sm')}${compare ? 'Hide changes' : `What changed since ${esc(longDate(db.plans[prevWeekId()].date))}`}</button>` : ''}
       </section>
-      <section class="isec"><h3>At a glance</h3><div class="tiles">
+      ${!ui.adv ? `<section class="isec"><p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW · ${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)} stage</p></section>` : ''}
+      ${ui.adv ? `<section class="isec"><h3>At a glance</h3><div class="tiles">
         <div class="tile"><b>${t.ins}</b><span>inputs · ${t.rf} RF</span></div>
         <div class="tile"><b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b><span>stage</span></div>
         <div class="tile"><b>${fmtLen(t.cab, 0)}</b><span>${plural(plan.cables.length, 'run')}</span></div>
         <div class="tile"><b>${(t.watts / 1000).toFixed(1)} kW</b><span>stage power</span></div>
-      </div></section>
+      </div></section>` : ''}
       ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
       ${ui.adv ? '' : `<details class="more" data-fold="legend"${moreOpen.legend ? ' open' : ''}><summary>${ic('cable', 'sm')}<span><b>Cable colours</b><small>Tap a colour to show or hide that type</small></span>${ic('chevD', 'sm')}</summary>`}
       <section class="isec"><h3>Cable colours <span style="text-transform:none;letter-spacing:0;font-weight:500">dashed = overhead</span></h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
         <div class="flowlegend"><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg>Input / power</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3 0L-4 3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Output</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)" fill="currentColor"/></svg>Digital link</span></div>
         <p class="hint">Arrows point the way the signal travels.</p></section>
       ${ui.adv ? '' : '</details>'}
-      <section class="isec"><p class="hint">Click anything on the plot to edit it. Shift-click or the Select tool picks several. Press <span class="kbd">?</span> for shortcuts.</p></section>
+      ${tipsSeen ? '' : `<section class="isec"><p class="hint">Click anything on the plot to edit it. Shift-click or the Select tool picks several. Press <span class="kbd">?</span> for shortcuts.</p></section>`}
     </div>`;
   }
 }
@@ -3521,6 +3527,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.go === 'build') { buildNow(); return; }
   if (t.dataset.ctxCable) { const id = t.dataset.ctxCable; setMode('cable'); pending = { from: id, points: [] }; renderPlot(); toast('Now click the gear it runs to'); return; }
   if (t.dataset.go === 'compare') { toggleCompare(); return; }
+  if (t.dataset.allconns) { showAllConns = t.dataset.allconns; renderInspector(); return; }
   if (t.dataset.go === 'checks') { checksOpen = true; renderFloat(); return; }
   if (t.dataset.go === 'cable') { mutate(autoCable, 'Cabling re-run'); return; }
   if (t.dataset.go === 'paper') { openPaper(warnings().length ? 'sec-checks' : null); return; }
