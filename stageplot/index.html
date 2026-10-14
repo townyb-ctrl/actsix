@@ -523,7 +523,6 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .allset small { display: block; color: var(--muted); font-size: 12px; }
 .pcoline { display: flex; align-items: center; gap: 8px; width: 100%; border: 1px dashed var(--line-2, var(--line)); background: transparent; border-radius: var(--r-md); padding: 8px 10px; cursor: pointer; color: var(--ink-2); font-size: 13px; text-align: left; }
 .pcoline:hover { border-color: var(--accent); color: var(--ink); }
-.detailrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12.5px; }
 @media (max-width: 720px) { .detailseg button { padding: 5px 8px; } }
 .steps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .steps li { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; padding: 8px 0; }
@@ -1115,7 +1114,6 @@ function setDetail(adv) {
   renderAll();
   toast(adv ? 'Advanced: every setting and tool is showing' : 'Simple: everyday controls up front. Fine settings sit under “More settings”');
 }
-const detailSeg = () => `<div class="detailrow"><span>View</span><div class="seg detailseg" role="group" aria-label="How much detail to show"><button data-detail="simple" aria-pressed="${!ui.adv}">Simple</button><button data-detail="adv" aria-pressed="${ui.adv}">Advanced</button></div></div>`;
 function moreFold(parts, what, key = 'insp') {
   const inner = parts.filter(Boolean).join('');
   if (!inner) return '';
@@ -2415,7 +2413,7 @@ function renderFloat() {
       <button class="tool tool-add" id="addTool" aria-pressed="${!!placing || (railOpen && railTab === 'gear')}" title="Add gear from the library (A)">${ic('plus', 'sm')}<span class="tl">Add</span></button>
       <span class="dock-sep"></span>
       <button class="tool" data-mode="select" aria-pressed="${mode === 'select'}" title="Move (V)">${ic('cursor', 'sm')}<span class="tl">Move</span></button>
-      <button class="tool" data-mode="box" aria-pressed="${mode === 'box'}" title="Select several (S)">${ic('boxsel', 'sm')}<span class="tl">Select</span></button>
+      ${ui.adv || mode === 'box' || matchMedia('(pointer: coarse)').matches ? `<button class="tool" data-mode="box" aria-pressed="${mode === 'box'}" title="Select several (S)">${ic('boxsel', 'sm')}<span class="tl">Select</span></button>` : ''}
       <button class="tool" data-mode="cable" aria-pressed="${mode === 'cable'}" title="Run cable (C)">${ic('cable', 'sm')}<span class="tl">Run cable</span></button>
       ${ui.adv || mode === 'channel' ? `<button class="tool" data-mode="channel" aria-pressed="${mode === 'channel'}" title="Draw a cable channel (T)">${ic('trench', 'sm')}<span class="tl">Channel</span></button>` : ''}
       <button class="tool" data-mode="measure" aria-pressed="${mode === 'measure'}" title="Measure (M)">${ic('ruler', 'sm')}<span class="tl">Measure</span></button>
@@ -2545,12 +2543,11 @@ function renderRail() {
   } else {
     const st = plan.stage, se = plan.settings;
     const num = (id, label, v, attrs) => `<div class="field"><label for="${id}">${label}</label><div class="unit" data-unit="m"><input id="${id}" type="number" value="${v}" ${attrs}></div></div>`;
-    pane.innerHTML = `${detailSeg()}
-      <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage</h3><p>${plan.stage.poly ? `Custom shape · ${plan.stage.poly.length} corners` : 'Rectangle'}</p></div></div>
+    pane.innerHTML = `
+      <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage shape</h3><p>${plan.stage.poly ? `Custom · ${plan.stage.poly.length} corners` : 'Rectangle'}</p></div></div>
         <svg class="stage-thumb" viewBox="${-fromM(.6)} ${-fromM(.6)} ${st.w + fromM(1.2)} ${st.d + fromM(1.2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="th-deck" d="${polyPath(stagePoly())}"/></svg>
         <button class="btn" id="editStage">${ic('pen', 'sm')}Draw or edit stage shape</button>
-        <div class="grid2">${num('sw', 'Width', mVal(st.w), 'min="3" max="60" step=".1"')}${num('sd', 'Depth', mVal(st.d), 'min="2" max="40" step=".1"')}</div>
-        ${ui.adv ? '<p class="hint">50 cm grid, heavier every metre (2 × 1 m deck panels). Measured from upstage right.</p>' : ''}</div>
+        <p class="hint">${fmtLen(st.w)} × ${fmtLen(st.d)}. Type exact sizes in the right panel with nothing selected.</p></div>
       <div class="card"><div class="card-head"><span class="badge">${ic('clip', 'sm')}</span><div><h3>Notes for the crew</h3></div></div>
         <textarea id="notes" rows="4" aria-label="Notes for the crew" placeholder="Load-in time, changeovers, anything special. Shows on the paperwork" style="font-family:var(--f-ui);font-size:14px">${esc(plan.notes)}</textarea></div>
       ${ui.adv ? '' : `<details class="more card more-room" data-fold="room"${moreOpen.room ? ' open' : ''}><summary>${ic('sliders', 'sm')}<span><b>More room settings</b><small>House size, ceiling, cable slack, re-run or clear cabling</small></span>${ic('chevD', 'sm')}</summary><div style="display:grid;gap:12px;padding:0 12px 12px">`}
@@ -2770,8 +2767,8 @@ function renderInspector() {
         <p class="hint">${c.level === 'ceiling' ? `Dashed on the plot. Adds ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end. ` : ''}${via ? `Runs through ${esc(via.name)}. ` : chans().length && c.route !== 'direct' && !c.points.length ? 'No channel helps this run. ' : ''}${c.points.length ? 'Drag the gold dots on the plot to reroute.' : 'Drag the cable on the plot to add a bend.'}</p>
       </section>
       <section class="isec"><h3>Cable type</h3><div class="chips">${Object.keys(CABLES).map(k => `<button class="ctype" data-settype="${k}" aria-pressed="${k === c.type}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
+        <div class="row" style="gap:6px;margin-top:12px">${c.points.length ? `<button class="btn" id="cClear">Straighten</button>` : ''}<button class="btn quiet danger" id="cDel">${ic('trash', 'sm')}Delete cable</button></div>
       </section>
-      <section class="isec"><div class="actions">${c.points.length ? `<button class="btn" id="cClear">Straighten</button>` : ''}<button class="btn danger" id="cDel">${ic('trash', 'sm')}Delete cable</button></div></section>
       ${moreFold(adv, ['bends', src ? 'circuit' : '', 'slack'].filter(Boolean).join(', '))}
     </div>`;
   } else {
@@ -2799,18 +2796,18 @@ function renderInspector() {
         <h3>Ready <span style="display:flex;gap:6px;align-items:center">${hide}</span></h3>
         <div class="allset"><span class="mark">${ic('check', 'sm')}</span><div><b>All set for ${esc(new Date(plan.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'long' }))}</b><small>Stage, team, gear, audio and power all check out.</small></div></div>
         <button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button></section>`
-      : `<section class="isec setupguide"><h3>Set up this week <span style="display:flex;gap:4px;align-items:center"><span class="gprog" aria-label="${nDone} of 6 done">${steps.map(x => `<i class="${x.done ? 'on' : ''}"></i>`).join('')}</span><button class="iconbtn" id="guideOff" aria-label="Hide the guide" title="Hide the guide (bring it back from ⋯)" style="margin:-6px -2px">${ic('x', 'sm')}</button>${hide}</span></h3>
+      : `<section class="isec setupguide"><h3 title="Do these in any order. Ticks follow what's on the plan">Set up this week <span style="display:flex;gap:4px;align-items:center"><span class="gprog" aria-label="${nDone} of 6 done">${steps.map(x => `<i class="${x.done ? 'on' : ''}"></i>`).join('')}</span><button class="iconbtn" id="guideOff" aria-label="Hide the guide" title="Hide the guide (bring it back from ⋯)" style="margin:-6px -2px">${ic('x', 'sm')}</button>${hide}</span></h3>
         <ol class="steps">${steps.map((x, i) => `<li class="${x.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${x.done ? ic('check', 'sm') : i + 1}</span><div><button class="steplink" data-step="${x.k}" title="Go to ${esc(x.t)}"><b>${esc(x.t)}</b><span class="sub">${esc(x.sub)}</span></button>${i === nowIdx ? `<div class="stepact">${x.act}</div>` : ''}</div></li>`).join('')}</ol>
-        <p class="hint">Do these in any order. Ticks follow what's on the plan.</p></section>`;
+      </section>`;
     el.innerHTML = `<div class="insp">
       ${guide}
       ${prevWeekId() ? `<section class="isec" style="padding-top:${ui.guide ? 0 : 14}px"><button class="btn block" data-go="compare" aria-pressed="${!!compare}">${ic('diff', 'sm')}${compare ? 'Hide changes' : `What changed since ${esc(longDate(db.plans[prevWeekId()].date))}`}</button></section>` : ''}
       <section class="isec"><h3>Stage <span style="display:flex;gap:6px;align-items:center">${st.poly ? 'custom shape' : 'rectangle'}${ui.guide ? '' : hide}</span></h3>
         <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
-        <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
+        <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap" title="Hold Alt while dragging to place freely">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
         <p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW</p>
-        <p class="hint">Measured in metres from upstage right. Hold Alt while dragging to place freely.</p></section>
-      ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
+      </section>
+      ${w.length && !ui.guide ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
       ${tipsSeen ? '' : `<section class="isec"><p class="hint">Click anything on the plot to edit it. Shift-click or the Select tool picks several. Press <span class="kbd">?</span> for shortcuts.</p></section>`}
     </div>`;
   }
