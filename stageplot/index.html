@@ -1383,6 +1383,8 @@ function circuitLoads(src) {
   return { loads, items, cap: (Number(prop(src, 'amps')) || 16) * (Number(prop(src, 'volts')) || 230) };
 }
 
+// new gear arrives patched and powered (Room → More room settings to turn off); hand-run cables are kept as they are
+const autoPatch = () => { if (plan.settings.autoPatch !== false && plan.items.some(i => i.type !== 'person')) autoCable(); };
 function autoCable() {
   plan.cables = plan.cables.filter(c => !c.auto);
   const boxes = plan.items.filter(isBox);
@@ -2518,6 +2520,7 @@ function renderRail() {
         <div class="grid2"><div class="field"><label for="slack">Slack</label><div class="unit" data-unit="%"><input id="slack" type="number" min="0" max="100" step="1" value="${se.slack}"></div></div>
         ${num('ends', 'Drop each end', mVal(se.ends), 'min="0" max="6" step=".1"')}</div>
         <div class="grid2">${num('ceilH', 'Ceiling height', mVal(se.ceilH ?? fromM(4.5)), 'min="2" max="30" step=".1"')}</div>
+        <label class="row" for="autoPatchCb" style="gap:8px;flex-wrap:nowrap"><input type="checkbox" id="autoPatchCb" ${se.autoPatch !== false ? 'checked' : ''} style="accent-color:var(--accent)"><span>Patch and power new gear automatically</span></label>
         <label class="row" for="overheadSpk" style="gap:8px;flex-wrap:nowrap"><input type="checkbox" id="overheadSpk" ${se.overheadSpk !== false ? 'checked' : ''} style="accent-color:var(--accent)"><span>Run speaker &amp; sub feeds along the ceiling</span></label>
         <div class="grid2"><button class="btn" id="autoBtn">${ic('wand', 'sm')}Re-run cabling</button><button class="btn" id="clearAuto">Clear auto runs</button></div></div>
       <button class="btn danger" id="clearGen">${ic('trash', 'sm')}Remove all team gear</button>
@@ -3154,6 +3157,7 @@ function addGear(type, x, y, hit) {
     if (type === 'stagebox') it.label = `Stage box ${String.fromCharCode(65 + n)}`;
     if (type === 'distro') it.label = `Distro ${n + 1}`;
     if (type === 'rack') { it.label = `Rack ${n + 1}`; it.rackU = 8; it.devices = []; }
+    autoPatch();
     sel = { kind: 'item', id: it.id };
   }, hit && canSitInChannel({ type }) ? `${CAT[type].name} placed inside ${hit.ch.name} · Alt-drop to place on top` : null);
   if (type === 'rack') openRack(sel.id);
@@ -3231,7 +3235,7 @@ function duplicateSelected() {
   const its = ids.map(itemById), set = new Set(ids), d = fromM(.3);
   mutate(() => {
     const n = cloneItems(its, plan.cables.filter(c => set.has(c.from) && set.has(c.to)), d, d);
-    plan.items.push(...n.its); plan.cables.push(...n.cabs); setGroup(n.its.map(i => i.id));
+    plan.items.push(...n.its); plan.cables.push(...n.cabs); autoPatch(); setGroup(n.its.map(i => i.id));
   }, ids.length > 1 ? `${plural(ids.length, 'item')} duplicated` : null);
 }
 function rotateSelected(by) {
@@ -3256,7 +3260,7 @@ function pasteClip() {
   // lands under the pointer when it's over the plot; otherwise just off the originals (or in the same spot in another week)
   const off = clip.from === plan.id ? fromM(.3) : 0;
   const dx = hoverPt ? snapTo(hoverPt.x - clip.cx) : off, dy = hoverPt ? snapTo(hoverPt.y - clip.cy) : off;
-  mutate(() => { const n = cloneItems(clip.items, clip.cables, dx, dy); plan.items.push(...n.its); plan.cables.push(...n.cabs); setGroup(n.its.map(i => i.id)); }, `Pasted ${plural(clip.items.length, 'item')}`);
+  mutate(() => { const n = cloneItems(clip.items, clip.cables, dx, dy); plan.items.push(...n.its); plan.cables.push(...n.cabs); autoPatch(); setGroup(n.its.map(i => i.id)); }, `Pasted ${plural(clip.items.length, 'item')}`);
 }
 function selectAll() {
   const ids = plan.items.filter(i => cat(i).shape !== 'platform' && !(cableView.hideInCh && i.chan)).map(i => i.id);
@@ -3504,6 +3508,7 @@ $('railPane').addEventListener('change', e => {
     shw: () => { plan.stage.houseW = fromM(clamp(num(t.value) || 16, 3, 100)); },
     slack: () => { plan.settings.slack = clamp(num(t.value) || 0, 0, 100); },
     ceilH: () => { plan.settings.ceilH = fromM(clamp(num(t.value) || 4.5, 2, 30)); },
+    autoPatchCb: () => { plan.settings.autoPatch = t.checked; if (t.checked) autoCable(); },
     overheadSpk: () => { plan.settings.overheadSpk = t.checked; for (const c of plan.cables) if (c.auto && [itemById(c.from), itemById(c.to)].some(i => i && OVERHEAD_TYPES.includes(i.type))) c.level = t.checked ? 'ceiling' : undefined; },
     ends: () => { plan.settings.ends = fromM(clamp(num(t.value) || 0, 0, 6)); },
     notes: () => { plan.notes = t.value; },
