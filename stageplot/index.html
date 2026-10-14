@@ -533,7 +533,15 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .steps b { display: block; font-weight: 600; }
 .steps li.done b { color: var(--muted); font-weight: 500; }
 .steps .sub { color: var(--muted); font-size: 12.5px; }
-.steps .btn { margin-top: 8px; }
+.steps li { padding: 5px 0; }
+.steplink { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 2px 6px; margin: -2px -6px; border-radius: var(--r-sm); color: inherit; cursor: pointer; font: inherit; }
+.steplink:hover { background: var(--surface-2); }
+.steplink .sub { display: block; }
+.stepact { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.stepact .btn { padding: 5px 10px; font-size: 13px; }
+.gprog { display: inline-flex; gap: 3px; margin-right: 4px; }
+.gprog i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+.gprog i.on { background: var(--ok); }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .tile { background: var(--surface-2); border-radius: var(--r-md); padding: 10px 12px; display: grid; gap: 2px; }
 .tile b { white-space: nowrap; font: 600 17px/1.2 var(--f-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
@@ -582,6 +590,24 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .cm-switch[data-on="true"]::after { transform: translateX(14px); }
 .cm-type { grid-template-columns: 18px minmax(0, 1fr) auto 16px; padding: 6px 10px; }
 .cm-n { color: var(--muted); font: 500 12px var(--f-mono); }
+.cm-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 6px 6px 10px; font-size: 13.5px; }
+.cm-top .btn { padding: 3px 8px; font-size: 12px; }
+.cm-top .hint { font-size: 11.5px; }
+.ends { display: grid; gap: 4px; margin-bottom: 10px; }
+.endrow { display: grid; grid-template-columns: 40px 28px 1fr 16px; gap: 8px; align-items: center; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-md); padding: 6px 10px; cursor: pointer; color: var(--ink); font: inherit; }
+.endrow:hover { background: var(--surface-2); }
+.endrow .endk { font-size: 10.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.endrow .endn { font-weight: 550; font-size: 13.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.endrow .endn small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.endrow > svg.ic { color: var(--muted); }
+.endrow .glyph, .endrow > svg:not(.ic) { width: 28px; height: 28px; }
+.routeseg { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 8px; }
+.routeseg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.cm-legend { padding: 8px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; font-size: 11.5px; }
+.laychip { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.laychip .toolhint { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.laychip .btn { padding: 4px 10px; }
+.cm-row[aria-pressed="false"] > .ic:first-child { opacity: .4; }
 .cm-h { font-size: 10.5px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); padding: 10px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; }
 .cm-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; margin: 2px 6px 4px; background: var(--surface-3); border-radius: 8px; }
 .cm-seg button { border: 0; background: transparent; border-radius: 6px; padding: 5px 0; font-size: 12.5px; font-weight: 550; color: var(--ink-2); cursor: pointer; }
@@ -855,6 +881,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   <div class="modal" role="dialog" aria-labelledby="helpTitle" style="width:min(460px,100%)">
     <div class="row" style="justify-content:space-between"><h2 id="helpTitle">Shortcuts</h2><button class="iconbtn" id="helpClose" aria-label="Close"></button></div>
     <dl class="shortcuts">
+      <dt><span class="kbd">A</span></dt><dd>Add gear: opens the library with search ready</dd>
       <dt><span class="kbd">V</span></dt><dd>Move tool</dd>
       <dt><span class="kbd">S</span></dt><dd>Select tool: tap or box-select several (no Shift needed)</dd>
       <dt><span class="kbd">C</span></dt><dd>Run a cable</dd>
@@ -873,9 +900,9 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <dt><span class="kbd">0</span></dt><dd>Fit stage</dd>
       <dt><span class="kbd">Ctrl</span><span class="kbd">Z</span></dt><dd>Undo (add Shift to redo)</dd>
       <dt><span class="kbd">Ctrl</span><span class="kbd">K</span></dt><dd>Search actions, gear and people</dd>
-      <dt><span class="kbd">H</span></dt><dd>Show / hide cables</dd>
+      <dt><span class="kbd">H</span></dt><dd>Show / hide cables (Layers in the toolbar hides people, gear, labels and more)</dd>
       <dt><span class="kbd">T</span></dt><dd>Draw a cable channel (Enter finishes; Advanced view)</dd>
-      <dt>Hold <span class="kbd">Alt</span></dt><dd>Move without snapping to guides</dd>
+      <dt>Hold <span class="kbd">Alt</span></dt><dd>Move without snapping to guides (snap size: click the empty floor)</dd>
       <dt><span class="kbd">[</span><span class="kbd">]</span></dt><dd>Hide left / right panel</dd>
       <dt><span class="kbd">\</span></dt><dd>Focus: hide both panels</dd>
       <dt>Drag floor</dt><dd>Pan · pinch or Ctrl+scroll to zoom</dd>
@@ -1013,7 +1040,7 @@ const r2 = n => Math.round(n * 100) / 100;
 /* Positions are stored in feet internally (keeps older saved weeks valid); everything shown or typed is metric. */
 const FT = 0.3048;
 const toM = ft => ft * FT, fromM = m => m / FT;
-const snapTo = (ft, m = .05) => Math.round(ft * FT / m) * m / FT;   // snap to 5 cm by default
+const snapTo = (ft, m = ui.snap) => m ? Math.round(ft * FT / m) * m / FT : ft;   // snap to 5 cm by default (Snap setting with nothing selected)
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const firstName = s => String(s || '').trim().split(/\s+/)[0] || '';
 const initials = s => String(s || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -1032,8 +1059,9 @@ function nextSunday() {
 function toast(msg, withUndo) {
   document.querySelector('.toast')?.remove();
   const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
-  t.innerHTML = `<span>${esc(msg)}</span>${withUndo ? '<button type="button">Undo</button>' : ''}`;
-  if (withUndo) t.querySelector('button').onclick = () => { t.remove(); undo(); };
+  const act = withUndo && typeof withUndo === 'object' ? withUndo : null;   // { label, fn } for an action other than Undo
+  t.innerHTML = `<span>${esc(msg)}</span>${withUndo ? `<button type="button">${esc(act ? act.label : 'Undo')}</button>` : ''}`;
+  if (withUndo) t.querySelector('button').onclick = () => { t.remove(); act ? act.fn() : undo(); };
   document.body.appendChild(t); setTimeout(() => t.remove(), withUndo ? 5000 : 2400);
 }
 async function copyText(text, fallbackEl) {
@@ -1073,13 +1101,14 @@ function setGroup(ids) {
 }
 // Compare with another week: gear matched by id (copied weeks and rebuilds keep ids)
 // Detail level: Simple keeps the everyday controls up front and folds the fine-grained ones away; Advanced shows everything
-const ui = { adv: false };
-try { ui.adv = localStorage.getItem('stageplot.detail') === 'adv'; } catch { /* storage blocked */ }
-const moreOpen = {};
-let showAllConns = null;
-let placing = null;             // gear type picked from the library, waiting for a click on the stage        // item whose full connection list is open
+const ui = { adv: false, snap: .05, guide: true };   // snap: metres to round to as gear moves (0 = off)
+try { ui.adv = localStorage.getItem('stageplot.detail') === 'adv'; ui.guide = localStorage.getItem('stageplot.guide') !== 'off'; const sn = localStorage.getItem('stageplot.snap'); if (sn !== null && [0, .05, .25, .5].includes(Number(sn))) ui.snap = Number(sn); } catch { /* storage blocked */ }
+function setGuide(on) { ui.guide = on; try { localStorage.setItem('stageplot.guide', on ? 'on' : 'off'); } catch { /* memory only */ } renderInspector(); if (!on) toast('Guide hidden · bring it back from the ⋯ menu'); }
+const moreOpen = {};            // which "More settings" folds are open, by panel
+let showAllConns = null;        // item whose full connection list is open
+let placing = null;             // gear type picked from the library, waiting for a click on the stage
 let tipsSeen = false;
-try { tipsSeen = localStorage.getItem('stageplot.tips') === '1'; } catch { /* ignore */ }            // which "More settings" folds are open, by panel
+try { tipsSeen = localStorage.getItem('stageplot.tips') === '1'; } catch { /* ignore */ }
 function setDetail(adv) {
   ui.adv = adv; try { localStorage.setItem('stageplot.detail', adv ? 'adv' : 'simple'); } catch { /* memory only */ }
   if (!adv && mode === 'channel') setMode('select');
@@ -1673,6 +1702,7 @@ const ICONS = {
   undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/>',
   redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 000 11H13"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5"/>',
   minus: '<path d="M5 12h14"/>',
   dots: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   sliders: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
@@ -2161,17 +2191,20 @@ function renderPlot() {
   const showSmall = scale >= 34, showBig = scale >= 11;
   svg.style.setProperty('--lab', `${f3(10.5 / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 / scale)}px`); svg.style.setProperty('--labs', `${f3(3 / scale)}px`);
   let s = `<defs><marker id="cmpHead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="cmp-head" d="M0 0L10 5L0 10z"/></marker><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
-  s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/><rect class="house-dots" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`;
+  s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`}`;
   const poly = stagePoly(), deckD = polyPath(poly);
   s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath></defs>`);
   s += `<path class="deck-shadow" transform="translate(.25 .35)" d="${deckD}"/>`;
   s += `<path class="deck" d="${deckD}"/>`;
   const half = fromM(.5);
+  if (!layerOff('grid')) {
   s += '<g clip-path="url(#deckclip)">';
   for (let i = 1; i * half < w - .01; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="${i * half}" x2="${i * half}" y1="0" y2="${d}"/>`;
   for (let i = 1; i * half < d - .01; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="0" x2="${w}" y1="${i * half}" y2="${i * half}"/>`;
   s += '</g>';
+  }
   for (const [a, c] of frontEdges(poly)) s += `<line class="edge" x1="${a[0]}" y1="${a[1]}" x2="${c[0]}" y2="${c[1]}"/>`;
+  if (!layerOff('dims')) {
   s += '<g class="ruler">';
   const step = fromM(1);
   for (let i = 0; i * step <= w + .001; i++) {
@@ -2185,18 +2218,19 @@ function renderPlot() {
     if (i % 2 === 0 && i) s += `<text x="-1.45" y="${y + .18}" text-anchor="end">${i} m</text>`;
   }
   s += '</g>';
+  }
   const zw = t => t.length * .53;   // .62 ft caps plus letter spacing
-  const zoneCands = [
+  const zoneCands = layerOff('dims') ? [] : [
     { pri: 9, avoid: true, box: [w / 2 - zw('UPSTAGE') / 2, .3, w / 2 + zw('UPSTAGE') / 2, 1], svg: `<text class="zone on-deck" x="${w / 2}" y=".85" text-anchor="middle">UPSTAGE</text>` },
     { pri: 9, avoid: true, box: [w / 2 - zw('DOWNSTAGE') / 2, d - 1, w / 2 + zw('DOWNSTAGE') / 2, d - .3], svg: `<text class="zone on-deck" x="${w / 2}" y="${d - .45}" text-anchor="middle">DOWNSTAGE</text>` },
     { pri: 9, avoid: true, box: [.3, d / 2 - zw('STAGE RIGHT') / 2, 1.1, d / 2 + zw('STAGE RIGHT') / 2], svg: `<text class="zone on-deck" x=".5" y="${d / 2}" transform="rotate(-90 .5 ${d / 2})" text-anchor="middle" dy=".45">STAGE RIGHT</text>` },
     { pri: 9, avoid: true, box: [w - 1.1, d / 2 - zw('STAGE LEFT') / 2, w - .3, d / 2 + zw('STAGE LEFT') / 2], svg: `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".45">STAGE LEFT</text>` },
   ];
-  s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
+  if (!layerOff('dims')) s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
 
   const selItem = sel?.kind === 'item' ? sel.id : null, selSet = new Set(selIds()), solo = selSet.size === 1;
   syncChanItems();
-  const sorted = plan.items.filter(it => !(cableView.hideInCh && it.chan && !selSet.has(it.id))).sort((a, c) => layerOf(a) - layerOf(c));
+  const sorted = plan.items.filter(it => selSet.has(it.id) || (itemShown(it) && !(cableView.hideInCh && it.chan))).sort((a, c) => layerOf(a) - layerOf(c));
   const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
   s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
@@ -2208,7 +2242,7 @@ function renderPlot() {
     if (C.shape !== 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; obstacles.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
     const isSel = selSet.has(it.id), big = Math.min(iw, id) >= 1.6 && C.shape !== 'person';
     const person = C.shape === 'person';
-    const visible = isSel || (person ? showBig : big ? showBig : showSmall);
+    const visible = isSel || (!layerOff('labels') && (person ? showBig : big ? showBig : showSmall));
     if (visible && C.shape !== 'platform') {
       const owner = it.personId && personById(it.personId), fn = owner && firstName(owner.name);
       const text = person ? firstName(owner?.name || it.label) : (fn && itemName(it).startsWith(fn + ' ') ? itemName(it).slice(fn.length + 1) : itemName(it));
@@ -2217,7 +2251,7 @@ function renderPlot() {
       const fs = (person ? 11.5 : 10.5) / scale;
       labCands.push({ x: it.x, y: ly, w: String(text).length * fs * .58 + fs * .4, h: fs * 1.05, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
         svg: `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${ly}" text-anchor="middle">${esc(text)}</text>` });
-    } else if (C.shape === 'platform' && showBig) {
+    } else if (C.shape === 'platform' && showBig && !layerOff('labels')) {
       const own = it.personId && personById(it.personId), fnr = own && firstName(own.name), nm = fnr && itemName(it).startsWith(fnr + ' ') ? itemName(it).slice(fnr.length + 1) : itemName(it);
       const cap = `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = it.y + id / 2 - .35;
       labCands.push({ pri: selSet.has(it.id) ? 0 : 6, avoid: !selSet.has(it.id), box: [it.x - zw(cap) / 2, cy - .55, it.x + zw(cap) / 2, cy + .1], svg: `<text class="zone on-deck" x="${it.x}" y="${cy}" text-anchor="middle">${esc(cap)}</text>` });
@@ -2378,6 +2412,8 @@ function renderFloat() {
   renderEmpty();
   const cab = cableMenuHtml().replace('<div class="panel cabwrap">', '<div class="cabwrap">').replace(/<\/div>$/, '</div>');
   $('ftools').innerHTML = `<div class="panel">
+      <button class="tool tool-add" id="addTool" aria-pressed="${!!placing || (railOpen && railTab === 'gear')}" title="Add gear from the library (A)">${ic('plus', 'sm')}<span class="tl">Add</span></button>
+      <span class="dock-sep"></span>
       <button class="tool" data-mode="select" aria-pressed="${mode === 'select'}" title="Move (V)">${ic('cursor', 'sm')}<span class="tl">Move</span></button>
       <button class="tool" data-mode="box" aria-pressed="${mode === 'box'}" title="Select several (S)">${ic('boxsel', 'sm')}<span class="tl">Select</span></button>
       <button class="tool" data-mode="cable" aria-pressed="${mode === 'cable'}" title="Run cable (C)">${ic('cable', 'sm')}<span class="tl">Run cable</span></button>
@@ -2395,6 +2431,10 @@ function renderFloat() {
     : mode === 'box' ? `<div class="panel"><span class="toolhint">${selIds().length > 1 ? `<b>${selIds().length} picked</b> · drag one to move them all · ` : ''}Tap gear to pick it, or drag a box over the floor</span><button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
     : mode === 'measure' ? `<div class="panel"><span class="toolhint">${measure && !measure.live ? `<b>${mVal(Math.hypot(measure.b[0] - measure.a[0], measure.b[1] - measure.a[1]))} m</b> · drag again for a new measurement` : 'Drag between two points (gear snaps to its centre) · Shift keeps it straight'}</span>${measure ? '<button class="btn quiet" id="msrClear" style="padding:5px 10px">Clear</button>' : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
     : compare && db.plans[compare] ? (() => { const d = weekDiff(); return `<div class="panel cmpbar"><span class="toolhint"><b>Since ${esc(longDate(d.old.date))}</b><span class="cmpdot" style="background:#30a46c"></span>${d.added.length} new<span class="cmpdot" style="background:#f5a524"></span>${d.moved.length} moved<span class="cmpdot" style="background:#e5484d"></span>${d.removed.length} removed</span><button class="iconbtn" id="cmpClose" aria-label="Hide changes" title="Hide changes (Esc)">${ic('x', 'sm')}</button></div>`; })() : '';
+  if (!$('fzoom').innerHTML) {   // a hidden layer is never a mystery: say what's off, one click brings it all back
+    const off = hiddenLayers();
+    if (off.length) $('fzoom').innerHTML = `<div class="panel laychip"><span class="toolhint">${ic('eyeOff', 'sm')}<span><b>Hidden:</b> ${esc(off.slice(0, 3).join(', '))}${off.length > 3 ? ` +${off.length - 3}` : ''}</span></span><button class="btn quiet" id="layShowAll2">Show all</button></div>`;
+  }
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel statuspill">
       <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}" aria-expanded="${checksOpen}">${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${plural(w.length, 'check')}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
@@ -2709,56 +2749,68 @@ function renderInspector() {
     const len = cableLen(c), st = stockFor(c.type, len), a = itemById(c.from), b = itemById(c.to);
     const src = isPowerSource(a) ? a : isPowerSource(b) ? b : null;
     const circOpts = src ? Array.from({ length: Number(prop(src, 'circuits')) || 1 }, (_, k) => `<option ${c.circuit === k + 1 ? 'selected' : ''} value="${k + 1}">Circuit ${k + 1}</option>`).join('') : '';
-    const adv = [`<section class="isec"><h3>Routing</h3>
-        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.filter(q => !isHop(q)).length}</dd>${routeInfo(c).via ? `<dt>Runs through</dt><dd>${esc(routeInfo(c).via.name)}</dd>` : ''}</dl>
-        ${chans().length && !c.points.length ? `<div class="field"><span>Route</span><div class="seg"><button data-route="auto" aria-pressed="${c.route !== 'direct'}">Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}">Direct</button></div></div>` : ''}
+    const adv = [`<section class="isec"><h3>Run details</h3>
+        <dl class="kv"><dt>Floor run</dt><dd>${fmtLen(runLen(cableGeom(c)))}</dd><dt>Bends</dt><dd>${c.points.filter(q => !isHop(q)).length}</dd></dl>
         ${src ? `<div class="field"><label for="cCirc">${esc(itemName(src))} circuit</label><select id="cCirc">${circOpts}</select></div>` : ''}
         ${field('cSlack', 'Slack for this run', c.slack ?? '', 'number', `min="0" max="200" placeholder="${plan.settings.slack} (default)"`, '%')}</section>`];
+    const via = routeInfo(c)?.via, fl = flowOf(c), pr = portRange(c);
+    const fam = c.type === 'power' ? 'Power' : c.type === 'video' ? 'Video' : 'Signal';
+    const [srcIt, dstIt] = fl.dir < 0 ? [b, a] : [a, b];   // listed the way the signal or power travels
+    const end = (lbl, x) => `<button class="endrow" data-selitem="${x?.id || ''}" title="Select ${esc(itemName(x))}"><span class="endk">${lbl}</span>${x ? glyph(x.type) : ''}<span class="endn">${esc(itemName(x) || '?')}${x?.personId && personById(x.personId) ? `<small>${esc(personById(x.personId).name)}</small>` : ''}</span>${ic('chevR', 'sm')}</button>`;
     el.innerHTML = `<div class="insp">
-      <div class="insp-head"><span class="swline bg-${c.type}"></span><div><div class="eyebrow">${esc(CABLES[c.type].name)}${c.auto ? ' · auto' : ''}</div><h2>${esc(itemName(a))} → ${esc(itemName(b))}</h2></div>
+      <div class="insp-head"><span class="swline bg-${c.type}"></span><div><div class="eyebrow">${fam}${c.auto ? ' · auto' : ''}</div><h2>${esc(CABLES[c.type].name)}</h2></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       <section class="isec">
-        <p class="cabsum"><b>${fmtLen(len)}</b><span>pull ${st.map(fmtStock).join(' + ')}${cableQty(c) > 1 ? ` ×${cableQty(c)}` : ''}</span>${(() => { const f = flowOf(c), pr = portRange(c); return f.kind === 'link' ? '<span class="chip">digital link</span>' : `<span class="chip flowchip flow-${f.kind}">${{ in: 'input', out: 'output', power: 'power', signal: 'signal' }[f.kind] || ''}${pr ? ' · ' + esc(pr.text) : ''}</span>`; })()}</p>
-        <div class="field"><span>Runs along</span><div class="seg"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}">Floor</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}">Ceiling</button></div>${c.level === 'ceiling' ? `<span class="hint">Includes ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end.</span>` : ''}</div>
+        <div class="ends">${end('From', srcIt)}${end('To', dstIt)}</div>
+        <p class="cabsum"><b>${fmtLen(len)}</b><span>pull ${st.map(fmtStock).join(' + ')}${cableQty(c) > 1 ? ` ×${cableQty(c)}` : ''}</span>${fl.kind === 'link' ? '<span class="chip">digital link</span>' : `<span class="chip flowchip flow-${fl.kind}">${{ in: 'input', out: 'output', power: 'power', signal: 'signal' }[fl.kind] || ''}${pr ? ' · ' + esc(pr.text) : ''}</span>`}</p>
+      </section>
+      <section class="isec"><h3>Route</h3>
+        <div class="seg routeseg" role="group" aria-label="Where the cable runs"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}" title="Along the stage floor">On stage</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}" title="Up, across the ceiling and down">Overhead</button></div>
+        ${chans().length && !c.points.length ? `<div class="seg routeseg" role="group" aria-label="Cable channels"><button data-route="auto" aria-pressed="${c.route !== 'direct'}" title="Ride a cable channel when it keeps more of the run off the open floor">${ic('trench', 'sm')}Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}" title="Ignore channels">Direct</button></div>` : ''}
+        <p class="hint">${c.level === 'ceiling' ? `Dashed on the plot. Adds ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end. ` : ''}${via ? `Runs through ${esc(via.name)}. ` : chans().length && c.route !== 'direct' && !c.points.length ? 'No channel helps this run. ' : ''}${c.points.length ? 'Drag the gold dots on the plot to reroute.' : 'Drag the cable on the plot to add a bend.'}</p>
       </section>
       <section class="isec"><h3>Cable type</h3><div class="chips">${Object.keys(CABLES).map(k => `<button class="ctype" data-settype="${k}" aria-pressed="${k === c.type}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
-        ${c.points.length && ui.adv ? '<p class="hint">Drag the gold dots on the plot to reroute around risers or along walls.</p>' : ''}
       </section>
       <section class="isec"><div class="actions">${c.points.length ? `<button class="btn" id="cClear">Straighten</button>` : ''}<button class="btn danger" id="cDel">${ic('trash', 'sm')}Delete cable</button></div></section>
-      ${moreFold(adv, ['bends', chans().length ? 'channel route' : '', src ? 'circuit' : '', 'slack'].filter(Boolean).join(', '))}
+      ${moreFold(adv, ['bends', src ? 'circuit' : '', 'slack'].filter(Boolean).join(', '))}
     </div>`;
   } else {
     const t = totals(), w = warnings();
-    const built = plan.items.some(i => i.gen);
     const patchIssues = w.filter(x => /patched|inputs patched|outputs used/.test(x.msg)).length;
     const powerIssues = w.filter(x => /circuit|needs power/.test(x.msg)).length;
+    const people = plan.items.filter(i => cat(i).shape === 'person').length;
+    const gearN = plan.items.filter(i => !['person', 'platform'].includes(cat(i).shape)).length;
+    const powN = plan.cables.filter(c => c.type === 'power').length;
+    const st = plan.stage, stageSet = !!(st.set || st.poly || plan.items.length);
+    const btn = (go, icon, label, primary) => `<button class="btn${primary ? ' primary' : ''}" data-go="${go}">${ic(icon, 'sm')}${label}</button>`;
+    // every tick comes from the plan itself, never from which screens you've opened
     const steps = [
-      { done: plan.team.length > 0, t: 'Schedule the team', sub: plan.team.length ? plural(plan.team.length, 'person', 'people') : 'Import from Planning Center or add people', act: plan.team.length ? '' : `<button class="btn" data-go="team">${ic('users', 'sm')}Add the team</button>` },
-      { done: built, t: 'Build the stage', sub: built ? `${plural(plan.items.length, 'item')} placed` : 'Place everyone’s gear by position', act: built ? '' : `<button class="btn primary" data-go="build">${ic('wand', 'sm')}Build stage</button>` },
-      { done: built && !patchIssues, t: 'Patch every input', sub: patchIssues ? plural(patchIssues, 'issue') : `${t.ins} inputs, ${t.rf} RF`, act: built && patchIssues ? `<button class="btn" data-go="cable">${ic('wand', 'sm')}Re-run cabling</button>` : '' },
-      { done: built && !powerIssues, t: 'Check power', sub: powerIssues ? plural(powerIssues, 'issue') : `${(t.watts / 1000).toFixed(1)} kW across ${plan.items.filter(isPowerSource).length} sources`, act: built && powerIssues ? `<button class="btn" data-go="paper">${ic('zap', 'sm')}Open power sheet</button>` : '' },
+      { k: 'room', done: stageSet, t: 'Stage', sub: `${fmtLen(st.w)} × ${fmtLen(st.d)}${st.poly ? ' · custom shape' : ''}`, act: btn('shape', 'pen', 'Draw my stage', true) },
+      { k: 'team', done: plan.team.length > 0 || people > 0, t: 'Team', sub: plan.team.length ? plural(plan.team.length, 'person', 'people') : 'From Planning Center or by hand', act: btn('team', 'users', 'Add the team', true) },
+      { k: 'gear', done: gearN > 0, t: 'Gear', sub: gearN ? `${plural(gearN, 'item')} on stage` : plan.team.length ? 'Build it from the team, or add by hand' : 'Pick from the library', act: plan.team.length ? btn('build', 'wand', 'Build stage from team', true) + btn('gear', 'box', 'Add gear') : btn('gear', 'box', 'Add gear', true) },
+      { k: 'audio', done: gearN > 0 && !patchIssues, t: 'Audio', sub: patchIssues ? `${plural(patchIssues, 'thing')} not patched` : t.ins ? `${plural(t.ins, 'input')} patched${t.rf ? ` · ${t.rf} RF` : ''}` : 'Mics, DIs and stage boxes', act: btn('cable', 'wand', 'Patch it for me', true) + btn('runcable', 'cable', 'Run a cable') },
+      { k: 'power', done: gearN > 0 && !powerIssues, t: 'Power', sub: powerIssues ? `${plural(powerIssues, 'thing')} to sort` : powN ? `${(t.watts / 1000).toFixed(1)} kW on ${plural(powN, 'run')}` : gearN ? 'Nothing needs power yet' : 'Power points, distros and leads', act: btn('cable', 'zap', 'Power it for me', true) + btn('powersheet', 'sheet', 'Power sheet') },
+      { k: 'review', done: false, t: 'Review & share', sub: w.length ? `${plural(w.length, 'check')} to look at` : 'Plot, input list, power and pull sheets', act: w.length ? btn('checks', 'alert', 'See the checks', true) : btn('paper', 'sheet', 'Open the paperwork', true) },
     ];
-    const nowIdx = steps.findIndex(s => !s.done);
+    steps[5].done = steps.slice(0, 5).every(x => x.done) && !w.length;
+    const nowIdx = steps.findIndex(x => !x.done), nDone = steps.filter(x => x.done).length;
+    const hide = `<button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )" style="margin:-6px -6px -6px 0">${ic('chevsR', 'sm')}</button>`;
+    const guide = !ui.guide ? '' : nowIdx < 0 ? `<section class="isec">
+        <h3>Ready <span style="display:flex;gap:6px;align-items:center">${hide}</span></h3>
+        <div class="allset"><span class="mark">${ic('check', 'sm')}</span><div><b>All set for ${esc(new Date(plan.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'long' }))}</b><small>Stage, team, gear, audio and power all check out.</small></div></div>
+        <button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button></section>`
+      : `<section class="isec setupguide"><h3>Set up this week <span style="display:flex;gap:4px;align-items:center"><span class="gprog" aria-label="${nDone} of 6 done">${steps.map(x => `<i class="${x.done ? 'on' : ''}"></i>`).join('')}</span><button class="iconbtn" id="guideOff" aria-label="Hide the guide" title="Hide the guide (bring it back from ⋯)" style="margin:-6px -2px">${ic('x', 'sm')}</button>${hide}</span></h3>
+        <ol class="steps">${steps.map((x, i) => `<li class="${x.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${x.done ? ic('check', 'sm') : i + 1}</span><div><button class="steplink" data-step="${x.k}" title="Go to ${esc(x.t)}"><b>${esc(x.t)}</b><span class="sub">${esc(x.sub)}</span></button>${i === nowIdx ? `<div class="stepact">${x.act}</div>` : ''}</div></li>`).join('')}</ol>
+        <p class="hint">Do these in any order. Ticks follow what's on the plan.</p></section>`;
     el.innerHTML = `<div class="insp">
-      <section class="isec"><h3>This week <span style="display:flex;gap:6px;align-items:center">${nowIdx < 0 ? '' : `${steps.filter(s => s.done).length}/${steps.length}`}<button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )" style="margin:-6px -6px -6px 0">${ic('chevsR', 'sm')}</button></span></h3>
-        ${nowIdx < 0 ? `<div class="allset"><span class="mark">${ic('check', 'sm')}</span><div><b>All set for ${esc(new Date(plan.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'long' }))}</b><small>Team placed, every input patched and powered.</small></div></div>`
-          : `<ol class="steps">${steps.map((s, i) => `<li class="${s.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${s.done ? ic('check', 'sm') : i + 1}</span><div><b>${esc(s.t)}</b><span class="sub">${esc(s.sub)}</span>${i === nowIdx ? `<div>${s.act}</div>` : ''}</div></li>`).join('')}</ol>`}
-        ${nowIdx < 0 ? `<button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button>` : ''}
-        ${prevWeekId() ? `<button class="btn block" data-go="compare" aria-pressed="${!!compare}" style="margin-top:8px">${ic('diff', 'sm')}${compare ? 'Hide changes' : `What changed since ${esc(longDate(db.plans[prevWeekId()].date))}`}</button>` : ''}
-      </section>
-      ${!ui.adv ? `<section class="isec"><p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW · ${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)} stage</p></section>` : ''}
-      ${ui.adv ? `<section class="isec"><h3>At a glance</h3><div class="tiles">
-        <div class="tile"><b>${t.ins}</b><span>inputs · ${t.rf} RF</span></div>
-        <div class="tile"><b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b><span>stage</span></div>
-        <div class="tile"><b>${fmtLen(t.cab, 0)}</b><span>${plural(plan.cables.length, 'run')}</span></div>
-        <div class="tile"><b>${(t.watts / 1000).toFixed(1)} kW</b><span>stage power</span></div>
-      </div></section>` : ''}
+      ${guide}
+      ${prevWeekId() ? `<section class="isec" style="padding-top:${ui.guide ? 0 : 14}px"><button class="btn block" data-go="compare" aria-pressed="${!!compare}">${ic('diff', 'sm')}${compare ? 'Hide changes' : `What changed since ${esc(longDate(db.plans[prevWeekId()].date))}`}</button></section>` : ''}
+      <section class="isec"><h3>Stage <span style="display:flex;gap:6px;align-items:center">${st.poly ? 'custom shape' : 'rectangle'}${ui.guide ? '' : hide}</span></h3>
+        <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
+        <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
+        <p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW</p>
+        <p class="hint">Measured in metres from upstage right. Hold Alt while dragging to place freely.</p></section>
       ${w.length ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
-      ${ui.adv ? '' : `<details class="more" data-fold="legend"${moreOpen.legend ? ' open' : ''}><summary>${ic('cable', 'sm')}<span><b>Cable colours</b><small>Tap a colour to show or hide that type</small></span>${ic('chevD', 'sm')}</summary>`}
-      <section class="isec"><h3>Cable colours <span style="text-transform:none;letter-spacing:0;font-weight:500">dashed = overhead</span></h3><div class="legend">${Object.keys(CABLES).map(k => `<button data-legend="${k}" aria-pressed="${cableView.all && !cableView.hidden.has(k)}" title="Show or hide ${esc(SHORT[k])} cables"><span class="sw bg-${k}"></span>${esc(SHORT[k])}</button>`).join('')}</div>
-        <div class="flowlegend"><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg>Input / power</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3 0L-4 3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Output</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)" fill="currentColor"/></svg>Digital link</span></div>
-        <p class="hint">Arrows point the way the signal travels.</p></section>
-      ${ui.adv ? '' : '</details>'}
       ${tipsSeen ? '' : `<section class="isec"><p class="hint">Click anything on the plot to edit it. Shift-click or the Select tool picks several. Press <span class="kbd">?</span> for shortcuts.</p></section>`}
     </div>`;
   }
@@ -2776,8 +2828,9 @@ function plotSnapshot() {
   sel = null; group = null; mode = 'select'; pending = null; measure = null; compare = null; view = 'plot';
   zoom = Math.max(8, Math.min(60, (($('paperInner')?.clientWidth || 1000) - 42) / bounds().vw));   // labels sized for the width it's shown at
   let html = '';
+  layersBypass = true;
   try { renderPlot(); html = `<svg class="snap" viewBox="${svg.getAttribute('viewBox')}" style="${svg.getAttribute('style') || ''};width:100%;height:auto" role="img" aria-label="Stage plot">${svg.innerHTML.replace(/ id="[^"]*"/g, '').replace(/<polyline class="cabhit[^>]*>(<title>[^<]*<\/title>)?<\/polyline>/g, '')}</svg>`; }
-  finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); }
+  finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); layersBypass = false; if (view === 'plot') renderPlot(); }
   return html;
 }
 function renderPaper() {
@@ -2953,7 +3006,9 @@ svg.addEventListener('pointerdown', e => {
           sel = { kind: 'cable', id: c.id };
         });
         if (!cableView.all || cableView.hidden.has(ct)) setCableView(() => { cableView.all = true; cableView.hidden.delete(ct); });
-        toast(`${SHORT[ct]} run added${cableType === 'auto' ? ' · change the type in its details if needed' : ''}`, true);
+        // a gentle heads-up when the two ends don't make sense for this cable (never blocks: the plan is yours)
+        const ends = [itemById(from), itemById(id)], unpowered = ct === 'power' && ends.find(x => !isPowerSource(x) && !needsPower(x));
+        toast(unpowered ? `Heads up: ${itemName(unpowered)} doesn't draw power. Change the type if this is a signal run` : `${SHORT[ct]} run added${cableType === 'auto' ? ' · change the type in its details if needed' : ''}`, true);
         return;
       }
     } else if (pending) {
@@ -3096,7 +3151,7 @@ function endDrag() {
     const x0 = Math.min(d.x0, d.x1), x1 = Math.max(d.x0, d.x1), y0 = Math.min(d.y0, d.y1), y1 = Math.max(d.y0, d.y1);
     const inside = (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
     const hit = plan.items.filter(it => {   // risers only when the box takes in all of them, so a sweep over the band doesn't grab the deck
-      if (cableView.hideInCh && it.chan) return false;
+      if ((cableView.hideInCh && it.chan) || !itemShown(it)) return false;
       if (cat(it).shape !== 'platform') return inside(it.x, it.y);
       const w = Number(prop(it, 'w')) / 2, dd = Number(prop(it, 'd')) / 2;
       return inside(it.x - w, it.y - dd) && inside(it.x + w, it.y + dd);
@@ -3163,9 +3218,12 @@ function addGear(type, x, y, hit) {
   if (type === 'rack') openRack(sel.id);
 }
 $('ftools').addEventListener('click', e => {
+  if (e.target.closest('#addTool')) { if (placing) { placing = null; renderPlot(); } else if (railOpen && railTab === 'gear' && view === 'plot') { togglePanel('rail', false); } else openLibrary(); return; }
   if (e.target.closest('#cabBtn')) { cableView.menu = !cableView.menu; renderFloat(); return; }
   const ct = e.target.closest('[data-cabtype]');
   if (ct) { const k = ct.dataset.cabtype; setCableView(() => { cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
+  const ly = e.target.closest('[data-layer]'); if (ly) { const k = ly.dataset.layer; setCableView(() => { cableView.layers.has(k) ? cableView.layers.delete(k) : cableView.layers.add(k); if (k === 'people' || k === 'gear') group = null; }); return; }
+  if (e.target.closest('#layShowAll')) { showAllLayers(); return; }
   if (e.target.closest('#cabFlow')) { setCableView(() => { cableView.noFlow = !cableView.noFlow; }); return; }
   if (e.target.closest('#cabAnim')) { setCableView(() => { cableView.anim = !cableView.anim; }); return; }
   if (e.target.closest('#cabInCh')) { setCableView(() => { cableView.hideInCh = !cableView.hideInCh; }); return; }
@@ -3180,10 +3238,14 @@ $('ftools').addEventListener('click', e => {
   if (t) { cableType = t.dataset.ctype; renderFloat(); }
 });
 $('ftools').addEventListener('change', e => { if (e.target.id === 'cabAll') setCableView(() => { cableView.all = e.target.checked; }); });
-document.addEventListener('pointerdown', e => { if (cableView.menu && !e.target.closest('.cabwrap')) { cableView.menu = false; renderFloat(); } });
+// close without re-rendering, so the click that closed it still lands on what was under it
+const closeLayers = () => { cableView.menu = false; document.querySelector('.cabmenu')?.remove(); $('cabBtn')?.setAttribute('aria-expanded', 'false'); };
+document.addEventListener('pointerdown', e => { if (cableView.menu && !e.target.closest('.cabwrap')) closeLayers(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && cableView.menu) { closeLayers(); $('cabBtn')?.focus(); } }, true);
 $('fzoom').addEventListener('click', e => {
   const t = e.target.closest('[data-ctype]'); if (t) { cableType = t.dataset.ctype; renderFloat(); }
   if (e.target.closest('#chFinish')) finishChannel();
+  if (e.target.closest('#layShowAll2')) { showAllLayers(); return; }
   if (e.target.closest('#msrClear')) { measure = null; renderPlot(); }
   if (e.target.closest('#placeCancel')) { placing = null; renderPlot(); renderRail(); }
   if (e.target.closest('#cmpClose')) toggleCompare(false);
@@ -3263,7 +3325,7 @@ function pasteClip() {
   mutate(() => { const n = cloneItems(clip.items, clip.cables, dx, dy); plan.items.push(...n.its); plan.cables.push(...n.cabs); autoPatch(); setGroup(n.its.map(i => i.id)); }, `Pasted ${plural(clip.items.length, 'item')}`);
 }
 function selectAll() {
-  const ids = plan.items.filter(i => cat(i).shape !== 'platform' && !(cableView.hideInCh && i.chan)).map(i => i.id);
+  const ids = plan.items.filter(i => cat(i).shape !== 'platform' && itemShown(i) && !(cableView.hideInCh && i.chan)).map(i => i.id);
   if (!ids.length) return;
   setGroup(ids); renderPlot(); renderInspector(); toast(`${plural(ids.length, 'item')} selected · risers left out`);
 }
@@ -3366,6 +3428,7 @@ document.addEventListener('keydown', e => {
   else if (k === 's' && !e.ctrlKey && !e.metaKey) setMode(mode === 'box' ? 'select' : 'box');
   else if (k === 'm' && !e.ctrlKey && !e.metaKey) setMode(mode === 'measure' ? 'select' : 'measure');
   else if (k === 't' && !e.ctrlKey && !e.metaKey) setMode(mode === 'channel' ? 'select' : 'channel');
+  else if (k === 'a' && !e.ctrlKey && !e.metaKey) openLibrary();
   else if (k === 'h' && !e.ctrlKey && !e.metaKey) setCableView(() => { cableView.all = !cableView.all; });
   else if (e.key === '[') togglePanel('rail');
   else if (e.key === ']') togglePanel('insp');
@@ -3394,6 +3457,7 @@ function renderMoreMenu() {
     <p class="hint" style="margin:-8px 0 0">${ui.adv ? 'Every setting and tool is showing.' : 'Everyday controls up front; fine settings under “More settings”.'}</p>
     <div class="mm-row"><span>Theme</span><div class="seg detailseg">${th('system', 'Auto')}${th('light', 'Light')}${th('dark', 'Dark')}</div></div>
     <div class="mm-list">
+      <button data-mm="guide">${ic('check', 'sm')}${ui.guide ? 'Hide' : 'Show'} the setup guide</button>
       <button data-mm="help">${ic('keyboard', 'sm')}Keyboard shortcuts<span class="kbd">?</span></button>
       <button data-mm="data">${ic('save', 'sm')}Backup &amp; restore</button>
     </div>`;
@@ -3407,6 +3471,7 @@ $('moreMenu').addEventListener('click', e => {
   const t = e.target.closest('[data-theme-set]'); if (t) { setTheme(t.dataset.themeSet); renderMoreMenu(); return; }
   const m = e.target.closest('[data-mm]'); if (!m) return;
   toggleMoreMenu(false);
+  if (m.dataset.mm === 'guide') { setGuide(!ui.guide); if (ui.guide) { sel = null; group = null; togglePanel('insp', true); renderAll(); } }
   if (m.dataset.mm === 'help') $('helpBtn').click();
   if (m.dataset.mm === 'data') $('dataBtn').click();
 });
@@ -3502,8 +3567,8 @@ $('railPane').addEventListener('change', e => {
   }
   const num = v => Number(v);
   const map = {
-    sw: () => { const nw = fromM(clamp(num(t.value) || 10, 3, 60)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [r2(x * nw / plan.stage.w), y]); plan.stage.w = nw; needFit = true; },
-    sd: () => { const nd = fromM(clamp(num(t.value) || 6, 2, 40)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [x, r2(y * nd / plan.stage.d)]); plan.stage.d = nd; needFit = true; },
+    sw: () => setStageW(num(t.value)),
+    sd: () => setStageD(num(t.value)),
     shd: () => { plan.stage.house = fromM(clamp(num(t.value) || 12, 2, 100)); },
     shw: () => { plan.stage.houseW = fromM(clamp(num(t.value) || 16, 3, 100)); },
     slack: () => { plan.settings.slack = clamp(num(t.value) || 0, 0, 100); },
@@ -3516,12 +3581,24 @@ $('railPane').addEventListener('change', e => {
   if (map[t.id]) mutate(map[t.id]);
 });
 
+function openLibrary() {   // the Add tool: gear tab, search focused
+  if (view !== 'plot') { view = 'plot'; renderAll(); }
+  railTab = 'gear'; if (!railOpen) togglePanel('rail', true); else renderRail();
+  renderFloat(); setTimeout(() => { const q = $('gearSearch'); if (q) { q.focus(); q.select(); } }, 60);
+}
+/* stage size, from the Room tab or the stage panel; a custom shape stretches to fit */
+function setStageW(m) { const nw = fromM(clamp(m || 10, 3, 60)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [r2(x * nw / plan.stage.w), y]); plan.stage.w = nw; plan.stage.set = true; needFit = true; }
+function setStageD(m) { const nd = fromM(clamp(m || 6, 2, 40)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [x, r2(y * nd / plan.stage.d)]); plan.stage.d = nd; plan.stage.set = true; needFit = true; }
+
 /* inspector */
 $('inspector').addEventListener('keydown', e => { if (e.target.matches?.('input[type=text], input[type=number]') && e.key === 'Enter') e.target.blur(); if (e.target.id === 'iLabel' && e.key === 'Escape') { e.target.value = itemById(sel.id)?.label || ''; e.target.blur(); } });
 $('inspector').addEventListener('change', e => {
   const t = e.target;
   const it = sel?.kind === 'item' ? itemById(sel.id) : null;
   const c = sel?.kind === 'cable' ? plan.cables.find(x => x.id === sel.id) : null;
+  if (t.id === 'isw') { mutate(() => setStageW(Number(t.value))); return; }
+  if (t.id === 'isd') { mutate(() => setStageD(Number(t.value))); return; }
+  if (t.id === 'iSnap') { ui.snap = Number(t.value); try { localStorage.setItem('stageplot.snap', String(ui.snap)); } catch { /* memory only */ } toast(ui.snap ? `Gear snaps to ${Math.round(ui.snap * 100)} cm as you move it · hold Alt to place freely` : 'Snapping off'); return; }
   if (t.id === 'gPerson') { if (t.value !== '*') mutate(() => { for (const i of selIds().map(itemById)) i.personId = t.value || undefined; }); return; }
   if (it) mutate(() => {
     const n = Number(t.value);
@@ -3554,6 +3631,7 @@ $('inspector').addEventListener('change', e => {
 });
 $('inspector').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.selitem) { if (itemById(t.dataset.selitem)) { sel = { kind: 'item', id: t.dataset.selitem }; group = null; focusItem(t.dataset.selitem); renderPlot(); renderInspector(); } return; }
   if (t.dataset.selc) { sel = { kind: 'cable', id: t.dataset.selc }; renderPlot(); renderInspector(); return; }
   if (t.dataset.level) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.level = t.dataset.level === 'ceiling' ? 'ceiling' : undefined; c.auto = false; }); return; }
   if (t.dataset.route) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.route = t.dataset.route === 'direct' ? 'direct' : undefined; }); return; }
@@ -3566,6 +3644,22 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.legend) { const k = t.dataset.legend; setCableView(() => { if (!cableView.all) { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(x => x !== k)); } else cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
   if (t.dataset.go === 'team') { railTab = 'team'; renderRail(); $('pcoStart')?.focus(); return; }
   if (t.dataset.go === 'build') { buildNow(); return; }
+  if (t.dataset.go === 'shape') { openDesigner(false); return; }
+  if (t.dataset.go === 'gear') { railTab = 'gear'; togglePanel('rail', true); setTimeout(() => $('gearSearch')?.focus(), 60); return; }
+  if (t.dataset.go === 'room') { railTab = 'stage'; togglePanel('rail', true); return; }
+  if (t.dataset.go === 'runcable') { setMode('cable'); return; }
+  if (t.dataset.go === 'powersheet') { openPaper('sec-power'); return; }
+  if (t.id === 'guideOff') { setGuide(false); return; }
+  if (t.dataset.step) {   // each step takes you to where that work happens
+    const k = t.dataset.step;
+    if (k === 'room' || k === 'team' || k === 'gear') { railTab = k === 'room' ? 'stage' : k; togglePanel('rail', true); if (k === 'gear') setTimeout(() => $('gearSearch')?.focus(), 60); return; }
+    if (k === 'audio' || k === 'power') {
+      setCableView(() => { cableView.all = true; cableView.hideCeil = false; cableView.hidden = new Set(k === 'audio' ? ['power', 'video'] : Object.keys(CABLES).filter(x => x !== 'power')); });
+      toast(`Showing ${k} cables only`, { label: 'Show all', fn: showAllLayers });
+      return;
+    }
+    openPaper(warnings().length ? 'sec-checks' : null); return;
+  }
   if (t.dataset.ctxCable) { const id = t.dataset.ctxCable; setMode('cable'); pending = { from: id, points: [] }; renderPlot(); toast('Now click the gear it runs to'); return; }
   if (t.dataset.go === 'compare') { toggleCompare(); return; }
   if (t.dataset.allconns) { showAllConns = t.dataset.allconns; renderInspector(); return; }
@@ -3775,7 +3869,7 @@ function dsgSave() {
   const ptsFt = dsg.pts.map(([x, y]) => [r2(fromM(x - b.x0)), r2(fromM(y - b.y0))]);
   const W = fromM(b.x1 - b.x0), D = fromM(b.y1 - b.y0);
   const isRect = ptsFt.length === 4 && ptsFt.every(([x, y]) => (Math.abs(x) < .01 || Math.abs(x - W) < .05) && (Math.abs(y) < .01 || Math.abs(y - D) < .05));
-  const apply = p => { p.stage.w = r2(W); p.stage.d = r2(D); p.stage.poly = isRect ? null : ptsFt.map(q => q.slice()); p.stage.houseW = Math.max(p.stage.houseW, r2(W) + fromM(2)); };
+  const apply = p => { p.stage.set = true; p.stage.w = r2(W); p.stage.d = r2(D); p.stage.poly = isRect ? null : ptsFt.map(q => q.slice()); p.stage.houseW = Math.max(p.stage.houseW, r2(W) + fromM(2)); };
   if (dsg.firstRun) {
     const p = blankPlan(); apply(p); plan = p;
     if (dsg.starter) { addStarterGear(); autoCable(); }
@@ -3840,40 +3934,63 @@ $('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = 
 /* ===================================================================
    Cable visibility (per browser)
    =================================================================== */
-const cableView = { all: true, hidden: new Set(), menu: false };
-try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; cableView.hideInCh = !!v.hideInCh; cableView.quiet = v.quiet !== false; } } catch { /* ignore */ }
-const cableShown = c => cableView.all && !cableView.hidden.has(c.type) && !(c.level === 'ceiling' && cableView.hideCeil);
+const cableView = { all: true, hidden: new Set(), menu: false, layers: new Set() };   // layers: 'people' | 'gear' | 'labels' | 'dims' | 'grid' switched off (view only, never the data)
+try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; cableView.hideInCh = !!v.hideInCh; cableView.quiet = v.quiet !== false; cableView.layers = new Set(v.layers || []); } } catch { /* ignore */ }
+const cableShown = c => layersBypass || cableView.all && !cableView.hidden.has(c.type) && !(c.level === 'ceiling' && cableView.hideCeil);
 function setCableView(fn) {
   fn();
-  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim, hideInCh: !!cableView.hideInCh, quiet: cableView.quiet !== false })); } catch { /* ignore */ }
+  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim, hideInCh: !!cableView.hideInCh, quiet: cableView.quiet !== false, layers: [...cableView.layers] })); } catch { /* ignore */ }
   if (sel?.kind === 'cable') { const c = plan.cables.find(x => x.id === sel.id); if (c && !cableShown(c)) sel = null; }
   renderPlot(); renderInspector();
 }
+let layersBypass = false;   // the paperwork snapshot always draws every layer
+const layerOff = k => !layersBypass && cableView.layers.has(k);
+const itemShown = it => { const sh = cat(it).shape; return sh === 'platform' || !layerOff(sh === 'person' ? 'people' : 'gear'); };
+const LAYERS = [['people', 'People', 'users'], ['gear', 'Gear', 'box'], ['labels', 'Labels', 'pen'], ['dims', 'Rulers & stage words', 'ruler'], ['grid', 'Floor grid', 'plot']];
+function hiddenLayers() {   // what's switched off right now, in words, for the "hidden" chip
+  const counts = {}; for (const c of plan.cables) counts[c.type] = (counts[c.type] || 0) + 1;
+  const out = LAYERS.filter(([k]) => cableView.layers.has(k)).map(([, n]) => n);
+  if (!cableView.all) out.push('Cables');
+  else {
+    for (const k of cableView.hidden) if (counts[k]) out.push(`${SHORT[k]} cables`);
+    if (cableView.hideCeil && plan.cables.some(c => c.level === 'ceiling')) out.push('Ceiling runs');
+    if (cableView.hideInCh && plan.cables.some(c => routeInfo(c)?.via)) out.push('Cables in channels');
+  }
+  return out;
+}
+function showAllLayers() { setCableView(() => { cableView.all = true; cableView.hidden.clear(); cableView.hideCeil = false; cableView.hideInCh = false; cableView.layers.clear(); }); }
 function cableMenuHtml() {
   const counts = {}; for (const c of plan.cables) counts[c.type] = (counts[c.type] || 0) + 1;
-  const hiddenN = cableView.all ? [...cableView.hidden].filter(k => counts[k]).length : 0;
-  const btn = `<button class="tool" id="cabBtn" aria-expanded="${cableView.menu}" title="Show or hide cables (H)">${ic(cableView.all ? 'eye' : 'eyeOff', 'sm')}<span class="tl">Cables</span>${!cableView.all ? ' off' : hiddenN ? ` <span class="chip" style="padding:0 6px">${hiddenN} hidden</span>` : ''}</button>`;
+  const off = hiddenLayers();
+  const btn = `<button class="tool" id="cabBtn" aria-expanded="${cableView.menu}" aria-haspopup="menu" title="Layers: show or hide people, gear, cables and labels (H hides all cables)">${ic('layers', 'sm')}<span class="tl">Layers</span>${off.length ? ` <span class="chip warn" style="padding:0 6px">${off.length} off</span>` : ''}</button>`;
   if (!cableView.menu) return `<div class="panel cabwrap">${btn}</div>`;
-  // only types that are on this plot (or that you've hidden) are listed
+  // only cable types that are on this plot (or that you've hidden) are listed
   const types = Object.keys(CABLES).filter(k => counts[k] || cableView.hidden.has(k));
   const onlyOf = keys => cableView.all && Object.keys(CABLES).every(k => keys.includes(k) === !cableView.hidden.has(k));
   const preset = onlyOf(Object.keys(CABLES)) ? 'all' : onlyOf(['xlr', 'cat6', 'inst', 'speakon', 'usb']) ? 'audio' : onlyOf(['power']) ? 'power' : '';
   const sw = on => `<span class="cm-switch" aria-hidden="true" data-on="${!!on}"></span>`;
   const tog = (id, on, label, sub, dis = false) => `<button class="cm-row cm-tog" id="${id}" role="menuitemcheckbox" aria-checked="${!!on}" ${dis ? 'disabled' : ''}><span class="cm-lbl">${label}${sub ? `<small>${sub}</small>` : ''}</span>${sw(on)}</button>`;
+  const eye = on => ic(on ? 'eye' : 'eyeOff', 'sm');
+  const people = plan.items.filter(i => cat(i).shape === 'person').length, gear = plan.items.filter(i => !['person', 'platform'].includes(cat(i).shape)).length;
+  const lcount = { people, gear };
   const inCh = plan.cables.filter(c => routeInfo(c)?.via).length, ceilN = plan.cables.filter(c => c.level === 'ceiling').length;
-  return `<div class="panel cabwrap">${btn}<div class="cabmenu" role="menu">
-      ${tog('cabAllBtn', cableView.all, '<b>Show cables</b>', '')}
-      <div class="cm-seg" role="group" aria-label="Quick views">
-        <button id="cabShowAll" aria-pressed="${preset === 'all'}" ${cableView.all ? '' : ''}>All</button><button id="cabAudio" aria-pressed="${preset === 'audio'}">Audio</button><button id="cabOnly" aria-pressed="${preset === 'power'}">Power</button>
+  return `<div class="panel cabwrap">${btn}<div class="cabmenu" role="menu" aria-label="Layers">
+      <div class="cm-top"><b>Layers</b>${off.length ? `<button class="btn quiet" id="layShowAll">${ic('eye', 'sm')}Show everything</button>` : '<span class="hint">Hiding never deletes anything</span>'}</div>
+      <div class="cm-h">On stage</div>
+      ${LAYERS.map(([k, n, icn]) => `<button class="cm-row cm-type" data-layer="${k}" aria-pressed="${!cableView.layers.has(k)}" role="menuitemcheckbox" aria-checked="${!cableView.layers.has(k)}">${ic(icn, 'sm')}<span>${n}</span><span class="cm-n">${lcount[k] ?? ''}</span>${eye(!cableView.layers.has(k))}</button>`).join('')}
+      <div class="cm-h">Cables</div>
+      ${tog('cabAllBtn', cableView.all, '<b>Show cables</b>', 'Shortcut: H')}
+      <div class="cm-seg" role="group" aria-label="Focus on">
+        <button id="cabShowAll" aria-pressed="${preset === 'all'}">All</button><button id="cabAudio" aria-pressed="${preset === 'audio'}">Audio</button><button id="cabOnly" aria-pressed="${preset === 'power'}">Power</button>
       </div>
-      <div class="cm-h">Types</div>
-      ${types.length ? types.map(k => `<button class="cm-row cm-type" data-cabtype="${k}" aria-pressed="${!cableView.hidden.has(k)}" ${cableView.all ? '' : 'disabled'}><span class="sw bg-${k}"></span><span>${esc(CABLES[k].name)}</span><span class="cm-n">${counts[k] || 0}</span>${ic(cableView.hidden.has(k) ? 'eyeOff' : 'eye', 'sm')}</button>`).join('') : '<p class="hint" style="margin:2px 8px 6px">No cables yet.</p>'}
+      ${types.length ? types.map(k => `<button class="cm-row cm-type" data-cabtype="${k}" aria-pressed="${!cableView.hidden.has(k)}" ${cableView.all ? '' : 'disabled'}><span class="sw bg-${k}"></span><span>${esc(CABLES[k].name)}</span><span class="cm-n">${counts[k] || 0}</span>${eye(!cableView.hidden.has(k))}</button>`).join('') : '<p class="hint" style="margin:2px 8px 6px">No cables yet.</p>'}
+      ${ceilN || cableView.hideCeil ? `<button class="cm-row cm-type" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="cm-n">${ceilN}</span>${eye(!cableView.hideCeil)}</button>` : ''}
+      ${chans().length ? `<button class="cm-row cm-type" id="cabInCh" aria-pressed="${!cableView.hideInCh}" ${cableView.all ? '' : 'disabled'}><span class="sw" style="background:var(--house-ink)"></span><span>Inside channels<small style="display:block;color:var(--muted);font-size:11.5px">gear in channels too</small></span><span class="cm-n">${inCh}</span>${eye(!cableView.hideInCh)}</button>` : ''}
       <div class="cm-h">Display</div>
-      ${tog('cabQuiet', cableView.quiet !== false, 'Quiet until selected', 'Fade cables and hide arrows until you pick something')}
+      ${tog('cabQuiet', cableView.quiet !== false, 'Quiet until selected', 'Fade cables until you pick something')}
       ${ui.adv ? `${tog('cabFlow', !cableView.noFlow, 'Signal flow arrows', '')}
-      ${tog('cabAnim', !!cableView.anim, 'Animate the flow', '', !!cableView.noFlow)}
-      ${!chans().length ? '' : tog('cabInCh', !cableView.hideInCh, 'Cables inside channels', `${plural(inCh, 'run')} · gear in channels too`, !cableView.all)}
-      ${tog('cabCeil', !cableView.hideCeil, 'Ceiling runs', plural(ceilN, 'run'), !cableView.all)}` : ''}
+      ${tog('cabAnim', !!cableView.anim, 'Animate the flow', '', !!cableView.noFlow)}` : ''}
+      <div class="flowlegend cm-legend"><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3.5 0L-4 3.5Z" fill="currentColor"/></svg>Input / power</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><path d="M-4 -3.5L3 0L-4 3.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Output</span><span><svg viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)" fill="currentColor"/></svg>Digital</span><span><span class="sw ceilsw" style="display:inline-block;width:16px;height:3px"></span>Overhead</span></div>
     </div></div>`;
 }
 
@@ -4195,7 +4312,7 @@ function markSaved(ok) {
 }
 function renderEmpty() {
   const el = $('fempty');
-  const show = view === 'plot' && plan.items.length === 0;
+  const show = view === 'plot' && plan.items.length === 0 && !placing && mode === 'select';   // out of the way while you place gear or use a tool
   el.hidden = !show; if (!show) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="emptycard">
     <div class="eyebrow">Empty stage</div><h3>Let’s put something on it</h3>
