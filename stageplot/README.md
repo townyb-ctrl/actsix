@@ -31,6 +31,14 @@ Every gear item is drawn as a real top-down symbol (drum kit with shells and cym
 - The stage plot on the paperwork always draws every layer and every cable at full strength, without flow arrows or pulses, so it prints clean.
 - The input list groups rows by person: the name shows once and a firmer rule marks each new person.
 - Power tables share fixed columns, so circuits, loads and meters line up from one distro to the next.
+- **Print or PDF** (top right of the paperwork, or Ctrl+P from anywhere): every sheet prints on its own page with no app chrome, tables keep their headings across pages, and colours print true. Choose *Save as PDF* in the print dialog for a file.
+- Outputs list box by box, port by port.
+
+## Reliability and accessibility
+
+- If saved data ever can't be read, it is never overwritten: a copy is kept in the browser and a **Recover** button opens it in Backup & restore.
+- An unexpected error shows one calm notice instead of failing silently; work already saved stays saved.
+- Checked with axe-core in light and dark themes: no violations (contrast at least 4.5:1, labelled panels and tabs, keyboard-reachable canvas, a page heading for screen readers).
 
 ## Saving
 

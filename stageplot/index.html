@@ -3,7 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Stageplot Weekly</title>
+<title>Stageplot: stage plots for church teams</title>
+<meta name="description" content="Plan this week's stage in minutes. Place the team and gear, patch every input and power it automatically, then print a clean stage plot, input list, monitor mixes and power sheet.">
+<meta name="theme-color" content="#f5f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1013" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Stageplot: stage plots for church teams">
+<meta property="og:description" content="Team in, stage built, inputs patched and powered, paperwork printed. Free, in your browser, nothing to install.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='8' fill='%2320272d'/%3E%3Cpath d='M8 22h16' stroke='%23f0b429' stroke-width='2.4' stroke-linecap='round' stroke-dasharray='4 2.5'/%3E%3Ccircle cx='12' cy='13' r='3' fill='%23f0b429'/%3E%3Ccircle cx='20' cy='13' r='3' fill='%238f7cd4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -17,7 +26,7 @@
   --surface-3: #eaeef2;
   --ink: #12161a;
   --ink-2: #39434c;
-  --muted: #6a7580;
+  --muted: #5d6874;   /* 5:1 on the light surfaces */
   --line: #e0e5ea;
   --line-2: #cbd3da;
   --accent: #f0b429;          /* spike-tape gold */
@@ -31,7 +40,7 @@
   --house: #e4e9ed;
   --house-dot: rgba(18,22,26,.10);
   --house-ink: #5b6772;
-  --ok: #23875a; --ok-soft: rgba(35,135,90,.12);
+  --ok: #23875a; --ok-soft: rgba(35,135,90,.12); --ok-ink: #17643f; --warn-ink: #8a4f00; --bad-ink: #b4231a;   /* chip text: 4.5:1 on the soft tints */
   --warn: #b86e00; --warn-soft: rgba(214,138,0,.14);
   --bad: #c8372d; --bad-soft: rgba(200,55,45,.12);
   --k-xlr: #3b8ad9; --k-cat: #9a5ee6; --k-pow: #ee6f1f; --k-inst: #2ea25a; --k-spk: #0f9f9b; --k-vid: #de4379; --k-usb: #6f7f91;
@@ -48,7 +57,7 @@
     --bg: #0d1013; --surface: #151a1e; --surface-2: #1b2025; --surface-3: #22282e; --ink: #e9edf0; --ink-2: #c2cad1; --muted: #8b96a0;
     --line: #242a30; --line-2: #323a42; --accent: #f5bd3a; --accent-ink: #1b1505; --accent-text: #f5c24d; --accent-soft: rgba(245,189,58,.14);
     --deck: #2b343c; --deck-edge: #000; --house: #0f1316; --house-dot: rgba(255,255,255,.07); --house-ink: #8a96a0;
-    --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
+    --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --ok-ink: #4cc386; --warn-ink: #f2a94a; --bad-ink: #ff6f62; --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
     --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0; --k-usb: #b3c0cf;
     --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 10px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3); --shadow-3: 0 28px 70px rgba(0,0,0,.6);
     --glass: rgba(24,29,34,.86);
@@ -59,7 +68,7 @@
   --bg: #0d1013; --surface: #151a1e; --surface-2: #1b2025; --surface-3: #22282e; --ink: #e9edf0; --ink-2: #c2cad1; --muted: #8b96a0;
   --line: #242a30; --line-2: #323a42; --accent: #f5bd3a; --accent-ink: #1b1505; --accent-text: #f5c24d; --accent-soft: rgba(245,189,58,.14);
   --deck: #2b343c; --deck-edge: #000; --house: #0f1316; --house-dot: rgba(255,255,255,.07); --house-ink: #8a96a0;
-  --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
+  --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --ok-ink: #4cc386; --warn-ink: #f2a94a; --bad-ink: #ff6f62; --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
   --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0; --k-usb: #b3c0cf;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 10px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3); --shadow-3: 0 28px 70px rgba(0,0,0,.6);
   --glass: rgba(24,29,34,.86);
@@ -117,7 +126,7 @@ header .iconbtn[aria-pressed="true"] { background: var(--surface-3); color: var(
 .unit::after { content: attr(data-unit); position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font: 12px var(--f-mono); color: var(--muted); pointer-events: none; }
 h1, h2, h3 { margin: 0; text-wrap: balance; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface-3); color: var(--ink-2); white-space: nowrap; }
-.chip.ok { background: var(--ok-soft); color: var(--ok); } .chip.warn { background: var(--warn-soft); color: var(--warn); } .chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.ok { background: var(--ok-soft); color: var(--ok-ink, var(--ok)); } .chip.warn { background: var(--warn-soft); color: var(--warn-ink, var(--warn)); } .chip.bad { background: var(--bad-soft); color: var(--bad-ink, var(--bad)); }
 .chip.gold { background: var(--accent-soft); color: var(--accent-text); }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
 
@@ -265,7 +274,7 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .saved.ok .ic { color: var(--ok); }
 .saved.bad { color: var(--bad); }
 .saved.flash { color: var(--ink); }
-.saved.idle { opacity: 0; transition: opacity .6s; }
+.saved.idle { opacity: 0; visibility: hidden; transition: opacity .6s, visibility 0s .6s; }
 .saved.idle:hover { opacity: 1; }
 .searchbtn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); border-radius: var(--r-md); padding: 6px 8px 6px 10px; cursor: pointer; min-width: 200px; font-size: 13px; }
 .searchbtn:hover { border-color: var(--line-2); color: var(--ink-2); }
@@ -631,11 +640,13 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .light-deck .cab.quiet { opacity: .85; }
 .light-deck .cab.quiet.ceil { opacity: .6; }
 .light-deck .ch-edge { stroke: rgba(0,0,0,.3); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
 .swatch { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); cursor: pointer; padding: 0; box-shadow: inset 0 0 0 2px rgba(255,255,255,.08); position: relative; }
-.swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.swatch[aria-pressed="true"], .swatch.on { outline: 2px solid var(--accent); outline-offset: 2px; }
 .swatch.custom { background: conic-gradient(#e5484d, #f5a524, #30a46c, #0091ff, #8e4ec6, #e5484d); display: grid; place-items: center; overflow: hidden; }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
+.printbar { margin-left: auto; display: flex; }
 .tablewrap table.fixed { table-layout: fixed; }
 .tablewrap tr.grp td { border-top: 1.5px solid var(--line-2); }
 .cm-legend { padding: 8px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; font-size: 11.5px; }
@@ -743,7 +754,26 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .docnav button[aria-selected="true"] .hint { color: inherit; opacity: .7; }
 .snapwrap { border-radius: var(--r-md); overflow: hidden; background: var(--house); }
 .snap { display: block; pointer-events: none; }
-@media print { .sheetgrid .sheet { display: grid !important; } .docnav { display: none; } }
+/* print: every sheet, no app chrome, one sheet per page, tables break cleanly with their headings repeated */
+@page { size: A4; margin: 12mm; }
+@media print {
+  html, body { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; }
+  header.top, #plotView, .overlay, .toast, .docnav, .printbar, [data-copy], .hovercard, #glyphMeasure, .sr-only { display: none !important; }
+  .paper { display: block !important; overflow: visible !important; padding: 0 !important; flex: none !important; }
+  .paper-inner { display: block !important; max-width: none !important; }
+  .sheetgrid, .sheets2 { display: block !important; }
+  .sheetgrid .sheet { display: block !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; margin: 0 0 6mm; break-before: page; }
+  .sheetgrid .sheet:first-child { break-before: auto; }
+  .sheet header { margin-bottom: 3mm; }
+  .doc-head { margin-bottom: 6mm; break-after: avoid; }
+  .doc-head, .snapwrap, .snap, .ch, .meter, .dot, td, th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .snapwrap { break-inside: avoid; }
+  .snap { max-height: 240mm; }
+  .tablewrap { overflow: visible !important; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  tbody tr:hover td { background: none !important; }
+}
 .sheets2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 22px; }
 
 /* ---------- overlays ---------- */
@@ -798,7 +828,9 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 </style>
 </head>
 <body>
+<noscript><p style="padding:24px;font:16px system-ui,sans-serif">Stageplot runs in your browser and needs JavaScript turned on.</p></noscript>
 
+<h1 class="sr-only">Stageplot: plan your stage, patch and power</h1>
 <header class="top">
   <div class="brand">
     <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--deck)"/><path d="M8 22h16" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="var(--accent)"/><circle cx="20" cy="13" r="3" fill="#8f7cd4"/></svg>
@@ -833,11 +865,13 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 </header>
 
 <main class="work" id="plotView">
-  <aside class="rail">
-    <div class="tabs" role="tablist">
+  <aside class="rail" aria-label="Team, gear and room">
+    <div class="tabs">
+      <div role="tablist" aria-label="Left panel" style="display:contents">
       <button role="tab" id="tTeam" aria-selected="true"></button>
       <button role="tab" id="tGear" aria-selected="false"></button>
       <button role="tab" id="tStage" aria-selected="false"></button>
+      </div>
       <button class="collapse" id="railCollapse" aria-label="Collapse panel"></button>
     </div>
     <div class="railbody" id="railPane"></div>
@@ -845,7 +879,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   </aside>
 
   <section class="canvas" id="canvas">
-    <div class="scroller" id="scroller"><svg id="plot" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stage plot"></svg></div>
+    <div class="scroller" id="scroller" tabindex="0" aria-label="Stage plot canvas. Arrow keys nudge the selection; plus and minus zoom."><svg id="plot" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stage plot"></svg></div>
     <div class="float f-empty" id="fempty" hidden></div>
     <div class="float f-dock" id="ftools"></div>
     <div class="float f-tl" id="fstats"></div>
@@ -853,7 +887,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
     <div class="float f-tr" id="fquick" hidden></div>
   </section>
 
-  <aside class="inspector" id="inspector"></aside>
+  <aside class="inspector" id="inspector" aria-label="Details"></aside>
 </main>
 
 <main class="paper" id="paperView" hidden><div class="paper-inner" id="paperInner"></div></main>
@@ -1232,9 +1266,11 @@ function tidyPlan(p) {
   p.items = p.items.filter(i => !gone.has(i.id));
   p.cables = p.cables.filter(c => !gone.has(c.from) && !gone.has(c.to));
 }
+let unreadable = null;   // saved data we couldn't read: kept aside, never overwritten, offered back in Backup & restore
 function load() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem(STORE);
+    raw = localStorage.getItem(STORE);
     if (raw) {
       const d = JSON.parse(raw);
       if (d && d.plans && Object.keys(d.plans).length) {
@@ -1242,7 +1278,9 @@ function load() {
         return d;
       }
     }
-  } catch { /* storage blocked */ }
+  } catch {
+    if (raw) { unreadable = raw; try { localStorage.setItem(STORE + '.unreadable', raw); } catch { /* memory copy still offered */ } }
+  }
   return null;
 }
 function save() {
@@ -1562,7 +1600,9 @@ function outputList() {
       rows.push({ dest: itemName(it) + (n > 1 ? ` · ${k}` : ''), type: cat(it).name, port, flag, itemId: it.id });
     }
   }
-  return rows;
+  // ports are handed out stage right to left; the sheet reads box by box, port by port, unpatched last
+  const key = r => { const m = /^(.*) · out (\d+)$/.exec(r.port); return m ? [0, m[1], Number(m[2])] : [r.port === '—' ? 2 : 1, r.port, 0]; };
+  return rows.sort((a, b) => { const x = key(a), y = key(b); return x[0] - y[0] || x[1].localeCompare(y[1]) || x[2] - y[2]; });
 }
 function monitorMixes() {
   const rows = []; let mix = 0;
@@ -2678,9 +2718,9 @@ function renderRail() {
     const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => (!q || gearMatch(t, q)) && (!q || !seen.has(t)) && seen.add(t))]).filter(([, t]) => t.length);
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
       <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}</button>`).join('')}</div>
-      ${!q && recentGear.length ? `<div class="recent"><h3 class="eyebrow">Recently used</h3><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
+      ${!q && recentGear.length ? `<div class="recent"><h2 class="eyebrow">Recently used</h2><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
       ${q ? '<p class="hint">Results across all categories.</p>' : recentGear.length ? '' : '<p class="hint">Click a tile, then click the stage. Or drag it on.</p>'}` +
-      (groups.map(([g, types]) => `<div class="gearcat"><h3 class="eyebrow">${esc(g)}</h3><div class="gearlist">
+      (groups.map(([g, types]) => `<div class="gearcat"><h2 class="eyebrow">${esc(g)}</h2><div class="gearlist">
         ${types.map(t => `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)} · ${esc(gearMeta(t))}">${glyph(t)}<span><b>${esc(tileName(t))}</b><small>${esc(/×/.test(gearMeta(t)) ? '' : gearMeta(t))}</small></span></button>`).join('')}
       </div></div>`).join('') || `<p class="hint">Nothing matches “${esc(gearQuery)}”.</p>`);
   } else {
@@ -2951,7 +2991,7 @@ function renderInspector() {
       <section class="isec"><h3>Stage <span style="display:flex;gap:6px;align-items:center">${st.poly ? 'custom shape' : 'rectangle'}${ui.guide ? '' : hide}</span></h3>
         <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
         <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap" title="Hold Alt while dragging to place freely">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
-        <div class="field"><span>Stage colour</span><div class="swatches" role="group" aria-label="Stage colour">${STAGE_COLORS.map(([v, n]) => `<button class="swatch" data-deckcolor="${v}" aria-pressed="${(st.color || '') === v}" title="${n}" aria-label="${n}" style="background:${v || 'var(--deck)'}"></button>`).join('')}<label class="swatch custom" title="Pick any colour" aria-pressed="${!!st.color && !STAGE_COLORS.some(([v]) => v === st.color)}" style="${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? `background:${st.color}` : ''}"><input type="color" id="iDeckColor" value="${esc(st.color || '#20272d')}" aria-label="Custom stage colour"></label></div></div>
+        <div class="field"><span>Stage colour</span><div class="swatches" role="group" aria-label="Stage colour">${STAGE_COLORS.map(([v, n]) => `<button class="swatch" data-deckcolor="${v}" aria-pressed="${(st.color || '') === v}" title="${n}" aria-label="${n}" style="background:${v || 'var(--deck)'}"></button>`).join('')}<label class="swatch custom${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? ' on' : ''}" title="Pick any colour" style="${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? `background:${st.color}` : ''}"><input type="color" id="iDeckColor" value="${esc(st.color || '#20272d')}" aria-label="Custom stage colour"></label></div></div>
         <p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW</p>
       </section>
       ${w.length && !ui.guide ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
@@ -3010,7 +3050,7 @@ function renderPaper() {
     <header class="doc-head"><div class="eyebrow">${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <nav class="docnav" role="tablist" aria-label="Sheets">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav>
+    <nav class="docnav" role="tablist" aria-label="Sheets">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}<span class="printbar"><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></nav>
     <div class="sheetgrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${plotSnapshot()}</div></section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
@@ -3829,6 +3869,7 @@ $('inspector').addEventListener('click', e => {
 $('paperInner').addEventListener('click', e => {
   const t = e.target.closest('[data-copy]'); if (t) { copyText(paperData[t.dataset.copy], $('copyFallback')); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
+  if (e.target.closest('#printBtn')) { window.print(); return; }
   const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
 });
 
@@ -4218,7 +4259,7 @@ function renderRack() {
   $('rkLib').innerHTML = `<div class="search">${ic('search', 'sm')}<input id="rkSearch" type="search" placeholder="Search devices" value="${esc(rk.q)}" aria-label="Search devices"></div>` +
     Object.entries(RACK_KINDS).map(([k, label]) => {
       const list = Object.entries(RACK_DEV).filter(([, d]) => d.kind === k && (!q || d.name.toLowerCase().includes(q)));
-      return list.length ? `<div class="gearcat"><h3 class="eyebrow">${esc(label)}</h3>${list.map(([key, d]) => `<button class="rk-dev" data-rkadd="${key}"><span class="rk-sw k-${d.kind}"></span><span><b>${esc(d.name)}</b><small>${d.u}U${devMeta({ key }) ? ' · ' + esc(devMeta({ key })) : ''}</small></span>${ic('plus', 'sm')}</button>`).join('')}</div>` : '';
+      return list.length ? `<div class="gearcat"><h2 class="eyebrow">${esc(label)}</h2>${list.map(([key, d]) => `<button class="rk-dev" data-rkadd="${key}"><span class="rk-sw k-${d.kind}"></span><span><b>${esc(d.name)}</b><small>${d.u}U${devMeta({ key }) ? ' · ' + esc(devMeta({ key })) : ''}</small></span>${ic('plus', 'sm')}</button>`).join('')}</div>` : '';
     }).join('') +
     `<div class="card soft" style="gap:8px"><b>Custom device</b><div class="grid2"><div class="field" style="grid-column:1/-1"><label for="rkCName">Name</label><input id="rkCName" type="text" placeholder="e.g. Click track interface"></div>
       <div class="field"><label for="rkCU">Height</label><div class="unit" data-unit="U"><input id="rkCU" type="number" min="1" max="12" value="1"></div></div>
@@ -4678,6 +4719,17 @@ $('fquick').addEventListener('click', e => {
 // a collapsed rail opens again when you pick one of its tabs
 for (const id of ['tTeam', 'tGear', 'tStage']) $(id).addEventListener('click', () => { if (!railOpen) togglePanel('rail', true); });
 
+/* Ctrl+P from the plot prints the paperwork, then puts you back where you were */
+let printFrom = null;
+window.addEventListener('beforeprint', () => { if (view !== 'paper') { printFrom = view; view = 'paper'; renderAll(); } });
+window.addEventListener('afterprint', () => { if (printFrom) { view = printFrom; printFrom = null; needFit = !zoom; renderAll(); } });
+
+/* ----- safety net: an unexpected error says so once, calmly, and work already saved stays saved ----- */
+let lastCrash = 0;
+const onCrash = () => { if (Date.now() - lastCrash < 15000) return; lastCrash = Date.now(); try { toast('Something went wrong there. Your work is saved; reload if the plot looks off'); } catch { /* nothing more to do */ } };
+window.addEventListener('error', e => { if (e.filename && !e.filename.startsWith(location.href.split('#')[0])) return; onCrash(); });
+window.addEventListener('unhandledrejection', onCrash);
+
 /* ----- boot ----- */
 try { const ps = JSON.parse(localStorage.getItem('stageplot.panels') || 'null'); if (ps) { railOpen = ps.railOpen !== false; inspOpen = ps.inspOpen !== false; } else if (innerWidth < 1360) inspOpen = false; } catch { /* ignore */ }
 $('plotView').classList.toggle('rail-collapsed', !railOpen);
@@ -4686,8 +4738,9 @@ document.head.insertAdjacentHTML('beforeend', `<style id="symcss">${SYM_CSS}</st
 try { const t = localStorage.getItem('stageplot.theme'); if (t === 'light' || t === 'dark') { themePref = t; document.documentElement.dataset.theme = t; } } catch { /* ignore */ }
 db = load();
 if (db) plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]];
-else { db = seed(); plan = db.plans[db.currentId]; save(); $('welcomeDlg').hidden = false; }
+else { db = seed(); plan = db.plans[db.currentId]; if (!unreadable) save(); $('welcomeDlg').hidden = !!unreadable; }
 renderAll();
+if (unreadable) setTimeout(() => toast('Your saved weeks couldn’t be read. A copy is kept safe in this browser', { label: 'Recover', fn: () => { $('dataText').value = unreadable; $('dataDlg').hidden = false; } }), 300);
 requestAnimationFrame(() => { needFit = true; renderPlot(); });
 if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); }, () => { pco.mcp = null; renderRail(); });
 </script>
