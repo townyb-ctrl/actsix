@@ -99,6 +99,7 @@ input[type="number"] { font-family: var(--f-mono); font-size: 13px; font-variant
 .iconbtn:hover { background: var(--surface-3); color: var(--ink); }
 .iconbtn:disabled { opacity: .35; cursor: default; background: transparent; }
 .iconbtn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
+header .iconbtn[aria-pressed="true"] { background: var(--surface-3); color: var(--ink); }   /* panel shown is the normal state: no gold */
 .seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface-3); border-radius: 8px; }
 .seg button { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 6px; background: transparent; padding: 6px 12px; cursor: pointer; color: var(--ink-2); font-weight: 550; }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }
@@ -1800,7 +1801,7 @@ const SYM_CSS = `
 .s-red{fill:#ff6b5e}
 .s-port{fill:#14181c;stroke:rgba(255,255,255,.6);stroke-width:.03}
 .s-acrylic{fill:rgba(170,215,255,.16);stroke:rgba(190,225,255,.75);stroke-width:.05}
-.s-beam{fill:rgba(255,214,110,.16)}
+.s-beam{fill:rgba(255,214,110,.09)}
 .s-ped1{fill:#3fb6a8}.s-ped2{fill:#e2833a}.s-ped3{fill:#d8d24a}.s-ped4{fill:#8a73d6}
 .s-deck{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.45);stroke-width:.07;stroke-dasharray:.3 .2}
 .s-spruce{fill:#d8ad6c}.s-burst{fill:#3b1d10}.s-burstin{fill:#cf7a2b}.s-navy{fill:#33507c}.s-maple{fill:#e3c389}.s-rose{fill:#2b1c13}.s-varnish{fill:#a24f25}.s-pg{fill:#f2efe8}.s-cream{fill:#efe6d2}.s-chrome{fill:#cfd5da}
@@ -2170,12 +2171,25 @@ const r2x = n => Math.round(n * 1000) / 1000;
 // keep the most useful labels when they'd overlap: the selection, then people, then big gear, then the rest
 function placeLabels(cands, obstacles = []) {
   const placed = [], hit = (b, q) => b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1];
-  return cands.sort((a, b) => a.pri - b.pri).filter(l => {
+  // gear outlines a touch smaller than drawn, so a label grazing a corner still counts as clear
+  const core = obstacles.map(q => { const ix = (q[2] - q[0]) * .12, iy = (q[3] - q[1]) * .12; return [q[0] + ix, q[1] + iy, q[2] - ix, q[3] - iy]; });
+  const out = [];
+  for (const l of cands.sort((a, b) => a.pri - b.pri)) {
+    if (l.mk) {   // item names: below the item, else above it; never printed over other gear
+      const at = y => [l.x - l.w / 2, y - l.h, l.x + l.w / 2, y + l.h * .25];
+      const clear = (box, gear) => !placed.some(q => hit(box, q)) && (!gear || !core.some((q, i) => i !== l.own && hit(box, q)));
+      let y = [l.y, ...(l.alt || [])].find(v => clear(at(v), true));
+      if (y === undefined && l.pri === 0) y = l.y;   // the selection always keeps its name
+      if (y === undefined && l.pri <= 1 && clear(at(l.y), false)) y = l.y;   // people keep their name even when gear crowds them
+      if (y === undefined) continue;
+      placed.push(at(y)); out.push(l.mk(y)); continue;
+    }
     const box = l.box || [l.x - l.w / 2, l.y - l.h, l.x + l.w / 2, l.y + l.h * .25];
-    if (l.pri > 0 && placed.some(q => hit(box, q))) return false;
-    if (l.avoid && obstacles.some(q => hit(box, q))) return false;   // stage words and riser captions give way to gear
-    placed.push(box); return true;
-  }).map(l => l.svg).join('');
+    if (l.pri > 0 && placed.some(q => hit(box, q))) continue;
+    if (l.avoid && obstacles.some(q => hit(box, q))) continue;   // stage words and riser captions give way to gear
+    placed.push(box); out.push(l.svg);
+  }
+  return out.join('');
 }
 const layerOf = it => cat(it).shape === 'platform' ? 0 : cat(it).shape === 'person' ? 3 : (Math.min(prop(it, 'w'), prop(it, 'd')) >= 1.6 ? 1 : 2);
 
@@ -2230,7 +2244,8 @@ function renderPlot() {
 
   const selItem = sel?.kind === 'item' ? sel.id : null, selSet = new Set(selIds()), solo = selSet.size === 1;
   syncChanItems();
-  const sorted = plan.items.filter(it => selSet.has(it.id) || (itemShown(it) && !(cableView.hideInCh && it.chan))).sort((a, c) => layerOf(a) - layerOf(c));
+  const zOf = it => layerOf(it) + (selSet.has(it.id) && cat(it).shape !== 'platform' ? 10 : 0);   // picked gear comes to the front, so it never hides under a person
+  const sorted = plan.items.filter(it => selSet.has(it.id) || (itemShown(it) && !(cableView.hideInCh && it.chan))).sort((a, c) => zOf(a) - zOf(c));
   const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
   s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
@@ -2249,8 +2264,9 @@ function renderPlot() {
       const onDeck = inPoly(it.x, it.y, stagePoly());
       const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
       const fs = (person ? 11.5 : 10.5) / scale;
-      labCands.push({ x: it.x, y: ly, w: String(text).length * fs * .58 + fs * .4, h: fs * 1.05, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
-        svg: `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${ly}" text-anchor="middle">${esc(text)}</text>` });
+      const above = big ? [] : [it.y - Math.max(iw, id) / 2 - 4 / scale];
+      labCands.push({ x: it.x, y: ly, alt: above, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: String(text).length * fs * .58 + fs * .4, h: fs * 1.05, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
+        mk: y => `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text>` });
     } else if (C.shape === 'platform' && showBig && !layerOff('labels')) {
       const own = it.personId && personById(it.personId), fnr = own && firstName(own.name), nm = fnr && itemName(it).startsWith(fnr + ' ') ? itemName(it).slice(fnr.length + 1) : itemName(it);
       const cap = `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = it.y + id / 2 - .35;
@@ -2528,7 +2544,7 @@ function renderRail() {
         <button class="btn" id="bulkAdd">Add these people</button>
         <p class="hint">Name, then position. “BGV”, “Keys / Vox” and similar are understood.</p></div></details>`;
     const built = plan.items.some(i => i.gen);
-    foot.innerHTML = `<button class="btn primary lg block" id="buildBtn" ${plan.team.length ? '' : 'disabled'}>${ic('wand', 'sm')}${built ? 'Rebuild stage from team' : 'Build stage from team'}</button>
+    foot.innerHTML = `<button class="btn ${built ? '' : 'primary '}lg block" id="buildBtn" ${plan.team.length ? '' : 'disabled'}>${ic('wand', 'sm')}${built ? 'Rebuild stage from team' : 'Build stage from team'}</button>
       ${built ? '' : `<p class="hint" style="text-align:center">Places everyone's gear, then patches and powers it.</p>`}`;
   } else if (railTab === 'gear') {
     const q = gearQuery.trim().toLowerCase();
