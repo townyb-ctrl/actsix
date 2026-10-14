@@ -22,7 +22,7 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![FOH console](foh.svg) | `foh` | FOH console | 1.83 × 0.91 m |
 | ![Monitor console](mon_desk.svg) | `mon_desk` | Monitor console | 1.22 × 0.76 m |
 | ![Drum kit](drum_kit.svg) | `drum_kit` | Drum kit | 1.98 × 1.68 m |
-| ![Drum shield](drum_shield.svg) | `drum_shield` | Drum shield | 2.44 × 0.12 m |
+| ![Drum shield](drum_shield.svg) | `drum_shield` | Drum shield | 2.44 × 0.37 m |
 | ![Guitar amp (miked)](gtr_amp.svg) | `gtr_amp` | Guitar amp (miked) | 0.61 × 0.30 m |
 | ![Bass amp](bass_amp.svg) | `bass_amp` | Bass amp | 0.61 × 0.46 m |
 | ![MIDI keyboard controller](midi_keys.svg) | `midi_keys` | MIDI keyboard controller | 1.52 × 0.61 m |

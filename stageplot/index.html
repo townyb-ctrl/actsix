@@ -241,6 +241,8 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .gear small { color: var(--muted); font-size: 10.5px; font-family: var(--f-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .glyph { width: 34px; height: 34px; border-radius: 8px; background: radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--deck) 82%, #fff), var(--deck)); padding: 3px; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 .glyph .s-beam { display: none; }
+.glyph .s-deck { fill: rgba(255,255,255,.12); stroke: rgba(255,255,255,.7); }
+.glyph .s-thin { stroke: rgba(255,255,255,.5); }
 
 /* ---------- canvas ---------- */
 .canvas { position: relative; min-width: 0; min-height: 0; background: var(--house); }
@@ -955,7 +957,7 @@ const CAT = {
   // Instruments & staging
   drum_kit:    { name: 'Drum kit', short: 'Kit', cat: 'inst', w: 6.5, d: 5.5, shape: 'kit',
                  inputs: ['Kick In', 'Kick Out', 'Snare Top', 'Snare Btm', 'Hi-hat', 'Rack Tom', 'Floor Tom', 'OH L', 'OH R'] },
-  drum_shield: { name: 'Drum shield', short: 'Shield', cat: 'staging', w: 8, d: .4, shape: 'rect' },
+  drum_shield: { name: 'Drum shield', short: 'Shield', cat: 'staging', w: 8, d: 1.2, shape: 'rect' },
   gtr_amp:     { name: 'Guitar amp (miked)', short: 'Gtr amp', cat: 'inst', w: 2, d: 1, shape: 'rect', inputs: ['Gtr Amp'], watts: 120 },
   bass_amp:    { name: 'Bass amp', short: 'Bass amp', cat: 'inst', w: 2, d: 1.5, shape: 'rect', watts: 400 },
   keys:        { name: 'Keyboard rig', short: 'Keys', cat: 'inst', w: 5, d: 2, shape: 'keys', inputs: ['Keys L', 'Keys R'], watts: 150 },
@@ -1808,6 +1810,12 @@ function gearMeta(type) {
    =================================================================== */
 const SYM_CSS = `
 .s-bg{opacity:.5}
+.s-plexi{fill:rgba(170,215,255,.32);stroke:rgba(200,230,255,.85);stroke-width:.05}
+.s-shine{fill:none;stroke:rgba(255,255,255,.55);stroke-width:.03;stroke-linecap:round}
+.s-staff{fill:none;stroke:rgba(20,24,28,.4);stroke-width:.018}
+.s-lyric{fill:rgba(255,255,255,.75)}
+.s-brassline{fill:none;stroke:#d6b04a;stroke-width:.08;stroke-linecap:round}
+.s-valve{fill:#f0d27a;stroke:#8a6a1f;stroke-width:.02}
 .s-line{fill:none;stroke:rgba(255,255,255,.55);stroke-width:.05;stroke-linecap:round;stroke-linejoin:round}
 .s-thin{fill:none;stroke:rgba(255,255,255,.32);stroke-width:.035;stroke-linecap:round}
 .s-boom{fill:none;stroke:#e8ecef;stroke-width:.06;stroke-linecap:round}
@@ -1941,7 +1949,8 @@ const SYM = (() => {
       cymbal(2.05, -.75, .62) +                                                  // hi-hat
       cymbal(1.95, 1.15, .82) +                                                  // crash
       cymbal(-1.95, .75, .95),                                                   // ride
-    drum_shield: [-3.2, -1.6, 0, 1.6, 3.2].map(x => rect(x - .78, -.2, 1.56, .4, 's-acrylic', .05)).join('') + [-2.4, -.8, .8, 2.4].map(x => circ(x, 0, .07, 's-white')).join(''),
+    // five acrylic panels on a shallow arc, ends wrapping back toward the kit, chrome hinges between
+    drum_shield: '<rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(-3.230 -0.064) rotate(18.10)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(-3.230 -0.064) rotate(18.10)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(-1.636 0.321) rotate(9.05)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(-1.636 0.321) rotate(9.05)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(0.000 0.450) rotate(-0.00)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(0.000 0.450) rotate(-0.00)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(1.636 0.321) rotate(-9.05)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(1.636 0.321) rotate(-9.05)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(3.230 -0.064) rotate(-18.10)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(3.230 -0.064) rotate(-18.10)"/><circle class="s-white" cx="-2.441" cy="0.160" r=".08"/><circle class="s-white" cx="-0.820" cy="0.418" r=".08"/><circle class="s-white" cx="0.820" cy="0.418" r=".08"/><circle class="s-white" cx="2.441" cy="0.160" r=".08"/>',
     gtr_amp: box(2, 1, 'inst') + rect(-.92, .1, 1.84, .32, 's-grille', .04) + rect(-.35, -.22, .7, .14, 's-dark', .07) + grid(-.75, -.34, 6, 1, .12, 0, .035, 's-white') + circ(.82, -.34, .035, 's-red'),
     bass_amp: box(2, 1.5, 'inst') + rect(-.92, .25, 1.84, .42, 's-grille', .04) + rect(-.85, -.68, 1.7, .6, 'body c-infra s-edge', .05) + grid(-.65, -.38, 7, 1, .16, 0, .04, 's-white') + rect(-.25, -.62, .5, .1, 's-dark', .05) + circ(.72, -.38, .04, 's-led'),
     get midi_keys() { return this.keys; },
@@ -1957,7 +1966,9 @@ const SYM = (() => {
     ac_guitar: acoustic(1.25),
     el_guitar: strat(1.1),
     bass_guitar: pbass(1.1),
-    trumpet: '<path class="s-brass" d="M-.12 -.8 L.12 -.8 L.1 .25 Q.38 .5 .38 .85 L-.38 .85 Q-.38 .5 -.1 .25 Z"/>' + circ(0, .85, .38, 's-brass') + circ(0, .85, .26, 's-blk') + grid(-.12, -.3, 3, 1, .12, 0, .045, 's-white'),
+    // from above: mouthpiece, the tubing loop, three valve caps and the bell
+    trumpet: '<rect class="s-brassline" x="-.28" y="-.5" width=".56" height=".72" rx=".24"/>' + '<path class="s-brassline" d="M0 -.78V.25"/>' + grid(-.14, -.16, 3, 1, .14, 0, .075, 's-valve') +
+      '<path class="s-brass" d="M-.1 .2L.1 .2L.3 .5Q.36 .58 .36 .62L-.36 .62Q-.36 .58 -.3 .5Z"/>' + circ(0, .55, .3, 's-brass') + circ(0, .55, .2, 's-blk') + circ(0, -.8, .06, 's-chrome'),
     cajon: rect(-.55, -.55, 1.1, 1.1, 's-wood s-edge', .08) + rect(-.45, -.45, .9, .9, 's-wood2', .05) + circ(0, .2, .15, 's-blk'),
     up_piano: rect(-2.5, -1, 5, 2, 's-blk s-edge', .08) + rect(-2.3, -1, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -1, .08, .32, 's-blk', .01) : '').join('') + rect(-2.4, .5, 4.8, .3, 's-thin', .03),
     grand_piano: '<path class="s-blk s-edge" d="M-2.5 -3.25 L2.5 -3.25 L2.5 -.6 Q2.4 1.4 .9 2.3 Q-.6 3.25 -1.6 3.25 L-2.5 3.25 Z"/>' + rect(-2.3, -3.25, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -3.25, .08, .32, 's-blk', .01) : '').join('') + '<path class="s-thin" d="M-2.2 -2.4 L2.2 -2.4 L2.2 -.7 Q2.1 1.2 .8 2 Q-.6 2.9 -1.5 2.9 L-2.2 2.9 Z"/>',
@@ -1975,7 +1986,9 @@ const SYM = (() => {
     pedalboard: rect(-1.25, -.6, 2.5, 1.2, 's-dark', .08) + rect(-1.25, -.6, 2.5, 1.2, 's-line', .08) +
       [['s-ped1', -1.05], ['s-ped2', -.6], ['s-ped3', -.15], ['s-ped4', .3], ['s-ped1', .75]].map(([c, x]) => rect(x, -.35, .34, .6, c, .04) + circ(x + .17, -.2, .05, 's-dark') + circ(x + .17, .12, .07, 's-white')).join('') + line(-1.2, -.5, 1.2, -.5, 's-thin'),
     laptop: rect(-1, -.75, 2, 1.5, 'body c-infra s-bg', .08) + rect(-.65, -.45, 1.1, .75, 'body c-inst s-edge', .04) + rect(-.58, -.38, .96, .45, 's-head', .02) + rect(-.65, .3, 1.1, .08, 's-glass', .02) + rect(.55, -.3, .38, .55, 'body c-infra s-edge', .04) + circ(.74, -.12, .06, 's-white') + circ(.74, .1, .06, 's-white'),
-    music_stand: tripod(.38, 's-thin') + rect(-.72, -.1, 1.44, .34, 's-dark', .03) + rect(-.72, -.1, 1.44, .34, 's-line', .03) + line(-.68, .22, .68, .22, 's-boom'),
+    // desk tilted toward the player with an open part on it, so it reads as a music stand at a glance
+    music_stand: tripod(.38, 's-thin') + rect(-.72, -.34, 1.44, .6, 's-dark', .05) + rect(-.66, -.29, .63, .48, 's-pg', .02) + rect(.03, -.29, .63, .48, 's-pg', .02) +
+      [-.17, -.08, .01, .1].map(y => line(-.6, y, -.09, y, 's-staff') + line(.09, y, .6, y, 's-staff')).join('') + line(-.72, .27, .72, .27, 's-boom'),
     pulpit: rect(-1.25, -1, 2.5, 2, 'body c-infra s-edge', .12) + rect(-1.05, -.8, 2.1, 1.25, 's-head', .06) + line(-1.05, -.8, 1.05, -.8, 's-boom') + rect(-.7, .62, 1.4, .18, 's-dark', .05) + '<path class="s-boom" d="M.6 .55q.05 -.6 -.3 -.75"/>' + circ(.3, -.2, .05, 's-white'),
     riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
     drum_riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
@@ -1985,7 +1998,9 @@ const SYM = (() => {
     pboard6: rect(-.95, -.22, 1.9, .44, 's-white s-edge', .1) + [-.7, -.42, -.14, .14, .42, .7].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.87, 0, .035, 's-red'),
     wall_outlet: rect(-.35, -.25, .7, .5, 's-white s-edge', .06) + circ(0, 0, .17, 'body c-power') + circ(-.06, 0, .03, 's-dark') + circ(.06, 0, .03, 's-dark'),
     camera: tripod(.95, 's-line') + rect(-.32, -.28, .64, .62, 'body c-video s-edge', .08) + rect(-.18, -.62, .36, .36, 's-dark', .05) + circ(0, -.62, .15, 's-glass') + rect(-.12, .34, .24, .2, 's-dark', .03),
-    conf_mon: '<polygon class="body c-infra s-bg" points="-.6,.45 .6,.45 .35,-.05 -.35,-.05"/>' + rect(-1.75, -.42, 3.5, .34, 'body c-video s-edge', .05) + rect(-1.65, -.4, 3.3, .14, 's-glass', .02),
+    // floor screen tilted up at the stage, lyrics showing, on a low wedge stand
+    conf_mon: '<polygon class="body c-infra s-bg" points="-.7,.48 .7,.48 .45,.2 -.45,.2"/>' + rect(-1.72, -.46, 3.44, .72, 'body c-video s-edge', .06) + rect(-1.6, -.37, 3.2, .54, 's-glass', .03) +
+      rect(-.95, -.25, 1.9, .07, 's-lyric', .03) + rect(-.75, -.12, 1.5, .07, 's-lyric', .03) + rect(-.85, .01, 1.7, .07, 's-lyric', .03),
     light_stand: '<polygon class="s-beam" points="-.35,-.2 .35,-.2 .75,-.75 -.75,-.75"/>' + tripod(.7, 's-thin') + '<path class="s-line" d="M-.48 -.05V-.3M.48 -.05V-.3M-.48 -.3H.48"/>' + circ(0, 0, .42, 'body c-video s-edge') + circ(0, -.12, .22, 's-glass') + circ(0, -.12, .08, 's-white'),
   };
 })();
@@ -2070,7 +2085,7 @@ function glyphBox(type) {
 }
 function glyph(type, extraCls = '') {
   const c = CAT[type], [x, y, sd] = glyphBox(type);
-  return `<svg class="glyph ${extraCls}" viewBox="${f3(x)} ${f3(y)} ${f3(sd)} ${f3(sd)}" aria-hidden="true">${shapeSvg({ type, rot: 0 }, c.w, c.d)}</svg>`;
+  return `<svg class="glyph ${extraCls}" viewBox="${f3(x)} ${f3(y)} ${f3(sd)} ${f3(sd)}" aria-hidden="true">${shapeSvg({ type, rot: 0 }, c.w, c.d)}${type === 'drum_riser' && SYM.drum_kit ? `<g opacity=".6" transform="scale(.7)">${SYM.drum_kit}</g>` : ''}</svg>`;   // the drum riser icon shows a kit, so it isn't mistaken for a plain riser
 }
 /* ---------- signal flow ----------
    dir: 1 = from c.from to c.to (the order the geometry is drawn in), -1 = reverse, 0 = both ways.
