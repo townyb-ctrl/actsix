@@ -410,7 +410,7 @@ svg text { font-family: var(--f-ui); }
 .house-fill { fill: var(--house); }
 .house-dots { fill: url(#dots); }
 .dotp { fill: var(--house-dot); }
-.deck { fill: var(--deck); stroke: rgba(255,255,255,.07); stroke-width: .06; }
+.deck { fill: var(--deck); stroke: var(--deck-rim, rgba(255,255,255,.07)); stroke-width: .06; }
 .deck-shadow { fill: var(--deck-edge); opacity: .45; filter: url(#deckblur); }
 .g-minor { stroke: var(--deck-grid); stroke-width: .03; opacity: .6; }
 .g-major { stroke: var(--deck-grid-major); stroke-width: .05; }
@@ -418,7 +418,7 @@ svg text { font-family: var(--f-ui); }
 .ruler line { stroke: var(--house-ink); stroke-width: .045; }
 .ruler text { fill: var(--house-ink); font-size: .52px; font-family: var(--f-mono); }
 .zone { fill: var(--house-ink); font-size: .62px; letter-spacing: .14px; font-weight: 650; }
-.zone.on-deck { fill: rgba(255,255,255,.28); }
+.zone.on-deck { fill: var(--deck-ink, rgba(255,255,255,.28)); }
 .item { cursor: pointer; touch-action: none; }
 .item .body { stroke: rgba(0,0,0,.35); stroke-width: .05; transition: filter .12s; }
 .item:hover .body, .item:hover .sym { filter: brightness(1.18); }
@@ -621,6 +621,11 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .endrow .glyph, .endrow > svg:not(.ic) { width: 28px; height: 28px; }
 .routeseg { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 8px; }
 .routeseg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); cursor: pointer; padding: 0; box-shadow: inset 0 0 0 2px rgba(255,255,255,.08); position: relative; }
+.swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.swatch.custom { background: conic-gradient(#e5484d, #f5a524, #30a46c, #0091ff, #8e4ec6, #e5484d); display: grid; place-items: center; overflow: hidden; }
+.swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
 .cm-legend { padding: 8px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; font-size: 11.5px; }
 .laychip { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
 .laychip .toolhint { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -2140,6 +2145,14 @@ function pointAt(o, d) {
   const p = o[o.length - 1]; return [p[0], p[1], 0];
 }
 // a run as a path with its right-angle bends rounded off (each bend takes at most half of either leg, so short jogs stay true)
+/* stage colour: one per week, saved with setups; light decks flip the grid and stage words to dark ink */
+const STAGE_COLORS = [['', 'Charcoal'], ['#121417', 'Black'], ['#3b424a', 'Slate'], ['#1d2943', 'Navy'], ['#4a3426', 'Walnut'], ['#8a6a48', 'Oak'], ['#d8d3c6', 'Light']];
+const lum = hex => { const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 0; const n = parseInt(m[1], 16); return (.2126 * (n >> 16 & 255) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255; };
+function applyDeckColor(el) {
+  const col = plan.stage.color, light = lum(col) > .55;
+  const vars = col ? { '--deck': col, '--deck-grid': light ? 'rgba(0,0,0,.07)' : 'rgba(255,255,255,.055)', '--deck-grid-major': light ? 'rgba(0,0,0,.16)' : 'rgba(255,255,255,.12)', '--deck-ink': light ? 'rgba(0,0,0,.32)' : 'rgba(255,255,255,.28)', '--deck-rim': light ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.07)' } : {};
+  for (const k of ['--deck', '--deck-grid', '--deck-grid-major', '--deck-ink', '--deck-rim']) vars[k] ? el.style.setProperty(k, vars[k]) : el.style.removeProperty(k);
+}
 function roundPath(pts, r = fromM(.12)) {
   const P = q => `${f3(q[0])} ${f3(q[1])}`;
   let d = `M${P(pts[0])}`;
@@ -2284,6 +2297,7 @@ function renderPlot() {
   const { w, d, house } = plan.stage;
   const showSmall = scale >= 34, showBig = scale >= 11;
   svg.style.setProperty('--lab', `${f3(10.5 / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 / scale)}px`); svg.style.setProperty('--labs', `${f3(3 / scale)}px`);
+  applyDeckColor(svg);
   // cable weights are set in screen pixels, so runs stay fine and crisp at any zoom; the caps keep them inside their lanes when zoomed out
   const W = (px, cap) => `${f3(Math.min(px / scale, cap))}px`;
   for (const [k, px, cap] of [['cw', 1.8, .12], ['cwq', 1.3, .09], ['cwh', 2.5, .17], ['cws', 3.1, .22], ['cc', 4.6, .26], ['ccq', 3.4, .18], ['cch', 5.6, .32], ['ccs', 6.6, .4], ['csh', .7, .04], ['cshs', .9, .055], ['cg', 11, .8], ['cwa', 2.4, .16]]) svg.style.setProperty('--' + k, W(px, cap));
@@ -2661,7 +2675,7 @@ function renderRail() {
     const num = (id, label, v, attrs) => `<div class="field"><label for="${id}">${label}</label><div class="unit" data-unit="m"><input id="${id}" type="number" value="${v}" ${attrs}></div></div>`;
     pane.innerHTML = `
       <div class="card"><div class="card-head"><span class="badge">${ic('room', 'sm')}</span><div><h3>Stage shape</h3><p>${plan.stage.poly ? `Custom · ${plan.stage.poly.length} corners` : 'Rectangle'}</p></div></div>
-        <svg class="stage-thumb" viewBox="${-fromM(.6)} ${-fromM(.6)} ${st.w + fromM(1.2)} ${st.d + fromM(1.2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="th-deck" d="${polyPath(stagePoly())}"/></svg>
+        <svg class="stage-thumb" viewBox="${-fromM(.6)} ${-fromM(.6)} ${st.w + fromM(1.2)} ${st.d + fromM(1.2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="th-deck"${st.color ? ` style="fill:${esc(st.color)}"` : ''} d="${polyPath(stagePoly())}"/></svg>
         <button class="btn" id="editStage">${ic('pen', 'sm')}Draw or edit stage shape</button>
         <p class="hint">${fmtLen(st.w)} × ${fmtLen(st.d)}. Type exact sizes in the right panel with nothing selected.</p></div>
       <div class="card"><div class="card-head"><span class="badge">${ic('clip', 'sm')}</span><div><h3>Notes for the crew</h3></div></div>
@@ -2924,6 +2938,7 @@ function renderInspector() {
       <section class="isec"><h3>Stage <span style="display:flex;gap:6px;align-items:center">${st.poly ? 'custom shape' : 'rectangle'}${ui.guide ? '' : hide}</span></h3>
         <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
         <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap" title="Hold Alt while dragging to place freely">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
+        <div class="field"><span>Stage colour</span><div class="swatches" role="group" aria-label="Stage colour">${STAGE_COLORS.map(([v, n]) => `<button class="swatch" data-deckcolor="${v}" aria-pressed="${(st.color || '') === v}" title="${n}" aria-label="${n}" style="background:${v || 'var(--deck)'}"></button>`).join('')}<label class="swatch custom" title="Pick any colour" aria-pressed="${!!st.color && !STAGE_COLORS.some(([v]) => v === st.color)}" style="${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? `background:${st.color}` : ''}"><input type="color" id="iDeckColor" value="${esc(st.color || '#20272d')}" aria-label="Custom stage colour"></label></div></div>
         <p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW</p>
       </section>
       ${w.length && !ui.guide ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
@@ -3712,6 +3727,7 @@ $('inspector').addEventListener('change', e => {
   const t = e.target;
   const it = sel?.kind === 'item' ? itemById(sel.id) : null;
   const c = sel?.kind === 'cable' ? plan.cables.find(x => x.id === sel.id) : null;
+  if (t.id === 'iDeckColor') { mutate(() => { plan.stage.color = t.value; }, 'Stage colour changed'); return; }
   if (t.id === 'isw') { mutate(() => setStageW(Number(t.value))); return; }
   if (t.id === 'isd') { mutate(() => setStageD(Number(t.value))); return; }
   if (t.id === 'iSnap') { ui.snap = Number(t.value); try { localStorage.setItem('stageplot.snap', String(ui.snap)); } catch { /* memory only */ } toast(ui.snap ? `Gear snaps to ${Math.round(ui.snap * 100)} cm as you move it · hold Alt to place freely` : 'Snapping off'); return; }
@@ -3766,6 +3782,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.go === 'runcable') { setMode('cable'); return; }
   if (t.dataset.go === 'powersheet') { openPaper('sec-power'); return; }
   if (t.id === 'guideOff') { setGuide(false); return; }
+  if (t.dataset.deckcolor !== undefined) { const v = t.dataset.deckcolor; mutate(() => { if (v) plan.stage.color = v; else delete plan.stage.color; }, `Stage colour: ${STAGE_COLORS.find(([k]) => k === v)?.[1] || 'custom'}`); return; }
   if (t.dataset.step) {   // each step takes you to where that work happens
     const k = t.dataset.step;
     if (k === 'room' || k === 'team' || k === 'gear') { railTab = k === 'room' ? 'stage' : k; togglePanel('rail', true); if (k === 'gear') setTimeout(() => $('gearSearch')?.focus(), 60); return; }
