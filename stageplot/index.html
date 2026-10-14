@@ -477,7 +477,7 @@ svg text { font-family: var(--f-ui); }
 .titlein::placeholder { color: var(--ink); opacity: 1; }
 .insp-head .swline { width: 44px; height: 6px; border-radius: 3px; }
 .isec { padding: 14px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
-.isec > h3 { font-size: 11px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.isec > h3 { font-size: 11px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 .isec:last-child { border-bottom: 0; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; margin: 0; }
 .kv dt { color: var(--muted); }
@@ -510,6 +510,10 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .mm-list button { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 8px; border-radius: var(--r-sm); cursor: pointer; color: var(--ink); font-size: 13.5px; text-align: left; }
 .mm-list button:hover { background: var(--surface-2); }
 .mm-list .kbd { margin-left: auto; }
+.cabsum { margin: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cabsum b { font: 600 20px var(--f-mono); }
+.cabsum > span:not(.chip) { color: var(--muted); font-size: 13px; }
+.cabsum .chip { margin-left: auto; align-self: center; }
 .glance { margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.5; }
 .allset { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); background: var(--ok-soft, rgba(48,164,108,.12)); }
 .allset .mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ok, #30a46c); color: #fff; }
@@ -2440,7 +2444,7 @@ function renderRail() {
     const pcoBusy = pco.types.length || pco.busy || pco.err;
     pane.innerHTML = `
       ${plan.team.length && !pcoBusy ? (window.claude?.use && pco.mcp ? `<button class="pcoline" id="pcoStart">${ic('calendar', 'sm')}Update the team from Planning Center</button>` : '') : pcoHtml()}
-      <div class="sechead"><h2>This week's team</h2><span class="hint">${plural(plan.team.length, 'person', 'people')}</span></div>
+      <div class="sechead"><h2>This week's team</h2></div>
       ${plan.team.length ? `<div class="people">${plan.team.map(p => `
         <div class="person" data-pid="${p.id}">
           <span class="avatar tone-${roleTone(p.role)}">${esc(initials(p.name) || '?')}</span>
@@ -2685,13 +2689,12 @@ function renderInspector() {
     el.innerHTML = `<div class="insp">
       <div class="insp-head"><span class="swline bg-${c.type}"></span><div><div class="eyebrow">${esc(CABLES[c.type].name)}${c.auto ? ' · auto' : ''}</div><h2>${esc(itemName(a))} → ${esc(itemName(b))}</h2></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
-      <section class="isec"><h3>Length</h3>
-        <div class="tiles"><div class="tile"><b>${fmtLen(len)}</b><span>with slack</span></div><div class="tile"><b>${st.map(fmtStock).join(' + ')}</b><span>to pull${cableQty(c) > 1 ? ` · ×${cableQty(c)}` : ''}</span></div></div>
-        <p class="flowline flow-${flowOf(c).kind}">${esc(flowText(c))}</p>
+      <section class="isec">
+        <p class="cabsum"><b>${fmtLen(len)}</b><span>pull ${st.map(fmtStock).join(' + ')}${cableQty(c) > 1 ? ` ×${cableQty(c)}` : ''}</span>${(() => { const f = flowOf(c), pr = portRange(c); return f.kind === 'link' ? '<span class="chip">digital link</span>' : `<span class="chip flowchip flow-${f.kind}">${{ in: 'input', out: 'output', power: 'power', signal: 'signal' }[f.kind] || ''}${pr ? ' · ' + esc(pr.text) : ''}</span>`; })()}</p>
         <div class="field"><span>Runs along</span><div class="seg"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}">Floor</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}">Ceiling</button></div>${c.level === 'ceiling' ? `<span class="hint">Includes ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end.</span>` : ''}</div>
       </section>
       <section class="isec"><h3>Cable type</h3><div class="chips">${Object.keys(CABLES).map(k => `<button class="ctype" data-settype="${k}" aria-pressed="${k === c.type}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
-        <p class="hint">Drag the gold dots on the plot to reroute around risers or along walls.</p>
+        ${c.points.length && ui.adv ? '<p class="hint">Drag the gold dots on the plot to reroute around risers or along walls.</p>' : ''}
       </section>
       <section class="isec"><div class="actions">${c.points.length ? `<button class="btn" id="cClear">Straighten</button>` : ''}<button class="btn danger" id="cDel">${ic('trash', 'sm')}Delete cable</button></div></section>
       ${moreFold(adv, ['bends', chans().length ? 'channel route' : '', src ? 'circuit' : '', 'slack'].filter(Boolean).join(', '))}
@@ -2709,8 +2712,7 @@ function renderInspector() {
     ];
     const nowIdx = steps.findIndex(s => !s.done);
     el.innerHTML = `<div class="insp">
-      <div class="insp-head" style="grid-template-columns:1fr auto"><div><div class="eyebrow">${esc(longDate(plan.date))}</div><h2>${esc(plan.name || 'Untitled service')}</h2></div><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button></div>
-      <section class="isec"><h3>This week <span>${steps.filter(s => s.done).length}/${steps.length}</span></h3>
+      <section class="isec"><h3>This week <span style="display:flex;gap:6px;align-items:center">${nowIdx < 0 ? '' : `${steps.filter(s => s.done).length}/${steps.length}`}<button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )" style="margin:-6px -6px -6px 0">${ic('chevsR', 'sm')}</button></span></h3>
         ${nowIdx < 0 ? `<div class="allset"><span class="mark">${ic('check', 'sm')}</span><div><b>All set for ${esc(new Date(plan.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'long' }))}</b><small>Team placed, every input patched and powered.</small></div></div>`
           : `<ol class="steps">${steps.map((s, i) => `<li class="${s.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${s.done ? ic('check', 'sm') : i + 1}</span><div><b>${esc(s.t)}</b><span class="sub">${esc(s.sub)}</span>${i === nowIdx ? `<div>${s.act}</div>` : ''}</div></li>`).join('')}</ol>`}
         ${nowIdx < 0 ? `<button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button>` : ''}
