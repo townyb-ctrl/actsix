@@ -33,6 +33,8 @@ Every gear item is drawn as a real top-down symbol (drum kit with shells and cym
 - Power tables share fixed columns, so circuits, loads and meters line up from one distro to the next.
 - **Print or PDF** (top right of the paperwork, or Ctrl+P from anywhere): every sheet prints on its own page with no app chrome, tables keep their headings across pages, and colours print true. Choose *Save as PDF* in the print dialog for a file.
 - Outputs list box by box, port by port.
+- **Download sheets** saves every sheet as one self-contained web page (stage plot included) that opens, shares and prints anywhere without the app. *Download .json* in Backup & restore saves all weeks. Inside Claude both ask you to confirm the save; elsewhere they're ordinary downloads.
+- **About Stageplot** (⋯ menu): version, where your data lives (this browser only), and what the optional Planning Center link reads (service types, plans and who's scheduled; read-only).
 
 ## Reliability and accessibility
 

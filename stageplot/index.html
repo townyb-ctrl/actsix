@@ -646,7 +646,11 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .swatch[aria-pressed="true"], .swatch.on { outline: 2px solid var(--accent); outline-offset: 2px; }
 .swatch.custom { background: conic-gradient(#e5484d, #f5a524, #30a46c, #0091ff, #8e4ec6, #e5484d); display: grid; place-items: center; overflow: hidden; }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
-.printbar { margin-left: auto; display: flex; }
+.about { max-width: 520px; }
+.aboutkv { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13.5px; }
+.aboutkv dt { font-weight: 600; white-space: nowrap; }
+.aboutkv dd { margin: 0; color: var(--ink-2); }
+.printbar { margin-left: auto; display: flex; gap: 6px; }
 .tablewrap table.fixed { table-layout: fixed; }
 .tablewrap tr.grp td { border-top: 1.5px solid var(--line-2); }
 .cm-legend { padding: 8px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; font-size: 11.5px; }
@@ -755,7 +759,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .snapwrap { border-radius: var(--r-md); overflow: hidden; background: var(--house); }
 .snap { display: block; pointer-events: none; }
 /* print: every sheet, no app chrome, one sheet per page, tables break cleanly with their headings repeated */
-@page { size: A4; margin: 12mm; }
+@page { margin: 12mm; }   /* the printer’s paper size: A4 or Letter */
 @media print {
   html, body { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; }
   header.top, #plotView, .overlay, .toast, .docnav, .printbar, [data-copy], .hovercard, #glyphMeasure, .sr-only { display: none !important; }
@@ -899,7 +903,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
     <div class="row">
       <button class="btn primary" id="copyAll">Copy all weeks</button>
       <button class="btn" id="copyOne">Copy this week</button>
-      <button class="btn" id="dlAll">Download .json</button>
+      <button class="btn" id="dlAll" data-needs-dl>Download .json</button>
     </div>
     <textarea id="dataText" rows="8" aria-label="Plan JSON" spellcheck="false" placeholder="Paste a backup here to restore it"></textarea>
     <div class="row" style="justify-content:space-between">
@@ -946,6 +950,21 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   </div>
 </div>
 
+<div class="overlay" id="aboutDlg" hidden>
+  <div class="modal about" role="dialog" aria-labelledby="aboutTitle">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div class="row" style="gap:12px;flex-wrap:nowrap"><svg viewBox="0 0 32 32" width="40" height="40" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#20272d"/><path d="M8 22h16" stroke="#f0b429" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="#f0b429"/><circle cx="20" cy="13" r="3" fill="#8f7cd4"/></svg>
+        <div><h2 id="aboutTitle">Stageplot</h2><p class="hint" id="aboutVer"></p></div></div>
+      <button class="iconbtn" id="aboutClose" aria-label="Close"></button></div>
+    <p style="font-size:15px;margin:0">Plan this week’s stage in minutes. Add the team, build the stage, and every input is patched and powered for you. Then print the stage plot, input list, monitor mixes, cable pull and power sheet.</p>
+    <dl class="aboutkv">
+      <dt>Your data</dt><dd>Weeks are saved in this browser only. Nothing is uploaded. Use Backup &amp; restore to move them to another computer.</dd>
+      <dt>Planning Center</dt><dd>Optional and read-only: service types, plans and who’s scheduled. Stageplot never changes anything in Planning Center.</dd>
+      <dt>Works on</dt><dd>Modern browsers on desktop, iPad and phone. Prints on A4 or Letter, or saves as PDF.</dd>
+    </dl>
+    <div class="row" style="gap:8px"><button class="btn" id="aboutKeys">Keyboard shortcuts</button><button class="btn" id="aboutData">Backup &amp; restore</button></div>
+  </div>
+</div>
 <div class="overlay" id="helpDlg" hidden>
   <div class="modal" role="dialog" aria-labelledby="helpTitle" style="width:min(460px,100%)">
     <div class="row" style="justify-content:space-between"><h2 id="helpTitle">Shortcuts</h2><button class="iconbtn" id="helpClose" aria-label="Close"></button></div>
@@ -3050,7 +3069,7 @@ function renderPaper() {
     <header class="doc-head"><div class="eyebrow">${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <nav class="docnav" role="tablist" aria-label="Sheets">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}<span class="printbar"><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></nav>
+    <div class="docnav"><nav role="tablist" aria-label="Sheets" style="display:contents">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav><span class="printbar"><button class="btn" id="sheetsBtn" data-needs-dl title="Every sheet in one page you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download sheets</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
     <div class="sheetgrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${plotSnapshot()}</div></section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
@@ -3589,7 +3608,7 @@ document.addEventListener('keydown', e => {
     if (act && (k === 'v' || k === 'a' || selIds().length)) { e.preventDefault(); act(); return; }
   }
   if (e.key === 'Escape') {
-    if (!$('dataDlg').hidden || !$('helpDlg').hidden) { $('dataDlg').hidden = true; $('helpDlg').hidden = true; return; }
+    if (!$('dataDlg').hidden || !$('helpDlg').hidden || !$('aboutDlg').hidden) { $('dataDlg').hidden = true; $('helpDlg').hidden = true; $('aboutDlg').hidden = true; return; }
     if (!$('weekPop').hidden) { closePops(); $('weekBtn').focus(); return; }
     if (!$('moreMenu').hidden) { toggleMoreMenu(false); $('moreBtn').focus(); return; }
   }
@@ -3644,6 +3663,7 @@ function renderMoreMenu() {
     <div class="mm-list">
       <button data-mm="guide">${ic('check', 'sm')}${ui.guide ? 'Hide' : 'Show'} the setup guide</button>
       <button data-mm="help">${ic('keyboard', 'sm')}Keyboard shortcuts<span class="kbd">?</span></button>
+      <button data-mm="about">${ic('sheet', 'sm')}About Stageplot</button>
       <button data-mm="data">${ic('save', 'sm')}Backup &amp; restore</button>
     </div>`;
 }
@@ -3658,6 +3678,7 @@ $('moreMenu').addEventListener('click', e => {
   toggleMoreMenu(false);
   if (m.dataset.mm === 'guide') { setGuide(!ui.guide); if (ui.guide) { sel = null; group = null; togglePanel('insp', true); renderAll(); } }
   if (m.dataset.mm === 'help') $('helpBtn').click();
+  if (m.dataset.mm === 'about') openAbout();
   if (m.dataset.mm === 'data') $('dataBtn').click();
 });
 document.addEventListener('pointerdown', e => { if (!$('moreMenu').hidden && !e.target.closest('.menuwrap')) toggleMoreMenu(false); });
@@ -3665,6 +3686,12 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-deta
 document.addEventListener('click', e => { const sm = e.target.closest('details.more > summary'); if (sm) moreOpen[sm.parentElement.dataset.fold] = !sm.parentElement.open; }, true);   // a fold you opened stays open as you click around
 $('themeBtn').onclick = () => setTheme(themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system');
 $('helpBtn').onclick = () => { $('helpDlg').hidden = false; };
+const APP_VERSION = '1.0';
+function openAbout() { $('aboutVer').textContent = `Version ${APP_VERSION} · ${Object.keys(db.plans).length} saved ${Object.keys(db.plans).length === 1 ? 'week' : 'weeks'}`; $('aboutClose').innerHTML = ic('x'); $('aboutDlg').hidden = false; }
+$('aboutClose').onclick = () => { $('aboutDlg').hidden = true; };
+$('aboutDlg').addEventListener('click', e => { if (e.target.id === 'aboutDlg') $('aboutDlg').hidden = true; });
+$('aboutKeys').onclick = () => { $('aboutDlg').hidden = true; $('helpDlg').hidden = false; };
+$('aboutData').onclick = () => { $('aboutDlg').hidden = true; $('dataBtn').click(); };
 $('helpClose').onclick = () => { $('helpDlg').hidden = true; };
 $('helpDlg').addEventListener('click', e => { if (e.target.id === 'helpDlg') $('helpDlg').hidden = true; });
 $('weekBtn').onclick = e => {
@@ -3870,6 +3897,7 @@ $('paperInner').addEventListener('click', e => {
   const t = e.target.closest('[data-copy]'); if (t) { copyText(paperData[t.dataset.copy], $('copyFallback')); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn')) { window.print(); return; }
+  if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
   const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
 });
 
@@ -3880,13 +3908,29 @@ $('dataDlg').addEventListener('click', e => { if (e.target.id === 'dataDlg') $('
 const backup = all => JSON.stringify({ app: 'stageplot', version: 1, plans: all ? db.plans : { [plan.id]: plan }, ...(all && db.setups ? { setups: db.setups } : {}) }, null, 1);
 $('copyAll').onclick = () => { const s = backup(true); $('dataText').value = s; copyText(s, $('dataText')); };
 $('copyOne').onclick = () => { const s = backup(false); $('dataText').value = s; copyText(s, $('dataText')); };
-if ($('dlAll')) $('dlAll').onclick = () => {
-  const s = backup(true); $('dataText').value = s;
+/* files out: inside Claude the viewer confirms each save; on a plain web page it's an ordinary download */
+let dlCap;   // undefined until known; null = this view can't save files (the buttons hide)
+if (window.claude?.use) window.claude.use('downloads').then(d => { dlCap = d; if (!d) document.querySelectorAll('[data-needs-dl]').forEach(b => b.hidden = true); }, () => { dlCap = null; });
+async function offerFile(filename, text, mime) {
+  if (window.claude?.use) {
+    if (!dlCap) { toast('Saving files isn’t available here. Use Copy instead'); return; }
+    try { await dlCap.save({ filename, data: text }); toast(`Saved ${filename}`); }
+    catch (e) { if (e?.code !== 'declined') toast(e?.code === 'rate_limited' ? 'A save is already waiting for you to confirm' : 'Couldn’t save the file here. Use Copy instead'); }
+    return;
+  }
   try {
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: 'application/json' }));
-    a.download = `stageplot-${plan.date}.json`; document.body.appendChild(a); a.click(); a.remove();
-  } catch { toast('Download blocked here. Copy the text instead'); }
-};
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+    a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch { toast('Download blocked here. Use Copy instead'); }
+}
+if ($('dlAll')) $('dlAll').onclick = () => { const s = backup(true); $('dataText').value = s; offerFile(`stageplot-${plan.date}.json`, s, 'application/json'); };
+// every sheet as one self-contained page: opens and prints anywhere, no app needed
+function paperworkHtml() {
+  const keep = paperTab; paperTab = 'all'; renderPaper();
+  const body = $('paperInner').innerHTML; paperTab = keep; renderPaper();
+  const css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  return `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(plan.name || 'Stage plot')} · ${esc(plan.date)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap"><style>${css}</style><style>.docnav,[data-copy],.printbar{display:none!important}html,body{height:auto;display:block}</style></head><body><main class="paper" style="overflow:visible"><div class="paper-inner">${body}</div></main></body></html>`;
+}
 function importJson(text) {
   let d; try { d = JSON.parse(text); } catch { toast('That isn’t valid JSON. Check you copied all of it.'); return; }
   const plans = d?.plans || (d?.stage && d?.items ? { [d.id || uid()]: d } : null);
