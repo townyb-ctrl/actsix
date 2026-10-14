@@ -2171,7 +2171,7 @@ function laneGeoms(list) {
 }
 const r2x = n => Math.round(n * 1000) / 1000;
 // keep the most useful labels when they'd overlap: the selection, then people, then big gear, then the rest
-function placeLabels(cands, obstacles = []) {
+function placeLabels(cands, obstacles = [], risers = []) {
   const placed = [], hit = (b, q) => b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1];
   // gear outlines a touch smaller than drawn, so a label grazing a corner still counts as clear
   const core = obstacles.map(q => { const ix = (q[2] - q[0]) * .12, iy = (q[3] - q[1]) * .12; return [q[0] + ix, q[1] + iy, q[2] - ix, q[3] - iy]; });
@@ -2189,6 +2189,7 @@ function placeLabels(cands, obstacles = []) {
     const box = l.box || [l.x - l.w / 2, l.y - l.h, l.x + l.w / 2, l.y + l.h * .25];
     if (l.pri > 0 && placed.some(q => hit(box, q))) continue;
     if (l.avoid && obstacles.some(q => hit(box, q))) continue;   // stage words and riser captions give way to gear
+    if (l.avoidRisers && risers.some(q => hit(box, q))) continue;   // and stage words give way to risers, so UPSTAGE never sits on a drum riser's edge
     placed.push(box); out.push(l.svg);
   }
   return out.join('');
@@ -2238,10 +2239,10 @@ function renderPlot() {
   }
   const zw = t => t.length * .53;   // .62 ft caps plus letter spacing
   const zoneCands = layerOff('dims') ? [] : [
-    { pri: 9, avoid: true, box: [w / 2 - zw('UPSTAGE') / 2, .3, w / 2 + zw('UPSTAGE') / 2, 1], svg: `<text class="zone on-deck" x="${w / 2}" y=".85" text-anchor="middle">UPSTAGE</text>` },
-    { pri: 9, avoid: true, box: [w / 2 - zw('DOWNSTAGE') / 2, d - 1, w / 2 + zw('DOWNSTAGE') / 2, d - .3], svg: `<text class="zone on-deck" x="${w / 2}" y="${d - .45}" text-anchor="middle">DOWNSTAGE</text>` },
-    { pri: 9, avoid: true, box: [.3, d / 2 - zw('STAGE RIGHT') / 2, 1.1, d / 2 + zw('STAGE RIGHT') / 2], svg: `<text class="zone on-deck" x=".5" y="${d / 2}" transform="rotate(-90 .5 ${d / 2})" text-anchor="middle" dy=".45">STAGE RIGHT</text>` },
-    { pri: 9, avoid: true, box: [w - 1.1, d / 2 - zw('STAGE LEFT') / 2, w - .3, d / 2 + zw('STAGE LEFT') / 2], svg: `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".45">STAGE LEFT</text>` },
+    { pri: 9, avoid: true, avoidRisers: true, box: [w / 2 - zw('UPSTAGE') / 2, .3, w / 2 + zw('UPSTAGE') / 2, 1], svg: `<text class="zone on-deck" x="${w / 2}" y=".85" text-anchor="middle">UPSTAGE</text>` },
+    { pri: 9, avoid: true, avoidRisers: true, box: [w / 2 - zw('DOWNSTAGE') / 2, d - 1, w / 2 + zw('DOWNSTAGE') / 2, d - .3], svg: `<text class="zone on-deck" x="${w / 2}" y="${d - .45}" text-anchor="middle">DOWNSTAGE</text>` },
+    { pri: 9, avoid: true, avoidRisers: true, box: [.3, d / 2 - zw('STAGE RIGHT') / 2, 1.1, d / 2 + zw('STAGE RIGHT') / 2], svg: `<text class="zone on-deck" x=".5" y="${d / 2}" transform="rotate(-90 .5 ${d / 2})" text-anchor="middle" dy=".45">STAGE RIGHT</text>` },
+    { pri: 9, avoid: true, avoidRisers: true, box: [w - 1.1, d / 2 - zw('STAGE LEFT') / 2, w - .3, d / 2 + zw('STAGE LEFT') / 2], svg: `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".45">STAGE LEFT</text>` },
   ];
   if (!layerOff('dims')) s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
 
@@ -2252,11 +2253,12 @@ function renderPlot() {
   const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
   s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
-  const labCands = [...zoneCands], obstacles = [];
+  const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
     const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}</title>${shapeSvg(it, iw, id)}</g>`;
     if (L < 1) s += g; else top += g;   // cables run under the gear, so plugs disappear beneath it instead of crossing it
+    if (C.shape === 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; risers.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
     if (C.shape !== 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; obstacles.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
     const isSel = selSet.has(it.id), big = Math.min(iw, id) >= 1.6 && C.shape !== 'person';
     const person = C.shape === 'person';
@@ -2338,7 +2340,8 @@ function renderPlot() {
     if (isSel) c.points.forEach((p, k) => { if (isHop(p)) return; wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
-  s += top + chv.over + ceil + labels + selb + placeLabels(labCands, obstacles) + lens + wps + chv.handles;
+  // ceiling runs pass over the gear when you're looking at cables; while they're quiet they tuck under it, so names and symbols stay clean
+  s += (quiet ? ceil + top : top + ceil) + chv.over + labels + selb + placeLabels(labCands, obstacles, risers) + lens + wps + chv.handles;
   if (drag?.kind === 'box') {
     const x = Math.min(drag.x0, drag.x1), y = Math.min(drag.y0, drag.y1);
     s += `<rect class="marquee" x="${f3(x)}" y="${f3(y)}" width="${f3(Math.abs(drag.x1 - drag.x0))}" height="${f3(Math.abs(drag.y1 - drag.y0))}" rx=".1"/>`;
