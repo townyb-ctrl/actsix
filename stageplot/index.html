@@ -621,11 +621,23 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .endrow .glyph, .endrow > svg:not(.ic) { width: 28px; height: 28px; }
 .routeseg { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 8px; }
 .routeseg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+/* light stage colours: outlines, plexi and quiet cables that were drawn for a dark deck switch to dark ink */
+.light-deck .s-deck { fill: rgba(0,0,0,.05); stroke: rgba(0,0,0,.45); }
+.light-deck .s-deck ~ .s-thin { stroke: rgba(0,0,0,.35); }
+.light-deck .c-staging { fill: rgba(0,0,0,.04); stroke: rgba(0,0,0,.42) !important; }
+.light-deck .s-plexi { fill: rgba(60,120,190,.22); stroke: rgba(35,85,145,.85); }
+.light-deck .s-acrylic { fill: rgba(60,120,190,.16); stroke: rgba(35,85,145,.8); }
+.light-deck .s-shine { stroke: rgba(255,255,255,.8); }
+.light-deck .cab.quiet { opacity: .85; }
+.light-deck .cab.quiet.ceil { opacity: .6; }
+.light-deck .ch-edge { stroke: rgba(0,0,0,.3); }
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
 .swatch { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); cursor: pointer; padding: 0; box-shadow: inset 0 0 0 2px rgba(255,255,255,.08); position: relative; }
 .swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
 .swatch.custom { background: conic-gradient(#e5484d, #f5a524, #30a46c, #0091ff, #8e4ec6, #e5484d); display: grid; place-items: center; overflow: hidden; }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
+.tablewrap table.fixed { table-layout: fixed; }
+.tablewrap tr.grp td { border-top: 1.5px solid var(--line-2); }
 .cm-legend { padding: 8px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; font-size: 11.5px; }
 .laychip { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
 .laychip .toolhint { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -2152,6 +2164,7 @@ function applyDeckColor(el) {
   const col = plan.stage.color, light = lum(col) > .55;
   const vars = col ? { '--deck': col, '--deck-grid': light ? 'rgba(0,0,0,.07)' : 'rgba(255,255,255,.055)', '--deck-grid-major': light ? 'rgba(0,0,0,.16)' : 'rgba(255,255,255,.12)', '--deck-ink': light ? 'rgba(0,0,0,.32)' : 'rgba(255,255,255,.28)', '--deck-rim': light ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.07)' } : {};
   for (const k of ['--deck', '--deck-grid', '--deck-grid-major', '--deck-ink', '--deck-rim']) vars[k] ? el.style.setProperty(k, vars[k]) : el.style.removeProperty(k);
+  el.classList.toggle('light-deck', light);
 }
 function roundPath(pts, r = fromM(.12)) {
   const P = q => `${f3(q[0])} ${f3(q[1])}`;
@@ -2959,9 +2972,9 @@ function plotSnapshot() {
   sel = null; group = null; mode = 'select'; pending = null; measure = null; compare = null; view = 'plot';
   zoom = Math.max(8, Math.min(60, (($('paperInner')?.clientWidth || 1000) - 42) / bounds().vw));   // labels sized for the width it's shown at
   let html = '';
-  layersBypass = true;
-  try { renderPlot(); html = `<svg class="snap" viewBox="${svg.getAttribute('viewBox')}" style="${svg.getAttribute('style') || ''};width:100%;height:auto" role="img" aria-label="Stage plot">${svg.innerHTML.replace(/ id="[^"]*"/g, '').replace(/<polyline class="cabhit[^>]*>(<title>[^<]*<\/title>)?<\/polyline>/g, '')}</svg>`; }
-  finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); layersBypass = false; if (view === 'plot') renderPlot(); }
+  layersBypass = true; const quietWas = cableView.quiet, flowWas = cableView.noFlow, animWas = cableView.anim; cableView.quiet = false; cableView.noFlow = true; cableView.anim = false;   // paper: every run at full strength, no arrows or pulses
+  try { renderPlot(); html = `<svg class="snap${svg.classList.contains('light-deck') ? ' light-deck' : ''}" viewBox="${svg.getAttribute('viewBox')}" style="${svg.getAttribute('style') || ''};width:100%;height:auto" role="img" aria-label="Stage plot">${svg.innerHTML.replace(/ id="[^"]*"/g, '').replace(/<polyline class="cabhit[^>]*>(<title>[^<]*<\/title>)?<\/polyline>/g, '')}</svg>`; }
+  finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); layersBypass = false; cableView.quiet = quietWas; cableView.noFlow = flowWas; cableView.anim = animWas; if (view === 'plot') renderPlot(); }
   return html;
 }
 function renderPaper() {
@@ -2981,13 +2994,14 @@ function renderPaper() {
     if (c[0] === 'Qty') return `<td class="num">${esc(v)}</td>`;
     return `<td class="${['Patch', 'Length'].includes(c[0]) ? 'mono' : ''}">${esc(v) || (i ? '<span class="hint">—</span>' : '')}</td>`;
   };
-  const table = (rows, cols, flagKey) => `<div class="tablewrap"><table><thead><tr>${cols.map(c => `<th${c[0] === 'Qty' ? ' style="text-align:right"' : ''}>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr class="${flagKey && r[flagKey] ? 'flag' : ''}">${cols.map((c, i) => cell(r, c, i)).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length}" class="hint">Nothing here yet.</td></tr>`}</tbody></table></div>`;
+  // rows that belong to the same person read as one group: the name shows once, a firmer rule marks each new person
+  const table = (rows, cols, flagKey) => { const pi = cols.findIndex(c => c[0] === 'Person'); return `<div class="tablewrap"><table><thead><tr>${cols.map(c => `<th${c[0] === 'Qty' ? ' style="text-align:right"' : ''}>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map((r, n) => { const same = pi >= 0 && n > 0 && r.person && r.person === rows[n - 1].person; return `<tr class="${flagKey && r[flagKey] ? 'flag' : ''}${pi >= 0 && n > 0 && !same ? ' grp' : ''}">${cols.map((c, i) => i === pi && same ? '<td class="rep"></td>' : cell(r, c, i)).join('')}</tr>`; }).join('') || `<tr><td colspan="${cols.length}" class="hint">Nothing here yet.</td></tr>`}</tbody></table></div>`; };
   const head = (title, key, sub) => `<header><div><h2>${title}</h2>${sub ? `<p class="hint">${sub}</p>` : ''}</div>${key ? `<button class="btn" data-copy="${key}">${ic('copy', 'sm')}Copy</button>` : ''}</header>`;
   const powerHtml = sources.map(src => {
     const { loads, items, cap } = circuitLoads(src);
     const f = isExt(src) && feedOf(src);
     return `<div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(src))}</b><span class="hint">${isExt(src) ? `${prop(src, 'outlets')}-way extension lead · ${prop(src, 'amps')} A · ${f ? 'fed from ' + esc(itemName(other(f, src.id))) : 'not plugged in'}` : `${prop(src, 'circuits')} × ${prop(src, 'amps')} A @ ${prop(src, 'volts')} V`}</span></div>
-      <div class="tablewrap"><table><thead><tr><th>Circuit</th><th>Load</th><th style="width:28%">Use</th><th>Gear</th></tr></thead><tbody>
+      <div class="tablewrap"><table class="fixed"><colgroup><col style="width:13%"><col style="width:22%"><col style="width:28%"><col></colgroup><thead><tr><th>Circuit</th><th>Load</th><th>Use</th><th>Gear</th></tr></thead><tbody>
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
