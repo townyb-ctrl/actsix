@@ -492,8 +492,10 @@ svg text { font-family: var(--f-ui); }
 .conns small { display: block; color: var(--muted); font-size: 11.5px; }
 .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .actions .btn { flex: 1; }
-.actions4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.actions4 .btn { flex-direction: column; gap: 3px; padding: 8px 4px; font-size: 12px; }
+.actions4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line-2); border-radius: var(--r-sm); overflow: hidden; }
+.actions4 .btn { flex-direction: column; gap: 2px; padding: 6px 4px; font-size: 11.5px; border: 0; border-radius: 0; background: transparent; }
+.actions4 .btn + .btn { border-left: 1px solid var(--line); }
+.actions4 .btn:hover { background: var(--surface-2); }
 .actions4 .btn[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 details.more { border-top: 1px solid var(--line); }
 details.more > summary { list-style: none; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 12px 16px; cursor: pointer; color: var(--ink-2); }
@@ -2710,20 +2712,23 @@ function renderInspector() {
       </section>`);
     if (C.inputs || ins.length) adv.push(`<section class="isec"><h3>Inputs <span>${ins.length}</span></h3><div class="field"><label for="iInputs">Channel names, comma-separated</label><input id="iInputs" type="text" value="${esc(ins.join(', '))}"></div></section>`);
     if (Number(prop(it, 'outs')) > 0 && it.type !== 'stagebox' && it.type !== 'rack') adv.push(`<section class="isec"><h3>Outputs</h3>${field('iOutsUse', 'Outputs it uses', prop(it, 'outs'), 'number', 'min="0" max="64"')}</section>`);
-    const moreWhat = ['position', isRiser ? '' : 'size', C.wireless || isPowerSource(it) || isRiser ? '' : 'power draw', ins.length || C.inputs ? 'input names' : '', isExt(it) || isPowerSource(it) ? 'ratings' : '', it.type === 'stagebox' ? 'ports' : ''].filter(Boolean).join(', ');
     const pOpts = `<option value="">Nobody</option>` + plan.team.map(p => `<option value="${p.id}" ${p.id === it.personId ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+    // owner up front for people and owned gear; shared gear (stage boxes, distros, speakers) keeps it under More settings
+    const ownerUp = C.shape === 'person' || !!it.personId, ownerField = `<div class="field"><label for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>`;
+    if (!ownerUp && plan.team.length) adv.unshift(`<section class="isec">${ownerField}</section>`);
+    const moreWhat = [!ownerUp && plan.team.length ? 'owner' : '', 'position', isRiser ? '' : 'size', C.wireless || isPowerSource(it) || isRiser ? '' : 'power draw', ins.length || C.inputs ? 'input names' : '', isExt(it) || isPowerSource(it) ? 'ratings' : '', it.type === 'stagebox' ? 'ports' : ''].filter(Boolean).join(', ');
     const conns = plan.cables.filter(x => touches(x, it.id));
     el.innerHTML = `<div class="insp">
       <div class="insp-head">${C.shape === 'person' ? `<span class="avatar tone-${roleTone(owner?.role)}" style="width:44px;height:44px">${esc(initials(owner?.name || it.label))}</span>` : glyph(it.type)}
         <div style="min-width:0"><div class="eyebrow">${esc(C.name)}</div><input id="iLabel" class="titlein" type="text" value="${esc(it.label || '')}" placeholder="${esc(itemName({ ...it, label: '' }))}" aria-label="Name" title="Click to rename"></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
-      <section class="isec">
-        <div class="field"><label for="iPerson">Belongs to</label><select id="iPerson">${pOpts}</select></div>
+      ${ownerUp || it.chan ? `<section class="isec">
+        ${ownerUp ? ownerField : ''}
         ${it.chan ? `<div class="flowline" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Sits inside ${esc(chans().find(c => c.id === it.chan.id)?.name || 'a channel')}<button class="btn" id="iOutCh" style="padding:4px 10px">Take out</button></div>` : ''}
-      </section>
+      </section>` : ''}
       ${basic}
       <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div></section>
-      <section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.slice(0, showAllConns === it.id ? conns.length : 4).map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>${conns.length > 4 && showAllConns !== it.id ? `<button class="btn quiet" data-allconns="${it.id}">Show all ${conns.length}</button>` : ''}` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>
+      ${C.shape === 'person' && !conns.length ? '' : `<section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.slice(0, showAllConns === it.id ? conns.length : 4).map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>${conns.length > 4 && showAllConns !== it.id ? `<button class="btn quiet" data-allconns="${it.id}">Show all ${conns.length}</button>` : ''}` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>`}
       ${moreFold(adv, moreWhat)}
     </div>`;
   } else if (sel?.kind === 'channel' && chans().find(x => x.id === sel.id)) {
