@@ -398,8 +398,8 @@ svg text { font-family: var(--f-ui); }
 .house-dots { fill: url(#dots); }
 .dotp { fill: var(--house-dot); }
 .deck { fill: var(--deck); stroke: rgba(255,255,255,.07); stroke-width: .06; }
-.deck-shadow { fill: var(--deck-edge); opacity: .55; }
-.g-minor { stroke: var(--deck-grid); stroke-width: .035; }
+.deck-shadow { fill: var(--deck-edge); opacity: .45; filter: url(#deckblur); }
+.g-minor { stroke: var(--deck-grid); stroke-width: .03; opacity: .6; }
 .g-major { stroke: var(--deck-grid-major); stroke-width: .05; }
 .edge { stroke: var(--accent); stroke-width: .16; stroke-dasharray: .7 .35; }
 .ruler line { stroke: var(--house-ink); stroke-width: .045; }
@@ -412,7 +412,9 @@ svg text { font-family: var(--f-ui); }
 .hit { fill: transparent; }
 .c-audio { fill: #2e6a99; } .c-inst { fill: #6b51a3; } .c-power { fill: #b85a22; } .c-infra { fill: #44535e; }
 .c-video { fill: #a3426b; } .c-staging { fill: rgba(255,255,255,.05); stroke: rgba(255,255,255,.42) !important; stroke-dasharray: .3 .2; stroke-width: .07 !important; }
-.c-person { fill: var(--accent); stroke: rgba(0,0,0,.45) !important; }
+.c-person { fill: var(--accent); stroke: rgba(255,255,255,.92) !important; stroke-width: .07 !important; paint-order: stroke; }   /* white ring lifts people off instruments and cables */
+/* people take their role's colour, the same family as the team list: voices gold, band violet, speakers teal, tech grey */
+.c-person.pt-band { fill: #a58bf5; } .c-person.pt-word { fill: #4cc4b6; } .c-person.pt-tech { fill: #a3afba; }
 .item .detail { stroke: rgba(255,255,255,.42); stroke-width: .05; fill: none; }
 .ilabel { fill: #fff; font-size: var(--lab, .48px); font-weight: 600; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: var(--labs, .12px); pointer-events: none; }
 .ilabel.out { fill: var(--ink-2); stroke: var(--house); }
@@ -453,7 +455,7 @@ svg text { font-family: var(--f-ui); }
 .cab { fill: none; stroke-width: .14; stroke-linejoin: round; stroke-linecap: round; opacity: .88; pointer-events: none; transition: opacity .15s; }
 .cab.dim { opacity: .18; }
 .cab.quiet { stroke-width: .1; opacity: .55; }
-.cab.quiet.ceil { opacity: .45; }
+.cab.quiet.ceil { opacity: .32; stroke-width: .08; }
 .cab.hl { stroke-width: .22; opacity: 1; }
 .cab.sel { stroke-width: .3; opacity: 1; }
 .cabhit { fill: none; stroke: transparent; stroke-width: .8; cursor: pointer; }
@@ -2010,7 +2012,7 @@ function shapeSvg(it, w, d) {
     return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="sym"${sc ? ` transform="scale(${f3(sx)} ${f3(sy)})"` : ''}>${art}</g>`;
   }
   switch (c.shape) {
-    case 'person': return `<circle class="${cls}" r="${hw}"/><text class="initials" text-anchor="middle" dy=".21">${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
+    case 'person': return `<circle class="${cls} pt-${roleTone(personById(it.personId)?.role) || 'none'}" r="${hw}"/><text class="initials" text-anchor="middle" dy=".21">${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
     case 'round': return `<ellipse class="${cls}" rx="${hw}" ry="${hd}"/>`;
     case 'wedge': return `<polygon class="${cls}" points="${-hw},${hd} ${hw},${hd} ${hw * .65},${-hd} ${-hw * .65},${-hd}"/>`;
     case 'platform': return `<rect class="${cls}" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".1"/>`;
@@ -2208,7 +2210,8 @@ function renderPlot() {
   s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`}`;
   const poly = stagePoly(), deckD = polyPath(poly);
   s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath></defs>`);
-  s += `<path class="deck-shadow" transform="translate(.25 .35)" d="${deckD}"/>`;
+  s = s.replace('</defs>', '<filter id="deckblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".22"/></filter></defs>');
+  s += `<path class="deck-shadow" transform="translate(.06 .22)" d="${deckD}"/>`;
   s += `<path class="deck" d="${deckD}"/>`;
   const half = fromM(.5);
   if (!layerOff('grid')) {
