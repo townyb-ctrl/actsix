@@ -229,14 +229,18 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .geartabs button:hover { border-color: var(--line-2); color: var(--ink); }
 .geartabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .geartabs button[aria-selected="true"] span { color: inherit; opacity: .7; }
-.gearlist { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-.gear { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: center; text-align: left; border: 1px solid var(--line); border-radius: var(--r-md); padding: 5px 10px 5px 5px; background: var(--surface); cursor: grab; transition: border-color .15s, box-shadow .15s, transform .1s; }
-.gear:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); transform: translateY(-1px); }
-.gear:active { cursor: grabbing; }
-.gear > span { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
-.gear b { font-weight: 600; font-size: 13px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gear small { flex: none; color: var(--muted); font-size: 11px; font-family: var(--f-mono); }
-.glyph { width: 34px; height: 34px; border-radius: 8px; background: var(--deck); padding: 3px; display: block; }
+/* the library is a palette of tiles: picture first, name under it, what it plugs into in small type */
+.gearlist { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.gear { display: grid; justify-items: center; align-content: start; gap: 6px; text-align: center; border: 1px solid transparent; border-radius: var(--r-md); padding: 8px 4px 7px; background: var(--surface-2); cursor: grab; transition: border-color .15s, box-shadow .15s, transform .1s, background .15s; color: var(--ink); font: inherit; }
+.gear:hover { background: var(--surface); border-color: var(--line-2); box-shadow: var(--shadow-1); transform: translateY(-1px); }
+.gear:hover .glyph { transform: scale(1.04); }
+.gear:active { cursor: grabbing; transform: none; }
+.gear .glyph { width: 52px; height: 52px; border-radius: 11px; padding: 5px; transition: transform .15s; }
+.gear > span { display: grid; gap: 1px; min-width: 0; width: 100%; }
+.gear b { font-weight: 600; font-size: 12px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.gear small { color: var(--muted); font-size: 10.5px; font-family: var(--f-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.glyph { width: 34px; height: 34px; border-radius: 8px; background: radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--deck) 82%, #fff), var(--deck)); padding: 3px; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.glyph .s-beam { display: none; }
 
 /* ---------- canvas ---------- */
 .canvas { position: relative; min-width: 0; min-height: 0; background: var(--house); }
@@ -1776,6 +1780,13 @@ function gearMatch(t, q) {
   const n = `${CAT[t].name} ${CAT[t].short || ''}`.toLowerCase();
   return n.split(/[^a-z0-9]+/).some(w => w.startsWith(q)) || (q.length > 3 && n.includes(q));
 }
+// tile names: the full name without its bracket note, or the short name when that would still run past two lines
+const bare = t => CAT[t].name.replace(/\s*\([^)]*\)\s*$/, '');
+const tileName = t => {
+  const twin = Object.keys(CAT).some(k => k !== t && !CAT[k].hidden && bare(k) === bare(t));   // keep "(wireless)" or "(4-way)" when it's what tells two apart
+  const n = twin ? CAT[t].name : bare(t);
+  return n.length > 20 && CAT[t].short && !twin ? CAT[t].short : n;
+};
 function gearMeta(type) {
   const c = CAT[type], bits = [];
   if (c.inputs) bits.push(plural(c.inputs.length, 'input'));
@@ -2040,9 +2051,26 @@ function shapeSvg(it, w, d) {
     default: return `<rect class="${cls}" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".08"/>`;
   }
 }
+// icons frame the drawing itself, not the footprint: a long shield or a stand fills its tile like a mic does
+const GLYPH_BOX = {};
+function glyphBox(type) {
+  if (GLYPH_BOX[type]) return GLYPH_BOX[type];
+  const c = CAT[type]; let r = null;
+  try {
+    let m = document.getElementById('glyphMeasure');
+    if (!m) { m = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); m.id = 'glyphMeasure'; m.setAttribute('aria-hidden', 'true'); m.setAttribute('style', 'position:absolute;left:-9999px;top:0;width:10px;height:10px;visibility:hidden'); document.body.appendChild(m); }
+    m.innerHTML = `<g>${shapeSvg({ type, rot: 0 }, c.w, c.d)}</g>`;
+    m.querySelectorAll('.hit, .s-beam').forEach(e => e.remove());   // the click area and the coverage fan aren't part of the picture
+    const b = m.firstChild.getBBox(); if (b.width > 0 && b.height > 0) r = b;
+    m.innerHTML = '';
+  } catch { /* not in a document yet */ }
+  if (!r) { const h = Math.max(c.w, c.d) / 2; return [-h - .35, -h - .35, 2 * h + .7]; }
+  const side = Math.max(r.width, r.height) * 1.22 + .12;
+  return (GLYPH_BOX[type] = [r.x + r.width / 2 - side / 2, r.y + r.height / 2 - side / 2, side]);
+}
 function glyph(type, extraCls = '') {
-  const c = CAT[type], m = Math.max(c.w, c.d) / 2 + .35;
-  return `<svg class="glyph ${extraCls}" viewBox="${-m} ${-m} ${2 * m} ${2 * m}" aria-hidden="true">${shapeSvg({ type, rot: 0 }, c.w, c.d)}</svg>`;
+  const c = CAT[type], [x, y, sd] = glyphBox(type);
+  return `<svg class="glyph ${extraCls}" viewBox="${f3(x)} ${f3(y)} ${f3(sd)} ${f3(sd)}" aria-hidden="true">${shapeSvg({ type, rot: 0 }, c.w, c.d)}</svg>`;
 }
 /* ---------- signal flow ----------
    dir: 1 = from c.from to c.to (the order the geometry is drawn in), -1 = reverse, 0 = both ways.
@@ -2595,9 +2623,9 @@ function renderRail() {
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
       <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}</button>`).join('')}</div>
       ${!q && recentGear.length ? `<div class="recent"><h3 class="eyebrow">Recently used</h3><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
-      ${q ? '<p class="hint">Results across all categories.</p>' : recentGear.length ? '' : '<p class="hint">Click gear, then click the stage where it goes. Or drag it on.</p>'}` +
+      ${q ? '<p class="hint">Results across all categories.</p>' : recentGear.length ? '' : '<p class="hint">Click a tile, then click the stage. Or drag it on.</p>'}` +
       (groups.map(([g, types]) => `<div class="gearcat"><h3 class="eyebrow">${esc(g)}</h3><div class="gearlist">
-        ${types.map(t => `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}">${glyph(t)}<span><b>${esc(CAT[t].name)}</b><small>${esc(gearMeta(t))}</small></span></button>`).join('')}
+        ${types.map(t => `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)} · ${esc(gearMeta(t))}">${glyph(t)}<span><b>${esc(tileName(t))}</b><small>${esc(/×/.test(gearMeta(t)) ? '' : gearMeta(t))}</small></span></button>`).join('')}
       </div></div>`).join('') || `<p class="hint">Nothing matches “${esc(gearQuery)}”.</p>`);
   } else {
     const st = plan.stage, se = plan.settings;
