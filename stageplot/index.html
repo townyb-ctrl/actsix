@@ -1147,7 +1147,7 @@ function measurePt(e, from) {
   if (from && e.shiftKey) q = Math.abs(q[0] - from[0]) > Math.abs(q[1] - from[1]) ? [q[0], from[1]] : [from[0], q[1]];
   return q;
 }
-let mode = 'select', cableType = 'xlr', pending = null, cursorPt = null;
+let mode = 'select', cableType = 'auto', pending = null, cursorPt = null;   // 'auto' works the type out from the two ends
 let zoom = null;                // px per internal unit, null = fit
 let view = 'plot', railTab = 'team';
 let history = [], future = [], drag = null, delArmed = false, hoverPt = null;
@@ -2005,6 +2005,19 @@ function glyph(type, extraCls = '') {
    dir: 1 = from c.from to c.to (the order the geometry is drawn in), -1 = reverse, 0 = both ways.
    kind: in (source into a stage box/desk), out (stage box/desk out to a destination), power, link (digital snake), signal. */
 const isHub = x => x && (isBox(x) || cat(x).desk);
+// the cable you'd most likely run between two pieces of gear
+function guessCable(a, b) {
+  if (!a || !b) return 'xlr';
+  const has = list => list.includes(a.type) || list.includes(b.type);
+  if (isPowerSource(a) || isPowerSource(b)) return 'power';
+  if (has(['midi_keys', 'midi_fs']) && has(['usb_if', 'mt_ipad', 'laptop'])) return 'usb';
+  if (isHub(a) && isHub(b)) return 'cat6';
+  if (has(['ac_guitar', 'el_guitar', 'bass_guitar'])) return 'inst';
+  if (has(['pedalboard', 'multifx', 'ac_preamp']) && has(['gtr_amp', 'bass_amp', 'pedalboard', 'multifx', 'ac_preamp', 'di_mono', 'di_stereo'])) return 'inst';
+  if (has(['keys', 'midi_keys']) && has(['di_mono', 'di_stereo'])) return 'inst';
+  if (cat(a).cat === 'video' || cat(b).cat === 'video') return 'video';
+  return 'xlr';
+}
 function flowOf(c) {
   const a = itemById(c.from), b = itemById(c.to);
   if (!a || !b) return { dir: 1, kind: 'signal' };
@@ -2293,14 +2306,15 @@ function renderPlot() {
       if (pendChan) s += `<circle class="pend-target" cx="${f3(pendChan.pt[0])}" cy="${f3(pendChan.pt[1])}" r="${f3(Math.max(.25, 7 / scale))}"/>`;
       s += `<circle class="pend-start" cx="${a.x}" cy="${a.y}" r="${Math.max(prop(a, 'w'), prop(a, 'd')) / 2 + .3}"/>`;
       if (tgt) s += `<circle class="pend-target" cx="${tgt.x}" cy="${tgt.y}" r="${Math.max(prop(tgt, 'w'), prop(tgt, 'd')) / 2 + .3}"/>`;
-      s += `<polyline class="pending pending-${cableType}" points="${geo.map(p => p.join(',')).join(' ')}" style="stroke:var(${KVAR[cableType]})"/>`;
+      const pt = cableType === 'auto' ? (tgt ? guessCable(a, tgt) : null) : cableType, pcol = pt ? `var(${KVAR[pt]})` : 'var(--ink-2)';
+      s += `<polyline class="pending pending-${pt || 'auto'}" points="${geo.map(p => p.join(',')).join(' ')}" style="stroke:${pcol}"/>`;
       const r = Math.max(.14, 4 / scale);
       for (const q of pending.points) if (!isHop(q)) s += `<circle class="pivot" cx="${q[0]}" cy="${q[1]}" r="${f3(r)}"/>`;
-      for (const [i0, i1] of ex.ranges) for (const k of [i0, i1]) s += `<circle class="chport" cx="${f3(pts[k][0])}" cy="${f3(pts[k][1])}" r="${f3(r)}" style="fill:var(${KVAR[cableType]})"/>`;
+      for (const [i0, i1] of ex.ranges) for (const k of [i0, i1]) s += `<circle class="chport" cx="${f3(pts[k][0])}" cy="${f3(pts[k][1])}" r="${f3(r)}" style="fill:${pcol}"/>`;
       const end = geo[geo.length - 1];
       if (geo.length > 1) {
         const len = runLen(geo) * (1 + plan.settings.slack / 100) + 2 * (Number(plan.settings.ends) || 0);
-        const oh = openHop(), note = tgt ? ' · ' + esc(itemName(tgt)) : pendChan ? (oh && oh.ch === pendChan.ch.id ? ` · come out of ${esc(pendChan.ch.name)} here` : ` · click to enter ${esc(pendChan.ch.name)}`) : '';
+        const oh = openHop(), note = tgt ? ` · ${cableType === 'auto' ? SHORT[pt] + ' to ' : ''}${esc(itemName(tgt))}` : pendChan ? (oh && oh.ch === pendChan.ch.id ? ` · come out of ${esc(pendChan.ch.name)} here` : ` · click to enter ${esc(pendChan.ch.name)}`) : '';
         s += `<text class="cablen" x="${f3(end[0] + 10 / scale)}" y="${f3(end[1] - 10 / scale)}">${fmtLen(len)}${note}</text>`;
       }
     }
@@ -2373,7 +2387,7 @@ function renderFloat() {
       <button class="iconbtn" id="zIn" aria-label="Zoom in" title="Zoom in (+)">${ic('plus')}</button>
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
     </div>`;
-  $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip gold">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
+  $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip gold">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${`<button class="ctype" data-ctype="auto" aria-pressed="${cableType === 'auto'}" title="Pick the type from the two ends">${ic('wand', 'sm')}Auto</button>` + Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
       <span class="dock-sep"></span><span class="toolhint">${pending ? `Click to pivot · click a channel to enter it · click gear to finish · <span class="kbd">⌫</span> undo pivot · <span class="kbd">Esc</span> cancel` : 'Click the gear where the cable starts'}</span></div>`
     : placing && CAT[placing] ? `<div class="panel" style="display:flex;align-items:center;flex-wrap:nowrap"><span class="toolhint" style="white-space:nowrap">Click the stage to place <b>${esc(CAT[placing].name)}</b> · Shift-click for several</span><button class="btn quiet" id="placeCancel" style="padding:5px 10px">Cancel</button></div>`
     : mode === 'box' ? `<div class="panel"><span class="toolhint">${selIds().length > 1 ? `<b>${selIds().length} picked</b> · drag one to move them all · ` : ''}Tap gear to pick it, or drag a box over the floor</span><button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
@@ -2920,22 +2934,23 @@ svg.addEventListener('pointerdown', e => {
     if (g && cableEnd(itemById(g.dataset.id))) {
       const id = g.dataset.id;
       const isMains = x => x && isPowerSource(x) && !isExt(x);
+      const ct = pending ? (cableType === 'auto' ? guessCable(itemById(pending.from), itemById(id)) : cableType) : null;
       if (!pending) pending = { from: id, points: [] };
-      else if (id !== pending.from && cableType === 'power' && isMains(itemById(id)) && isMains(itemById(pending.from))) {
+      else if (id !== pending.from && ct === 'power' && isMains(itemById(id)) && isMains(itemById(pending.from))) {
         pending = null; cursorPt = null; toast('Distros and power points are fed from the DB board, so they don’t need a lead between them.'); renderPlot(); return;
       } else if (id !== pending.from) {
         const pts = pending.points, from = pending.from, lvl = pending.level; pending = null; cursorPt = null; pendHover = null; pendChan = null;
         mutate(() => {
-          const c = addCable(cableType, from, id, { points: pts });
+          const c = addCable(ct, from, id, { points: pts });
           if (lvl) c.level = lvl;
-          if (cableType === 'power') {
+          if (ct === 'power') {
             const src = [itemById(from), itemById(id)].find(isPowerSource);
             if (src) { const { loads } = circuitLoads(src); c.circuit = loads.indexOf(Math.min(...loads)) + 1; }
           }
           sel = { kind: 'cable', id: c.id };
         });
-        if (!cableView.all || cableView.hidden.has(cableType)) setCableView(() => { cableView.all = true; cableView.hidden.delete(cableType); });
-        toast(`${SHORT[cableType]} run added`, true);
+        if (!cableView.all || cableView.hidden.has(ct)) setCableView(() => { cableView.all = true; cableView.hidden.delete(ct); });
+        toast(`${SHORT[ct]} run added${cableType === 'auto' ? ' · change the type in its details if needed' : ''}`, true);
         return;
       }
     } else if (pending) {
