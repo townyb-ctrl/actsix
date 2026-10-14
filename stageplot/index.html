@@ -437,6 +437,9 @@ svg text { font-family: var(--f-ui); }
 .cmpdot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin: 0 5px 0 10px; vertical-align: -1px; }
 .roth { fill: var(--surface); stroke: var(--accent); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: grab; }
 .rotstem { stroke: var(--accent); stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.ghost { opacity: .6; pointer-events: none; }
+.scroller.placing { cursor: copy; }
+.recentchip[aria-pressed="true"], .gear[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
 .marquee { fill: var(--accent); fill-opacity: .08; stroke: var(--accent); stroke-width: .06; stroke-dasharray: .3 .2; pointer-events: none; }
 .lockbadge circle { fill: var(--surface); stroke: var(--accent); stroke-width: 1.6; }
 .lockbadge path, .lockbadge rect { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1073,7 +1076,8 @@ function setGroup(ids) {
 const ui = { adv: false };
 try { ui.adv = localStorage.getItem('stageplot.detail') === 'adv'; } catch { /* storage blocked */ }
 const moreOpen = {};
-let showAllConns = null;        // item whose full connection list is open
+let showAllConns = null;
+let placing = null;             // gear type picked from the library, waiting for a click on the stage        // item whose full connection list is open
 let tipsSeen = false;
 try { tipsSeen = localStorage.getItem('stageplot.tips') === '1'; } catch { /* ignore */ }            // which "More settings" folds are open, by panel
 function setDetail(adv) {
@@ -2137,6 +2141,7 @@ function renderPlot() {
   svg.style.width = `${b.vw * scale}px`; svg.style.height = `${b.vh * scale}px`;
   svg.setAttribute('viewBox', `${b.x0} ${b.y0} ${b.vw} ${b.vh}`);
   $('scroller').classList.toggle('cabling', mode === 'cable' || mode === 'measure' || mode === 'box');
+  $('scroller').classList.toggle('placing', !!placing);
   const { w, d, house } = plan.stage;
   const showSmall = scale >= 34, showBig = scale >= 11;
   svg.style.setProperty('--lab', `${f3(10.5 / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 / scale)}px`); svg.style.setProperty('--labs', `${f3(3 / scale)}px`);
@@ -2300,6 +2305,11 @@ function renderPlot() {
       }
     }
   }
+  if (placing && hoverPt && CAT[placing]) {
+    const C = CAT[placing], q = channelAt(hoverPt);
+    s += `<g class="ghost" transform="translate(${f3(snapTo(hoverPt.x))} ${f3(snapTo(hoverPt.y))})">${shapeSvg({ type: placing }, C.w, C.d)}</g>`;
+    if (q && canSitInChannel({ type: placing })) s += `<text class="cablen" x="${f3(hoverPt.x + 12 / scale)}" y="${f3(hoverPt.y - 12 / scale)}">Into ${esc(q.ch.name)}</text>`;
+  }
   if (compare) s += compareSvg();
   s += measureSvg();
   svg.innerHTML = s;
@@ -2365,6 +2375,7 @@ function renderFloat() {
     </div>`;
   $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip gold">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
       <span class="dock-sep"></span><span class="toolhint">${pending ? `Click to pivot · click a channel to enter it · click gear to finish · <span class="kbd">⌫</span> undo pivot · <span class="kbd">Esc</span> cancel` : 'Click the gear where the cable starts'}</span></div>`
+    : placing && CAT[placing] ? `<div class="panel" style="display:flex;align-items:center;flex-wrap:nowrap"><span class="toolhint" style="white-space:nowrap">Click the stage to place <b>${esc(CAT[placing].name)}</b> · Shift-click for several</span><button class="btn quiet" id="placeCancel" style="padding:5px 10px">Cancel</button></div>`
     : mode === 'box' ? `<div class="panel"><span class="toolhint">${selIds().length > 1 ? `<b>${selIds().length} picked</b> · drag one to move them all · ` : ''}Tap gear to pick it, or drag a box over the floor</span><button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
     : mode === 'measure' ? `<div class="panel"><span class="toolhint">${measure && !measure.live ? `<b>${mVal(Math.hypot(measure.b[0] - measure.a[0], measure.b[1] - measure.a[1]))} m</b> · drag again for a new measurement` : 'Drag between two points (gear snaps to its centre) · Shift keeps it straight'}</span>${measure ? '<button class="btn quiet" id="msrClear" style="padding:5px 10px">Clear</button>' : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
     : compare && db.plans[compare] ? (() => { const d = weekDiff(); return `<div class="panel cmpbar"><span class="toolhint"><b>Since ${esc(longDate(d.old.date))}</b><span class="cmpdot" style="background:#30a46c"></span>${d.added.length} new<span class="cmpdot" style="background:#f5a524"></span>${d.moved.length} moved<span class="cmpdot" style="background:#e5484d"></span>${d.removed.length} removed</span><button class="iconbtn" id="cmpClose" aria-label="Hide changes" title="Hide changes (Esc)">${ic('x', 'sm')}</button></div>`; })() : '';
@@ -2470,10 +2481,10 @@ function renderRail() {
     const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => (!q || gearMatch(t, q)) && (!q || !seen.has(t)) && seen.add(t))]).filter(([, t]) => t.length);
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
       <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}</button>`).join('')}</div>
-      ${!q && recentGear.length ? `<div class="recent"><h3 class="eyebrow">Recently used</h3><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
-      ${q ? '<p class="hint">Results across all categories.</p>' : recentGear.length ? '' : '<p class="hint">Drag onto the stage, or click to drop it centre stage.</p>'}` +
+      ${!q && recentGear.length ? `<div class="recent"><h3 class="eyebrow">Recently used</h3><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
+      ${q ? '<p class="hint">Results across all categories.</p>' : recentGear.length ? '' : '<p class="hint">Click gear, then click the stage where it goes. Or drag it on.</p>'}` +
       (groups.map(([g, types]) => `<div class="gearcat"><h3 class="eyebrow">${esc(g)}</h3><div class="gearlist">
-        ${types.map(t => `<button class="gear" data-add="${t}" draggable="true">${glyph(t)}<span><b>${esc(CAT[t].name)}</b><small>${esc(gearMeta(t))}</small></span></button>`).join('')}
+        ${types.map(t => `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}">${glyph(t)}<span><b>${esc(CAT[t].name)}</b><small>${esc(gearMeta(t))}</small></span></button>`).join('')}
       </div></div>`).join('') || `<p class="hint">Nothing matches “${esc(gearQuery)}”.</p>`);
   } else {
     const st = plan.stage, se = plan.settings;
@@ -2854,6 +2865,11 @@ svg.addEventListener('pointerdown', e => {
   const g = e.target.closest('[data-id]'), ch = e.target.closest('[data-cid]'), wp = e.target.closest('[data-wp]');
   const rh = e.target.closest('[data-rh]'), chp = e.target.closest('[data-chp]'), chh = e.target.closest('[data-chid]');
   const chx = e.target.closest('[data-chext]'), chi = e.target.closest('[data-chins]'), rot = e.target.closest('[data-rot]');
+  if (placing) {   // drop the picked gear where you click; Shift keeps it in hand to place another
+    const t = placing; if (!e.shiftKey) placing = null;
+    addGear(t, snapTo(p.x), snapTo(p.y), e.altKey ? null : channelAt(p));
+    e.preventDefault(); renderRail(); return;
+  }
   if (rot) {
     drag = { kind: 'rot', id: rot.dataset.rot, snap: JSON.stringify(plan), moved: false };
     try { svg.setPointerCapture(e.pointerId); } catch { /* ok */ }
@@ -2976,6 +2992,7 @@ svg.addEventListener('pointerdown', e => {
 });
 svg.addEventListener('pointermove', e => {
   hoverPt = toFt(e);
+  if (placing && !drag) { renderPlot(); return; }
   if (mode === 'measure' && measure?.live === 'click' && !drag) { measure.b = measurePt(e, measure.a); renderPlot(); return; }
   if (drag?.kind === 'measure') { measure.b = measurePt(e, measure.a); if (Math.hypot(measure.b[0] - measure.a[0], measure.b[1] - measure.a[1]) > .15) drag.moved = true; renderPlot(); return; }
   if (drag?.kind === 'rot') {
@@ -3123,7 +3140,7 @@ function addGear(type, x, y, hit) {
     if (type === 'distro') it.label = `Distro ${n + 1}`;
     if (type === 'rack') { it.label = `Rack ${n + 1}`; it.rackU = 8; it.devices = []; }
     sel = { kind: 'item', id: it.id };
-  }, hit && canSitInChannel({ type }) ? `${CAT[type].name} placed inside ${hit.ch.name} · Alt-drop to place on top` : `${CAT[type].name} added`);
+  }, hit && canSitInChannel({ type }) ? `${CAT[type].name} placed inside ${hit.ch.name} · Alt-drop to place on top` : null);
   if (type === 'rack') openRack(sel.id);
 }
 $('ftools').addEventListener('click', e => {
@@ -3149,6 +3166,7 @@ $('fzoom').addEventListener('click', e => {
   const t = e.target.closest('[data-ctype]'); if (t) { cableType = t.dataset.ctype; renderFloat(); }
   if (e.target.closest('#chFinish')) finishChannel();
   if (e.target.closest('#msrClear')) { measure = null; renderPlot(); }
+  if (e.target.closest('#placeCancel')) { placing = null; renderPlot(); renderRail(); }
   if (e.target.closest('#cmpClose')) toggleCompare(false);
   const dk = e.target.closest('[data-chdraftkind]'); if (dk) { chDraftKind = dk.dataset.chdraftkind; renderFloat(); }
   const m = e.target.closest('[data-mode]'); if (m) setMode(m.dataset.mode);
@@ -3256,7 +3274,7 @@ function toggleLock(ids) {
   const lock = !its.every(i => i.locked);
   mutate(() => { for (const i of its) { if (lock) i.locked = true; else delete i.locked; } }, `${its.length > 1 ? plural(its.length, 'item') : itemName(its[0])} ${lock ? 'locked in place' : 'unlocked'}`);
 }
-function setMode(m) { mode = m; measure = null; pending = null; cursorPt = null; pendHover = null; pendChan = null; if (m !== 'channel') chDraft = null; renderPlot(); }
+function setMode(m) { mode = m; measure = null; placing = null; pending = null; cursorPt = null; pendHover = null; pendChan = null; if (m !== 'channel') chDraft = null; renderPlot(); }
 function openPaper(anchor) {
   if (anchor) paperTab = anchor === 'sec-checks' ? 'overview' : anchor.replace(/^sec-/, '');
   view = 'paper'; pending = null; renderAll();
@@ -3316,6 +3334,7 @@ document.addEventListener('keydown', e => {
   if (mode === 'channel' && e.key === 'Escape') { if (chDraft?.pts.length) { chDraft.pts.pop(); cursorPt = null; renderPlot(); } else setMode('select'); return; }
   if (pending && (e.key === 'Backspace' || e.key === 'Delete')) { e.preventDefault(); if (pending.points.length) pending.points.pop(); else pending = null; renderPlot(); return; }
   if (pending && e.key === 'Enter' && pendHover) { e.preventDefault(); return; }
+  if (e.key === 'Escape' && placing) { placing = null; renderPlot(); renderRail(); return; }
   if (e.key === 'Escape' && mode === 'measure') { if (measure) { measure = null; renderPlot(); } else setMode('select'); return; }
   if (e.key === 'Escape' && mode === 'box' && !sel) { setMode('select'); return; }
   if (e.key === 'Escape' && compare && !sel && !pending) { toggleCompare(false); return; }
@@ -3438,7 +3457,7 @@ $('railPane').addEventListener('click', e => {
     }, `Added ${plural(lines.length, 'person', 'people')}`);
   }
   else if (t.dataset.geartab) { gearTab = t.dataset.geartab; gearQuery = ''; renderRail(); }
-  else if (t.dataset.add) addGear(t.dataset.add, snapTo(plan.stage.w / 2), snapTo(plan.stage.d / 2));
+  else if (t.dataset.add) { if (view !== 'plot') { view = 'plot'; renderAll(); } const was = placing; setMode('select'); placing = was === t.dataset.add ? null : t.dataset.add; renderRail(); renderPlot(); }
   else if (t.id === 'editStage') openDesigner(false);
   else if (t.id === 'autoBtn') mutate(autoCable, 'Cabling re-run');
   else if (t.id === 'clearAuto') mutate(() => { plan.cables = plan.cables.filter(c => !c.auto); }, 'Auto runs cleared');
