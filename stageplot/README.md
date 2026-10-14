@@ -1,8 +1,23 @@
 # Stageplot
 
-Weekly church stage layout builder. Single HTML file, no install, no server.
+**Stage plots, patching and power for church production teams, in minutes instead of an evening.**
 
-Open `index.html` in any modern browser (Chrome, Edge, Safari, Firefox).
+Every week a volunteer tech or worship leader works out who is on stage, where their gear goes, which stage-box input each mic lands on, what plugs into which circuit, and how much cable to pull, usually across a whiteboard, a spreadsheet and memory. Stageplot does it in one place:
+
+1. **Add the team.** Import who's scheduled from Planning Center, paste a list, or type names.
+2. **Build the stage.** One click places everyone's gear by position on your real stage shape: kit, amps, keys, mics, wedges or in-ears.
+3. **It's patched and powered.** Inputs land on the nearest stage box in band order, outputs feed mains, subs and IEMs, and every powered item is put on the least-loaded circuit, with load checks.
+4. **Print the paperwork.** Stage plot, input list, outputs, monitor mixes, cable pull list, power sheet and team, as one PDF or a single file to share.
+
+Then drag anything, run cables by hand, hide layers, and next week start from a copy.
+
+**For** church sound, production and worship teams, from a volunteer's first Sunday to a production manager running several services. Simple view keeps everyday controls up front; Advanced shows every setting.
+
+**How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
+
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 39 automated end-to-end browser tests covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+
+Open `index.html` in a modern browser to run it.
 
 ## What it does
 
