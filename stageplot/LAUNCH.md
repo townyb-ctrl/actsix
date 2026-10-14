@@ -15,6 +15,7 @@ Status of Stageplot for a public launch. Facts only: what has been checked, how,
 | Unexpected errors show one calm notice | Test throws an error inside the page |
 | Accessibility | axe-core 4.10: no violations in light or dark theme across welcome, plot, item details, gear library and paperwork |
 | Phone (400 px), iPad portrait and landscape, desktop | No sideways scrolling; toolbar fits at each width |
+| Performance | Typical week (46 items, 30 cables): about 14 ms per redraw, so dragging stays at 60 fps; three times the gear: about 38 ms; first paint about 1 s (Chromium, desktop) |
 | Planning Center (Services): service types, plans, plan people | Argument names checked against the connector's schemas; response shapes confirmed with one read-only call each |
 
 ## Open before a public launch
