@@ -1810,6 +1810,10 @@ function gearMeta(type) {
    =================================================================== */
 const SYM_CSS = `
 .s-bg{opacity:.5}
+.s-plate{fill:rgba(214,176,74,.28);stroke:rgba(214,176,74,.6);stroke-width:.04}
+.s-string{fill:none;stroke:rgba(240,225,190,.45);stroke-width:.02}
+.s-gloss{fill:none;stroke:rgba(255,255,255,.3);stroke-width:.05;stroke-linecap:round}
+.s-pad{fill:#e9a23b}.s-pad2{fill:#3fb8c9}
 .s-plexi{fill:rgba(170,215,255,.32);stroke:rgba(200,230,255,.85);stroke-width:.05}
 .s-shine{fill:none;stroke:rgba(255,255,255,.55);stroke-width:.03;stroke-linecap:round}
 .s-staff{fill:none;stroke:rgba(20,24,28,.4);stroke-width:.018}
@@ -1954,6 +1958,12 @@ const SYM = (() => {
     gtr_amp: box(2, 1, 'inst') + rect(-.92, .1, 1.84, .32, 's-grille', .04) + rect(-.35, -.22, .7, .14, 's-dark', .07) + grid(-.75, -.34, 6, 1, .12, 0, .035, 's-white') + circ(.82, -.34, .035, 's-red'),
     bass_amp: box(2, 1.5, 'inst') + rect(-.92, .25, 1.84, .42, 's-grille', .04) + rect(-.85, -.68, 1.7, .6, 'body c-infra s-edge', .05) + grid(-.65, -.38, 7, 1, .16, 0, .04, 's-white') + rect(-.25, -.62, .5, .1, 's-dark', .05) + circ(.72, -.38, .04, 's-led'),
     get midi_keys() { return this.keys; },
+    // controller, not a rig: dark body, pitch and mod wheels, pads and knobs, so it can't be mistaken for the keyboard rig
+    midi_keys: line(-2.1, -.9, -1.6, .9, 's-thin') + line(-1.6, -.9, -2.1, .9, 's-thin') + line(2.1, -.9, 1.6, .9, 's-thin') + line(1.6, -.9, 2.1, .9, 's-thin') +
+      rect(-2.5, -.75, 5, 1.5, 'body c-infra s-edge', .1) + rect(-1.8, -.68, 4.15, .58, 's-white', .03) +
+      Array.from({ length: 30 }, (_, i) => -1.8 + (i + 1) * 4.15 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
+      rect(-2.38, -.62, .18, .5, 's-dark', .05) + rect(-2.12, -.62, .18, .5, 's-dark', .05) +
+      [0, 1, 2, 3, 4, 5, 6, 7].map(i => rect(.25 + (i % 4) * .52, .06 + Math.floor(i / 4) * .32, .42, .24, i % 2 ? 's-pad2' : 's-pad', .04)).join('') + grid(-1.6, .3, 5, 1, .36, 0, .1, 's-chrome'),
     keys: line(-2.1, -.9, -1.6, .9, 's-thin') + line(-1.6, -.9, -2.1, .9, 's-thin') + line(2.1, -.9, 1.6, .9, 's-thin') + line(1.6, -.9, 2.1, .9, 's-thin') +
       rect(-2.5, -.75, 5, 1.5, 'body c-inst s-edge', .1) + rect(-2.35, -.68, 4.7, .58, 's-white', .03) +
       Array.from({ length: 35 }, (_, i) => -2.35 + (i + 1) * 4.7 / 36).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
@@ -1970,8 +1980,9 @@ const SYM = (() => {
     trumpet: '<rect class="s-brassline" x="-.28" y="-.5" width=".56" height=".72" rx=".24"/>' + '<path class="s-brassline" d="M0 -.78V.25"/>' + grid(-.14, -.16, 3, 1, .14, 0, .075, 's-valve') +
       '<path class="s-brass" d="M-.1 .2L.1 .2L.3 .5Q.36 .58 .36 .62L-.36 .62Q-.36 .58 -.3 .5Z"/>' + circ(0, .55, .3, 's-brass') + circ(0, .55, .2, 's-blk') + circ(0, -.8, .06, 's-chrome'),
     cajon: rect(-.55, -.55, 1.1, 1.1, 's-wood s-edge', .08) + rect(-.45, -.45, .9, .9, 's-wood2', .05) + circ(0, .2, .15, 's-blk'),
-    up_piano: rect(-2.5, -1, 5, 2, 's-blk s-edge', .08) + rect(-2.3, -1, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -1, .08, .32, 's-blk', .01) : '').join('') + rect(-2.4, .5, 4.8, .3, 's-thin', .03),
-    grand_piano: '<path class="s-blk s-edge" d="M-2.5 -3.25 L2.5 -3.25 L2.5 -.6 Q2.4 1.4 .9 2.3 Q-.6 3.25 -1.6 3.25 L-2.5 3.25 Z"/>' + rect(-2.3, -3.25, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -3.25, .08, .32, 's-blk', .01) : '').join('') + '<path class="s-thin" d="M-2.2 -2.4 L2.2 -2.4 L2.2 -.7 Q2.1 1.2 .8 2 Q-.6 2.9 -1.5 2.9 L-2.2 2.9 Z"/>',
+    up_piano: rect(-2.5, -1, 5, 2, 's-blk s-edge', .08) + rect(-2.3, -1, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -1, .08, .32, 's-blk', .01) : '').join('') + rect(-2.4, .5, 4.8, .3, 's-thin', .03) + line(-2.3, -.36, 2.3, -.36, 's-gloss') + line(-2.38, .92, 2.38, .92, 's-gloss'),   // fallboard and lid catch the light
+    grand_piano: '<path class="s-blk s-edge" d="M-2.5 -3.25 L2.5 -3.25 L2.5 -.6 Q2.4 1.4 .9 2.3 Q-.6 3.25 -1.6 3.25 L-2.5 3.25 Z"/>' + rect(-2.3, -3.25, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -3.25, .08, .32, 's-blk', .01) : '').join('') + '<path class="s-plate" d="M-2.2 -2.4 L2.2 -2.4 L2.2 -.7 Q2.1 1.2 .8 2 Q-.6 2.9 -1.5 2.9 L-2.2 2.9 Z"/>' + '<path class="s-string" d="M-1.90 -2.45V2.78"/><path class="s-string" d="M-1.48 -2.45V2.77"/><path class="s-string" d="M-1.06 -2.45V2.61"/><path class="s-string" d="M-0.64 -2.45V2.44"/><path class="s-string" d="M-0.22 -2.45V2.28"/><path class="s-string" d="M0.20 -2.45V2.11"/><path class="s-string" d="M0.62 -2.45V1.95"/><path class="s-string" d="M1.04 -2.45V1.62"/><path class="s-string" d="M1.46 -2.45V1.15"/><path class="s-string" d="M1.88 -2.45V0.46"/>' +
+      '<path class="s-gloss" d="M2.35 -2.9 L2.35 -.65 Q2.25 1.3 .85 2.15"/>' + line(-2.2, -2.45, 2.2, -2.45, 's-thin'),   // open lid: gold plate and strings fanning to the tail
     ipad_stand: tripod(.38, 's-thin') + rect(-.42, -.32, .84, .6, 's-dark', .07) + rect(-.36, -.26, .72, .48, 's-glass', .04) + circ(0, .3, .025, 's-white') + rect(-.5, .2, 1, .08, 's-line', .03),
     ac_preamp: rect(-.4, -.27, .8, .55, 'body c-inst s-edge', .06) + grid(-.25, -.12, 4, 1, .17, 0, .05, 's-white') + rect(-.22, .06, .44, .14, 's-dark', .03) + circ(.3, .16, .03, 's-led') + rect(-.36, -.25, .14, .06, 's-white', .01),
     midi_fs: rect(-.85, -.27, 1.7, .55, 's-dark', .06) + rect(-.85, -.27, 1.7, .55, 's-line', .06) + [-.6, -.2, .2, .6].map(x => circ(x, .06, .11, 's-white') + circ(x, -.16, .03, 's-led')).join('') + rect(-.3, -.24, .6, .08, 's-glass', .02),
@@ -2259,6 +2270,7 @@ function placeLabels(cands, obstacles = [], risers = []) {
   }
   return out.join('');
 }
+const ROUND_SEL = new Set(['vox_mic', 'vox_wl', 'inst_mic', 'headset', 'light_stand', 'camera']);
 const layerOf = it => cat(it).shape === 'platform' ? 0 : cat(it).shape === 'person' ? 3 : (Math.min(prop(it, 'w'), prop(it, 'd')) >= 1.6 ? 1 : 2);
 
 function renderPlot() {
@@ -2338,7 +2350,7 @@ function renderPlot() {
       const onDeck = inPoly(it.x, it.y, stagePoly());
       const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
       const fs = (person ? 11.5 : 10.5) / scale;
-      const above = big ? [] : [it.y - Math.max(iw, id) / 2 - 4 / scale];
+      const above = big ? [] : [it.y - Math.max(iw, id) / 2 - (isSel ? .3 + 24 / scale : 4 / scale)];   // a selected name clears the ring and the rotate knob
       labCands.push({ x: it.x, y: ly, alt: above, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: String(text).length * fs * .58 + fs * .4, h: fs * 1.05, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
         mk: y => `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text>` });
     } else if (C.shape === 'platform' && showBig && !layerOff('labels')) {
@@ -2362,8 +2374,10 @@ function renderPlot() {
       const q = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => [it.x + sx * iw / 2 * cs - sy * id / 2 * sn, it.y + sx * iw / 2 * sn + sy * id / 2 * cs]);
       selb += `<polygon class="selbox" points="${q.map(v => `${f3(v[0])},${f3(v[1])}`).join(' ')}"/>`;
     } else if (isSel) {
-      const m = Math.max(iw, id) / 2 + .3;
-      selb += `<rect class="selglow" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/><rect class="selbox" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/>`;
+      let m = Math.max(iw, id) / 2 + .3;
+      // round things (people, mics, headsets) get a ring that hugs them; everything else a rounded square
+      if (C.shape === 'person' || ROUND_SEL.has(it.type)) { const r = (C.shape === 'person' ? iw / 2 : Math.min(iw, id) / 2) + .28; m = r; selb += `<circle class="selglow" cx="${it.x}" cy="${it.y}" r="${f3(r)}"/><circle class="selbox" cx="${it.x}" cy="${it.y}" r="${f3(r)}"/>`; }
+      else selb += `<rect class="selglow" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/><rect class="selbox" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/>`;
       if (solo && !it.locked && (mode === 'select' || mode === 'box')) {   // drag the knob to rotate (15° steps, Alt for free)
         const ky = it.y - m - 16 / scale;
         selb += `<line class="rotstem" x1="${it.x}" y1="${f3(it.y - m)}" x2="${it.x}" y2="${f3(ky)}"/><circle class="roth" data-rot="${it.id}" cx="${it.x}" cy="${f3(ky)}" r="${f3(6 / scale)}"><title>Drag to rotate</title></circle>`;
