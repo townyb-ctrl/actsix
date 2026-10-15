@@ -341,11 +341,11 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .cab-inside { fill: none; stroke-width: .12; stroke-dasharray: .2 .25; opacity: .55; pointer-events: none; }
 .fl-out { fill: var(--deck); stroke-width: .07; stroke-linejoin: round; }
 .flowg.dim { opacity: .18; }
-.cab.k-inst.quiet { opacity: .85; stroke-width: var(--cw, .12); }   /* leads stay visible, they're the fun ones */
-.lead-shadow { fill: none; stroke: rgba(0,0,0,.38); stroke-width: var(--cwh, .17); stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.cab.k-inst.quiet { opacity: .9; stroke-width: var(--cl, .2); }   /* leads stay visible, they're the fun ones */
+.lead-shadow { fill: none; stroke: rgba(0,0,0,.45); stroke-width: var(--cl2, .3); stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .light-deck .lead-shadow { stroke: rgba(0,0,0,.16); }
-.cab.k-inst { stroke-width: var(--cwh, .17); }   /* jack leads are the chunky ones */
-.cab.k-inst.sel { stroke-width: var(--cws, .22); }
+.cab.k-inst { stroke-width: var(--cl, .2); opacity: 1; }   /* jack leads are the chunky ones */
+.cab.k-inst.sel { stroke-width: var(--cls, .26); }
 .cab.drawin { stroke-dasharray: 1; animation: leadin .9s cubic-bezier(.22,.9,.3,1) both; }
 @keyframes leadin { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @media (prefers-reduced-motion: reduce) { .cab.drawin { animation: none; } }
@@ -2433,32 +2433,38 @@ function applyDeckColor(el) {
    Each lead gets its own wave and coil from its id, so neighbouring leads never look stamped out. */
 const GUITARS = new Set(['el_guitar', 'bass_guitar', 'ac_guitar']);
 function naturalLead(pts, c) {
-  const L = runLen(pts); if (L < fromM(.6)) return pts;
+  if (pts.length < 2) return pts;
+  if ((c.points || []).some(isHop) || routeInfo(c)?.via) return smoothRun(pts);   // in a channel: follow it, just without corners
   let h = 0; for (const ch of String(c.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const rnd = k => ((Math.sin(h * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
-  const amp = fromM(.08 + .05 * rnd(1)), wave = fromM(.85 + .5 * rnd(2)), phase = rnd(3) * Math.PI * 2, phase2 = rnd(5) * Math.PI * 2, ease = fromM(.45);
-  const a = itemById(c.from), b = itemById(c.to), gStart = GUITARS.has(a?.type), gEnd = GUITARS.has(b?.type);
-  const off0 = g => Math.max(Number(prop(g, 'w')), Number(prop(g, 'd'))) / 2 + fromM(.25);   // just clear of the guitar
-  const coilAt = gStart && L > off0(a) + fromM(.6) ? off0(a) : gEnd && L > off0(b) + fromM(.6) ? L - off0(b) : null, R = fromM(.11), side = rnd(4) < .5 ? 1 : -1;
-  const step = fromM(.06), n = Math.max(2, Math.round(L / step));
-  const base = Array.from({ length: n + 1 }, (_, k) => pointAt(pts, L * k / n));
-  // round the right-angle corners: a moving average that shrinks to nothing at the plugs
-  const W = 7, sm = base.map((q, k) => { const w = Math.min(W, k, n - k); let x = 0, y = 0; for (let j = -w; j <= w; j++) { x += base[k + j][0]; y += base[k + j][1]; } return [x / (2 * w + 1), y / (2 * w + 1)]; });
-  const out = [];
-  for (let k = 0; k <= n; k++) {
-    const t = L * k / n, p0 = sm[Math.max(0, k - 1)], p1 = sm[Math.min(n, k + 1)];
-    const th = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), nx = -Math.sin(th), ny = Math.cos(th);
-    // two waves, a long lazy one and a smaller one riding on it, eased in and out of the plugs: reads like a lead dropped on the floor
-    const u = Math.min(1, t / ease, (L - t) / ease), fade = u * u * (3 - 2 * u);
-    const off = amp * fade * (Math.sin(t / wave * Math.PI * 2 + phase) + .35 * Math.sin(t / (wave * .43) * Math.PI * 2 + phase2));
-    const x = sm[k][0] + nx * off, y = sm[k][1] + ny * off;
-    out.push([x, y]);
-    if (coilAt !== null && t <= coilAt && t + L / n > coilAt) {   // one loose loop, lying flat beside the run
-      const cx = x + nx * side * R, cy = y + ny * side * R, a0 = Math.atan2(-ny * side, -nx * side);
-      for (let m = 1; m <= 28; m++) { const an = a0 + side * m / 28 * Math.PI * 2, drift = m / 28 * fromM(.07); out.push([cx + Math.cos(an) * R + Math.cos(th) * drift, cy + Math.sin(an) * R + Math.sin(th) * drift]); }
+  const ia = itemById(c.from), ib = itemById(c.to);
+  const jack = (it, q, far) => { if (!it || !GUITARS.has(it.type)) return q; const k = cat(it), r = (it.rot || 0) * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
+    const toward = (far[0] - it.x) * cs + (far[1] - it.y) * sn, lx = k.w * .3 * (toward < 0 ? -1 : 1), ly = k.d * .34;   // the body's edge on the side the lead leaves from
+    return [it.x + lx * cs - ly * sn, it.y + lx * sn + ly * cs]; };
+  const A = jack(ia, pts[0], pts[pts.length - 1]), B = jack(ib, pts[pts.length - 1], pts[0]), user = (c.points || []).filter(q => !isHop(q));
+  const ctrl = [A, ...user, B], out = [];
+  if (ctrl.length === 2) {
+    // one relaxed curve between the two pieces of gear: a gentle C or S, its belly about a fifth of the distance
+    const dx = B[0] - A[0], dy = B[1] - A[1], D = Math.hypot(dx, dy); if (D < fromM(.2)) return [A, B];
+    const ux = dx / D, uy = dy / D, nx = -uy, ny = ux, g = [ia, ib].find(i => i && GUITARS.has(i.type));
+    const away = g && ((B[0] + A[0]) / 2 - g.x) * nx + ((B[1] + A[1]) / 2 - g.y) * ny, side = g ? (away < 0 ? -1 : 1) : rnd(1) < .5 ? 1 : -1;   // bow away from the guitar so the lead never tucks under its neck
+    const bend = Math.min(fromM(.9), Math.max(fromM(.12), D * (.16 + .1 * rnd(2)))) * side, tail = rnd(3) < .45 && !(ib && GUITARS.has(ib.type)) ? -.55 : .7;
+    const c1 = [A[0] + ux * D * .3 + nx * bend, A[1] + uy * D * .3 + ny * bend], c2 = [B[0] - ux * D * .3 + nx * bend * tail, B[1] - uy * D * .3 + ny * bend * tail];
+    for (let k = 0; k <= 48; k++) { const t = k / 48, m = 1 - t; out.push([m * m * m * A[0] + 3 * m * m * t * c1[0] + 3 * m * t * t * c2[0] + t * t * t * B[0], m * m * m * A[1] + 3 * m * m * t * c1[1] + 3 * m * t * t * c2[1] + t * t * t * B[1]]); }
+  } else {
+    // through the bends you placed, as one flowing line
+    for (let i = 0; i < ctrl.length - 1; i++) {
+      const p0 = ctrl[Math.max(0, i - 1)], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[Math.min(ctrl.length - 1, i + 2)];
+      for (let k = i ? 1 : 0; k <= 16; k++) { const t = k / 16, t2 = t * t, t3 = t2 * t;
+        out.push([0, 1].map(a => .5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3))); }
     }
   }
   return out.map(q => [Math.round(q[0] * 1000) / 1000, Math.round(q[1] * 1000) / 1000]);
+}
+function smoothRun(pts) {   // a route with its corners eased
+  const L = runLen(pts); if (L < fromM(.4)) return pts;
+  const n = Math.max(2, Math.round(L / fromM(.06))), base = Array.from({ length: n + 1 }, (_, k) => pointAt(pts, L * k / n)), W = 7;
+  return base.map((q, k) => { const w = Math.min(W, k, n - k); let x = 0, y = 0; for (let j = -w; j <= w; j++) { x += base[k + j][0]; y += base[k + j][1]; } return [x / (2 * w + 1), y / (2 * w + 1)]; });
 }
 // a dense point list as one continuous curve (Catmull-Rom as cubic Béziers): no facets at any zoom
 function smoothPath(pts) {
@@ -2620,7 +2626,7 @@ function renderPlot() {
   applyDeckColor(svg);
   // cable weights are set in screen pixels, so runs stay fine and crisp at any zoom; the caps keep them inside their lanes when zoomed out
   const W = (px, cap) => `${f3(Math.min(px / scale, cap))}px`;
-  for (const [k, px, cap] of [['cw', 1.8, .12], ['cwq', 1.3, .09], ['cwh', 2.5, .17], ['cws', 3.1, .22], ['cc', 4.6, .26], ['ccq', 3.4, .18], ['cch', 5.6, .32], ['ccs', 6.6, .4], ['csh', .7, .04], ['cshs', .9, .055], ['cg', 11, .8], ['cwa', 2.4, .16]]) svg.style.setProperty('--' + k, W(px, cap));
+  for (const [k, px, cap] of [['cw', 1.8, .12], ['cwq', 1.3, .09], ['cwh', 2.5, .17], ['cws', 3.1, .22], ['cc', 4.6, .26], ['ccq', 3.4, .18], ['cch', 5.6, .32], ['ccs', 6.6, .4], ['csh', .7, .04], ['cshs', .9, .055], ['cg', 11, .8], ['cwa', 2.4, .16], ['cl', 3.2, .2], ['cls', 4, .26], ['cl2', 5.6, .34]]) svg.style.setProperty('--' + k, W(px, cap));
   svg.style.setProperty('--cd', `${f3(Math.min(7 / scale, .55))} ${f3(Math.min(4.5 / scale, .3))}`);
   let s = `<defs><marker id="cmpHead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="cmp-head" d="M0 0L10 5L0 10z"/></marker><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
   s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`}`;
@@ -2739,7 +2745,7 @@ function renderPlot() {
       const sp = seg.map(p => p.join(',')).join(' ');
       const lead = c.type === 'inst', d = lead ? smoothPath(seg) : roundPath(seg), st = isSel ? ' sel' : rel;
       if (isSel) out += `<path class="cab-glow" d="${d}" style="stroke:var(${KVAR[c.type]})"/>`;
-      if (lead && c.level !== 'ceiling' && rel !== ' dim') out += `<path class="lead-shadow" d="${d}" transform="translate(.035 .06)"/>`;   // a soft shadow: the lead lies on the deck
+      if (lead && c.level !== 'ceiling' && rel !== ' dim') out += `<path class="lead-shadow" d="${d}"/>`;   // a dark edge so the lead reads crisply on any deck
       // a deck-coloured sheath under each floor run: where cables cross, the one on top reads cleanly over the other
       if (c.level !== 'ceiling' && rel !== ' dim') out += `<path class="cab-case${st}" d="${d}" clip-path="url(#deckclip)"/>`;
       const age = freshLeads.has(c.id) ? performance.now() - freshLeads.get(c.id) : Infinity;
