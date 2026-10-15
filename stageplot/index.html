@@ -184,7 +184,7 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .people { display: grid; gap: 4px; }
 .person { display: grid; grid-template-columns: 36px minmax(0,1fr) auto auto; gap: 10px; align-items: center; padding: 6px 6px 6px 8px; border-radius: var(--r-md); border: 1px solid transparent; transition: background .15s, border-color .15s; }
 .person:hover, .person:focus-within { background: var(--surface-2); border-color: var(--line); }
-.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; letter-spacing: .02em; background: var(--av-bg, var(--surface-3)); color: var(--av-fg, var(--ink-2)); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; letter-spacing: .03em; background: linear-gradient(180deg, color-mix(in srgb, var(--av-bg, var(--surface-3)) 70%, #fff), var(--av-bg, var(--surface-3))); color: var(--av-fg, var(--ink-2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--av-fg, var(--ink-2)) 18%, transparent), 0 1px 2px rgba(0,0,0,.12); }
 .tone-band { --av-bg: #ece6fb; --av-fg: #5a3fa6; } .tone-vox { --av-bg: #fdf0cf; --av-fg: #8a5c00; } .tone-word { --av-bg: #d9f2ef; --av-fg: #0f6e68; } .tone-tech { --av-bg: #e3e8ed; --av-fg: #44515c; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tone-band { --av-bg: #2f2747; --av-fg: #c9b6ff; } :root:not([data-theme="light"]) .tone-vox { --av-bg: #3a2f12; --av-fg: #f5c24d; } :root:not([data-theme="light"]) .tone-word { --av-bg: #123331; --av-fg: #6fe0d6; } :root:not([data-theme="light"]) .tone-tech { --av-bg: #252c33; --av-fg: #a9b4be; } }
 :root[data-theme="dark"] .tone-band { --av-bg: #2f2747; --av-fg: #c9b6ff; } :root[data-theme="dark"] .tone-vox { --av-bg: #3a2f12; --av-fg: #f5c24d; } :root[data-theme="dark"] .tone-word { --av-bg: #123331; --av-fg: #6fe0d6; } :root[data-theme="dark"] .tone-tech { --av-bg: #252c33; --av-fg: #a9b4be; }
@@ -338,6 +338,13 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .fl-out { fill: var(--deck); stroke-width: .07; stroke-linejoin: round; }
 .flowg.dim { opacity: .18; }
 .cab.k-inst.quiet { opacity: .85; stroke-width: var(--cw, .12); }   /* leads stay visible, they're the fun ones */
+.lead-shadow { fill: none; stroke: rgba(0,0,0,.38); stroke-width: var(--cwh, .17); stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.light-deck .lead-shadow { stroke: rgba(0,0,0,.16); }
+.cab.k-inst { stroke-width: var(--cwh, .17); }   /* jack leads are the chunky ones */
+.cab.k-inst.sel { stroke-width: var(--cws, .22); }
+.cab.drawin { stroke-dasharray: 1; animation: leadin .9s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes leadin { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .cab.drawin { animation: none; } }
 .cab-case { fill: none; stroke: var(--deck); stroke-width: var(--cc, .3); stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
 .cab-case.quiet { stroke-width: var(--ccq, .2); }
 .cab-case.hl { stroke-width: var(--cch, .4); }
@@ -438,6 +445,11 @@ svg text { font-family: var(--f-ui); }
 .c-person { fill: var(--accent); stroke: rgba(255,255,255,.92) !important; stroke-width: .07 !important; paint-order: stroke; }   /* white ring lifts people off instruments and cables */
 /* people take their role's colour, the same family as the team list: voices gold, band violet, speakers teal, tech grey */
 .c-person.pt-band { fill: #a58bf5; } .c-person.pt-word { fill: #4cc4b6; } .c-person.pt-tech { fill: #a3afba; }
+.pt-shadow { fill: rgba(0,0,0,.4); }
+.pt-light { fill: rgba(255,255,255,.2); pointer-events: none; }
+.pt-ring { fill: none; stroke: rgba(255,255,255,.28); stroke-width: .03; pointer-events: none; }
+.pt-nose { fill: #c98f12; } .pt-nose.pt-band { fill: #7d63d6; } .pt-nose.pt-word { fill: #2f9e91; } .pt-nose.pt-tech { fill: #7d8893; }
+.initials.pi-band { fill: #241650; } .initials.pi-word { fill: #0b3a35; } .initials.pi-tech { fill: #1f262c; }
 .item .detail { stroke: rgba(255,255,255,.42); stroke-width: .05; fill: none; }
 .ilabel { fill: #fff; font-size: var(--lab, .48px); font-weight: 600; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: var(--labs, .12px); pointer-events: none; }
 .ilabel.out { fill: var(--ink-2); stroke: var(--house); }
@@ -1073,6 +1085,7 @@ const CAT = {
   keys:        { name: 'Keyboard rig', short: 'Keys', cat: 'inst', w: 5, d: 2, shape: 'keys', inputs: ['Keys L', 'Keys R'], watts: 150 },
   multifx:     { name: 'Multi-effects floor unit (Helix style)', short: 'Multi-FX', cat: 'inst', w: 2.1, d: 1, shape: 'rect', inputs: ['Gtr FX L', 'Gtr FX R'], watts: 50 },
   pedalboard:  { name: 'Pedalboard', short: 'Pedals', cat: 'inst', w: 2.5, d: 1.2, shape: 'rect', watts: 30 },
+  bass_pedal:  { name: 'Bass effects pedal (2-channel)', short: 'Bass pedal', cat: 'inst', w: 1.15, d: .85, shape: 'rect', watts: 5 },
   laptop:      { name: 'Tracks laptop', short: 'Tracks rig', cat: 'inst', w: 2, d: 1.5, shape: 'rect', inputs: ['Tracks L', 'Tracks R', 'Click'], watts: 90 },
   ac_guitar:   { name: 'Acoustic guitar (on stand)', short: 'Acoustic', cat: 'inst', w: 1.4, d: 3.4, shape: 'rect' },
   el_guitar:   { name: 'Electric guitar (on stand)', short: 'Electric', cat: 'inst', w: 1.2, d: 3.2, shape: 'rect' },
@@ -1107,7 +1120,7 @@ const CAT = {
 /* CAT:END */
 const GEAR_GROUPS = [
   ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub', 'la_main', 'la_sub']],
-  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'di_mono', 'di_stereo', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'multifx', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
+  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'di_mono', 'di_stereo', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'bass_pedal', 'multifx', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
   ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
   ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
   ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
@@ -1969,6 +1982,9 @@ function gearMeta(type) {
    =================================================================== */
 const SYM_CSS = `
 .s-bg{opacity:.5}
+.s-bpbody{fill:#1f6b5c}.s-bptop{fill:#2a8a76}.s-bpdiv{fill:none;stroke:rgba(0,0,0,.35);stroke-width:.015}
+.s-bpknob{fill:#16181b;stroke:#c9d0d5;stroke-width:.012}.s-bpmark{fill:none;stroke:#fff;stroke-width:.014;stroke-linecap:round}
+.s-bpsw{fill:#aab2b9;stroke:#6b747b;stroke-width:.01}.s-bplabel{fill:rgba(255,255,255,.7)}
 .s-sb1{fill:#2a120a}.s-sb2{fill:#6e2a10}.s-sb3{fill:#c9731f}.s-sb4{fill:#f0ac45}
 .s-red1{fill:#7d141c}.s-red2{fill:#b5222c}.s-red3{fill:#d43c42}
 .s-arm{fill:none;stroke:#d9dee2;stroke-width:.018;stroke-linecap:round}
@@ -2228,6 +2244,11 @@ const SYM = (() => {
       circ(.3, .3, .35, 'body c-inst s-edge') + circ(-.4, .3, .35, 'body c-inst s-edge') + circ(-1.1, -.4, .45, 'body c-inst s-edge') +
       circ(1.55, -.5, .45, 's-metal') + circ(1.4, .9, .55, 's-metal') + circ(-1.5, .7, .6, 's-metal') +
       rect(-1.95, -1.55, .7, .45, 'body c-infra s-edge', .05) + rect(-1.88, -1.48, .56, .2, 's-glass', .02),   // module
+    // small two-channel bass pedal: brushed steel top, a knob row per channel, two footswitches with channel LEDs, jacks on the sides
+    bass_pedal: rect(-.575, -.425, 1.15, .85, 's-bpbody s-edge', .07) + rect(-.53, -.385, 1.06, .77, 's-bptop', .05) +
+      line(0, -.36, 0, .17, 's-bpdiv') + [-.27, .27].map((x, ch) => [-.17, 0, .17].map(dx => circ(x + dx, -.24, .055, 's-bpknob') + line(x + dx, -.24, x + dx, -.285, 's-bpmark')).join('') +
+        circ(x, -.06, .025, ch ? 's-led' : 's-red') + circ(x, .19, .11, 's-chrome2') + circ(x, .19, .07, 's-bpsw')).join('') +
+      rect(-.12, .33, .24, .05, 's-bplabel', .02) + rect(-.64, -.1, .07, .14, 's-chrome2', .02) + rect(.57, -.1, .07, .14, 's-chrome2', .02),
     pedalboard: rect(-1.25, -.6, 2.5, 1.2, 's-dark', .08) + rect(-1.25, -.6, 2.5, 1.2, 's-line', .08) +
       [['s-ped1', -1.05], ['s-ped2', -.6], ['s-ped3', -.15], ['s-ped4', .3], ['s-ped1', .75]].map(([c, x]) => rect(x, -.35, .34, .6, c, .04) + circ(x + .17, -.2, .05, 's-dark') + circ(x + .17, .12, .07, 's-white')).join('') + line(-1.2, -.5, 1.2, -.5, 's-thin'),
     laptop: rect(-1, -.75, 2, 1.5, 'body c-infra s-bg', .08) + rect(-.65, -.45, 1.1, .75, 'body c-inst s-edge', .04) + rect(-.58, -.38, .96, .45, 's-head', .02) + rect(-.65, .3, 1.1, .08, 's-glass', .02) + rect(.55, -.3, .38, .55, 'body c-infra s-edge', .04) + circ(.74, -.12, .06, 's-white') + circ(.74, .1, .06, 's-white'),
@@ -2299,7 +2320,15 @@ function shapeSvg(it, w, d) {
     return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="sym"${sc ? ` transform="scale(${f3(sx)} ${f3(sy)})"` : ''}>${art}</g>`;
   }
   switch (c.shape) {
-    case 'person': return `<circle class="${cls} pt-${roleTone(personById(it.personId)?.role) || 'none'}" r="${hw}"/><text class="initials" text-anchor="middle" dy=".21">${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
+    case 'person': {   // a soft disc in the role's colour: shadow below, light from above, a small notch facing the audience
+      const tone = roleTone(personById(it.personId)?.role) || 'none', r = hw;
+      return `<circle class="pt-shadow" cx=".05" cy=".09" r="${f3(r * 1.02)}"/>` +
+        `<path class="pt-nose pt-${tone}" d="M${f3(-r * .32)} ${f3(r * .86)}Q0 ${f3(r * 1.32)} ${f3(r * .32)} ${f3(r * .86)}Z"/>` +
+        `<circle class="${cls} pt-${tone}" r="${f3(r)}"/>` +
+        `<ellipse class="pt-light" cx="0" cy="${f3(-r * .38)}" rx="${f3(r * .7)}" ry="${f3(r * .44)}"/>` +
+        `<circle class="pt-ring" r="${f3(r * .84)}"/>` +
+        `<text class="initials pi-${tone}" text-anchor="middle" dy=".21">${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
+    }
     case 'round': return `<ellipse class="${cls}" rx="${hw}" ry="${hd}"/>`;
     case 'wedge': return `<polygon class="${cls}" points="${-hw},${hd} ${hw},${hd} ${hw * .65},${-hd} ${-hw * .65},${-hd}"/>`;
     case 'platform': return `<rect class="${cls}" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".1"/>`;
@@ -2356,7 +2385,7 @@ function guessCable(a, b) {
   if (has(['midi_keys', 'midi_fs']) && has(['usb_if', 'mt_ipad', 'laptop'])) return 'usb';
   if (isHub(a) && isHub(b)) return 'cat6';
   if (has(['ac_guitar', 'el_guitar', 'bass_guitar'])) return 'inst';
-  if (has(['pedalboard', 'multifx', 'ac_preamp']) && has(['gtr_amp', 'bass_amp', 'pedalboard', 'multifx', 'ac_preamp', 'di_mono', 'di_stereo'])) return 'inst';
+  if (has(['pedalboard', 'bass_pedal', 'multifx', 'ac_preamp']) && has(['gtr_amp', 'bass_amp', 'pedalboard', 'bass_pedal', 'multifx', 'ac_preamp', 'di_mono', 'di_stereo'])) return 'inst';
   if (has(['keys', 'midi_keys']) && has(['di_mono', 'di_stereo'])) return 'inst';
   if (cat(a).cat === 'video' || cat(b).cat === 'video') return 'video';
   return 'xlr';
@@ -2403,7 +2432,7 @@ function naturalLead(pts, c) {
   const L = runLen(pts); if (L < fromM(.6)) return pts;
   let h = 0; for (const ch of String(c.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const rnd = k => ((Math.sin(h * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
-  const amp = fromM(.08 + .05 * rnd(1)), wave = fromM(.8 + .5 * rnd(2)), phase = rnd(3) * Math.PI * 2, ease = fromM(.35);
+  const amp = fromM(.08 + .05 * rnd(1)), wave = fromM(.85 + .5 * rnd(2)), phase = rnd(3) * Math.PI * 2, phase2 = rnd(5) * Math.PI * 2, ease = fromM(.45);
   const a = itemById(c.from), b = itemById(c.to), gStart = GUITARS.has(a?.type), gEnd = GUITARS.has(b?.type);
   const off0 = g => Math.max(Number(prop(g, 'w')), Number(prop(g, 'd'))) / 2 + fromM(.25);   // just clear of the guitar
   const coilAt = gStart && L > off0(a) + fromM(.6) ? off0(a) : gEnd && L > off0(b) + fromM(.6) ? L - off0(b) : null, R = fromM(.11), side = rnd(4) < .5 ? 1 : -1;
@@ -2415,7 +2444,9 @@ function naturalLead(pts, c) {
   for (let k = 0; k <= n; k++) {
     const t = L * k / n, p0 = sm[Math.max(0, k - 1)], p1 = sm[Math.min(n, k + 1)];
     const th = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), nx = -Math.sin(th), ny = Math.cos(th);
-    const fade = Math.min(1, t / ease, (L - t) / ease), off = amp * Math.sin(t / wave * Math.PI * 2 + phase) * fade;
+    // two waves, a long lazy one and a smaller one riding on it, eased in and out of the plugs: reads like a lead dropped on the floor
+    const u = Math.min(1, t / ease, (L - t) / ease), fade = u * u * (3 - 2 * u);
+    const off = amp * fade * (Math.sin(t / wave * Math.PI * 2 + phase) + .35 * Math.sin(t / (wave * .43) * Math.PI * 2 + phase2));
     const x = sm[k][0] + nx * off, y = sm[k][1] + ny * off;
     out.push([x, y]);
     if (coilAt !== null && t <= coilAt && t + L / n > coilAt) {   // one loose loop, lying flat beside the run
@@ -2425,6 +2456,18 @@ function naturalLead(pts, c) {
   }
   return out.map(q => [Math.round(q[0] * 1000) / 1000, Math.round(q[1] * 1000) / 1000]);
 }
+// a dense point list as one continuous curve (Catmull-Rom as cubic Béziers): no facets at any zoom
+function smoothPath(pts) {
+  if (pts.length < 3) return roundPath(pts);
+  const P = q => `${f3(q[0])} ${f3(q[1])}`;
+  let d = `M${P(pts[0])}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    d += `C${P([p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6])} ${P([p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6])} ${P(p2)}`;
+  }
+  return d;
+}
+const freshLeads = new Map();   // jack leads just run by hand draw themselves in
 function roundPath(pts, r = fromM(.12)) {
   const P = q => `${f3(q[0])} ${f3(q[1])}`;
   let d = `M${P(pts[0])}`;
@@ -2453,7 +2496,7 @@ function flowMarks(c, o, cls, animOnly = false) {
   if (cableView.anim && f.dir !== 0) {
     const pts = f.dir < 0 ? o.slice().reverse() : o;
     // every cable shares one clock (and restarts from it on each redraw), so the pulses march in step
-    s += `<path class="flowanim" d="${roundPath(pts)}" style="stroke:${col};stroke-dasharray:${f3(sz * .9)} ${f3(2 - sz * .9)};animation-delay:-${(performance.now() / 1000 % 1.1).toFixed(3)}s"/>`;
+    s += `<path class="flowanim" d="${c.type === 'inst' ? smoothPath(pts) : roundPath(pts)}" style="stroke:${col};stroke-dasharray:${f3(sz * .9)} ${f3(2 - sz * .9)};animation-delay:-${(performance.now() / 1000 % 1.1).toFixed(3)}s"/>`;
   }
   return `<g class="flowg${cls}">${s}</g>`;
 }
@@ -2690,12 +2733,15 @@ function renderPlot() {
     for (const seg of segs) {
       if (seg.length < 2) continue;
       const sp = seg.map(p => p.join(',')).join(' ');
-      const d = roundPath(seg), st = isSel ? ' sel' : rel;
+      const lead = c.type === 'inst', d = lead ? smoothPath(seg) : roundPath(seg), st = isSel ? ' sel' : rel;
       if (isSel) out += `<path class="cab-glow" d="${d}" style="stroke:var(${KVAR[c.type]})"/>`;
+      if (lead && c.level !== 'ceiling' && rel !== ' dim') out += `<path class="lead-shadow" d="${d}" transform="translate(.035 .06)"/>`;   // a soft shadow: the lead lies on the deck
       // a deck-coloured sheath under each floor run: where cables cross, the one on top reads cleanly over the other
       if (c.level !== 'ceiling' && rel !== ' dim') out += `<path class="cab-case${st}" d="${d}" clip-path="url(#deckclip)"/>`;
-      out += `<path class="cab${c.level === 'ceiling' ? ' ceil' : ''} k-${c.type}${st}" d="${d}" data-pts="${sp}"/>`;
-      if ((isSel || rel === ' hl') && c.level !== 'ceiling') out += `<path class="cab-sheen${st}" d="${d}"/>`;   // a fine light core so the run reads as a cable, not a line
+      const age = freshLeads.has(c.id) ? performance.now() - freshLeads.get(c.id) : Infinity;
+      if (age > 1200) freshLeads.delete(c.id);
+      out += `<path class="cab${c.level === 'ceiling' ? ' ceil' : ''} k-${c.type}${st}${age < 1200 ? ' drawin' : ''}" d="${d}" data-pts="${sp}"${age < 1200 ? ` pathLength="1" style="animation-delay:-${Math.round(age)}ms"` : ''}/>`;
+      if ((isSel || rel === ' hl' || (lead && rel !== ' dim')) && c.level !== 'ceiling') out += `<path class="cab-sheen${st}" d="${d}"/>`;   // a fine light core so the run reads as a cable, not a line
       out += flowMarks(c, seg, isSel ? '' : rel, rel === ' quiet' || (rel === ' dim' && cableView.quiet !== false));   // quiet cables keep the animation, not the arrows
       hits += `<polyline class="cabhit" data-cid="${c.id}" points="${sp}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
     }
@@ -3412,6 +3458,7 @@ svg.addEventListener('pointerdown', e => {
         const pts = pending.points, from = pending.from, lvl = pending.level; pending = null; cursorPt = null; pendHover = null; pendChan = null;
         mutate(() => {
           const c = addCable(ct, from, id, { points: pts });
+          if (ct === 'inst') freshLeads.set(c.id, performance.now());
           if (lvl) c.level = lvl;
           if (ct === 'power') {
             const src = [itemById(from), itemById(id)].find(isPowerSource);

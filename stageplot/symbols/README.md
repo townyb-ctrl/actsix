@@ -41,6 +41,7 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![USB audio interface (2 in / 2 out)](usb_if.svg) | `usb_if` | USB audio interface (2 in / 2 out) | 0.23 × 0.17 m |
 | ![MultiTracks iPad](mt_ipad.svg) | `mt_ipad` | MultiTracks iPad | 0.30 × 0.24 m |
 | ![Electronic drum kit](edrums.svg) | `edrums` | Electronic drum kit | 1.52 × 1.37 m |
+| ![Bass effects pedal (2-channel)](bass_pedal.svg) | `bass_pedal` | Bass effects pedal (2-channel) | 0.35 × 0.26 m |
 | ![Pedalboard](pedalboard.svg) | `pedalboard` | Pedalboard | 0.76 × 0.37 m |
 | ![Tracks laptop](laptop.svg) | `laptop` | Tracks laptop | 0.61 × 0.46 m |
 | ![Music stand](music_stand.svg) | `music_stand` | Music stand | 0.46 × 0.24 m |
