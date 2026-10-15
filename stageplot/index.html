@@ -2028,6 +2028,7 @@ const SYM_CSS = `
 .s-bstr0,.s-bstr1,.s-bstr2,.s-bstr3{fill:none;stroke:#c9b892;stroke-linecap:round}.s-bstr0{stroke-width:.012}.s-bstr1{stroke-width:.0105}.s-bstr2{stroke-width:.009}.s-bstr3{stroke-width:.0075}
 .s-strb{fill:none;stroke:#cfa86a;stroke-width:.0075}.s-grain0{fill:none;stroke:rgba(140,90,30,.16);stroke-width:.006}.s-grain1{fill:none;stroke:rgba(140,90,30,.09);stroke-width:.004}.s-grain2{fill:none;stroke:rgba(255,240,210,.12);stroke-width:.008}
 .s-purf{fill:none;stroke:rgba(30,15,5,.55);stroke-width:.008}.s-ros1{fill:#3b2414}.s-ros2{fill:#efe4c8}.s-ros3{fill:url(#spAbalone)}
+.s-flatedge{fill:none;stroke:rgba(120,70,20,.25);stroke-width:.03}
 .s-dicase{fill:#1e3a8a}.s-ditop{fill:#2f6bf0}.s-dicap{fill:#3f4752;stroke:rgba(0,0,0,.35);stroke-width:.01}.s-discrew{fill:#9aa3ab}
 .s-dihole{fill:#0e1114}.s-dipin{fill:#d9dee2}.s-dilabel{fill:rgba(255,255,255,.82)}.s-dislot{fill:#0f1a3d}.s-diglint{fill:rgba(255,255,255,.14)}
 .s-sb1{fill:#2a120a}.s-sb2{fill:#6e2a10}.s-sb3{fill:#c9731f}.s-sb4{fill:#f0ac45}
@@ -2153,8 +2154,8 @@ const SYM = (() => {
   const bodyArt = (d, fin, cy, spec, bind) => `<path d="${d}" transform="translate(.06 .09)" style="fill:#000;opacity:.5" filter="url(#spShadow)"/>` +
     `<path d="${d}" style="fill:url(#${fin})"/>` + (bind ? P(d, 's-gbind') : '') + `<path class="s-roundover" d="${d}"/>` + layer(d, 's-roundlight', .962, cy) +
     `<ellipse cx="${spec[0]}" cy="${spec[1]}" rx="${spec[2]}" ry="${spec[3]}" transform="rotate(-12 ${spec[0]} ${spec[1]})" style="fill:url(#spSpec)"/>`;
-  const BASS_BODY = 'M.1 .62C.13 .52 .18 .42 .26 .4C.33 .38 .37 .44 .38 .52C.39 .62 .44 .72 .47 .84C.5 .96 .44 1.04 .45 1.14C.46 1.26 .57 1.34 .57 1.52C.57 1.78 .36 1.9 0 1.9C-.36 1.9 -.57 1.78 -.57 1.52C-.57 1.34 -.47 1.26 -.46 1.12C-.45 1.0 -.51 .92 -.51 .76C-.51 .56 -.48 .36 -.42 .26C-.37 .18 -.29 .18 -.26 .24C-.21 .34 -.15 .48 -.1 .62Z';
-  const BASS_GUARD = 'M-.1 .66C-.16 .52 -.25 .44 -.33 .46C-.41 .49 -.42 .6 -.43 .72C-.45 .88 -.5 1.02 -.48 1.18C-.46 1.34 -.34 1.42 -.22 1.36C-.12 1.31 -.04 1.24 .06 1.2C.16 1.16 .3 1.12 .36 1.0C.41 .9 .4 .78 .36 .68C.32 .58 .25 .54 .18 .57C.14 .59 .11 .62 .1 .66Z';
+  const BASS_BODY = 'M.1 .66C.14 .56 .2 .48 .28 .47C.36 .46 .4 .52 .41 .6C.42 .7 .45 .78 .47 .88C.49 .98 .45 1.05 .46 1.15C.47 1.27 .57 1.35 .57 1.53C.57 1.79 .36 1.9 0 1.9C-.36 1.9 -.57 1.79 -.57 1.53C-.57 1.35 -.48 1.27 -.47 1.13C-.46 1.0 -.52 .92 -.52 .76C-.52 .56 -.5 .42 -.45 .34C-.41 .27 -.33 .26 -.29 .31C-.23 .38 -.15 .52 -.1 .66Z';
+  const BASS_GUARD = 'M-.1 .7C-.16 .58 -.24 .48 -.32 .5C-.4 .53 -.42 .64 -.43 .76C-.45 .9 -.5 1.04 -.48 1.18C-.46 1.34 -.34 1.42 -.22 1.36C-.12 1.31 -.04 1.24 .06 1.2C.16 1.16 .3 1.12 .36 1.0C.41 .9 .4 .8 .36 .72C.32 .64 .25 .6 .18 .62C.14 .63 .11 .66 .1 .7Z';
   const DREAD_BODY = 'M0 -.02C.2 -.02 .36 -.01 .43 .04C.5 .1 .49 .22 .47 .34C.45 .46 .42 .56 .44 .68C.46 .8 .6 .9 .63 1.08C.67 1.32 .58 1.54 .34 1.62C.22 1.66 .1 1.67 0 1.67C-.1 1.67 -.22 1.66 -.34 1.62C-.58 1.54 -.67 1.32 -.63 1.08C-.6 .9 -.46 .8 -.44 .68C-.42 .56 -.45 .46 -.47 .34C-.49 .22 -.5 .1 -.43 .04C-.36 -.01 -.2 -.02 0 -.02Z';
   const DREAD_GUARD = 'M.15 .5C.22 .44 .35 .45 .41 .55C.46 .64 .45 .76 .38 .82C.3 .88 .22 .84 .19 .76C.17 .69 .21 .62 .17 .57Z';
   // registered before ART_DEFS is built
@@ -2307,47 +2308,37 @@ const SYM = (() => {
     lin('spMicRed', [[0, '#5e0b14'], [.3, '#e8505b'], [.55, '#b8232f'], [1, '#4f0810']]) + lin('spGold', [[0, '#b99a52'], [.35, '#f6e7b8'], [1, '#a88a44']]) +
     rad('spMesh', [[0, '#ffffff'], [.45, '#cdd3d8'], [1, '#7a838b']], .38, .32) + rad('spMeshDk', [[0, '#737a82'], [.5, '#2d3136'], [1, '#0c0e10']], .38, .32) + DEFS.join('');
 
-  /* Bass: offset body with a long upper horn, candy-red lacquer, pearl guard, split pickup, four-saddle bridge,
-     angled control plate, big four-key head. 34" scale, 20 frets. */
+  /* Bass and acoustic as clean flat icons: solid colours, crisp silhouettes, only the details that make each one read at a glance.
+     Drawn at real size in feet, neck upstage. */
+  const FL = (d, fill, extra = '') => `<path d="${d}" style="fill:${fill}"${extra}/>`;
+  const flatShadow = d => `<path d="${d}" transform="translate(.04 .06)" style="fill:rgba(0,0,0,.28)"/>`;
   const bass2 = () => {
-    const nut = -1.35, scale = 2.83, fr = fretYs(nut, scale, 20), bridgeY = nut + scale;
+    const nut = -1.35, bridgeY = nut + 2.83;
     const head = 'M-.075 -1.35L-.085 -1.55C-.09 -1.7 -.11 -1.82 -.1 -1.88C-.08 -1.95 .02 -1.96 .08 -1.9C.15 -1.83 .17 -1.74 .15 -1.66C.13 -1.58 .085 -1.55 .08 -1.47L.075 -1.35Z';
     const keys = [-1.46, -1.59, -1.72, -1.85];
-    const lift = (x, y, w, h, rx) => `<rect x="${f(x)}" y="${f(y)}" width="${w}" height="${h}" rx="${rx}" transform="translate(.008 .014)" style="fill:#000;opacity:.35"/>`;
-    return bodyArt(BASS_BODY, BASS_FIN, 1.3, [-.33, 1.0, .12, .34]) +
-      `<path d="${BASS_GUARD}" transform="translate(.01 .016)" style="fill:#000;opacity:.3"/>` + P(BASS_GUARD, 's-guardpearl') + P(BASS_GUARD, 's-guardbevel') +
-      [[-.3, .52], [-.42, .76], [-.46, 1.1], [-.33, 1.35], [-.05, 1.24], [.25, 1.12], [.37, .86], [.3, .62], [.15, .62]].map(([x, y]) => C_(x, y, .01, 's-screw')).join('') +
-      softShadow('M-.1 .3H.1V.8H-.1Z', .03, .04, .4) + neckOn(nut, .8, .14, .2, 's-rosewood', fr, [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19]], .012) +
-      softShadow(head, .03, .05, .5) + P(head, 's-maple2') + P(head, 's-headrim') +
-      keys.map(y => `<path class="s-chrome2" d="M-.06 ${f(y - .028)}H-.13V${f(y + .028)}H-.06Z"/><ellipse class="s-chrome2" cx="-.18" cy="${y}" rx=".055" ry=".04"/>` + C_(-.035, y, .022, 's-chrome2') + C_(-.035, y, .01, 's-dark')).join('') +
-      R_(-.02, -1.52, .04, .03, 's-chrome2', .01) +                                                                               // string tree
-      [[-.058, 1.03], [.058, 1.13]].map(([x, y]) => lift(x - .1, y - .045, .2, .09, .035) + R_(f(x - .1), f(y - .045), .2, .09, 's-hbblk', .035) +
-        [-.023, .023].map(dx => C_(f(x + dx - .013), y, .011, 's-pole2') + C_(f(x + dx + .013), y, .011, 's-pole2')).join('')).join('') +   // split pickup
-      lift(-.15, bridgeY - .06, .3, .24, .03) + R_(-.15, f(bridgeY - .06), .3, .24, 's-chrome2', .03) +
-      [-.081, -.027, .027, .081].map(x => R_(f(x - .02), f(bridgeY - .03), .04, .08, 's-saddle', .01) + C_(x, f(bridgeY + .12), .011, 's-dark')).join('') +
-      `<g transform="rotate(-28 .33 1.5)">${lift(.27, 1.3, .13, .44, .06)}${R_(.27, 1.3, .13, .44, 's-chrome2', .06)}${C_(.335, 1.4, .042, 's-knob2')}${C_(.335, 1.58, .042, 's-knob2')}${C_(.335, 1.69, .02, 's-dark')}</g>` +
-      [0, 1, 2, 3].map(i => `<path class="s-bstr${i}" d="M${f(-.081 + i * .054)} ${f(bridgeY + .1)}L${f(-.042 + i * .028)} ${nut}L-.035 ${keys[i]}"/>`).join('');
+    const neck = `M-.07 ${nut}L.07 ${nut}L.1 .8L-.1 .8Z`;
+    return flatShadow(BASS_BODY) + flatShadow(neck) + flatShadow(head) +
+      FL(BASS_BODY, '#e2414b') + FL(BASS_GUARD, '#f6f2ea') +
+      FL(neck, '#3b2a20') + FL(head, '#f0cf93') +
+      keys.map(y => `<ellipse cx="-.17" cy="${y}" rx=".05" ry=".035" style="fill:#e9edf0"/>` + `<circle cx="-.035" cy="${y}" r=".02" style="fill:#e9edf0"/>`).join('') +
+      [[-.058, 1.03], [.058, 1.13]].map(([x, y]) => `<rect x="${f(x - .1)}" y="${f(y - .045)}" width=".2" height=".09" rx=".045" style="fill:#1d1f22"/>`).join('') +
+      `<rect x="-.14" y="${f(bridgeY - .05)}" width=".28" height=".2" rx=".04" style="fill:#c9d0d6"/>` +
+      `<g transform="rotate(-28 .33 1.5)"><rect x=".27" y="1.3" width=".13" height=".44" rx=".065" style="fill:#c9d0d6"/><circle cx=".335" cy="1.42" r=".04" style="fill:#2a2c30"/><circle cx=".335" cy="1.58" r=".04" style="fill:#2a2c30"/></g>` +
+      [0, 1, 2, 3].map(i => `<path d="M${f(-.075 + i * .05)} ${f(bridgeY + .1)}L${f(-.042 + i * .028)} ${nut}" style="fill:none;stroke:rgba(255,255,255,.55);stroke-width:${f(.011 - i * .0012)}"/>`).join('');
   };
-  /* Acoustic: dreadnought with square shoulders, spruce top with grain, bound and purfled edge, ringed rosette, tortoise guard,
-     belly bridge with a bone saddle and pins, 14-fret neck, 3+3 head with sealed tuners, bronze strings. 25.4" scale. */
   const acoustic2 = () => {
-    const nut = -1.2, scale = 2.12, fr = fretYs(nut, scale, 20).filter(y => y < .26), saddle = nut + scale + .02;
+    const nut = -1.2, saddle = nut + 2.14;
     const head = 'M-.075 -1.2L-.105 -1.3C-.125 -1.45 -.135 -1.6 -.12 -1.74Q-.06 -1.77 0 -1.75Q.06 -1.77 .12 -1.74C.135 -1.6 .125 -1.45 .105 -1.3L.075 -1.2Z';
-    const posts = [[-.072, -1.62, -1], [-.072, -1.49, -1], [-.072, -1.36, -1], [.072, -1.36, 1], [.072, -1.49, 1], [.072, -1.62, 1]];
-    const grain = Array.from({ length: 46 }, (_, i) => { const x = -.64 + i * .028; return `<path class="s-grain${i % 3}" d="M${f(x)} 0V1.68"/>`; }).join('');
-    return bodyArt(DREAD_BODY, ACOUSTIC_FIN, .82, [-.36, .5, .14, .3]).replace('<path class="s-roundover"', `<g clip-path="url(#spClipDread)">${grain}</g><path class="s-roundover"`) +
-      P(DREAD_BODY, 's-gbind') + layer(DREAD_BODY, 's-purf', .972, .82) +
-      `<path d="${DREAD_GUARD}" transform="translate(.008 .012)" style="fill:#000;opacity:.25"/><path d="${DREAD_GUARD}" style="fill:url(#spTort)"/>` +
-      circ(0, .46, .245, 's-ros1') + circ(0, .46, .228, 's-ros2') + circ(0, .46, .215, 's-ros3') + circ(0, .46, .2, 's-ros2') + circ(0, .46, .19, 's-ros1') + circ(0, .46, .178, 's-ros2') +
-      `<circle cx="0" cy=".46" r=".165" style="fill:url(#spHole)"/>` +
-      softShadow('M-.1 -.1H.1V.27H-.1Z', .03, .04, .4) + neckOn(nut, .27, .145, .19, 's-rosewood', fr, [[3], [5], [7], [9], [12, 0, 1], [15], [17]], .011) +
-      softShadow(head, .03, .05, .5) + `<path d="${head}" style="fill:url(#spHead)"/>` + P(head, 's-headrim') +
-      posts.map(([x, y, side]) => R_(f(side < 0 ? x - .1 : x + .045), f(y - .03), .055, .06, 's-chrome2', .012) + `<ellipse class="s-chrome2" cx="${f(x + side * .135)}" cy="${y}" rx=".022" ry=".036"/>` + C_(x, y, .018, 's-chrome2')).join('') +
-      `<path d="M-.27 ${f(saddle - .01)}C-.27 ${f(saddle - .04)} -.25 ${f(saddle - .05)} -.22 ${f(saddle - .05)}H.22C.25 ${f(saddle - .05)} .27 ${f(saddle - .04)} .27 ${f(saddle - .01)}V${f(saddle + .03)}C.27 ${f(saddle + .06)} .25 ${f(saddle + .07)} .22 ${f(saddle + .07)}C.12 ${f(saddle + .07)} .08 ${f(saddle + .11)} 0 ${f(saddle + .11)}C-.08 ${f(saddle + .11)} -.12 ${f(saddle + .07)} -.22 ${f(saddle + .07)}C-.25 ${f(saddle + .07)} -.27 ${f(saddle + .06)} -.27 ${f(saddle + .03)}Z" transform="translate(.008 .014)" style="fill:#000;opacity:.35"/>` +
-      `<path d="M-.27 ${f(saddle - .01)}C-.27 ${f(saddle - .04)} -.25 ${f(saddle - .05)} -.22 ${f(saddle - .05)}H.22C.25 ${f(saddle - .05)} .27 ${f(saddle - .04)} .27 ${f(saddle - .01)}V${f(saddle + .03)}C.27 ${f(saddle + .06)} .25 ${f(saddle + .07)} .22 ${f(saddle + .07)}C.12 ${f(saddle + .07)} .08 ${f(saddle + .11)} 0 ${f(saddle + .11)}C-.08 ${f(saddle + .11)} -.12 ${f(saddle + .07)} -.22 ${f(saddle + .07)}C-.25 ${f(saddle + .07)} -.27 ${f(saddle + .06)} -.27 ${f(saddle + .03)}Z" style="fill:url(#spEbony)"/>` +
-      `<path class="s-asaddle" d="M-.11 ${f(saddle - .02)}L.11 ${f(saddle - .008)}"/>` +
-      [-.095, -.057, -.019, .019, .057, .095].map(x => C_(x, f(saddle + .035), .014, 's-apin') + C_(x, f(saddle + .035), .005, 's-dark')).join('') +
-      Array.from({ length: 6 }, (_, i) => { const xb = -.095 + i * .038, xn = -.055 + i * .022, [px, py] = posts[i]; return `<path class="${i < 4 ? 's-strb' : 's-str2'}" d="M${f(xb)} ${f(saddle + .035)}L${f(xb)} ${f(saddle - .015)}L${f(xn)} ${nut}L${px} ${py}"/>`; }).join('');
+    const neck = `M-.072 ${nut}L.072 ${nut}L.095 .27L-.095 .27Z`;
+    return flatShadow(DREAD_BODY) + flatShadow(neck) + flatShadow(head) +
+      FL(DREAD_BODY, '#eab56b') + layer(DREAD_BODY, 's-flatedge', .965, .82) +
+      `<circle cx="0" cy=".46" r=".225" style="fill:#c98a3f"/><circle cx="0" cy=".46" r=".17" style="fill:#2b1d14"/>` +
+      FL(DREAD_GUARD, '#8a4a22') +
+      FL(neck, '#3b2a20') + FL(head, '#2b201a') +
+      [[-1, -1.62], [-1, -1.49], [-1, -1.36], [1, -1.36], [1, -1.49], [1, -1.62]].map(([k, y]) => `<circle cx="${f(k * .155)}" cy="${y}" r=".03" style="fill:#e9edf0"/>`).join('') +
+      `<path d="M-.26 ${f(saddle - .04)}H.26V${f(saddle + .03)}C.26 ${f(saddle + .06)} .1 ${f(saddle + .08)} 0 ${f(saddle + .08)}C-.1 ${f(saddle + .08)} -.26 ${f(saddle + .06)} -.26 ${f(saddle + .03)}Z" style="fill:#3b2a20"/>` +
+      `<rect x="-.11" y="${f(saddle - .025)}" width=".22" height=".022" rx=".011" style="fill:#f4ecd8"/>` +
+      Array.from({ length: 6 }, (_, i) => `<path d="M${f(-.095 + i * .038)} ${f(saddle)}L${f(-.055 + i * .022)} ${nut}" style="fill:none;stroke:rgba(255,255,255,.5);stroke-width:${f(.009 - i * .0007)}"/>`).join('');
   };
   const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
   function console_(w, d) {
