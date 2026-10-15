@@ -12,38 +12,40 @@
 <meta property="og:title" content="Stageplot: stage plots for church teams">
 <meta property="og:description" content="Team in, stage built, inputs patched and powered, paperwork printed. Free, in your browser, nothing to install.">
 <meta name="twitter:card" content="summary">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='8' fill='%2320272d'/%3E%3Cpath d='M8 22h16' stroke='%23f0b429' stroke-width='2.4' stroke-linecap='round' stroke-dasharray='4 2.5'/%3E%3Ccircle cx='12' cy='13' r='3' fill='%23f0b429'/%3E%3Ccircle cx='20' cy='13' r='3' fill='%238f7cd4'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='8' fill='%231b1e26'/%3E%3Cpath d='M8 22h16' stroke='%23f0b429' stroke-width='2.4' stroke-linecap='round' stroke-dasharray='4 2.5'/%3E%3Ccircle cx='12' cy='13' r='3' fill='%238b80ff'/%3E%3Ccircle cx='20' cy='13' r='3' fill='%23f5b544'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: a calm workbench. Left rail (team · gear · room), the stage as a dark deck floating in a dotted house,
-   right inspector. Tools float over the canvas. Spike-tape gold is the only accent. */
+   right inspector. Tools float over the canvas. Indigo-violet is the accent; amber spike tape marks the stage edge. */
 :root {
-  --bg: #edf0f3;
+  /* modern neutrals, an indigo-violet accent, spike-tape amber kept only for the stage's front edge */
+  --bg: #f4f5f8;
   --surface: #ffffff;
-  --surface-2: #f5f7f9;
-  --surface-3: #eaeef2;
-  --ink: #12161a;
-  --ink-2: #39434c;
-  --muted: #5d6874;   /* 5:1 on the light surfaces */
-  --line: #e0e5ea;
-  --line-2: #cbd3da;
-  --accent: #f0b429;          /* spike-tape gold */
-  --accent-ink: #1b1505;
-  --accent-text: #9a6700;     /* gold that reads on light surfaces */
-  --accent-soft: rgba(240,180,41,.16);
-  --deck: #20272d;
-  --deck-edge: #12171b;
-  --deck-grid: rgba(255,255,255,.055);
-  --deck-grid-major: rgba(255,255,255,.12);
-  --house: #e4e9ed;
-  --house-dot: rgba(18,22,26,.10);
-  --house-ink: #5b6772;
-  --ok: #23875a; --ok-soft: rgba(35,135,90,.12); --ok-ink: #17643f; --warn-ink: #8a4f00; --bad-ink: #b4231a;   /* chip text: 4.5:1 on the soft tints */
-  --warn: #b86e00; --warn-soft: rgba(214,138,0,.14);
-  --bad: #c8372d; --bad-soft: rgba(200,55,45,.12);
-  --k-xlr: #3b8ad9; --k-cat: #9a5ee6; --k-pow: #ee6f1f; --k-inst: #2ea25a; --k-spk: #0f9f9b; --k-vid: #de4379; --k-usb: #6f7f91;
+  --surface-2: #f7f8fa;
+  --surface-3: #eef0f4;
+  --ink: #0d0f14;
+  --ink-2: #3b404c;
+  --muted: #5c6270;   /* 5:1 on the light surfaces */
+  --line: #e5e7ec;
+  --line-2: #d3d7de;
+  --accent: #6d5efc;
+  --accent-ink: #ffffff;
+  --accent-text: #4f3fe0;     /* accent that reads as text on light surfaces */
+  --accent-soft: rgba(109,94,252,.12);
+  --tape: #f5b82e;            /* spike tape on the stage edge */
+  --deck: #1b1e26;
+  --deck-edge: #0b0d12;
+  --deck-grid: rgba(255,255,255,.05);
+  --deck-grid-major: rgba(255,255,255,.11);
+  --house: #e9ebf0;
+  --house-dot: rgba(13,15,20,.09);
+  --house-ink: #5c6270;
+  --ok: #16a34a; --ok-soft: rgba(22,163,74,.11); --ok-ink: #146c35; --warn-ink: #8a4a00; --bad-ink: #b31d1d;   /* chip text: 4.5:1 on the soft tints */
+  --warn: #d97706; --warn-soft: rgba(217,119,6,.13);
+  --bad: #dc2626; --bad-soft: rgba(220,38,38,.10);
+  --k-xlr: #3b82f6; --k-cat: #a855f7; --k-pow: #f97316; --k-inst: #22c55e; --k-spk: #14b8a6; --k-vid: #ec4899; --k-usb: #94a3b8;
   --shadow-1: 0 1px 2px rgba(16,24,32,.06), 0 1px 1px rgba(16,24,32,.04);
   --shadow-2: 0 8px 24px rgba(16,24,32,.10), 0 2px 6px rgba(16,24,32,.06);
   --shadow-3: 0 24px 60px rgba(16,24,32,.22), 0 6px 18px rgba(16,24,32,.10);
@@ -54,24 +56,24 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0d1013; --surface: #151a1e; --surface-2: #1b2025; --surface-3: #22282e; --ink: #e9edf0; --ink-2: #c2cad1; --muted: #8b96a0;
-    --line: #242a30; --line-2: #323a42; --accent: #f5bd3a; --accent-ink: #1b1505; --accent-text: #f5c24d; --accent-soft: rgba(245,189,58,.14);
-    --deck: #2b343c; --deck-edge: #000; --house: #0f1316; --house-dot: rgba(255,255,255,.07); --house-ink: #8a96a0;
-    --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --ok-ink: #4cc386; --warn-ink: #f2a94a; --bad-ink: #ff6f62; --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
-    --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0; --k-usb: #b3c0cf;
+    --bg: #0a0b0f; --surface: #121419; --surface-2: #171a20; --surface-3: #1e2129; --ink: #ececf1; --ink-2: #b9bdc9; --muted: #8b91a1;
+    --line: #22252d; --line-2: #2e323c; --accent: #8b80ff; --accent-ink: #0b0a1a; --accent-text: #a69dff; --accent-soft: rgba(139,128,255,.15); --tape: #f7c04a;
+    --deck: #22252e; --deck-edge: #000; --house: #0d0f13; --house-dot: rgba(255,255,255,.06); --house-ink: #8b91a1;
+    --ok: #4ade80; --ok-soft: rgba(74,222,128,.13); --ok-ink: #4ade80; --warn-ink: #fbbf24; --bad-ink: #f87171; --warn: #fbbf24; --warn-soft: rgba(251,191,36,.13); --bad: #f87171; --bad-soft: rgba(248,113,113,.13);
+    --k-xlr: #60a5fa; --k-cat: #c084fc; --k-pow: #fb923c; --k-inst: #4ade80; --k-spk: #2dd4bf; --k-vid: #f472b6; --k-usb: #cbd5e1;
     --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 10px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3); --shadow-3: 0 28px 70px rgba(0,0,0,.6);
-    --glass: rgba(24,29,34,.86);
+    --glass: rgba(20,22,28,.86);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0d1013; --surface: #151a1e; --surface-2: #1b2025; --surface-3: #22282e; --ink: #e9edf0; --ink-2: #c2cad1; --muted: #8b96a0;
-  --line: #242a30; --line-2: #323a42; --accent: #f5bd3a; --accent-ink: #1b1505; --accent-text: #f5c24d; --accent-soft: rgba(245,189,58,.14);
-  --deck: #2b343c; --deck-edge: #000; --house: #0f1316; --house-dot: rgba(255,255,255,.07); --house-ink: #8a96a0;
-  --ok: #4cc386; --ok-soft: rgba(76,195,134,.14); --ok-ink: #4cc386; --warn-ink: #f2a94a; --bad-ink: #ff6f62; --warn: #f2a94a; --warn-soft: rgba(242,169,74,.14); --bad: #ff6f62; --bad-soft: rgba(255,111,98,.14);
-  --k-xlr: #6db3ff; --k-cat: #c18dff; --k-pow: #ff8b42; --k-inst: #6bdc8e; --k-spk: #43d3c9; --k-vid: #ff70a0; --k-usb: #b3c0cf;
+  --bg: #0a0b0f; --surface: #121419; --surface-2: #171a20; --surface-3: #1e2129; --ink: #ececf1; --ink-2: #b9bdc9; --muted: #8b91a1;
+  --line: #22252d; --line-2: #2e323c; --accent: #8b80ff; --accent-ink: #0b0a1a; --accent-text: #a69dff; --accent-soft: rgba(139,128,255,.15); --tape: #f7c04a;
+  --deck: #22252e; --deck-edge: #000; --house: #0d0f13; --house-dot: rgba(255,255,255,.06); --house-ink: #8b91a1;
+  --ok: #4ade80; --ok-soft: rgba(74,222,128,.13); --ok-ink: #4ade80; --warn-ink: #fbbf24; --bad-ink: #f87171; --warn: #fbbf24; --warn-soft: rgba(251,191,36,.13); --bad: #f87171; --bad-soft: rgba(248,113,113,.13);
+  --k-xlr: #60a5fa; --k-cat: #c084fc; --k-pow: #fb923c; --k-inst: #4ade80; --k-spk: #2dd4bf; --k-vid: #f472b6; --k-usb: #cbd5e1;
   --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 10px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3); --shadow-3: 0 28px 70px rgba(0,0,0,.6);
-  --glass: rgba(24,29,34,.86);
+  --glass: rgba(20,22,28,.86);
   color-scheme: dark;
 }
 
@@ -127,7 +129,7 @@ header .iconbtn[aria-pressed="true"] { background: var(--surface-3); color: var(
 h1, h2, h3 { margin: 0; text-wrap: balance; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface-3); color: var(--ink-2); white-space: nowrap; }
 .chip.ok { background: var(--ok-soft); color: var(--ok-ink, var(--ok)); } .chip.warn { background: var(--warn-soft); color: var(--warn-ink, var(--warn)); } .chip.bad { background: var(--bad-soft); color: var(--bad-ink, var(--bad)); }
-.chip.gold { background: var(--accent-soft); color: var(--accent-text); }
+.chip.accent { background: var(--accent-soft); color: var(--accent-text); }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
 
 /* ---------- header ---------- */
@@ -321,7 +323,7 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .ch-label { fill: rgba(255,255,255,.55); font-size: var(--lab, .45px); font-weight: 650; letter-spacing: .02em; pointer-events: none; }
 .chhit { fill: none; stroke: transparent; cursor: pointer; }
 .ch-over { fill: none; stroke: rgba(150,200,255,.22); stroke-linejoin: round; stroke-linecap: square; pointer-events: none; }
-.ch-over.sel { stroke: rgba(240,180,41,.26); }
+.ch-over.sel { stroke: rgba(109,94,252,.3); }
 .ch-label.over { fill: rgba(170,210,255,.8); }
 .chplus { cursor: copy; }
 .chplus circle { fill: var(--surface); stroke: var(--accent); stroke-width: .05; }
@@ -431,7 +433,7 @@ svg text { font-family: var(--f-ui); }
 .deck-shadow { fill: var(--deck-edge); opacity: .45; filter: url(#deckblur); }
 .g-minor { stroke: var(--deck-grid); stroke-width: .03; opacity: .6; }
 .g-major { stroke: var(--deck-grid-major); stroke-width: .05; }
-.edge { stroke: var(--accent); stroke-width: .16; stroke-dasharray: .7 .35; }
+.edge { stroke: var(--tape); stroke-width: .16; stroke-dasharray: .7 .35; }
 .ruler line { stroke: var(--house-ink); stroke-width: .045; }
 .ruler text { fill: var(--house-ink); font-size: .52px; font-family: var(--f-mono); }
 .zone { fill: var(--house-ink); font-size: .62px; letter-spacing: .14px; font-weight: 650; }
@@ -442,8 +444,8 @@ svg text { font-family: var(--f-ui); }
 .hit { fill: transparent; }
 .c-audio { fill: #2e6a99; } .c-inst { fill: #6b51a3; } .c-power { fill: #b85a22; } .c-infra { fill: #44535e; }
 .c-video { fill: #a3426b; } .c-staging { fill: rgba(255,255,255,.05); stroke: rgba(255,255,255,.42) !important; stroke-dasharray: .3 .2; stroke-width: .07 !important; }
-.c-person { fill: var(--accent); stroke: rgba(255,255,255,.92) !important; stroke-width: .07 !important; paint-order: stroke; }   /* white ring lifts people off instruments and cables */
-/* people take their role's colour, the same family as the team list: voices gold, band violet, speakers teal, tech grey */
+.c-person { fill: #f5b544; stroke: rgba(255,255,255,.92) !important; stroke-width: .07 !important; paint-order: stroke; }   /* white ring lifts people off instruments and cables */
+/* people take their role's colour, the same family as the team list: voices amber, band violet, speakers teal, tech grey */
 .c-person.pt-band { fill: #a58bf5; } .c-person.pt-word { fill: #4cc4b6; } .c-person.pt-tech { fill: #a3afba; }
 .pt-shadow { fill: rgba(0,0,0,.4); }
 .pt-light { fill: rgba(255,255,255,.2); pointer-events: none; }
@@ -454,7 +456,7 @@ svg text { font-family: var(--f-ui); }
 .ilabel { fill: #fff; font-size: var(--lab, .48px); font-weight: 600; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: var(--labs, .12px); pointer-events: none; }
 .ilabel.out { fill: var(--ink-2); stroke: var(--house); }
 .ilabel.pname { font-size: var(--labp, .52px); font-weight: 700; }
-.initials { fill: var(--accent-ink); font-size: .58px; font-weight: 800; pointer-events: none; }
+.initials { fill: #3a2600; font-size: .58px; font-weight: 800; pointer-events: none; }
 .selbox { fill: none; stroke: var(--accent); stroke-width: .1; pointer-events: none; }
 .selglow { fill: var(--accent); opacity: .16; pointer-events: none; }
 .msr { stroke: var(--accent); stroke-width: 2px; vector-effect: non-scaling-stroke; stroke-linecap: round; }
@@ -502,7 +504,7 @@ svg text { font-family: var(--f-ui); }
 .wp { fill: var(--accent); stroke: #000; stroke-width: .05; cursor: move; touch-action: none; }
 .pending { fill: none; stroke: var(--accent); stroke-width: .16; stroke-dasharray: .45 .2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; opacity: .95; }
 .pivot { fill: #fff; stroke: var(--deck); stroke-width: .05; pointer-events: none; }
-.pend-target { fill: rgba(240,180,41,.12); stroke: var(--accent); stroke-width: .1; pointer-events: none; }
+.pend-target { fill: var(--accent-soft); stroke: var(--accent); stroke-width: .1; pointer-events: none; }
 .pend-start { fill: none; stroke: var(--accent); stroke-width: .12; pointer-events: none; }
 .droptarget #plot { outline: 2px dashed var(--accent); outline-offset: 4px; }
 
@@ -739,7 +741,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .d-dir { fill: var(--house-ink); font-size: .42px; font-weight: 700; letter-spacing: .08px; }
 .d-deck { fill: var(--deck); stroke: rgba(255,255,255,.25); stroke-width: .05; }
 .d-deck.bad { fill: var(--bad-soft); stroke: var(--bad); }
-.d-front { stroke: var(--accent); stroke-width: .1; stroke-dasharray: .4 .2; }
+.d-front { stroke: var(--tape); stroke-width: .1; stroke-dasharray: .4 .2; }
 .d-open { fill: none; stroke: var(--accent); stroke-width: .07; stroke-dasharray: .25 .15; }
 .d-len { fill: var(--ink-2); font: 600 .3px var(--f-mono); pointer-events: none; }
 .d-pt { fill: #fff; stroke: var(--deck); stroke-width: .06; cursor: grab; }
@@ -883,7 +885,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 <h1 class="sr-only">Stageplot: plan your stage, patch and power</h1>
 <header class="top">
   <div class="brand">
-    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--deck)"/><path d="M8 22h16" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="var(--accent)"/><circle cx="20" cy="13" r="3" fill="#8f7cd4"/></svg>
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--deck)"/><path d="M8 22h16" stroke="var(--tape)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="var(--accent)"/><circle cx="20" cy="13" r="3" fill="#f5b544"/></svg>
     <span>Stageplot</span>
   </div>
   <div class="weeknav">
@@ -1005,7 +1007,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 <div class="overlay" id="aboutDlg" hidden>
   <div class="modal about" role="dialog" aria-labelledby="aboutTitle">
     <div class="row" style="justify-content:space-between;align-items:flex-start">
-      <div class="row" style="gap:12px;flex-wrap:nowrap"><svg viewBox="0 0 32 32" width="40" height="40" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#20272d"/><path d="M8 22h16" stroke="#f0b429" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="#f0b429"/><circle cx="20" cy="13" r="3" fill="#8f7cd4"/></svg>
+      <div class="row" style="gap:12px;flex-wrap:nowrap"><svg viewBox="0 0 32 32" width="40" height="40" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#1b1e26"/><path d="M8 22h16" stroke="#f0b429" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="#8b80ff"/><circle cx="20" cy="13" r="3" fill="#f5b544"/></svg>
         <div><h2 id="aboutTitle">Stageplot</h2><p class="hint" id="aboutVer"></p></div></div>
       <button class="iconbtn" id="aboutClose" aria-label="Close"></button></div>
     <p style="font-size:15px;margin:0">Plan this week’s stage in minutes. Add the team, build the stage, and every input is patched and powered for you. Then print the stage plot, input list, monitor mixes, cable pull and power sheet.</p>
@@ -2872,7 +2874,7 @@ function renderFloat() {
       <button class="iconbtn" id="zIn" aria-label="Zoom in" title="Zoom in (+)">${ic('plus')}</button>
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
     </div>`;
-  $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip gold">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${`<button class="ctype" data-ctype="auto" aria-pressed="${cableType === 'auto'}" title="Pick the type from the two ends">${ic('wand', 'sm')}Auto</button>` + Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
+  $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip accent">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${`<button class="ctype" data-ctype="auto" aria-pressed="${cableType === 'auto'}" title="Pick the type from the two ends">${ic('wand', 'sm')}Auto</button>` + Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
       <span class="dock-sep"></span><span class="toolhint">${pending ? `Click to pivot · click a channel to enter it · click gear to finish · <span class="kbd">⌫</span> undo pivot · <span class="kbd">Esc</span> cancel` : 'Click the gear where the cable starts'}</span></div>`
     : placing && CAT[placing] ? `<div class="panel" style="display:flex;align-items:center;flex-wrap:nowrap"><span class="toolhint" style="white-space:nowrap">Click the stage to place <b>${esc(CAT[placing].name)}</b> · Shift-click for several</span><button class="btn quiet" id="placeCancel" style="padding:5px 10px">Cancel</button></div>`
     : mode === 'box' ? `<div class="panel"><span class="toolhint">${selIds().length > 1 ? `<b>${selIds().length} picked</b> · drag one to move them all · ` : ''}Tap gear to pick it, or drag a box over the floor</span><button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
@@ -3197,7 +3199,7 @@ function renderInspector() {
         ${field('chName', 'Name', ch.name)}
         <div class="field"><span>Type</span><div class="chips">${Object.entries(CH_KINDS).map(([key, v]) => `<button class="ctype" data-chkind="${key}" aria-pressed="${ch.kind === key}">${esc(v.name)}</button>`).join('')}</div></div>
         <div class="grid2">${field('chW', 'Width', mVal(fromM(ch.w ?? k.w)), 'number', 'step=".05" min=".1"', 'm')}<div class="field"><span>Length</span><b style="font:500 14px var(--f-mono);padding:8px 0">${fmtLen(runLen(ch.pts))}</b></div></div>
-        <p class="hint">${k.level ? 'Overhead: only ceiling runs use it. ' : ''}Drag the gold squares to reshape it. Click a + on an edge to add a bend, or past an end to extend it.</p>
+        <p class="hint">${k.level ? 'Overhead: only ceiling runs use it. ' : ''}Drag the square handles to reshape it. Click a + on an edge to add a bend, or past an end to extend it.</p>
         <button class="btn" id="chToggleIn">${ic(cableView.hideInCh ? 'eye' : 'eyeOff', 'sm')}${cableView.hideInCh ? 'Show cables inside channels' : 'Hide cables inside channels'}</button>
         <div class="grid2"><button class="btn" data-chextbtn="0">${ic('plus', 'sm')}Extend start</button><button class="btn" data-chextbtn="1">${ic('plus', 'sm')}Extend end</button></div></section>
       <section class="isec"><h3>Cables inside <span>${using.length}</span></h3>${using.length ? `<ul class="conns">${using.map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(itemById(x.from)))} → ${esc(itemName(itemById(x.to)))}<small>${esc(CABLES[x.type].name)}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>` : '<p class="hint">No cables use it yet. Cables route through a channel when it keeps more of the run off the open floor.</p>'}</section>
@@ -3225,7 +3227,7 @@ function renderInspector() {
       <section class="isec"><h3>Route</h3>
         <div class="seg routeseg" role="group" aria-label="Where the cable runs"><button data-level="floor" aria-pressed="${c.level !== 'ceiling'}" title="Along the stage floor">On stage</button><button data-level="ceiling" aria-pressed="${c.level === 'ceiling'}" title="Up, across the ceiling and down">Overhead</button></div>
         ${chans().length && !c.points.length ? `<div class="seg routeseg" role="group" aria-label="Cable channels"><button data-route="auto" aria-pressed="${c.route !== 'direct'}" title="Ride a cable channel when it keeps more of the run off the open floor">${ic('trench', 'sm')}Use channels</button><button data-route="direct" aria-pressed="${c.route === 'direct'}" title="Ignore channels">Direct</button></div>` : ''}
-        <p class="hint">${c.level === 'ceiling' ? `Dashed on the plot. Adds ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end. ` : ''}${via ? `Runs through ${esc(via.name)}. ` : chans().length && c.route !== 'direct' && !c.points.length ? 'No channel helps this run. ' : ''}${c.points.length ? 'Drag the gold dots on the plot to reroute.' : 'Drag the cable on the plot to add a bend.'}</p>
+        <p class="hint">${c.level === 'ceiling' ? `Dashed on the plot. Adds ${mVal(plan.settings.ceilH ?? fromM(4.5))} m up and down at each end. ` : ''}${via ? `Runs through ${esc(via.name)}. ` : chans().length && c.route !== 'direct' && !c.points.length ? 'No channel helps this run. ' : ''}${c.points.length ? 'Drag the round handles on the plot to reroute.' : 'Drag the cable on the plot to add a bend.'}</p>
       </section>
       <section class="isec"><h3>Cable type</h3><div class="chips">${Object.keys(CABLES).map(k => `<button class="ctype" data-settype="${k}" aria-pressed="${k === c.type}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}</div>
         <div class="row" style="gap:6px;margin-top:12px">${c.points.length ? `<button class="btn" id="cClear">Straighten</button>` : ''}<button class="btn quiet danger" id="cDel">${ic('trash', 'sm')}Delete cable</button></div>
