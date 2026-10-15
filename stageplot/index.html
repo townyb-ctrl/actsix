@@ -658,6 +658,26 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .swatch.custom { background: conic-gradient(#e5484d, #f5a524, #30a46c, #0091ff, #8e4ec6, #e5484d); display: grid; place-items: center; overflow: hidden; }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
 .about { max-width: 520px; }
+.lib { width: min(640px, calc(100vw - 24px)); max-height: min(86vh, 820px); display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+#libBody { display: grid; gap: 12px; overflow-y: auto; min-height: 0; padding-right: 2px; }
+.libstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.libstats div { background: var(--surface-2); border-radius: var(--r-md); padding: 8px 10px; display: grid; }
+.libstats b { font: 600 16px var(--f-mono); } .libstats span { font-size: 12px; color: var(--muted); }
+.liblist { display: grid; gap: 4px; }
+.libmonth { display: grid; gap: 4px; } .libmonth h3 { margin: 8px 0 2px; }
+.librow { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.librow.cur { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.librow.past .libmain b { color: var(--ink-2); }
+.libopen { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; border: 0; background: transparent; padding: 7px 8px; text-align: left; cursor: pointer; color: inherit; font: inherit; border-radius: var(--r-md); min-width: 0; }
+.libopen:hover { background: var(--surface-2); }
+.libdate { display: grid; justify-items: center; background: var(--surface-3); border-radius: 8px; padding: 3px 0; }
+.libdate b { font: 600 15px var(--f-mono); line-height: 1.1; } .libdate small { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.libmain { display: grid; min-width: 0; } .libmain b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .libmain small { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.librow .iconbtn.armed { color: var(--bad); width: auto; }
+.libdanger { display: grid; gap: 10px; border: 1px solid color-mix(in srgb, var(--bad) 40%, var(--line)); border-radius: var(--r-md); padding: 12px; background: var(--bad-soft); }
+.libdanger small { display: block; color: var(--ink-2); font-size: 12.5px; }
+.libconfirm { display: grid; gap: 6px; } .libconfirm label { font-size: 13px; }
+@media (max-width: 520px) { .libstats { grid-template-columns: repeat(2, 1fr); } }
 .aboutkv { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13.5px; }
 .aboutkv dt { font-weight: 600; white-space: nowrap; }
 .aboutkv dd { margin: 0; color: var(--ink-2); }
@@ -961,6 +981,12 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   </div>
 </div>
 
+<div class="overlay" id="libDlg" hidden>
+  <div class="modal lib" role="dialog" aria-labelledby="libTitle">
+    <div class="row" style="justify-content:space-between"><h2 id="libTitle">Library</h2><button class="iconbtn" id="libClose" aria-label="Close"></button></div>
+    <div id="libBody"></div>
+  </div>
+</div>
 <div class="overlay" id="aboutDlg" hidden>
   <div class="modal about" role="dialog" aria-labelledby="aboutTitle">
     <div class="row" style="justify-content:space-between;align-items:flex-start">
@@ -2819,7 +2845,7 @@ function renderWeekPop() {
       <div class="field" style="grid-column:1/-1"><label for="planName">Service name</label><input id="planName" type="text" value="${esc(plan.name)}" placeholder="e.g. Sunday 9am"></div>
       <div class="field" style="grid-column:1/-1"><label for="planDate">Date</label><input id="planDate" type="date" value="${esc(plan.date)}"></div>
     </div>
-    <div class="field"><span>Saved weeks</span><div class="weeklist">${ids.map(id => `<button data-week="${id}" aria-current="${id === plan.id}"><span class="d">${esc(db.plans[id].date)}</span><span class="n">${esc(db.plans[id].name || 'Untitled')}</span></button>`).join('')}</div></div>
+    <div class="field"><span class="row" style="justify-content:space-between">Saved weeks <button class="btn quiet" id="openLib" style="padding:2px 8px;font-size:12px">${ic('calendar', 'sm')}Library</button></span><div class="weeklist">${ids.map(id => `<button data-week="${id}" aria-current="${id === plan.id}"><span class="d">${esc(db.plans[id].date)}</span><span class="n">${esc(db.plans[id].name || 'Untitled')}</span></button>`).join('')}</div></div>
     <div class="field"><span>Setups <small class="hint" style="font-weight:400">reusable layouts</small></span>
       ${Object.keys(setups()).length ? `<div class="setuplist">${Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, su]) => `<div class="setuprow"><button class="setupuse" data-setup="${id}" title="Lay out this week's stage like this"><b>${esc(su.name)}</b><small>${plural(su.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(su.saved || '')}</small><span class="go">Use</span></button><button class="iconbtn" data-setupdel="${id}" aria-label="Delete setup ${esc(su.name)}" title="Delete setup">${ic('x', 'sm')}</button></div>`).join('')}</div>` : ''}
       <div class="row" style="gap:6px;flex-wrap:nowrap"><input id="setupName" type="text" placeholder="Name this stage, e.g. Full band" style="flex:1;min-width:0"><button class="btn" id="setupSave">${ic('save', 'sm')}Save</button></div>
@@ -3751,7 +3777,7 @@ document.addEventListener('keydown', e => {
     if (act && (k === 'v' || k === 'a' || selIds().length)) { e.preventDefault(); act(); return; }
   }
   if (e.key === 'Escape') {
-    if (!$('dataDlg').hidden || !$('helpDlg').hidden || !$('aboutDlg').hidden) { $('dataDlg').hidden = true; $('helpDlg').hidden = true; $('aboutDlg').hidden = true; return; }
+    if (!$('dataDlg').hidden || !$('helpDlg').hidden || !$('aboutDlg').hidden || !$('libDlg').hidden) { $('dataDlg').hidden = true; $('helpDlg').hidden = true; $('aboutDlg').hidden = true; $('libDlg').hidden = true; return; }
     if (!$('weekPop').hidden) { closePops(); $('weekBtn').focus(); return; }
     if (!$('moreMenu').hidden) { toggleMoreMenu(false); $('moreBtn').focus(); return; }
   }
@@ -3804,6 +3830,7 @@ function renderMoreMenu() {
     <p class="hint" style="margin:-8px 0 0">${ui.adv ? 'Every setting and tool is showing.' : 'Everyday controls up front; fine settings under “More settings”.'}</p>
     <div class="mm-row"><span>Theme</span><div class="seg detailseg">${th('system', 'Auto')}${th('light', 'Light')}${th('dark', 'Dark')}</div></div>
     <div class="mm-list">
+      <button data-mm="library">${ic('calendar', 'sm')}Library: weeks &amp; reset</button>
       <button data-mm="guide">${ic('check', 'sm')}${ui.guide ? 'Hide' : 'Show'} the setup guide</button>
       <button data-mm="help">${ic('keyboard', 'sm')}Keyboard shortcuts<span class="kbd">?</span></button>
       <button data-mm="about">${ic('sheet', 'sm')}About Stageplot</button>
@@ -3822,6 +3849,7 @@ $('moreMenu').addEventListener('click', e => {
   if (m.dataset.mm === 'guide') { setGuide(!ui.guide); if (ui.guide) { sel = null; group = null; togglePanel('insp', true); renderAll(); } }
   if (m.dataset.mm === 'help') $('helpBtn').click();
   if (m.dataset.mm === 'about') openAbout();
+  if (m.dataset.mm === 'library') openLibrary2();
   if (m.dataset.mm === 'data') $('dataBtn').click();
 });
 document.addEventListener('pointerdown', e => { if (!$('moreMenu').hidden && !e.target.closest('.menuwrap')) toggleMoreMenu(false); });
@@ -3859,6 +3887,7 @@ $('weekPop').addEventListener('click', e => {
   else if (b.dataset.setup) applySetup(b.dataset.setup);
   else if (b.dataset.setupdel) { const n = setups()[b.dataset.setupdel]?.name; delete setups()[b.dataset.setupdel]; save(); renderWeekPop(); toast(`Setup “${n}” deleted`); }
   else if (b.id === 'setupSave') saveSetup($('setupName').value);
+  else if (b.id === 'openLib') { closePops(); openLibrary2(); }
   else if (b.id === 'newCopy') newWeek(false);
   else if (b.id === 'newStage') newWeek(true);
   else if (b.id === 'delWeek') {
@@ -4916,6 +4945,102 @@ let printFrom = null;
 window.addEventListener('beforeprint', () => { if (view !== 'paper') { printFrom = view; view = 'paper'; renderAll(); } });
 window.addEventListener('afterprint', () => { if (printFrom) { view = printFrom; printFrom = null; needFit = !zoom; renderAll(); } });
 
+/* ===================================================================
+   Library: every saved week at a glance, setups, storage, and a safe reset to default
+   =================================================================== */
+const lib = { q: '', resetArmed: false, typed: '' };
+function weekStats(p) {   // the same checks the app runs, for any saved week
+  const keep = plan; plan = p;
+  try {
+    const w = warnings();
+    return { team: p.team.length, gear: p.items.filter(i => !['person', 'platform'].includes(cat(i).shape)).length, ins: inputList().length, cables: p.cables.length, checks: w.length, bad: w.filter(x => x.lvl === 'bad').length };
+  } catch { return { team: p.team.length, gear: p.items.length, ins: 0, cables: p.cables.length, checks: 0, bad: 0 }; }
+  finally { plan = keep; }
+}
+function storageUse() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('stageplot')) n += (localStorage.getItem(k) || '').length + k.length; } } catch { /* blocked */ } return n * 2; }
+const fmtBytes = b => b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`;
+function renderLibrary() {
+  const today = new Date().toISOString().slice(0, 10), q = lib.q.trim().toLowerCase();
+  const ids = sortedWeekIds().reverse().filter(id => !q || `${db.plans[id].name} ${db.plans[id].date} ${longDate(db.plans[id].date)}`.toLowerCase().includes(q));
+  const months = new Map();
+  for (const id of ids) { const d = db.plans[id].date; const k = d.slice(0, 7); if (!months.has(k)) months.set(k, []); months.get(k).push(id); }
+  const monthName = k => new Date(k + '-01T12:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const rows = [...months].map(([k, list]) => `<div class="libmonth"><h3 class="eyebrow">${esc(monthName(k))}</h3>${list.map(id => {
+    const p = db.plans[id], st = weekStats(p), cur = id === plan.id, past = p.date < today;
+    const chip = !p.items.length ? '<span class="chip">Empty</span>' : !st.team ? '<span class="chip">No team yet</span>' : st.checks ? `<span class="chip ${st.bad ? 'bad' : 'warn'}">${plural(st.checks, 'check')}</span>` : '<span class="chip ok">Ready</span>';
+    return `<div class="librow${cur ? ' cur' : ''}${past ? ' past' : ''}">
+      <button class="libopen" data-libopen="${id}" title="Open this week"><span class="libdate"><b>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { day: 'numeric' }))}</b><small>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' }))}</small></span>
+        <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${chip}</button>
+      <button class="iconbtn" data-libdup="${id}" aria-label="Copy to the following week" title="Copy to the following week">${ic('copy', 'sm')}</button>
+      <button class="iconbtn" data-libdel="${id}" aria-label="Delete ${esc(longDate(p.date))}" title="Delete this week">${ic('trash', 'sm')}</button></div>`;
+  }).join('')}</div>`).join('');
+  const su = Object.entries(setups());
+  const before = (() => { try { return localStorage.getItem('stageplot.beforeReset'); } catch { return null; } })();
+  $('libBody').innerHTML = `
+    <div class="libstats"><div><b>${Object.keys(db.plans).length}</b><span>weeks</span></div><div><b>${su.length}</b><span>setups</span></div><div><b>${esc(sortedWeekIds().length ? new Date(db.plans[sortedWeekIds()[0]].date + 'T12:00').toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—')}</b><span>first week</span></div><div><b>${fmtBytes(storageUse())}</b><span>in this browser</span></div></div>
+    <div class="search">${ic('search', 'sm')}<input id="libSearch" type="search" placeholder="Find a week by name or date" value="${esc(lib.q)}" aria-label="Find a week"></div>
+    <div class="liblist">${rows || `<p class="hint">No weeks match “${esc(lib.q)}”.</p>`}</div>
+    ${su.length ? `<details class="more"><summary>${ic('room', 'sm')}<span><b>Setups</b><small>${plural(su.length, 'saved layout')}</small></span>${ic('chevD', 'sm')}</summary><div class="liblist" style="padding:0 10px 10px">${su.sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, x]) => `<div class="librow"><span class="libmain" style="padding:6px 8px"><b>${esc(x.name)}</b><small>${plural(x.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(x.saved || '')}</small></span><button class="iconbtn" data-libsetupdel="${id}" aria-label="Delete setup ${esc(x.name)}" title="Delete setup">${ic('trash', 'sm')}</button></div>`).join('')}</div></details>` : ''}
+    <div class="libdanger">
+      <div><b>Reset to default</b><small>Clears every week, setup and preference in this browser and starts again from the example week. ${before ? 'A copy of your last reset is still kept.' : 'A safety copy is kept so you can restore it.'}</small></div>
+      ${lib.resetArmed ? `<div class="libconfirm"><label for="libType">Type <b>RESET</b> to confirm</label><div class="row" style="gap:6px;flex-wrap:nowrap"><input id="libType" type="text" autocomplete="off" value="${esc(lib.typed)}" style="flex:1;min-width:0"><button class="btn danger" id="libResetGo" ${lib.typed.trim().toUpperCase() === 'RESET' ? '' : 'disabled'}>Reset</button><button class="btn quiet" id="libResetCancel">Cancel</button></div>
+        <button class="btn quiet" id="libBackup" style="justify-self:start">${ic('save', 'sm')}Back up first</button></div>`
+        : `<div class="row" style="gap:6px">${before ? `<button class="btn" id="libRestore">${ic('undo', 'sm')}Restore before reset</button>` : ''}<button class="btn danger" id="libReset">${ic('trash', 'sm')}Reset…</button></div>`}
+    </div>`;
+}
+function openLibrary2() { lib.resetArmed = false; lib.typed = ''; $('libClose').innerHTML = ic('x'); renderLibrary(); $('libDlg').hidden = false; setTimeout(() => $('libSearch')?.focus(), 30); }
+function resetAll() {
+  const snap = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('stageplot') && k !== 'stageplot.beforeReset') snap[k] = localStorage.getItem(k); } } catch { /* blocked */ }
+  try {
+    localStorage.setItem('stageplot.beforeReset', JSON.stringify({ at: new Date().toISOString(), keys: snap }));
+    for (const k of Object.keys(snap)) localStorage.removeItem(k);
+    sessionStorage.setItem('stageplot.justReset', '1');
+  } catch { toast('This browser is blocking storage, so nothing could be reset'); return; }
+  location.reload();
+}
+function restoreBeforeReset() {
+  try {
+    const b = JSON.parse(localStorage.getItem('stageplot.beforeReset') || 'null'); if (!b?.keys) return;
+    for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k.startsWith('stageplot') && k !== 'stageplot.beforeReset') localStorage.removeItem(k); }
+    for (const [k, v] of Object.entries(b.keys)) localStorage.setItem(k, v);
+    localStorage.removeItem('stageplot.beforeReset'); sessionStorage.setItem('stageplot.justRestored', '1');
+  } catch { toast('Couldn’t restore here'); return; }
+  location.reload();
+}
+$('libClose').onclick = () => { $('libDlg').hidden = true; };
+$('libDlg').addEventListener('click', e => {
+  if (e.target.id === 'libDlg') { $('libDlg').hidden = true; return; }
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.libopen) { $('libDlg').hidden = true; if (view !== 'plot') view = 'plot'; switchWeek(t.dataset.libopen); return; }
+  if (t.dataset.libdup) {
+    const src = db.plans[t.dataset.libdup], np = JSON.parse(JSON.stringify(src)); np.id = uid(); np.date = addDays(src.date, 7);
+    while (Object.values(db.plans).some(x => x.date === np.date)) np.date = addDays(np.date, 7);
+    db.plans[np.id] = np; save(); renderLibrary(); toast(`Copied to ${longDate(np.date)}`); return;
+  }
+  if (t.dataset.libdel) {
+    const id = t.dataset.libdel, gone = db.plans[id];
+    if (!t.classList.contains('armed')) { t.classList.add('armed'); t.title = 'Click again to delete'; t.innerHTML = '<span style="font-size:11.5px;font-weight:600;padding:0 4px">Delete?</span>'; return; }
+    delete db.plans[id];
+    if (!Object.keys(db.plans).length) { const p = blankPlan(); db.plans[p.id] = p; }
+    if (id === plan.id) { const ids = sortedWeekIds(); switchWeek(ids[ids.length - 1]); } else save();
+    renderLibrary(); renderHeader();
+    toast(`Deleted ${longDate(gone.date)}`, { label: 'Undo', fn: () => { db.plans[gone.id] = gone; save(); renderHeader(); if (!$('libDlg').hidden) renderLibrary(); } });
+    return;
+  }
+  if (t.dataset.libsetupdel) { const id = t.dataset.libsetupdel, x = setups()[id]; delete setups()[id]; save(); renderLibrary(); toast(`Deleted setup “${x.name}”`, { label: 'Undo', fn: () => { setups()[id] = x; save(); if (!$('libDlg').hidden) renderLibrary(); } }); return; }
+  if (t.id === 'libReset') { lib.resetArmed = true; lib.typed = ''; renderLibrary(); setTimeout(() => $('libType')?.focus(), 30); return; }
+  if (t.id === 'libResetCancel') { lib.resetArmed = false; renderLibrary(); return; }
+  if (t.id === 'libResetGo') { resetAll(); return; }
+  if (t.id === 'libRestore') { restoreBeforeReset(); return; }
+  if (t.id === 'libBackup') { const s2 = backup(true); offerFile(`stageplot-backup-${new Date().toISOString().slice(0, 10)}.json`, s2, 'application/json'); return; }
+});
+$('libDlg').addEventListener('input', e => {
+  if (e.target.id === 'libSearch') { lib.q = e.target.value; const pos = e.target.selectionStart; renderLibrary(); const i = $('libSearch'); i.focus(); i.setSelectionRange(pos, pos); }
+  if (e.target.id === 'libType') { lib.typed = e.target.value; const b = $('libResetGo'); if (b) b.disabled = lib.typed.trim().toUpperCase() !== 'RESET'; }
+});
+$('libDlg').addEventListener('keydown', e => { if (e.target.id === 'libType' && e.key === 'Enter' && !$('libResetGo').disabled) resetAll(); });
+
 /* ----- safety net: an unexpected error says so once, calmly, and work already saved stays saved ----- */
 let lastCrash = 0;
 const onCrash = () => { if (Date.now() - lastCrash < 15000) return; lastCrash = Date.now(); try { toast('Something went wrong there. Your work is saved; reload if the plot looks off'); } catch { /* nothing more to do */ } };
@@ -4932,6 +5057,10 @@ db = load();
 if (db) plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]];
 else { db = seed(); plan = db.plans[db.currentId]; if (!unreadable) save(); $('welcomeDlg').hidden = !!unreadable; }
 renderAll();
+try {
+  if (sessionStorage.getItem('stageplot.justReset')) { sessionStorage.removeItem('stageplot.justReset'); setTimeout(() => toast('Reset to default. Your old library is kept', { label: 'Restore', fn: restoreBeforeReset }), 300); }
+  if (sessionStorage.getItem('stageplot.justRestored')) { sessionStorage.removeItem('stageplot.justRestored'); setTimeout(() => toast('Library restored'), 300); }
+} catch { /* storage blocked */ }
 if (unreadable) setTimeout(() => toast('Your saved weeks couldn’t be read. A copy is kept safe in this browser', { label: 'Recover', fn: () => { $('dataText').value = unreadable; $('dataDlg').hidden = false; } }), 300);
 requestAnimationFrame(() => { needFit = true; renderPlot(); });
 if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); }, () => { pco.mcp = null; renderRail(); });
