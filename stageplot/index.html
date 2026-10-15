@@ -1343,7 +1343,7 @@ function measurePt(e, from) {
 let mode = 'select', cableType = 'auto', pending = null, cursorPt = null;   // 'auto' works the type out from the two ends
 let zoom = null;                // px per internal unit, null = fit
 let view = 'plot', railTab = 'team';
-let history = [], future = [], drag = null, delArmed = false, hoverPt = null;
+let history = [], future = [], drag = null, delArmed = false, clearArmed = '', hoverPt = null;
 
 function blankPlan(date) {
   return {
@@ -2854,6 +2854,10 @@ function renderWeekPop() {
       <button class="btn" id="newCopy" title="Copy everything, team included">${ic('copy', 'sm')}Copy this week</button>
       <button class="btn" id="newStage" title="Same stage and infrastructure, no team">${ic('room', 'sm')}Stage only</button>
     </div></div>
+    <div class="field"><span>Clear this week <small class="hint" style="font-weight:400">Undo brings it back</small></span><div class="grid2">
+      <button class="btn" id="clearKeepStage" title="Remove the team, gear, cables, channels and notes. The stage shape, size and colour stay">${ic('room', 'sm')}${clearArmed === 'keep' ? 'Click again to clear' : 'Keep the stage'}</button>
+      <button class="btn danger" id="clearAll" title="Remove everything, the stage included, back to a blank 10 × 6 m stage">${ic('trash', 'sm')}${clearArmed === 'all' ? 'Click again to clear' : 'Clear everything'}</button>
+    </div></div>
     <div class="row" style="justify-content:flex-end"><button class="btn quiet danger" id="delWeek" style="padding:4px 8px;font-size:12.5px">${ic('trash', 'sm')}${delArmed ? 'Click again to delete this week' : 'Delete this week'}</button></div>`;
 }
 function roleOptions(cur) {
@@ -3736,6 +3740,15 @@ function openPaper(anchor) {
   else $('paperView').scrollTop = 0;
 }
 function switchWeek(id) { if (!db.plans[id]) return; compare = null; plan = db.plans[id]; history = []; future = []; sel = null; pending = null; delArmed = false; needFit = true; save(); renderAll(); }
+/* empty the open week: everything, or everything but the stage (shape, size, colour, house) and the room settings */
+function clearWeek(all) {
+  mutate(() => {
+    const fresh = blankPlan(plan.date);
+    plan.team = []; plan.items = []; plan.cables = []; plan.channels = []; plan.notes = '';
+    if (all) { plan.stage = fresh.stage; plan.settings = fresh.settings; }
+    sel = null; group = null; pending = null; measure = null; compare = null; needFit = true;
+  }, all ? 'Week cleared, stage reset to 10 × 6 m' : 'Week cleared, stage kept');
+}
 function newWeek(stageOnly) {
   const np = JSON.parse(JSON.stringify(plan));
   np.id = uid(); np.date = addDays(plan.date, 7);
@@ -3755,7 +3768,7 @@ function setTheme(t) {
   try { localStorage.setItem('stageplot.theme', t); } catch { /* ignore */ }
   renderHeader();
 }
-function closePops() { $('weekPop').hidden = true; $('weekBtn').setAttribute('aria-expanded', 'false'); delArmed = false; }
+function closePops() { $('weekPop').hidden = true; $('weekBtn').setAttribute('aria-expanded', 'false'); delArmed = false; clearArmed = ''; }
 
 document.addEventListener('keydown', e => {
   if (!$('cmdk').hidden) return;
@@ -3890,6 +3903,11 @@ $('weekPop').addEventListener('click', e => {
   else if (b.id === 'openLib') { closePops(); openLibrary2(); }
   else if (b.id === 'newCopy') newWeek(false);
   else if (b.id === 'newStage') newWeek(true);
+  else if (b.id === 'clearKeepStage' || b.id === 'clearAll') {
+    const k = b.id === 'clearAll' ? 'all' : 'keep';
+    if (clearArmed !== k) { clearArmed = k; renderWeekPop(); return; }
+    closePops(); clearWeek(k === 'all');
+  }
   else if (b.id === 'delWeek') {
     if (!delArmed) { delArmed = true; renderWeekPop(); return; }
     delete db.plans[plan.id];
@@ -4866,6 +4884,8 @@ function cmdItems() {
     ['Build stage from team', 'wand', () => buildNow()],
     ['Run a cable', 'cable', () => setMode('cable')],
     ['Draw a cable channel', 'trench', () => setMode('channel')],
+    ['Clear this week, keep the stage', 'room', () => clearWeek(false)],
+    ['Clear everything on this week', 'trash', () => clearWeek(true)],
     ['Add a custom rack', 'box', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } addGear('rack', snapTo(plan.stage.w - fromM(1)), snapTo(fromM(1))); }],
     [cableView.all ? 'Hide all cables' : 'Show cables', 'eye', () => setCableView(() => { cableView.all = !cableView.all; })],
     ['Open paperwork', 'sheet', () => openPaper()],
