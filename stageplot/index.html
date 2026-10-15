@@ -657,6 +657,8 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .swatch[aria-pressed="true"], .swatch.on { outline: 2px solid var(--accent); outline-offset: 2px; }
 .swatch.custom { background: conic-gradient(#e5484d, #f5a524, #30a46c, #0091ff, #8e4ec6, #e5484d); display: grid; place-items: center; overflow: hidden; }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
+.teamgear { gap: 8px; flex-wrap: nowrap; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; cursor: pointer; }
+.teamgear input { accent-color: var(--accent); }
 .about { max-width: 520px; }
 .lib { width: min(640px, calc(100vw - 24px)); max-height: min(86vh, 820px); display: grid; grid-template-rows: auto 1fr; gap: 12px; }
 #libBody { display: grid; gap: 12px; overflow-y: auto; min-height: 0; padding-right: 2px; }
@@ -1267,6 +1269,8 @@ function setGroup(ids) {
 // Compare with another week: gear matched by id (copied weeks and rebuilds keep ids)
 // Detail level: Simple keeps the everyday controls up front and folds the fine-grained ones away; Advanced shows everything
 const ui = { adv: false, snap: .05, guide: true };   // snap: metres to round to as gear moves (0 = off)
+ui.teamGear = true;
+try { ui.teamGear = localStorage.getItem('stageplot.teamGear') !== 'off'; } catch { /* default on */ }
 try { ui.adv = localStorage.getItem('stageplot.detail') === 'adv'; ui.guide = localStorage.getItem('stageplot.guide') !== 'off'; const sn = localStorage.getItem('stageplot.snap'); if (sn !== null && [0, .05, .25, .5].includes(Number(sn))) ui.snap = Number(sn); } catch { /* storage blocked */ }
 function setGuide(on) { ui.guide = on; try { localStorage.setItem('stageplot.guide', on ? 'on' : 'off'); } catch { /* memory only */ } renderInspector(); if (!on) toast('Guide hidden · bring it back from the ⋯ menu'); }
 const moreOpen = {};            // which "More settings" folds are open, by panel
@@ -1458,6 +1462,7 @@ function buildFromTeam() {
       for (let k = 0; k < 20 && !inPoly(ax, ay, poly); k++) { ax += (cx - ax) * .15; ay += (cy - ay) * .15; }
     }
     gear.forEach(([type, dx, dy, opts], gi) => {
+      if (!ui.teamGear && type !== 'person') return;   // "people only": the team stands on stage, their gear is yours to place
       const genKey = `${person.role}#${k}:${gi}:${type}`;
       const prev = old.get(genKey);
       const o = opts || {};
@@ -2897,7 +2902,8 @@ function renderRail() {
         <button class="btn" id="bulkAdd">Add these people</button>
         <p class="hint">Name, then position. “BGV”, “Keys / Vox” and similar are understood.</p></div></details>`;
     const built = plan.items.some(i => i.gen);
-    foot.innerHTML = `<button class="btn ${built ? '' : 'primary '}lg block" id="buildBtn" ${plan.team.length ? '' : 'disabled'}>${ic('wand', 'sm')}${built ? 'Rebuild stage from team' : 'Build stage from team'}</button>
+    foot.innerHTML = `<label class="row teamgear" for="teamGearCb" title="Off: the team is placed on stage, but you add their instruments, mics and monitors yourself"><input type="checkbox" id="teamGearCb" ${ui.teamGear ? 'checked' : ''}><span>Add each person’s instruments &amp; gear</span></label>
+      <button class="btn ${built ? '' : 'primary '}lg block" id="buildBtn" ${plan.team.length ? '' : 'disabled'}>${ic('wand', 'sm')}${ui.teamGear ? (built ? 'Rebuild stage from team' : 'Build stage from team') : (built ? 'Re-place the team' : 'Place the team on stage')}</button>
       ${built ? '' : `<p class="hint" style="text-align:center">Places everyone's gear, then patches and powers it.</p>`}`;
   } else if (railTab === 'gear') {
     const q = gearQuery.trim().toLowerCase();
@@ -3920,7 +3926,7 @@ $('weekPop').addEventListener('click', e => {
 /* rail */
 for (const [id, t] of [['tTeam', 'team'], ['tGear', 'gear'], ['tStage', 'stage']]) $(id).onclick = () => { railTab = t; renderRail(); };
 function matchRole(s) { for (const [re, r] of ROLE_MATCH) if (re.test(s)) return r; return ''; }
-function buildNow() { mutate(() => { buildFromTeam(); autoCable(); }); toast(`Stage built · ${plural(plan.items.filter(i => i.gen && i.type !== 'person').length, 'item')} placed`, true); }
+function buildNow() { mutate(() => { buildFromTeam(); autoCable(); }); toast(ui.teamGear ? `Stage built · ${plural(plan.items.filter(i => i.gen && i.type !== 'person').length, 'item')} placed` : `${plural(plan.items.filter(i => i.gen && i.type === 'person').length, 'person', 'people')} placed · add their gear from the Gear tab`, true); }
 $('railFoot').addEventListener('click', e => { if (e.target.closest('#buildBtn')) buildNow(); });
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
@@ -3955,6 +3961,14 @@ $('railPane').addEventListener('dragstart', e => {
 });
 $('railPane').addEventListener('input', e => {
   if (e.target.id === 'gearSearch') { gearQuery = e.target.value; const pos = e.target.selectionStart; renderRail(); const s = $('gearSearch'); s.focus(); s.setSelectionRange(pos, pos); }
+});
+$('railFoot').addEventListener('change', e => {
+  if (e.target.id !== 'teamGearCb') return;
+  ui.teamGear = e.target.checked; try { localStorage.setItem('stageplot.teamGear', ui.teamGear ? 'on' : 'off'); } catch { /* memory only */ }
+  const had = plan.items.some(i => i.gen && i.type !== 'person'), built = plan.items.some(i => i.gen);
+  if (!ui.teamGear && had) mutate(() => { buildFromTeam(); autoCable(); }, 'Team gear removed. New team members arrive without gear');
+  else if (ui.teamGear && built) mutate(() => { buildFromTeam(); autoCable(); }, 'Team gear placed again');
+  else { renderRail(); toast(ui.teamGear ? 'Building from the team adds everyone’s gear' : 'Building from the team places people only'); }
 });
 $('railPane').addEventListener('change', e => {
   const t = e.target, card = t.closest('[data-pid]');
