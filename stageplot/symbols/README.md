@@ -27,7 +27,7 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Bass amp](bass_amp.svg) | `bass_amp` | Bass amp | 0.61 × 0.46 m |
 | ![MIDI keyboard controller](midi_keys.svg) | `midi_keys` | MIDI keyboard controller | 1.52 × 0.61 m |
 | ![Keyboard rig](keys.svg) | `keys` | Keyboard rig | 1.52 × 0.61 m |
-| ![Multi-effects floor unit (Helix style)](multifx.svg) | `multifx` | Multi-effects floor unit (Helix style) | 0.64 × 0.30 m |
+| ![Multi-effects floor unit](multifx.svg) | `multifx` | Multi-effects floor unit | 0.64 × 0.30 m |
 | ![Acoustic guitar (on stand)](ac_guitar.svg) | `ac_guitar` | Acoustic guitar (on stand) | 0.43 × 1.04 m |
 | ![Electric guitar (on stand)](el_guitar.svg) | `el_guitar` | Electric guitar (on stand) | 0.37 × 0.98 m |
 | ![Bass guitar (on stand)](bass_guitar.svg) | `bass_guitar` | Bass guitar (on stand) | 0.37 × 1.19 m |
@@ -35,11 +35,11 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![Cajón](cajon.svg) | `cajon` | Cajón | 0.34 × 0.34 m |
 | ![Upright piano](up_piano.svg) | `up_piano` | Upright piano | 1.52 × 0.61 m |
 | ![Grand piano](grand_piano.svg) | `grand_piano` | Grand piano | 1.52 × 1.98 m |
-| ![iPad stand](ipad_stand.svg) | `ipad_stand` | iPad stand | 0.30 × 0.24 m |
+| ![Tablet stand](ipad_stand.svg) | `ipad_stand` | Tablet stand | 0.30 × 0.24 m |
 | ![Acoustic preamp pedal](ac_preamp.svg) | `ac_preamp` | Acoustic preamp pedal | 0.24 × 0.17 m |
 | ![MIDI footswitch controller](midi_fs.svg) | `midi_fs` | MIDI footswitch controller | 0.52 × 0.17 m |
 | ![USB audio interface (2 in / 2 out)](usb_if.svg) | `usb_if` | USB audio interface (2 in / 2 out) | 0.23 × 0.17 m |
-| ![MultiTracks iPad](mt_ipad.svg) | `mt_ipad` | MultiTracks iPad | 0.30 × 0.24 m |
+| ![Tracks & click player (tablet)](mt_ipad.svg) | `mt_ipad` | Tracks & click player (tablet) | 0.30 × 0.24 m |
 | ![Electronic drum kit](edrums.svg) | `edrums` | Electronic drum kit | 1.52 × 1.37 m |
 | ![Bass effects pedal (2-channel)](bass_pedal.svg) | `bass_pedal` | Bass effects pedal (2-channel) | 0.35 × 0.26 m |
 | ![Pedalboard](pedalboard.svg) | `pedalboard` | Pedalboard | 0.76 × 0.37 m |
