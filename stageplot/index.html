@@ -664,7 +664,6 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .gpick { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .gpk { display: grid; justify-items: center; gap: 4px; padding: 6px 2px 5px; border: 1px solid var(--line); border-radius: var(--r-md); background: radial-gradient(120% 90% at 50% 20%, color-mix(in srgb, var(--deck) 82%, #fff), var(--deck)); cursor: pointer; }
-.micdisc { fill: #2e6a99; opacity: .55; stroke: rgba(160,205,240,.7); stroke-width: .04; }
 .gpick.light .gpk { background: radial-gradient(120% 90% at 50% 25%, #ffffff, #e3e8ec); border-color: var(--line-2); }
 .gpick.light .gpk span { color: #34404a; }
 .gpk span { max-width: 100%; text-wrap: balance; min-height: 2.2em; display: grid; place-items: center; }
@@ -2010,21 +2009,21 @@ const SYM_CSS = `
 .s-emesh{fill:#3a3f46}.s-ehoop{fill:none;stroke:#8a939b;stroke-width:.035}.s-emeshline{fill:none;stroke:rgba(255,255,255,.08);stroke-width:.012}.s-etower{fill:#1d2024;stroke:#000;stroke-width:.02}
 .s-ecym{fill:#141518;stroke:#000;stroke-width:.02}.s-ecymzone{fill:none;stroke:rgba(255,255,255,.1);stroke-width:.03}.s-ecymbell{fill:#25282c}
 .s-emod{fill:#24272c;stroke:#000;stroke-width:.02}.s-escreen{fill:#2f6bf0}
-.s-hbring{fill:#15171a;stroke:rgba(0,0,0,.5);stroke-width:.008}.s-hbring2{fill:#efe9dc;stroke:#a89b78;stroke-width:.008}.s-hbblk{fill:#1b1c1e;stroke:#000;stroke-width:.006}.s-hbcream{fill:#efe4c4;stroke:#a89b78;stroke-width:.006}
+.s-hbring{fill:#15171a;stroke:rgba(0,0,0,.5);stroke-width:.008}.s-hbring2{fill:#efe9dc;stroke:#a89b78;stroke-width:.008}.s-hbblk{fill:url(#spHB);stroke:#000;stroke-width:.006}.s-hbcream{fill:#efe4c4;stroke:#a89b78;stroke-width:.006}
 .s-pole2{fill:#8f979e}.s-hbgloss{fill:none;stroke:rgba(255,255,255,.6);stroke-width:.01;stroke-linecap:round}
-.s-guardblk{fill:#141518;stroke:#000;stroke-width:.012}.s-guardpearl{fill:#efeee8;stroke:#b9b5a8;stroke-width:.014}.s-headblk{fill:#141210;stroke:#000;stroke-width:.008}
-.s-gbind{fill:none;stroke:#efe9d6;stroke-width:.022}.s-flame{fill:none;stroke:rgba(255,255,255,.07);stroke-width:.035;stroke-linecap:round}
-.s-fhole{fill:none;stroke:#141210;stroke-width:.035;stroke-linecap:round}.s-fdot{fill:#141210}.s-trapeze{fill:#cfd5da;stroke:#6b747b;stroke-width:.008}
-.s-knobhat{fill:#d8dde1;stroke:#6b747b;stroke-width:.01}.s-knobamb{fill:#c9862a;stroke:#5a3510;stroke-width:.01}.s-switch2{fill:none;stroke:#efe9d6;stroke-width:.022;stroke-linecap:round}
-.s-mbody{fill:#1d2024;stroke:#000;stroke-width:.008}.s-mbody2{fill:#3a3f45;stroke:#111;stroke-width:.008}.s-msilver{fill:#c3c9ce;stroke:#6b747b;stroke-width:.008}.s-mred{fill:#b8232f;stroke:#4a0c12;stroke-width:.008}
-.s-mesh{fill:#bcc2c7;stroke:#6b747b;stroke-width:.01}.s-meshline{fill:none;stroke:rgba(0,0,0,.28);stroke-width:.006}.s-meshdk{fill:#2b2f34;stroke:#0d0f11;stroke-width:.01}.s-meshlinelt{fill:none;stroke:rgba(255,255,255,.2);stroke-width:.006}
+.s-guardblk{fill:url(#spGuardB);stroke:#000;stroke-width:.012}.s-guardpearl{fill:url(#spPearl);stroke:#b9b5a8;stroke-width:.014}.s-headblk{fill:url(#spHead);stroke:#000;stroke-width:.008}
+.s-gbind{fill:none;stroke:#efe9d6;stroke-width:.014}.s-flame{fill:none;stroke:rgba(255,255,255,.07);stroke-width:.035;stroke-linecap:round}
+.s-fhole{fill:none;stroke:#141210;stroke-width:.022;stroke-linecap:round}.s-fdot{fill:#141210}.s-trapeze{fill:#cfd5da;stroke:#6b747b;stroke-width:.008}
+.s-knobhat{fill:url(#spChrome);stroke:#6b747b;stroke-width:.01}.s-knobamb{fill:url(#spKnobA);stroke:#5a3510;stroke-width:.01}.s-switch2{fill:none;stroke:#efe9d6;stroke-width:.022;stroke-linecap:round}
+.s-mbody{fill:url(#spMicBlk);stroke:#000;stroke-width:.008}.s-mbody2{fill:#3a3f45;stroke:#111;stroke-width:.008}.s-msilver{fill:url(#spMicSil);stroke:#6b747b;stroke-width:.008}.s-mred{fill:url(#spMicRed);stroke:#4a0c12;stroke-width:.008}
+.s-mesh{fill:url(#spMesh);stroke:#6b747b;stroke-width:.01}.s-meshline{fill:none;stroke:rgba(0,0,0,.28);stroke-width:.006}.s-meshdk{fill:url(#spMeshDk);stroke:#0d0f11;stroke-width:.01}.s-meshlinelt{fill:none;stroke:rgba(255,255,255,.2);stroke-width:.006}
 .s-mglint{fill:none;stroke:rgba(255,255,255,.7);stroke-width:.022;stroke-linecap:round}.s-mshine{fill:none;stroke:rgba(255,255,255,.22);stroke-width:.018;stroke-linecap:round}
 .s-mband{fill:#3b82f6}.s-mled{fill:#22c55e}.s-mledr{fill:#ef4444}.s-mledb{fill:#60a5fa}.s-mscreen{fill:#0c1a24;stroke:rgba(255,255,255,.25);stroke-width:.006}.s-mant{fill:none;stroke:#1d2024;stroke-width:.03;stroke-linecap:round}
 .s-mbase{fill:#26292e;stroke:#000;stroke-width:.01}.s-mpost{fill:none;stroke:#aab2b9;stroke-width:.04}.s-mpost2{fill:none;stroke:#aab2b9;stroke-width:.035;stroke-linecap:round}.s-myoke{fill:none;stroke:#aab2b9;stroke-width:.03}
-.s-mchrome{fill:#d4dadf;stroke:#6b747b;stroke-width:.01}.s-mslot{fill:none;stroke:#4b5259;stroke-width:.014}.s-mchromeline{fill:none;stroke:rgba(0,0,0,.18);stroke-width:.01}
+.s-mchrome{fill:url(#spChrome);stroke:#6b747b;stroke-width:.01}.s-mslot{fill:none;stroke:#4b5259;stroke-width:.014}.s-mchromeline{fill:none;stroke:rgba(0,0,0,.18);stroke-width:.01}
 .s-mneck{fill:none;stroke:#2a2d31;stroke-width:.05;stroke-linecap:round}.s-mneckrib{fill:none;stroke:rgba(255,255,255,.22);stroke-width:.05;stroke-dasharray:.008 .018}
 .s-mfoam{fill:#1a1b1e;stroke:#000;stroke-width:.008}.s-mcable{fill:none;stroke:#1d2024;stroke-width:.018;stroke-linecap:round}
-.s-mshock{fill:none;stroke:#3a3f45;stroke-width:.03}.s-melastic{fill:none;stroke:#111;stroke-width:.012}.s-mgold{fill:#d8c48e;stroke:#8a7a48;stroke-width:.008}
+.s-mshock{fill:none;stroke:#3a3f45;stroke-width:.03}.s-melastic{fill:none;stroke:#111;stroke-width:.012}.s-mgold{fill:url(#spGold);stroke:#8a7a48;stroke-width:.008}
 .s-rosette{fill:#2a1a10}.s-rosette2{fill:#e9dcc0}.s-shole{fill:#120c08}.s-abridge{fill:#2c1a12;stroke:#120a06;stroke-width:.01}.s-asaddle{fill:none;stroke:#f1ead8;stroke-width:.02;stroke-linecap:round}.s-apin{fill:#f1ead8;stroke:#8a7f62;stroke-width:.006}
 .s-dicase{fill:#1e3a8a}.s-ditop{fill:#2f6bf0}.s-dicap{fill:#3f4752;stroke:rgba(0,0,0,.35);stroke-width:.01}.s-discrew{fill:#9aa3ab}
 .s-dihole{fill:#0e1114}.s-dipin{fill:#d9dee2}.s-dilabel{fill:rgba(255,255,255,.82)}.s-dislot{fill:#0f1a3d}.s-diglint{fill:rgba(255,255,255,.14)}
@@ -2033,19 +2032,20 @@ const SYM_CSS = `
 .s-arm{fill:none;stroke:#d9dee2;stroke-width:.018;stroke-linecap:round}
 .s-gloss2{fill:none;stroke:rgba(255,255,255,.28);stroke-width:.035;stroke-linecap:round}
 .s-bodyrim{fill:none;stroke:rgba(0,0,0,.55);stroke-width:.018}
-.s-guard{fill:#f3f0e6;stroke:#bdb6a4;stroke-width:.014}
+.s-guard{fill:url(#spGuardW);stroke:#bdb6a4;stroke-width:.012}.s-guardbevel{fill:none;stroke:rgba(255,255,255,.45);stroke-width:.008}
+.s-roundover{fill:none;stroke:rgba(0,0,0,.32);stroke-width:.036}.s-roundlight{fill:none;stroke:rgba(255,255,255,.18);stroke-width:.018}.s-strw{fill:none;stroke:rgba(214,200,170,.85);stroke-width:.0075}
 .s-tort{fill:#3a160b}.s-tortspot{fill:#9c4a1c;opacity:.5}.s-tortspot2{fill:#c27a3a;opacity:.32}.s-guardrim{fill:none;stroke:#e9dccb;stroke-width:.012}
 .s-screw{fill:#cfd5da}
-.s-maple2{fill:#e6c487;stroke:#a87f3f;stroke-width:.008}.s-rosewood{fill:#3b2217;stroke:#1d100a;stroke-width:.008}
+.s-maple2{fill:url(#spMaple);stroke:#a87f3f;stroke-width:.008}.s-rosewood{fill:url(#spRose);stroke:#1d100a;stroke-width:.008}
 .s-headrim{fill:none;stroke:#8c6530;stroke-width:.01}
 .s-fret2{fill:none;stroke:#d9dde0;stroke-width:.007}
 .s-pearl{fill:#efe9dc}
 .s-nut{fill:none;stroke:#f4f1e8;stroke-width:.02}
-.s-chrome2{fill:#d9dee2;stroke:#7d868d;stroke-width:.008}
+.s-chrome2{fill:url(#spChrome);stroke:#6f7880;stroke-width:.008}
 .s-saddle{fill:#aab2b9;stroke:#6b747b;stroke-width:.006}
-.s-coil{fill:#f2ead2;stroke:#a89b78;stroke-width:.008}.s-pole{fill:#5c5f63}
+.s-coil{fill:url(#spCoil);stroke:#a89b78;stroke-width:.008}.s-pole{fill:#5c5f63}
 .s-coilb{fill:#141414;stroke:#3a3a3a;stroke-width:.008}.s-pole2{fill:#8f979d}
-.s-knob{fill:#f2ead2;stroke:#8a7f62;stroke-width:.01}.s-knob2{fill:#2a2a2a;stroke:#b8bfc4;stroke-width:.012}
+.s-knob{fill:url(#spKnobC);stroke:#8a7f62;stroke-width:.01}.s-knob2{fill:url(#spKnobB);stroke:#b8bfc4;stroke-width:.012}
 .s-switch{fill:none;stroke:#f2ead2;stroke-width:.03;stroke-linecap:round}
 .s-str2{fill:none;stroke:rgba(235,238,240,.75);stroke-width:.005}
 .s-str3{fill:none;stroke:rgba(225,228,230,.8);stroke-width:.009}
@@ -2082,6 +2082,7 @@ const SYM_CSS = `
 .s-wood{fill:#c08a4e}.s-wood2{fill:#7a5232}.s-red2{fill:#b5413a}.s-blk{fill:#26292d}.s-brass{fill:#d6b04a}
 .c-audio{fill:#2e6a99}.c-inst{fill:#6b51a3}.c-power{fill:#b85a22}.c-infra{fill:#44535e}.c-video{fill:#a3426b}
 `;
+let ART_DEFS = '';   // shared gradients and soft-shadow filters for the drawn instruments and mics (one copy in the page, one in each export)
 const MODEL_ART = {};   // vector art for each picture model, by gear type then model key: { art, box: [width, top, bottom] }
 const SYM = (() => {
   const f = n => +n.toFixed(3);
@@ -2166,27 +2167,35 @@ const SYM = (() => {
   const fretYs = (nut, scale, n) => Array.from({ length: n }, (_, i) => nut + scale * (1 - Math.pow(2, -(i + 1) / 12)));
   // offset double cutaway: long pointed bass-side horn, shorter treble horn, narrow waist, round lower bout
   const STRAT_BODY = 'M.095 .44C.12 .36 .17 .24 .23 .19C.29 .15 .36 .17 .38 .26C.4 .36 .45 .44 .46 .56C.47 .68 .44 .74 .45 .84C.46 .94 .54 1.0 .54 1.14C.54 1.42 .34 1.58 0 1.58C-.34 1.58 -.54 1.42 -.54 1.14C-.54 1.0 -.46 .94 -.45 .84C-.44 .74 -.49 .66 -.49 .52C-.49 .36 -.45 .2 -.39 .13C-.34 .07 -.26 .08 -.24 .15C-.2 .25 -.15 .34 -.12 .4C-.11 .42 -.1 .43 -.095 .44Z';
-  const GLOSS = '<path class="s-gloss2" d="M-.38 .6C-.43 .78 -.44 1.0 -.4 1.18"/><path class="s-gloss2" d="M.36 .36C.39 .42 .4 .47 .4 .52"/>';   // light catching the lacquer
   // a finish that fades smoothly from the edge in: many thin steps between colour stops (no gradients, so ids never clash in copies)
   const mixHex = (a, b, t) => '#' + [0, 2, 4].map(k => Math.round(parseInt(a.substr(1 + k, 2), 16) * (1 - t) + parseInt(b.substr(1 + k, 2), 16) * t).toString(16).padStart(2, '0')).join('');
   const finish = (d, stops, cy, inner, n = 14) => Array.from({ length: n }, (_, i) => {
     const t = i / (n - 1), k = 1 - (1 - inner) * t, seg = Math.min(stops.length - 2, Math.floor(t * (stops.length - 1))), lt = t * (stops.length - 1) - seg;
     return `<path d="${d}" style="fill:${mixHex(stops[seg], stops[seg + 1], lt)}"${i ? ` transform="translate(0 ${cy}) scale(${f(k)}) translate(0 ${-cy})"` : ''}/>`;
   }).join('');
+  /* real lacquer: a smooth radial burst per finish, a soft shadow on the deck, a darker roundover at the edge, a satin highlight */
+  const DEFS = [];
+  const lac = (id, stops) => { const a = [...stops].reverse(), n = a.length - 1;
+    DEFS.push(`<radialGradient id="spFin_${id}" cx=".5" cy=".64" r=".66" fx=".46" fy=".58">${a.map((c, i) => `<stop offset="${i ? f(.3 + .7 * Math.pow(i / n, 1.25)) : 0}" stop-color="${c}"/>`).join('')}</radialGradient>`); return `spFin_${id}`; };
+  const bodyArt = (d, fin, cy, spec, bind) => `<path d="${d}" transform="translate(.06 .09)" style="fill:#000;opacity:.5" filter="url(#spShadow)"/>` +
+    `<path d="${d}" style="fill:url(#${fin})"/>` + (bind ? P(d, 's-gbind') : '') + `<path class="s-roundover" d="${d}"/>` + layer(d, 's-roundlight', .962, cy) +
+    `<ellipse cx="${spec[0]}" cy="${spec[1]}" rx="${spec[2]}" ry="${spec[3]}" transform="rotate(-12 ${spec[0]} ${spec[1]})" style="fill:url(#spSpec)"/>`;
+  const BASS_FIN = lac('bass', ['#5a0c13', '#9a1823', '#c4262f', '#d8424a', '#e35a5e']), ACOUSTIC_FIN = lac('acoustic', ['#6a3c14', '#b47c3c', '#d6a865', '#e6c487', '#efd5a0', '#f3ddae']);   // registered before ART_DEFS is built
+  const softShadow = (d, dx = .03, dy = .05, o = .45) => `<path d="${d}" transform="translate(${dx} ${dy})" style="fill:#000;opacity:${o}" filter="url(#spShadow)"/>`;
   const layer = (d, cls, k, cy) => `<path class="${cls}" d="${d}" transform="translate(0 ${cy}) scale(${k}) translate(0 ${-cy})"/>`;
   const neckOn = (nut, heel, wNut, wHeel, board, frets, dots, fretW) => `<path class="${board}" d="M${-wNut / 2} ${nut}L${wNut / 2} ${nut}L${wHeel / 2} ${heel}L${-wHeel / 2} ${heel}Z"/>` +
     frets.map(y => `<path class="s-fret2" d="M${f(-(wNut + (wHeel - wNut) * (y - nut) / (heel - nut)) / 2 + .004)} ${f(y)}H${f((wNut + (wHeel - wNut) * (y - nut) / (heel - nut)) / 2 - .004)}"/>`).join('') +
     dots.map(([a, b2, dbl]) => { const y = (frets[a - 1] + (a > 1 ? frets[a - 2] : nut)) / 2; return dbl ? C_(-.025, f(y), fretW, 's-pearl') + C_(.025, f(y), fretW, 's-pearl') : C_(0, f(y), fretW, 's-pearl'); }).join('') +
     `<path class="s-nut" d="M${-wNut / 2} ${nut}H${wNut / 2}"/>`;
-  const strings2 = (n, yB, yN, wB, wN, cls = 's-str2') => Array.from({ length: n }, (_, i) => { const t = n > 1 ? i / (n - 1) - .5 : 0; return `<path class="${cls}" d="M${f(t * wB)} ${f(yB)}L${f(t * wN)} ${f(yN)}"/>`; }).join('');
+  const strings2 = (n, yB, yN, wB, wN, cls = 's-str2') => Array.from({ length: n }, (_, i) => { const t = n > 1 ? i / (n - 1) - .5 : 0; return `<path class="${cls === 's-str2' && n === 6 && i < 3 ? 's-strw' : cls}" d="M${f(t * wB)} ${f(yB)}L${f(t * wN)} ${f(yN)}"/>`; }).join('');
   const pbass2 = () => {   // tortoise guard: fine two-tone mottle kept inside the guard's two lobes
     const nut = -1.38, scale = 2.83, fr = fretYs(nut, scale, 20), bridgeY = nut + scale;
     const dy = .38, body = `<g transform="translate(0 ${dy}) scale(1.06 1.02)">`;
     const head = 'M-.075 -1.38L-.085 -1.6C-.09 -1.74 -.12 -1.84 -.1 -1.89C-.07 -1.95 .04 -1.95 .09 -1.89C.15 -1.82 .17 -1.74 .14 -1.66C.11 -1.58 .08 -1.55 .08 -1.47L.075 -1.38Z';
     const keys = [-1.47, -1.6, -1.73, -1.86];
     const guard = 'M-.1 .44C-.18 .38 -.27 .34 -.31 .37C-.36 .41 -.36 .52 -.37 .62C-.39 .8 -.45 .94 -.43 1.08C-.41 1.22 -.28 1.27 -.16 1.2C-.05 1.13 .04 1.04 .12 .96C.22 .86 .3 .74 .33 .62C.35 .52 .31 .46 .25 .44C.19 .42 .13 .42 .1 .44Z';
-    return body + finish(STRAT_BODY, ['#5a0c13', '#9a1823', '#c4262f', '#d8424a', '#e35a5e'], 1.0, .42) + P(STRAT_BODY, 's-bodyrim') + GLOSS +
-      P(guard, 's-tort') + [[-0.146,0.564,0.018,0,137],[-0.298,0.862,0.023,0,9],[-0.303,0.749,0.012,1,15],[0.186,0.545,0.012,0,147],[-0.214,0.844,0.01,1,36],[-0.003,0.854,0.017,0,26],[-0.114,0.838,0.009,0,158],[-0.224,0.929,0.015,1,119],[-0.162,1.008,0.019,0,20],[-0.282,0.749,0.02,0,125],[-0.309,0.845,0.021,1,87],[-0.047,0.918,0.009,1,165],[-0.066,0.954,0.022,1,5],[-0.216,0.658,0.02,1,100],[-0.25,0.737,0.012,0,110],[0.21,0.652,0.015,1,97],[-0.244,0.62,0.012,1,150],[-0.24,0.655,0.01,1,156],[0.167,0.731,0.014,0,123],[-0.253,0.695,0.009,0,145],[-0.262,0.634,0.014,1,121],[-0.279,1.046,0.024,1,122],[-0.293,0.696,0.012,0,132],[-0.188,0.713,0.011,0,136],[-0.003,0.807,0.018,0,61],[-0.21,0.817,0.014,0,7],[-0.232,0.878,0.014,1,93],[-0.05,0.693,0.016,0,122],[0.24,0.697,0.018,0,99],[0.161,0.689,0.021,1,118],[0.118,0.577,0.01,0,151],[-0.264,1.03,0.024,1,39],[-0.221,0.634,0.013,0,150],[-0.145,0.836,0.021,0,90],[0.152,0.563,0.01,0,142],[-0.319,0.931,0.016,1,27],[-0.295,0.772,0.008,0,113],[-0.177,0.811,0.021,0,133],[-0.189,0.846,0.023,1,35],[-0.085,0.731,0.013,0,109],[-0.312,0.922,0.021,0,164],[0.076,0.559,0.022,1,56],[0.133,0.525,0.022,0,170],[0.189,0.571,0.015,1,86],[-0.082,0.706,0.009,1,4],[-0.137,0.776,0.019,1,84]].map(([x, y, r, k, a]) => `<ellipse class="${k ? 's-tortspot' : 's-tortspot2'}" cx="${x}" cy="${y}" rx="${r}" ry="${f(r * .6)}" transform="rotate(${a} ${x} ${y})"/>`).join('') + P(guard, 's-guardrim') +
+    return body + bodyArt(STRAT_BODY, BASS_FIN, 1.0, [-.27, .8, .12, .32]) +
+      `<path d="${guard}" transform="translate(.01 .016)" style="fill:#000;opacity:.3"/>` + P(guard, 's-tort') + [[-0.146,0.564,0.018,0,137],[-0.298,0.862,0.023,0,9],[-0.303,0.749,0.012,1,15],[0.186,0.545,0.012,0,147],[-0.214,0.844,0.01,1,36],[-0.003,0.854,0.017,0,26],[-0.114,0.838,0.009,0,158],[-0.224,0.929,0.015,1,119],[-0.162,1.008,0.019,0,20],[-0.282,0.749,0.02,0,125],[-0.309,0.845,0.021,1,87],[-0.047,0.918,0.009,1,165],[-0.066,0.954,0.022,1,5],[-0.216,0.658,0.02,1,100],[-0.25,0.737,0.012,0,110],[0.21,0.652,0.015,1,97],[-0.244,0.62,0.012,1,150],[-0.24,0.655,0.01,1,156],[0.167,0.731,0.014,0,123],[-0.253,0.695,0.009,0,145],[-0.262,0.634,0.014,1,121],[-0.279,1.046,0.024,1,122],[-0.293,0.696,0.012,0,132],[-0.188,0.713,0.011,0,136],[-0.003,0.807,0.018,0,61],[-0.21,0.817,0.014,0,7],[-0.232,0.878,0.014,1,93],[-0.05,0.693,0.016,0,122],[0.24,0.697,0.018,0,99],[0.161,0.689,0.021,1,118],[0.118,0.577,0.01,0,151],[-0.264,1.03,0.024,1,39],[-0.221,0.634,0.013,0,150],[-0.145,0.836,0.021,0,90],[0.152,0.563,0.01,0,142],[-0.319,0.931,0.016,1,27],[-0.295,0.772,0.008,0,113],[-0.177,0.811,0.021,0,133],[-0.189,0.846,0.023,1,35],[-0.085,0.731,0.013,0,109],[-0.312,0.922,0.021,0,164],[0.076,0.559,0.022,1,56],[0.133,0.525,0.022,0,170],[0.189,0.571,0.015,1,86],[-0.082,0.706,0.009,1,4],[-0.137,0.776,0.019,1,84]].map(([x, y, r, k, a]) => `<ellipse class="${k ? 's-tortspot' : 's-tortspot2'}" cx="${x}" cy="${y}" rx="${r}" ry="${f(r * .6)}" transform="rotate(${a} ${x} ${y})"/>`).join('') + P(guard, 's-guardrim') +
       [[-.28, .42], [-.32, .62], [-.39, .92], [-.32, 1.18], [-.06, 1.12], [.2, .86], [.27, .56], [.18, .46]].map(([x, y]) => C_(x, y, .009, 's-screw')).join('') +
       `<g transform="rotate(-12 .3 1.22)">${R_(.22, 1.02, .15, .42, 's-chrome2', .07)}${C_(.295, 1.13, .045, 's-knob2')}${C_(.295, 1.32, .045, 's-knob2')}</g>` + '</g>' +
       neckOn(nut, .94, .14, .2, 's-rosewood', fr, [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19]], .012) +
@@ -2198,12 +2207,12 @@ const SYM = (() => {
   };
   /* Electric guitar models, all drawn to the same scale in feet with the neck upstage (y < 0) and the strap end at the bottom.
      One builder: body outline + finish, guard, neck and headstock, pickups, bridge and controls. No branding anywhere. */
-  const SINGLECUT_BODY = 'M.09 .5C.2 .5 .33 .53 .4 .63C.46 .72 .44 .82 .45 .9C.46 1.0 .53 1.06 .53 1.2C.53 1.44 .36 1.58 0 1.58C-.36 1.58 -.53 1.44 -.53 1.2C-.53 1.06 -.47 .98 -.46 .88C-.45 .76 -.48 .6 -.45 .46C-.42 .34 -.33 .27 -.22 .27C-.14 .27 -.1 .33 -.09 .42Z';
-  const DOUBLECUT_BODY = 'M.09 .44C.12 .34 .19 .24 .28 .23C.37 .22 .42 .3 .42 .4C.42 .5 .45 .58 .46 .66C.48 .76 .45 .84 .47 .94C.5 1.04 .54 1.1 .54 1.22C.54 1.46 .34 1.58 0 1.58C-.34 1.58 -.54 1.46 -.54 1.22C-.54 1.1 -.5 1.04 -.47 .94C-.45 .84 -.48 .76 -.46 .66C-.44 .56 -.41 .46 -.41 .36C-.42 .26 -.37 .18 -.29 .19C-.19 .2 -.12 .3 -.09 .44Z';
+  const SINGLECUT_BODY = 'M.09 .64C.18 .6 .34 .6 .42 .7C.47 .77 .44 .86 .46 .95C.49 1.05 .54 1.1 .54 1.22C.54 1.46 .34 1.58 0 1.58C-.34 1.58 -.54 1.46 -.54 1.22C-.54 1.1 -.48 1.04 -.46 .94C-.44 .84 -.49 .7 -.48 .55C-.47 .38 -.38 .28 -.25 .28C-.15 .28 -.1 .36 -.09 .45Z';
+  const DOUBLECUT_BODY = 'M.09 .5C.12 .4 .2 .3 .3 .29C.39 .28 .43 .36 .43 .45C.43 .55 .45 .62 .46 .7C.47 .8 .45 .86 .47 .95C.5 1.05 .54 1.1 .54 1.22C.54 1.46 .34 1.58 0 1.58C-.34 1.58 -.54 1.46 -.54 1.22C-.54 1.1 -.5 1.04 -.47 .95C-.45 .86 -.48 .8 -.47 .68C-.46 .56 -.44 .46 -.44 .38C-.44 .27 -.39 .21 -.31 .21C-.21 .21 -.13 .32 -.09 .45Z';
   const HOLLOW_BODY = 'M.09 .36C.14 .22 .26 .12 .4 .14C.56 .17 .62 .32 .6 .46C.58 .58 .54 .66 .58 .78C.64 .92 .74 1.0 .74 1.22C.74 1.5 .44 1.66 0 1.66C-.44 1.66 -.74 1.5 -.74 1.22C-.74 1.0 -.64 .92 -.58 .78C-.54 .66 -.58 .58 -.6 .46C-.62 .32 -.56 .17 -.4 .14C-.26 .12 -.14 .22 -.09 .36Z';
   const OFFSET_GUARD = 'M-.1 .44C-.17 .38 -.24 .35 -.28 .38C-.32 .41 -.32 .5 -.33 .58C-.35 .74 -.42 .86 -.42 1.0C-.42 1.12 -.33 1.18 -.22 1.15L-.13 1.08L.14 1.08C.2 1.17 .3 1.23 .38 1.19C.46 1.14 .46 1.03 .43 .94C.39 .82 .36 .72 .35 .62C.34 .52 .3 .46 .25 .44C.19 .42 .14 .42 .1 .44Z';
-  const SLAB_GUARD = 'M-.09 .5C-.2 .48 -.32 .52 -.38 .62C-.44 .72 -.43 .86 -.4 .96C-.36 1.08 -.27 1.14 -.17 1.13L-.13 .98L.13 .98L.19 .8C.23 .7 .2 .56 .09 .5Z';
-  const FLOAT_GUARD = 'M.16 .6C.3 .62 .46 .8 .52 .98C.56 1.1 .52 1.16 .44 1.12C.32 1.04 .22 .86 .14 .7Z';
+  const SLAB_GUARD = 'M-.09 .46C-.18 .4 -.36 .42 -.42 .55C-.47 .68 -.44 .86 -.36 .98C-.3 1.06 -.2 1.08 -.14 1.04L-.14 .97L.13 .97L.19 .86C.24 .76 .2 .67 .09 .65Z';
+  const FLOAT_GUARD = 'M.2 .66C.32 .7 .44 .86 .48 1.0C.5 1.08 .47 1.12 .42 1.09C.32 1.0 .24 .84 .18 .72Z';
   const HEADS = {
     inline: { d: 'M-.068 -1.0L-.075 -1.2C-.08 -1.34 -.1 -1.46 -.09 -1.53C-.07 -1.6 .02 -1.61 .07 -1.56C.12 -1.51 .14 -1.44 .12 -1.37C.1 -1.3 .07 -1.27 .07 -1.2L.068 -1.0Z', posts: [-1.08, -1.155, -1.23, -1.305, -1.38, -1.455].map(y => [-.035, y, -1]) },
     slab: { d: 'M-.068 -1.0L-.074 -1.2C-.078 -1.36 -.072 -1.48 -.052 -1.55C-.04 -1.6 .06 -1.62 .1 -1.6C.135 -1.58 .14 -1.54 .13 -1.48C.11 -1.38 .08 -1.3 .075 -1.2L.068 -1.0Z', posts: [-1.08, -1.155, -1.23, -1.305, -1.38, -1.455].map(y => [-.035, y, -1]) },
@@ -2217,10 +2226,10 @@ const SYM = (() => {
   const elGuitar = g => {
     const nut = -1.0, fr = fretYs(nut, g.scale, g.frets), bridgeY = nut + g.scale, H = HEADS[g.head];
     const sx = (i, w) => (i / 5 - .5) * w;
-    let s = finish(g.body, g.finish, g.cy || 1.06, g.inner || .38) + (g.flame ? g.flame : '') + (g.bind ? P(g.body, 's-gbind') : '') + P(g.body, 's-bodyrim') + (g.gloss || GLOSS);
+    let s = bodyArt(g.body, lac(g.id, g.finish), g.cy || 1.06, g.spec || [-.27, .8, .12, .32], g.bind).replace('<path class="s-roundover"', (g.flame || '') + '<path class="s-roundover"');
     if (g.fholes) s += g.fholes;
-    if (g.guard) s += P(g.guard, g.guardCls) + (g.screws || []).map(([x, y]) => C_(x, y, .009, 's-screw')).join('');
-    s += neckOn(nut, g.heel, .14, g.heelW || .18, g.board, fr, g.dots, .011) + P(H.d, g.headCls) + P(H.d, 's-headrim');
+    if (g.guard) s += `<path d="${g.guard}" transform="translate(.01 .016)" style="fill:#000;opacity:.3"/>` + P(g.guard, g.guardCls) + P(g.guard, 's-guardbevel') + (g.screws || []).map(([x, y]) => C_(x, y, .009, 's-screw')).join('');
+    s += softShadow(`M-.09 .1H.09V${g.heel}H-.09Z`, .03, .04, .4) + neckOn(nut, g.heel, .14, g.heelW || .18, g.board, fr, g.dots, .011) + softShadow(H.d, .03, .05, .5) + P(H.d, g.headCls) + P(H.d, 's-headrim');
     s += H.posts.map(([x, y, side]) => C_(x, y, .014, 's-chrome2') + R_(f(side < 0 ? x - .09 : x + .035), f(y - .016), .055, .032, 's-chrome2', .012)).join('');
     s += g.pickups(bridgeY) + g.bridge(bridgeY) + g.controls;
     s += strings2(6, bridgeY, nut, g.bridgeW || .17, .11) + H.posts.map(([x, y], i) => `<path class="s-str2" d="M${f(sx(i, .11))} ${nut}L${x} ${y}"/>`).join('');
@@ -2237,14 +2246,16 @@ const SYM = (() => {
       pickups: () => coilS(.66, 0) + coilS(.84, 0) + coilS(1.0, 9), bridge: tremBridge,
       controls: C_(.22, .93, .038, 's-knob') + C_(.28, 1.03, .038, 's-knob') + C_(.32, 1.13, .038, 's-knob') + `<path class="s-switch" d="M.17 .87L.22 .82"/>` +
         `<ellipse class="s-chrome2" cx=".44" cy="1.3" rx=".03" ry=".05" transform="rotate(-35 .44 1.3)"/><path class="s-arm" d="M.11 1.2C.16 1.24 .24 1.27 .34 1.27"/>` + C_(.34, 1.27, .018, 's-knob') },
-    t_burst: { body: SINGLECUT_BODY, finish: ['#140904', '#36160a', '#6e3412', '#b9772f', '#e0ad5c', '#ecc47c'], guard: SLAB_GUARD, guardCls: 's-guardblk', head: 'slab', headCls: 's-maple2', board: 's-maple2', gloss: '<path class="s-gloss2" d="M-.38 .7C-.43 .86 -.44 1.04 -.4 1.2"/>',
+    t_burst: { body: SINGLECUT_BODY, spec: [-.3, .72, .11, .26], finish: ['#140904', '#36160a', '#6e3412', '#b9772f', '#e0ad5c', '#ecc47c'], guard: SLAB_GUARD, guardCls: 's-guardblk', head: 'slab', headCls: 's-maple2', board: 's-maple2',
       screws: [[-.3, .58], [-.4, .82], [-.3, 1.08], [-.15, 1.1], [.12, .95], [.16, .62], [0, .52]],
       scale: 2.125, frets: 21, heel: .62, dots: [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19], [21]],
       pickups: () => R_(-.12, .7, .24, .07, 's-chrome2', .03) + `<path class="s-hbgloss" d="M-.09 .745H.09"/>`,
-      bridge: b => R_(-.17, f(b - .2), .34, .4, 's-chrome2', .04) + `<g transform="rotate(-7 0 ${f(b - .08)})">${R_(-.13, f(b - .11), .26, .065, 's-coil', .03)}${[-.085, -.051, -.017, .017, .051, .085].map(x => C_(x, f(b - .078), .009, 's-pole')).join('')}</g>` +
-        [-.06, 0, .06].map(x => R_(f(x - .026), f(b + .02), .052, .04, 's-saddle', .015)).join(''),
+      bridge: b => `<path class="s-chrome2" d="M-.15 ${f(b - .17)}H.15V${f(b + .09)}Q.15 ${f(b + .15)} .09 ${f(b + .15)}H-.09Q-.15 ${f(b + .15)} -.15 ${f(b + .09)}Z"/>` +
+        [[-.12, b - .14], [.12, b - .14], [-.12, b + .1], [.12, b + .1]].map(([x, y]) => C_(x, f(y), .009, 's-screw')).join('') +
+        `<g transform="rotate(-7 0 ${f(b - .07)})">${R_(-.12, f(b - .1), .24, .06, 's-coil', .03)}${[-.08, -.048, -.016, .016, .048, .08].map(x => C_(x, f(b - .07), .008, 's-pole')).join('')}</g>` +
+        [-.055, 0, .055].map(x => R_(f(x - .024), f(b + .02), .048, .036, 's-saddle', .015)).join(''),
       controls: `<g transform="rotate(-24 .3 1.12)">${R_(.25, .9, .1, .44, 's-chrome2', .045)}${C_(.3, .98, .012, 's-knob2')}${C_(.3, 1.12, .036, 's-knob2')}${C_(.3, 1.26, .036, 's-knob2')}</g>` },
-    dc_purple: { body: DOUBLECUT_BODY, finish: ['#12061f', '#271050', '#4b2390', '#6c40bd', '#8a62d6', '#a07ee4'], head: 'split', headCls: 's-headblk', board: 's-rosewood', bind: true, gloss: '<path class="s-gloss2" d="M-.38 .62C-.43 .8 -.44 1.0 -.4 1.18"/>',
+    dc_purple: { body: DOUBLECUT_BODY, spec: [-.27, .76, .12, .3], finish: ['#12061f', '#271050', '#4b2390', '#6c40bd', '#8a62d6', '#a07ee4'], head: 'split', headCls: 's-headblk', board: 's-rosewood', bind: true,
       flame: [.7, .82, .94, 1.06, 1.18, 1.3, 1.42].map(y => `<path class="s-flame" d="M-.4 ${y}C-.25 ${f(y - .05)} -.12 ${f(y + .05)} 0 ${y}C.12 ${f(y - .05)} .25 ${f(y + .05)} .4 ${y}"/>`).join(''),
       scale: 2.08, frets: 22, heel: .58, dots: [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19], [21]],
       pickups: () => hbucker(.74, 'zebra') + hbucker(1.0, 'zebra'), bridge: b => tomBridge(b, 'stop'),
@@ -2254,25 +2265,26 @@ const SYM = (() => {
       scale: 2.125, frets: 21, heel: .6, dots: [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19], [21]],
       pickups: () => coilS(.66, 0) + coilS(.84, 0) + hbucker(1.0, 'black'), bridge: tremBridge,
       controls: C_(.22, .93, .038, 's-knob') + C_(.28, 1.03, .038, 's-knob') + C_(.32, 1.13, .038, 's-knob') + `<path class="s-switch" d="M.17 .87L.22 .82"/>` + `<path class="s-arm" d="M.11 1.2C.16 1.24 .24 1.27 .34 1.27"/>` + C_(.34, 1.27, .018, 's-knob') },
-    hollow_white: { body: HOLLOW_BODY, finish: ['#b9b1a0', '#d8d1c1', '#ebe6da', '#f4f1e9', '#f8f6f0'], cy: 1.1, inner: .32, head: 'split', headCls: 's-headblk', board: 's-rosewood', bind: true, guard: FLOAT_GUARD, guardCls: 's-guardblk',
-      gloss: '<path class="s-gloss2" d="M-.6 .9C-.68 1.05 -.68 1.25 -.62 1.4"/><path class="s-gloss2" d="M.5 .25C.55 .3 .57 .36 .57 .42"/>',
-      fholes: [-1, 1].map(k => `<path class="s-fhole" d="M${.44 * k} .66C${.36 * k} .78 ${.52 * k} .88 ${.45 * k} 1.0C${.38 * k} 1.12 ${.52 * k} 1.18 ${.46 * k} 1.26"/>` + C_(f(.44 * k), .66, .022, 's-fdot') + C_(f(.46 * k), 1.26, .022, 's-fdot')).join(''),
+    hollow_white: { body: HOLLOW_BODY, spec: [-.4, .7, .16, .34], finish: ['#b9b1a0', '#d8d1c1', '#ebe6da', '#f4f1e9', '#f8f6f0'], cy: 1.1, inner: .32, head: 'split', headCls: 's-headblk', board: 's-rosewood', bind: true, guard: FLOAT_GUARD, guardCls: 's-guardblk',
+     
+      fholes: [-1, 1].map(k => `<path class="s-fhole" d="M${.44 * k} .66C${.36 * k} .78 ${.52 * k} .88 ${.45 * k} 1.0C${.38 * k} 1.12 ${.52 * k} 1.18 ${.46 * k} 1.26"/>` + C_(f(.44 * k), .66, .02, 's-fdot') + C_(f(.46 * k), 1.26, .02, 's-fdot')).join(''),
       scale: 2.06, frets: 20, heel: .42, heelW: .19, dots: [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19]],
       pickups: () => hbucker(.64, 'chrome') + hbucker(.9, 'chrome'), bridge: b => tomBridge(b, 'trapeze'),
       controls: [[-.34, 1.12], [-.42, 1.28], [-.2, 1.2], [-.28, 1.36]].map(([x, y]) => C_(x, y, .04, 's-knobamb')).join('') + C_(-.45, .5, .02, 's-chrome2') + `<path class="s-switch2" d="M-.45 .5L-.5 .44"/>` },
   };
+  MODEL_ART.el_guitar = {};
   const GTR_BOX = { s_burst: [1.1, -1.62, 1.6], s_gold: [1.1, -1.62, 1.6], t_burst: [1.08, -1.63, 1.6], dc_purple: [1.1, -1.62, 1.6], hollow_white: [1.5, -1.62, 1.68] };
-  MODEL_ART.el_guitar = {}; for (const k in GTR) MODEL_ART.el_guitar[k] = { art: elGuitar(GTR[k]), box: GTR_BOX[k] };
+  for (const k in GTR) GTR[k].id = k;
+  for (const k in GTR) MODEL_ART.el_guitar[k] = { art: elGuitar(GTR[k]), box: GTR_BOX[k] };
   const strat2 = () => MODEL_ART.el_guitar.s_burst.art;
   // dreadnought acoustic, same scale and style as the electrics: spruce top, rosette, tortoise guard, rosewood bridge with pins, 3+3 head
   const DREAD_BODY = 'M.2 .22C.36 .22 .5 .26 .53 .4C.56 .52 .5 .62 .52 .74C.55 .88 .68 .98 .68 1.2C.68 1.46 .44 1.62 0 1.62C-.44 1.62 -.68 1.46 -.68 1.2C-.68 .98 -.55 .88 -.52 .74C-.5 .62 -.56 .52 -.53 .4C-.5 .26 -.36 .22 -.2 .22Z';
   const acoustic2 = () => {
     const nut = -1.1, scale = 2.11, fr = fretYs(nut, scale, 20).filter(y => y < .4), bridgeY = nut + scale + .02, H = HEADS.split;
-    return finish(DREAD_BODY, ['#7a4a1c', '#b47c3c', '#d6a865', '#e6c487', '#efd5a0', '#f3ddae'], 1.1, .3) + P(DREAD_BODY, 's-gbind') + P(DREAD_BODY, 's-bodyrim') +
-      '<path class="s-gloss2" d="M-.58 .95C-.64 1.1 -.64 1.28 -.58 1.42"/><path class="s-gloss2" d="M.44 .3C.49 .35 .51 .4 .51 .46"/>' +
+    return bodyArt(DREAD_BODY, ACOUSTIC_FIN, 1.1, [-.4, .62, .15, .3], true) +
       `<path class="s-tort" d="M.17 .5C.32 .5 .44 .62 .45 .78C.46 .92 .36 .98 .26 .92C.18 .86 .16 .74 .14 .64Z"/>` +
       circ(0, .7, .25, 's-rosette') + circ(0, .7, .22, 's-rosette2') + circ(0, .7, .2, 's-rosette') + circ(0, .7, .17, 's-shole') +
-      neckOn(nut, .42, .15, .2, 's-rosewood', fr, [[3], [5], [7], [9], [12, 0, 1], [15], [17]], .011) +
+      softShadow('M-.1 .1H.1V.42H-.1Z', .03, .04, .4) + neckOn(nut, .42, .15, .2, 's-rosewood', fr, [[3], [5], [7], [9], [12, 0, 1], [15], [17]], .011) +
       `<g transform="translate(0 -.1)">${P(H.d, 's-headblk')}${P(H.d, 's-headrim')}${H.posts.map(([x, y, side]) => C_(x, y, .014, 's-chrome2') + R_(f(side < 0 ? x - .09 : x + .035), f(y - .016), .055, .032, 's-chrome2', .012)).join('')}</g>` +
       `<path class="s-abridge" d="M-.24 ${f(bridgeY - .05)}Q-.24 ${f(bridgeY - .08)} -.18 ${f(bridgeY - .08)}H.18Q.24 ${f(bridgeY - .08)} .24 ${f(bridgeY - .05)}V${f(bridgeY + .07)}Q.24 ${f(bridgeY + .1)} .18 ${f(bridgeY + .1)}H-.18Q-.24 ${f(bridgeY + .1)} -.24 ${f(bridgeY + .07)}Z"/>` +
       `<path class="s-asaddle" d="M-.1 ${f(bridgeY - .035)}L.1 ${f(bridgeY - .025)}"/>` + [-.085, -.051, -.017, .017, .051, .085].map(x => C_(x, f(bridgeY + .04), .012, 's-apin')).join('') +
@@ -2323,6 +2335,22 @@ const SYM = (() => {
     },
   };
   for (const t in MIC_ART) { MODEL_ART[t] = MODEL_ART[t] || {}; for (const k in MIC_ART[t]) MODEL_ART[t][k] = { art: MIC_ART[t][k], box: [1, -.5, .5] }; }
+  const stops = (...a) => a.map(([o, c, op]) => `<stop offset="${o}" stop-color="${c}"${op !== undefined ? ` stop-opacity="${op}"` : ''}/>`).join('');
+  const lin = (id, st, v) => `<linearGradient id="${id}" x1="0" y1="0" x2="${v ? 0 : 1}" y2="${v ? 1 : 0}">${stops(...st)}</linearGradient>`;
+  const rad = (id, st, cx = .5, cy = .5) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r=".6">${stops(...st)}</radialGradient>`;
+  ART_DEFS = '<filter id="spShadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation=".045"/></filter>' +
+    '<filter id="spMic" x="-35%" y="-35%" width="170%" height="170%"><feMorphology in="SourceAlpha" operator="dilate" radius=".007" result="d"/><feFlood flood-color="#fff" flood-opacity=".16"/><feComposite in2="d" operator="in" result="rim"/>' +
+      '<feGaussianBlur in="SourceAlpha" stdDeviation=".025" result="b"/><feOffset in="b" dx=".025" dy=".04" result="o"/><feComponentTransfer in="o" result="sh"><feFuncA type="linear" slope=".65"/></feComponentTransfer>' +
+      '<feMerge><feMergeNode in="sh"/><feMergeNode in="rim"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+    rad('spSpec', [[0, '#fff', .55], [.45, '#fff', .16], [1, '#fff', 0]]) +
+    `<linearGradient id="spChrome" x1="0" y1="0" x2="1" y2="1">${stops([0, '#7f8890'], [.3, '#f2f5f7'], [.5, '#b9c1c8'], [.62, '#ffffff'], [1, '#8a939b'])}</linearGradient>` +
+    lin('spMaple', [[0, '#c4924c'], [.25, '#e9c68a'], [.5, '#f4dcaa'], [.75, '#e9c68a'], [1, '#c4924c']]) + lin('spRose', [[0, '#1c0f09'], [.5, '#432719'], [1, '#1c0f09']]) +
+    lin('spGuardW', [[0, '#ffffff'], [1, '#e7e1d3']], 1) + lin('spGuardB', [[0, '#3a3c40'], [1, '#0b0c0d']], 1) + lin('spPearl', [[0, '#fdfcf9'], [.5, '#e4e8ee'], [1, '#f6efe4']], 1) +
+    lin('spCoil', [[0, '#fff9e6'], [1, '#ddcfa6']], 1) + lin('spHB', [[0, '#4a4d52'], [1, '#101113']], 1) + lin('spHead', [[0, '#2e2925'], [1, '#0b0a09']], 1) +
+    rad('spKnobC', [[0, '#fffbf2'], [1, '#cfc4a6']], .35, .3) + rad('spKnobB', [[0, '#62666c'], [1, '#0f1012']], .35, .3) + rad('spKnobA', [[0, '#f0b45a'], [1, '#8a4f14']], .35, .3) +
+    lin('spMicBlk', [[0, '#121417'], [.3, '#4d535a'], [.55, '#23262b'], [1, '#0c0e10']]) + lin('spMicSil', [[0, '#7f8890'], [.3, '#f3f6f8'], [.55, '#c3c9ce'], [1, '#737c84']]) +
+    lin('spMicRed', [[0, '#5e0b14'], [.3, '#e8505b'], [.55, '#b8232f'], [1, '#4f0810']]) + lin('spGold', [[0, '#b99a52'], [.35, '#f6e7b8'], [1, '#a88a44']]) +
+    rad('spMesh', [[0, '#ffffff'], [.45, '#cdd3d8'], [1, '#7a838b']], .38, .32) + rad('spMeshDk', [[0, '#737a82'], [.5, '#2d3136'], [1, '#0c0e10']], .38, .32) + DEFS.join('');
   const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
   function console_(w, d) {
     const hw = w / 2, hd = d / 2;
@@ -2462,6 +2490,8 @@ const SYM = (() => {
   };
 })();
 /* SYMBOLS:END */
+// one shared copy of the instrument gradients and shadows for every drawing on the page (plot, icons, pickers)
+document.body.insertAdjacentHTML('afterbegin', `<svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden"><defs>${ART_DEFS}</defs></svg>`);
 
 /* ===================================================================
    Rendering: plot
@@ -2502,8 +2532,8 @@ function shapeSvg(it, w, d) {
     return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="gart" transform="scale(${f3(k)}) translate(0 ${f3(-(top + bot) / 2)})">${ma.art}</g>`;
   }
   if (MIC_MODELS[it.type]) {   // the chosen mic, a little larger than its stand's footprint so it reads
-    const S = Math.max(w, d) * 1.55;   // on the blue audio disc, so a dark mic still reads on a dark stage
-    return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><circle class="micdisc" r="${f3(Math.min(w, d) / 2)}"/><g class="gart" transform="scale(${f3(S)})">${MODEL_ART[it.type][modelKey(it)].art}</g>`;
+    const S = Math.max(w, d) * 1.55;   // a light rim and a soft shadow keep a dark mic readable on a dark stage
+    return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><g class="gart" transform="scale(${f3(S)})" filter="url(#spMic)">${MODEL_ART[it.type][modelKey(it)].art}</g>`;
   }
 
   if (SYM[it.type]) {
@@ -4426,7 +4456,7 @@ if ($('dlAll')) $('dlAll').onclick = () => { const s = backup(true); $('dataText
 // every sheet as one self-contained page: opens and prints anywhere, no app needed
 function paperworkHtml() {
   const keep = paperTab; paperTab = 'all'; renderPaper();
-  const body = $('paperInner').innerHTML; paperTab = keep; renderPaper();
+  const body = `<svg aria-hidden="true" style="position:absolute;width:0;height:0"><defs>${ART_DEFS}</defs></svg>` + $('paperInner').innerHTML; paperTab = keep; renderPaper();   // the drawings' gradients travel with the file
   const css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n');
   return `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(plan.name || 'Stage plot')} · ${esc(plan.date)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap"><style>${css}</style><style>.docnav,[data-copy],.printbar{display:none!important}html,body{height:auto;display:block}</style></head><body><main class="paper" style="overflow:visible"><div class="paper-inner">${body}</div></main></body></html>`;
 }

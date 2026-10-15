@@ -11,7 +11,7 @@ const block = (name) => {
   if (!m) throw new Error(`Missing ${name} block in index.html`);
   return m[1];
 };
-const { CAT, SYM, SYM_CSS } = new Function(`${block('CAT')}\n${block('SYMBOLS')}\nreturn { CAT, SYM, SYM_CSS };`)();
+const { CAT, SYM, SYM_CSS, ART_DEFS } = new Function(`${block('CAT')}\n${block('SYMBOLS')}\nreturn { CAT, SYM, SYM_CSS, ART_DEFS };`)();
 
 const PX_PER_FT = 48;
 const outDir = join(root, 'symbols');
@@ -24,6 +24,7 @@ for (const [type, art] of Object.entries(SYM)) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m} ${-m} ${2 * m} ${2 * m}" width="${size}" height="${size}">
 <title>${c.name}</title>
 <style>${SYM_CSS.replace(/\s*\n\s*/g, '')}</style>
+<defs>${ART_DEFS}</defs>
 <rect x="${-m}" y="${-m}" width="${2 * m}" height="${2 * m}" rx="${(m * 0.12).toFixed(3)}" fill="#20272d"/>
 ${art}
 </svg>
