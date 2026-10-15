@@ -1989,6 +1989,8 @@ const SYM_CSS = `
 .s-bpbody{fill:#1f6b5c}.s-bptop{fill:#2a8a76}.s-bpdiv{fill:none;stroke:rgba(0,0,0,.35);stroke-width:.015}
 .s-bpknob{fill:#16181b;stroke:#c9d0d5;stroke-width:.012}.s-bpmark{fill:none;stroke:#fff;stroke-width:.014;stroke-linecap:round}
 .s-bpsw{fill:#aab2b9;stroke:#6b747b;stroke-width:.01}.s-bplabel{fill:rgba(255,255,255,.7)}
+.s-dicase{fill:#1e3a8a}.s-ditop{fill:#2f6bf0}.s-dicap{fill:#3f4752;stroke:rgba(0,0,0,.35);stroke-width:.01}.s-discrew{fill:#9aa3ab}
+.s-dihole{fill:#0e1114}.s-dipin{fill:#d9dee2}.s-dilabel{fill:rgba(255,255,255,.82)}.s-dislot{fill:#0f1a3d}.s-diglint{fill:rgba(255,255,255,.14)}
 .s-sb1{fill:#2a120a}.s-sb2{fill:#6e2a10}.s-sb3{fill:#c9731f}.s-sb4{fill:#f0ac45}
 .s-red1{fill:#7d141c}.s-red2{fill:#b5222c}.s-red3{fill:#d43c42}
 .s-arm{fill:none;stroke:#d9dee2;stroke-width:.018;stroke-linecap:round}
@@ -2050,6 +2052,15 @@ const SYM = (() => {
   const line = (x1, y1, x2, y2, cls = 's-line') => `<path class="${cls}" d="M${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}"/>`;
   const box = (w, d, c, rx = .08) => rect(-w / 2, -d / 2, w, d, `body c-${c} s-edge`, rx);
   const tripod = (r, cls = 's-line') => [90, 210, 330].map(a => line(0, 0, r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180), cls)).join('');
+  const diBox = (w, ys) => { const h = w / 2, jx = -h + .19, xx = h - .22, xr = ys.length > 1 ? .095 : .12;
+    return rect(-h, -.3, w, .6, 's-dicase s-edge', .07) + rect(-h + .075, -.26, w - .15, .52, 's-ditop', .03) + rect(-h + .075, -.26, w - .15, .06, 's-diglint', .03) +
+      rect(-h, -.3, .075, .6, 's-dicap', .04) + rect(h - .075, -.3, .075, .6, 's-dicap', .04) + [-.22, .22].map(y => circ(-h + .037, y, .014, 's-discrew') + circ(h - .037, y, .014, 's-discrew')).join('') +
+      ys.map(y => circ(jx, y, .068, 's-chrome2') + circ(jx, y, .036, 's-dihole') +                                               // 1/4" jack in
+        circ(xx, y, xr, 's-chrome2') + circ(xx, y, xr * .78, 's-dihole') + [[-.3, -.22], [.3, -.22], [0, .3]].map(([a, b]) => circ(xx + a * xr, y + b * xr, xr * .13, 's-dipin')).join('') +
+        rect(xx - xr * .22, y - xr - .03, xr * .44, .04, 's-chrome2', .01)).join('') +                                             // XLR out with its latch
+      rect(-.1, .185, .2, .045, 's-dilabel', .015) + (ys.length > 1 ? [-.04, .08] : [-.045, .035]).map(x => rect(x - .025, -.12, .05, .085, 's-dislot', .02) + circ(x, -.095, .024, 's-chrome2')).join('');
+  };
+  const jacks = h => rect(-h - .06, -.08, .08, .16, 's-chrome2', .02) + rect(h - .02, -.08, .08, .16, 's-chrome2', .02);   // IN on the right side, OUT on the left
   const grid = (x0, y0, cols, rows, dx, dy, r, cls) => { let s = ''; for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) s += circ(x0 + i * dx, y0 + j * dy, r, cls); return s; };
   const drum = (cx, cy, r) => circ(cx, cy, r, 'body c-inst s-edge') + circ(cx, cy, r * .82, 's-head') + circ(cx, cy, r * .08, 's-thin');
   const cymbal = (cx, cy, r) => circ(cx, cy, r, 's-metal') + circ(cx, cy, r * .55, 's-thin') + circ(cx, cy, r * .14, 's-metal');
@@ -2162,8 +2173,9 @@ const SYM = (() => {
     vox_wl: circ(0, 0, .45, 'body c-audio s-bg') + rect(-.07, -.18, .14, .5, 's-dark', .07) + circ(0, -.26, .11, 's-white') + '<path class="s-line" d="M.18 -.36a.25 .25 0 0 1 .1 .2M.27 -.44a.38 .38 0 0 1 .14 .3"/>' + circ(0, .2, .025, 's-led'),
     headset: circ(0, 0, .45, 'body c-audio s-bg') + circ(0, 0, .22, 's-line') + '<path class="s-boom" d="M.22 0q.12 .25 -.1 .36"/>' + circ(.12, .36, .05, 's-white'),
     inst_mic: circ(0, 0, .45, 'body c-audio s-bg') + tripod(.38) + `<g transform="rotate(-35)">${line(0, 0, 0, -.25, 's-boom')}${rect(-.05, -.38, .1, .18, 's-dark', .04)}${circ(0, -.4, .06, 's-white')}</g>` + circ(0, 0, .05, 's-dark'),
-    di_mono: box(.8, .6, 'audio') + rect(-.32, -.22, .64, .44, 's-head', .04) + circ(-.22, 0, .08, 's-white') + circ(-.22, 0, .035, 's-dark') + circ(.2, 0, .11, 's-port') + rect(-.06, -.17, .1, .06, 's-white', .02),
-    di_stereo: box(1, .6, 'audio') + rect(-.42, -.22, .84, .44, 's-head', .04) + circ(-.3, -.09, .07, 's-white') + circ(-.3, .1, .07, 's-white') + circ(.28, -.09, .09, 's-port') + circ(.28, .1, .09, 's-port') + rect(-.05, -.17, .1, .06, 's-white', .02),
+    // passive DI from above: steel bookend caps, blue top, the jack input at the left end, the XLR out at the right, ground-lift and pad toggles
+    di_mono: diBox(.8, [.03]),
+    di_stereo: diBox(1, [-.09, .14]),
     // speakers, top-down: cabinet top with handles, grille band on the face that points where the sound goes, faint coverage
     wedge: '<path class="s-beam" d="M-.75 -.7L-1.35 -1.55Q0 -1.9 1.35 -1.55L.75 -.7Z"/>' +
       '<path class="s-cab s-edge" d="M-.86 -.7H.86Q1 -.7 1 -.56V.56Q1 .7 .86 .7H-.86Q-1 .7 -1 .56V-.56Q-1 -.7 -.86 -.7Z"/>' +
@@ -2222,7 +2234,7 @@ const SYM = (() => {
       rect(-2.5, -.75, 5, 1.5, 'body c-inst s-edge', .1) + rect(-2.35, -.68, 4.7, .58, 's-white', .03) +
       Array.from({ length: 35 }, (_, i) => -2.35 + (i + 1) * 4.7 / 36).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .045, -.68, .09, .34, 's-dark', .01) : line(x, -.68, x, -.1, 's-thin')).join('') +
       grid(-2.1, .25, 10, 1, .2, 0, .045, 's-thin') + rect(.6, .12, 1.3, .3, 's-glass', .03),
-    multifx: rect(-1.05, -.5, 2.1, 1, 's-blk s-edge', .08) + rect(-1.05, -.5, 2.1, 1, 's-line', .08) +
+    multifx: jacks(1.05) + rect(-1.05, -.5, 2.1, 1, 's-blk s-edge', .08) + rect(-1.05, -.5, 2.1, 1, 's-line', .08) +
       rect(-.42, -.42, .84, .26, 's-glass', .03) + rect(-.36, -.37, .25, .16, 's-ped1', .01) + rect(-.08, -.37, .2, .16, 's-ped4', .01) + rect(.15, -.37, .2, .16, 's-ped2', .01) +
       grid(-.8, -.32, 3, 1, .13, 0, .04, 's-white') + grid(.54, -.32, 3, 1, .13, 0, .04, 's-white') +
       ['s-ped2', 's-ped1', 's-ped3', 's-ped4', 's-red'].map((c, i) => { const x = -.82 + i * .29; return circ(x, -.02, .085, c) + circ(x, -.02, .06, 's-chrome') + circ(x, .3, .085, ['s-ped4', 's-ped3', 's-ped1', 's-ped2', 's-led'][i]) + circ(x, .3, .06, 's-chrome'); }).join('') +
@@ -2238,7 +2250,7 @@ const SYM = (() => {
     grand_piano: '<path class="s-blk s-edge" d="M-2.5 -3.25 L2.5 -3.25 L2.5 -.6 Q2.4 1.4 .9 2.3 Q-.6 3.25 -1.6 3.25 L-2.5 3.25 Z"/>' + rect(-2.3, -3.25, 4.6, .55, 's-white', .02) + Array.from({ length: 30 }, (_, i) => -2.3 + (i + 1) * 4.6 / 31).map((x, i) => [1, 2, 4, 5, 6].includes(i % 7) ? rect(x - .04, -3.25, .08, .32, 's-blk', .01) : '').join('') + '<path class="s-plate" d="M-2.2 -2.4 L2.2 -2.4 L2.2 -.7 Q2.1 1.2 .8 2 Q-.6 2.9 -1.5 2.9 L-2.2 2.9 Z"/>' + '<path class="s-string" d="M-1.90 -2.45V2.78"/><path class="s-string" d="M-1.48 -2.45V2.77"/><path class="s-string" d="M-1.06 -2.45V2.61"/><path class="s-string" d="M-0.64 -2.45V2.44"/><path class="s-string" d="M-0.22 -2.45V2.28"/><path class="s-string" d="M0.20 -2.45V2.11"/><path class="s-string" d="M0.62 -2.45V1.95"/><path class="s-string" d="M1.04 -2.45V1.62"/><path class="s-string" d="M1.46 -2.45V1.15"/><path class="s-string" d="M1.88 -2.45V0.46"/>' +
       '<path class="s-gloss" d="M2.35 -2.9 L2.35 -.65 Q2.25 1.3 .85 2.15"/>' + line(-2.2, -2.45, 2.2, -2.45, 's-thin'),   // open lid: gold plate and strings fanning to the tail
     ipad_stand: tripod(.38, 's-thin') + rect(-.42, -.32, .84, .6, 's-dark', .07) + rect(-.36, -.26, .72, .48, 's-glass', .04) + circ(0, .3, .025, 's-white') + rect(-.5, .2, 1, .08, 's-line', .03),
-    ac_preamp: rect(-.4, -.27, .8, .55, 'body c-inst s-edge', .06) + grid(-.25, -.12, 4, 1, .17, 0, .05, 's-white') + rect(-.22, .06, .44, .14, 's-dark', .03) + circ(.3, .16, .03, 's-led') + rect(-.36, -.25, .14, .06, 's-white', .01),
+    ac_preamp: jacks(.4) + rect(-.4, -.27, .8, .55, 'body c-inst s-edge', .06) + grid(-.25, -.12, 4, 1, .17, 0, .05, 's-white') + rect(-.22, .06, .44, .14, 's-dark', .03) + circ(.3, .16, .03, 's-led') + rect(-.36, -.25, .14, .06, 's-white', .01),
     midi_fs: rect(-.85, -.27, 1.7, .55, 's-dark', .06) + rect(-.85, -.27, 1.7, .55, 's-line', .06) + [-.6, -.2, .2, .6].map(x => circ(x, .06, .11, 's-white') + circ(x, -.16, .03, 's-led')).join('') + rect(-.3, -.24, .6, .08, 's-glass', .02),
     usb_if: rect(-.37, -.27, .75, .55, 'body c-audio s-edge', .06) + circ(-.18, -.05, .09, 's-port') + circ(.06, -.05, .09, 's-port') + circ(.26, -.05, .06, 's-white') + grid(-.2, .16, 3, 1, .14, 0, .025, 's-led'),
     mt_ipad: tripod(.38, 's-thin') + rect(-.45, -.35, .9, .66, 's-dark', .08) + rect(-.39, -.29, .78, .54, 's-glass', .04) + rect(-.33, -.2, .66, .07, 's-ped1', .02) + rect(-.33, -.08, .45, .07, 's-ped4', .02) + rect(-.33, .04, .55, .07, 's-ped2', .02) + circ(.25, .17, .05, 's-white'),
@@ -2253,7 +2265,7 @@ const SYM = (() => {
       line(0, -.36, 0, .17, 's-bpdiv') + [-.27, .27].map((x, ch) => [-.17, 0, .17].map(dx => circ(x + dx, -.24, .055, 's-bpknob') + line(x + dx, -.24, x + dx, -.285, 's-bpmark')).join('') +
         circ(x, -.06, .025, ch ? 's-led' : 's-red') + circ(x, .19, .11, 's-chrome2') + circ(x, .19, .07, 's-bpsw')).join('') +
       rect(-.12, .33, .24, .05, 's-bplabel', .02) + rect(-.64, -.1, .07, .14, 's-chrome2', .02) + rect(.57, -.1, .07, .14, 's-chrome2', .02),
-    pedalboard: rect(-1.25, -.6, 2.5, 1.2, 's-dark', .08) + rect(-1.25, -.6, 2.5, 1.2, 's-line', .08) +
+    pedalboard: jacks(1.25) + rect(-1.25, -.6, 2.5, 1.2, 's-dark', .08) + rect(-1.25, -.6, 2.5, 1.2, 's-line', .08) +
       [['s-ped1', -1.05], ['s-ped2', -.6], ['s-ped3', -.15], ['s-ped4', .3], ['s-ped1', .75]].map(([c, x]) => rect(x, -.35, .34, .6, c, .04) + circ(x + .17, -.2, .05, 's-dark') + circ(x + .17, .12, .07, 's-white')).join('') + line(-1.2, -.5, 1.2, -.5, 's-thin'),
     laptop: rect(-1, -.75, 2, 1.5, 'body c-infra s-bg', .08) + rect(-.65, -.45, 1.1, .75, 'body c-inst s-edge', .04) + rect(-.58, -.38, .96, .45, 's-head', .02) + rect(-.65, .3, 1.1, .08, 's-glass', .02) + rect(.55, -.3, .38, .55, 'body c-infra s-edge', .04) + circ(.74, -.12, .06, 's-white') + circ(.74, .1, .06, 's-white'),
     // desk tilted toward the player with an open part on it, so it reads as a music stand at a glance
@@ -2432,24 +2444,38 @@ function applyDeckColor(el) {
    on the gear), and a slack coil near the guitar. Drawing only: lengths, patching and the saved route are untouched.
    Each lead gets its own wave and coil from its id, so neighbouring leads never look stamped out. */
 const GUITARS = new Set(['el_guitar', 'bass_guitar', 'ac_guitar']);
+const PEDALS = new Set(['pedalboard', 'bass_pedal', 'multifx', 'ac_preamp']), LEAD_SOURCES = new Set([...GUITARS, 'keys', 'midi_keys']);
+/* Where a jack lead plugs in, and which way the socket faces (unit vector in plot space), or null for gear with no set socket.
+   Guitars: the output jack at the bottom centre of the body. Pedals: IN on the right-hand side, OUT on the left, as on real
+   pedals. DI boxes: the jack input on the left end. 'first' says whether this item is the cable's from end. */
+function leadEnd(it, oth, q, first) {
+  if (!it) return { p: q, dir: null };
+  const k = cat(it), r = (it.rot || 0) * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
+  const at = (lx, ly, dx, dy) => ({ p: [it.x + lx * cs - ly * sn, it.y + lx * sn + ly * cs], dir: [dx * cs - dy * sn, dx * sn + dy * cs] });
+  if (GUITARS.has(it.type)) return at(0, k.d * .49, 0, 1);
+  if (PEDALS.has(it.type)) {
+    const isIn = oth && (LEAD_SOURCES.has(oth.type) || (PEDALS.has(oth.type) && !first));
+    return isIn ? at(k.w / 2, 0, 1, 0) : at(-k.w / 2, 0, -1, 0);
+  }
+  if (it.type === 'di_mono' || it.type === 'di_stereo') return at(-k.w / 2, 0, -1, 0);
+  return { p: q, dir: null };
+}
 function naturalLead(pts, c) {
   if (pts.length < 2) return pts;
   if ((c.points || []).some(isHop) || routeInfo(c)?.via) return smoothRun(pts);   // in a channel: follow it, just without corners
   let h = 0; for (const ch of String(c.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const rnd = k => ((Math.sin(h * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
   const ia = itemById(c.from), ib = itemById(c.to);
-  const jack = (it, q, far) => { if (!it || !GUITARS.has(it.type)) return q; const k = cat(it), r = (it.rot || 0) * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
-    const toward = (far[0] - it.x) * cs + (far[1] - it.y) * sn, lx = k.w * .3 * (toward < 0 ? -1 : 1), ly = k.d * .34;   // the body's edge on the side the lead leaves from
-    return [it.x + lx * cs - ly * sn, it.y + lx * sn + ly * cs]; };
-  const A = jack(ia, pts[0], pts[pts.length - 1]), B = jack(ib, pts[pts.length - 1], pts[0]), user = (c.points || []).filter(q => !isHop(q));
+  const A0 = pts[0], B0 = pts[pts.length - 1];
+  const ea = leadEnd(ia, ib, A0, true), eb = leadEnd(ib, ia, B0, false), A = ea.p, B = eb.p, user = (c.points || []).filter(q => !isHop(q));
   const ctrl = [A, ...user, B], out = [];
   if (ctrl.length === 2) {
-    // one relaxed curve between the two pieces of gear: a gentle C or S, its belly about a fifth of the distance
+    // one relaxed curve: it leaves each jack the way the jack faces, otherwise a gentle C or S with its belly about a fifth of the run
     const dx = B[0] - A[0], dy = B[1] - A[1], D = Math.hypot(dx, dy); if (D < fromM(.2)) return [A, B];
-    const ux = dx / D, uy = dy / D, nx = -uy, ny = ux, g = [ia, ib].find(i => i && GUITARS.has(i.type));
-    const away = g && ((B[0] + A[0]) / 2 - g.x) * nx + ((B[1] + A[1]) / 2 - g.y) * ny, side = g ? (away < 0 ? -1 : 1) : rnd(1) < .5 ? 1 : -1;   // bow away from the guitar so the lead never tucks under its neck
-    const bend = Math.min(fromM(.9), Math.max(fromM(.12), D * (.16 + .1 * rnd(2)))) * side, tail = rnd(3) < .45 && !(ib && GUITARS.has(ib.type)) ? -.55 : .7;
-    const c1 = [A[0] + ux * D * .3 + nx * bend, A[1] + uy * D * .3 + ny * bend], c2 = [B[0] - ux * D * .3 + nx * bend * tail, B[1] - uy * D * .3 + ny * bend * tail];
+    const ux = dx / D, uy = dy / D, nx = -uy, ny = ux, side = rnd(1) < .5 ? 1 : -1, reach = Math.min(fromM(1.1), Math.max(fromM(.35), D * .42));
+    const bend = Math.min(fromM(.9), Math.max(fromM(.12), D * (.16 + .1 * rnd(2)))) * side, tail = rnd(3) < .45 ? -.55 : .7;
+    const c1 = ea.dir ? [A[0] + ea.dir[0] * reach, A[1] + ea.dir[1] * reach] : [A[0] + ux * D * .3 + nx * bend, A[1] + uy * D * .3 + ny * bend];
+    const c2 = eb.dir ? [B[0] + eb.dir[0] * reach, B[1] + eb.dir[1] * reach] : [B[0] - ux * D * .3 + nx * bend * tail, B[1] - uy * D * .3 + ny * bend * tail];
     for (let k = 0; k <= 48; k++) { const t = k / 48, m = 1 - t; out.push([m * m * m * A[0] + 3 * m * m * t * c1[0] + 3 * m * t * t * c2[0] + t * t * t * B[0], m * m * m * A[1] + 3 * m * m * t * c1[1] + 3 * m * t * t * c2[1] + t * t * t * B[1]]); }
   } else {
     // through the bends you placed, as one flowing line
