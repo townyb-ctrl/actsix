@@ -234,24 +234,28 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .search .ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
 .search input { width: 100%; padding-left: 34px; }
 .gearcat { display: grid; gap: 8px; }
-.geartabs { display: flex; flex-wrap: nowrap; gap: 6px; flex: none; min-height: 34px; align-items: center; overflow-y: hidden; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 24px), transparent); }
-.geartabs::-webkit-scrollbar { display: none; }
-.geartabs button { flex: none; }
-.geartabs button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 5px 11px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
-.geartabs button span { font: 10.5px var(--f-mono); color: var(--muted); }
-.geartabs button:hover { border-color: var(--line-2); color: var(--ink); }
-.geartabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
-.geartabs button[aria-selected="true"] span { color: inherit; opacity: .7; }
+.geartabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 6px; flex: none; }   /* every category in view, no sideways scrolling */
+.geartabs button { display: flex; align-items: center; gap: 6px; min-height: 40px; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px 6px 4px 5px; cursor: pointer; font-size: 12.5px; letter-spacing: -.015em; font-weight: 600; color: var(--ink-2); text-align: left; transition: border-color .15s, background .15s; }
+.geartabs button .gtname { flex: 1; min-width: 0; line-height: 1.15; }
+.geartabs button .gtn { font: 600 10.5px var(--f-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.geartabs .tabglyph { width: 26px; height: 26px; flex: none; border-radius: 7px; padding: 2px; }
+.geartabs button:hover { border-color: var(--line-2); color: var(--ink); background: var(--surface-2); }
+.geartabs button[aria-selected="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
+.geartabs button[aria-selected="true"] .gtn { color: var(--accent); }
 /* the library is a palette of tiles: picture first, name under it, what it plugs into in small type */
-.gearlist { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.gearlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; }
+.gearcathead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.gearcathead .hint { margin: 0; font-size: 11px; text-align: right; }
+.gearhits { margin: -2px 0 0; }
 .gear { display: grid; justify-items: center; align-content: start; gap: 6px; text-align: center; border: 1px solid transparent; border-radius: var(--r-md); padding: 8px 4px 7px; background: var(--surface-2); cursor: grab; transition: border-color .15s, box-shadow .15s, transform .1s, background .15s; color: var(--ink); font: inherit; }
 .gear:hover { background: var(--surface); border-color: var(--line-2); box-shadow: var(--shadow-1); transform: translateY(-1px); }
 .gear:hover .glyph { transform: scale(1.04); }
 .gear:active { cursor: grabbing; transform: none; }
-.gear .glyph { width: 52px; height: 52px; border-radius: 11px; padding: 5px; transition: transform .15s; }
+.gear .glyph { width: 60px; height: 60px; border-radius: 12px; padding: 5px; transition: transform .15s; }
 .gear > span { display: grid; gap: 1px; min-width: 0; width: 100%; }
-.gear b { font-weight: 600; font-size: 12px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.gear small { color: var(--muted); font-size: 10.5px; font-family: var(--f-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gear b { font-weight: 600; font-size: 12.5px; line-height: 1.25; text-wrap: balance; }
+.gear small { color: var(--muted); font-size: 11px; line-height: 1.3; }
+.gear small:empty { display: none; }
 .glyph { width: 34px; height: 34px; border-radius: 8px; background: radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--deck) 82%, #fff), var(--deck)); padding: 3px; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 .glyph .s-beam { display: none; }
 .glyph .s-deck { fill: rgba(255,255,255,.12); stroke: rgba(255,255,255,.7); }
@@ -598,10 +602,10 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .checkswrap { flex-basis: 100%; display: flex; }
 .checkspop { flex: 0 0 auto; width: min(400px, calc(100vw - 40px)); background: var(--surface); backdrop-filter: none; display: grid; gap: 10px; padding: 12px; max-height: min(60vh, 520px); overflow: auto; }
 .recent { display: grid; gap: 6px; }
-.recentrow { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
-.recentchip { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 10px 3px 3px; cursor: grab; font-size: 12.5px; color: var(--ink); }
-.recentchip:hover { border-color: var(--accent); }
-.recentchip svg.glyph, .recentchip .glyph { width: 24px; height: 24px; }
+.recentrow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }   /* the last five, one row */
+.recentchip { display: grid; place-items: center; height: 44px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 0; cursor: grab; transition: border-color .15s, transform .1s; }
+.recentchip:hover { border-color: var(--accent); transform: translateY(-1px); }
+.recentchip svg.glyph, .recentchip .glyph { width: 34px; height: 34px; border-radius: 7px; padding: 2px; }
 .setuplist { display: grid; gap: 4px; margin-bottom: 6px; }
 .setuprow { display: grid; grid-template-columns: 1fr auto; gap: 4px; align-items: center; }
 .setupuse { display: grid; grid-template-columns: 1fr auto; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-sm); padding: 6px 10px; cursor: pointer; color: var(--ink); }
@@ -1122,14 +1126,14 @@ const CAT = {
   light_stand: { name: 'Light on stand', short: 'Light', cat: 'video', w: 1.5, d: 1.5, shape: 'round', watts: 250 },
 };
 /* CAT:END */
+// grouped the way a band thinks about its gear; each type lives in exactly one group. The third entry is the group's icon.
 const GEAR_GROUPS = [
-  ['Audio', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'wedge', 'iem', 'main_spk', 'sub', 'la_main', 'la_sub']],
-  ['Band', ['drum_kit', 'edrums', 'gtr_amp', 'bass_amp', 'di_mono', 'di_stereo', 'midi_keys', 'usb_if', 'keys', 'pedalboard', 'bass_pedal', 'multifx', 'ac_preamp', 'midi_fs', 'mt_ipad', 'laptop']],
-  ['Staging', ['ipad_stand', 'music_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']],
-  ['Snakes & desks', ['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack']],
-  ['Power', ['distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6']],
-  ['Instruments', ['ac_guitar', 'el_guitar', 'bass_guitar', 'trumpet', 'cajon', 'up_piano', 'grand_piano']],
-  ['Video & light', ['camera', 'conf_mon', 'light_stand']],
+  ['Instruments', ['drum_kit', 'edrums', 'cajon', 'keys', 'midi_keys', 'up_piano', 'grand_piano', 'ac_guitar', 'el_guitar', 'bass_guitar', 'trumpet'], 'keys'],
+  ['Amps & FX', ['gtr_amp', 'bass_amp', 'pedalboard', 'bass_pedal', 'multifx', 'ac_preamp', 'midi_fs'], 'gtr_amp'],
+  ['Mics & DI', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'usb_if'], 'vox_mic'],
+  ['Monitors & PA', ['wedge', 'iem', 'iem_rack', 'main_spk', 'sub', 'la_main', 'la_sub'], 'wedge'],
+  ['Desks & tech', ['stagebox', 'rack', 'foh', 'mon_desk', 'mt_ipad', 'laptop', 'camera', 'conf_mon', 'light_stand'], 'foh'],
+  ['Stage & power', ['riser', 'drum_riser', 'drum_shield', 'pulpit', 'music_stand', 'ipad_stand', 'distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6'], 'distro'],
 ];
 const OVERHEAD_TYPES = ['main_spk', 'sub', 'la_main', 'la_sub'];
 // Line arrays: boxes in the hang are editable; power draw scales per box unless typed in by hand.
@@ -1946,7 +1950,7 @@ const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hid
    UI state & small helpers
    =================================================================== */
 let railOpen = true, inspOpen = true;
-let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', gearTab = 'Audio', themePref = 'system';
+let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', gearTab = (() => { try { const t = localStorage.getItem('stageplot.gearTab'); return GEAR_GROUPS.some(([g]) => g === t) ? t : 'Instruments'; } catch { return 'Instruments'; } })(), themePref = 'system';
 const SHORT = { xlr: 'XLR', cat6: 'Cat6', power: 'Power', inst: 'Jack', speakon: 'Speakon', video: 'Video', usb: 'USB' };
 const KVAR = { xlr: '--k-xlr', cat6: '--k-cat', power: '--k-pow', inst: '--k-inst', speakon: '--k-spk', video: '--k-vid', usb: '--k-usb' };
 const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? 'word' : /Engineer|Lighting|Producer|Camera/.test(r) ? 'tech' : r ? 'band' : '';
@@ -1989,6 +1993,20 @@ const SYM_CSS = `
 .s-bpbody{fill:#1f6b5c}.s-bptop{fill:#2a8a76}.s-bpdiv{fill:none;stroke:rgba(0,0,0,.35);stroke-width:.015}
 .s-bpknob{fill:#16181b;stroke:#c9d0d5;stroke-width:.012}.s-bpmark{fill:none;stroke:#fff;stroke-width:.014;stroke-linecap:round}
 .s-bpsw{fill:#aab2b9;stroke:#6b747b;stroke-width:.01}.s-bplabel{fill:rgba(255,255,255,.7)}
+.s-rug{fill:rgba(0,0,0,.24);stroke:rgba(255,255,255,.1);stroke-width:.04}.s-rugline{fill:none;stroke:rgba(255,255,255,.07);stroke-width:.05}
+.light-deck .s-rug{fill:rgba(0,0,0,.07);stroke:rgba(0,0,0,.14)}.light-deck .s-rugline{stroke:rgba(0,0,0,.08)}
+.s-kshell{fill:#7a1e2c;stroke:rgba(0,0,0,.45);stroke-width:.025}.s-khoop{fill:none;stroke:#c3cad0;stroke-width:.045}.s-khoopw{fill:#5a1420;stroke:rgba(0,0,0,.35);stroke-width:.015}
+.s-lug{fill:#b9c1c8;stroke:#5d666d;stroke-width:.012}.s-kwear{fill:rgba(120,100,70,.12)}.s-kheadline{fill:none;stroke:rgba(0,0,0,.18);stroke-width:.012}
+.s-kglint{fill:none;stroke:rgba(255,255,255,.55);stroke-width:.035;stroke-linecap:round}
+.s-cymedge{fill:#6e4e16}.s-lathe{fill:none;stroke:rgba(90,58,10,.28);stroke-width:.012}.s-bell{fill:#e9c870;stroke:rgba(90,58,10,.45);stroke-width:.015}.s-bell2{fill:#f5dc93}
+.s-cymglint{fill:none;stroke:rgba(255,248,220,.6);stroke-width:.06;stroke-linecap:round}.s-cymglint2{fill:none;stroke:rgba(255,248,220,.3);stroke-width:.04;stroke-linecap:round}
+.s-seat{fill:#1b1d21;stroke:#000;stroke-width:.02}.s-stitch{fill:none;stroke:rgba(255,255,255,.18);stroke-width:.015;stroke-dasharray:.05 .04}
+.s-kleg{fill:none;stroke:#aab2b9;stroke-width:.05;stroke-linecap:round}.s-kfoot{fill:#22252a}
+.s-pedal{fill:#2b2f35;stroke:#000;stroke-width:.015}.s-pedaltop{fill:#5d656d}.s-beater{fill:#f1ede4;stroke:#555;stroke-width:.012}
+.s-erack{fill:none;stroke:#3c4249;stroke-width:.1;stroke-linecap:round;stroke-linejoin:round}.s-eshell{fill:#17191c;stroke:#000;stroke-width:.02}
+.s-emesh{fill:#3a3f46}.s-ehoop{fill:none;stroke:#8a939b;stroke-width:.035}.s-emeshline{fill:none;stroke:rgba(255,255,255,.08);stroke-width:.012}.s-etower{fill:#1d2024;stroke:#000;stroke-width:.02}
+.s-ecym{fill:#141518;stroke:#000;stroke-width:.02}.s-ecymzone{fill:none;stroke:rgba(255,255,255,.1);stroke-width:.03}.s-ecymbell{fill:#25282c}
+.s-emod{fill:#24272c;stroke:#000;stroke-width:.02}.s-escreen{fill:#2f6bf0}
 .s-dicase{fill:#1e3a8a}.s-ditop{fill:#2f6bf0}.s-dicap{fill:#3f4752;stroke:rgba(0,0,0,.35);stroke-width:.01}.s-discrew{fill:#9aa3ab}
 .s-dihole{fill:#0e1114}.s-dipin{fill:#d9dee2}.s-dilabel{fill:rgba(255,255,255,.82)}.s-dislot{fill:#0f1a3d}.s-diglint{fill:rgba(255,255,255,.14)}
 .s-sb1{fill:#2a120a}.s-sb2{fill:#6e2a10}.s-sb3{fill:#c9731f}.s-sb4{fill:#f0ac45}
@@ -2060,6 +2078,32 @@ const SYM = (() => {
         rect(xx - xr * .22, y - xr - .03, xr * .44, .04, 's-chrome2', .01)).join('') +                                             // XLR out with its latch
       rect(-.1, .185, .2, .045, 's-dilabel', .015) + (ys.length > 1 ? [-.04, .08] : [-.045, .035]).map(x => rect(x - .025, -.12, .05, .085, 's-dislot', .02) + circ(x, -.095, .024, 's-chrome2')).join('');
   };
+  // ---- drum kit parts (all sizes in feet) ----
+  const KIT = { shell: '#6e1a27', shellLt: '#97303f', shellDk: '#3d0c15' };
+  const rings = (cx, cy, r0, r1, c0, c1, n) => Array.from({ length: n }, (_, i) => { const t = i / (n - 1); return `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r0 + (r1 - r0) * t)}" style="fill:${mixHex(c0, c1, t)}"/>`; }).join('');
+  const arc = (cx, cy, r, a0, a1, cls) => { const p = a => [f(cx + r * Math.cos(a * Math.PI / 180)), f(cy + r * Math.sin(a * Math.PI / 180))]; const [x0, y0] = p(a0), [x1, y1] = p(a1); return `<path class="${cls}" d="M${x0} ${y0}A${f(r)} ${f(r)} 0 0 1 ${x1} ${y1}"/>`; };
+  const kDrum = (cx, cy, r, lugs, snare) =>
+    Array.from({ length: lugs }, (_, i) => `<rect class="s-lug" x="${f(cx - r * .07)}" y="${f(cy - r * 1.07)}" width="${f(r * .1)}" height="${f(r * .2)}" rx="${f(r * .04)}" transform="rotate(${f(360 * i / lugs + 180 / lugs)} ${f(cx)} ${f(cy)})"/>`).join('') +
+    (snare ? `<rect class="s-chrome2" x="${f(cx + r * .9)}" y="${f(cy - r * .12)}" width="${f(r * .22)}" height="${f(r * .24)}" rx="${f(r * .04)}"/>` : '') +   // snare throw-off
+    circ(cx, cy, r, 's-kshell') + circ(cx, cy, r * .9, 's-khoop') + rings(cx, cy, r * .87, r * .2, '#cfc7b6', '#efe9dc', 7) +
+    circ(cx, cy, r * .3, 's-kwear') + circ(cx, cy, r * .87, 's-kheadline') + arc(cx, cy, r * .9, 200, 255, 's-kglint');
+  const kCym = (cx, cy, r, hat) => circ(cx, cy, r * 1.01, 's-cymedge') + rings(cx, cy, r, r * .3, '#8a6420', '#e7c46a', 12) +
+    [.88, .78, .68, .58, .48, .38].map(k => circ(cx, cy, r * k, 's-lathe')).join('') +
+    circ(cx, cy, r * .26, 's-bell') + circ(cx, cy, r * .17, 's-bell2') + arc(cx, cy, r * .72, 195, 250, 's-cymglint') + arc(cx, cy, r * .5, 20, 55, 's-cymglint2') +
+    circ(cx, cy, r * (hat ? .09 : .06), 's-chrome2') + circ(cx, cy, r * .03, 's-dark');
+  const throne = (cx, cy, r) => [90, 210, 330].map(a => { const c = Math.cos(a * Math.PI / 180), s_ = Math.sin(a * Math.PI / 180); return `<path class="s-kleg" d="M${f(cx + c * r * .6)} ${f(cy + s_ * r * .6)}L${f(cx + c * r * 1.45)} ${f(cy + s_ * r * 1.45)}"/>` + circ(cx + c * r * 1.45, cy + s_ * r * 1.45, .05, 's-kfoot'); }).join('') +
+    circ(cx, cy, r, 's-seat') + circ(cx, cy, r * .8, 's-stitch') + arc(cx, cy, r * .62, 200, 260, 's-kglint');
+  const kickDrum = () => {   // 22 x 18: a cylinder lying front to back, so its shell shades across the width
+    const x0 = -.92, w = 1.84, y0 = -.15, d = 1.5, n = 11;
+    return `<path class="s-kleg" d="M-.92 1.05L-1.3 1.42M.92 1.05L1.3 1.42"/>` + circ(-1.3, 1.42, .05, 's-kfoot') + circ(1.3, 1.42, .05, 's-kfoot') +   // spurs
+      rect(-.13, -.86, .26, .64, 's-pedal', .05) + rect(-.09, -.8, .18, .5, 's-pedaltop', .03) + circ(0, -.22, .075, 's-beater') +                  // pedal and beater
+      rect(x0, y0, w, d, 's-kshell', .06) + Array.from({ length: n }, (_, i) => { const t = (i + .5) / n, l = Math.max(0, Math.cos((t - .38) * Math.PI * 1.1));
+        return `<rect x="${f(x0 + w * i / n)}" y="${f(y0)}" width="${f(w / n + .005)}" height="${f(d)}" style="fill:${l > .5 ? mixHex(KIT.shell, KIT.shellLt, (l - .5) * 2) : mixHex(KIT.shellDk, KIT.shell, l * 2)}"/>`; }).join('') +
+      [y0, y0 + d - .14].map(y => rect(x0 - .02, y, w + .04, .14, 's-khoopw', .03) + [-.7, -.35, 0, .35, .7].map(x => rect(x - .03, y + (y === y0 ? .1 : -.06), .06, .1, 's-chrome2', .015)).join('')).join('') +
+      rect(-.06, .45, .12, .32, 's-chrome2', .03) + `<path class="s-kglint" d="M-.5 .05V1.2"/>`;   // tom mount and a line of light down the shell
+  };
+  const ePad = (cx, cy, r) => circ(cx, cy, r, 's-eshell') + circ(cx, cy, r * .9, 's-ehoop') + circ(cx, cy, r * .86, 's-emesh') + circ(cx, cy, r * .6, 's-emeshline') + circ(cx, cy, r * .3, 's-emeshline') + arc(cx, cy, r * .9, 200, 250, 's-kglint');
+  const eCym = (cx, cy, r) => circ(cx, cy, r, 's-ecym') + circ(cx, cy, r * .82, 's-ecymzone') + circ(cx, cy, r * .3, 's-ecymbell') + arc(cx, cy, r * .7, 200, 245, 's-cymglint2') + circ(cx, cy, r * .07, 's-chrome2');
   const jacks = h => rect(-h - .06, -.08, .08, .16, 's-chrome2', .02) + rect(h - .02, -.08, .08, .16, 's-chrome2', .02);   // IN on the right side, OUT on the left
   const grid = (x0, y0, cols, rows, dx, dy, r, cls) => { let s = ''; for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) s += circ(x0 + i * dx, y0 + j * dy, r, cls); return s; };
   const drum = (cx, cy, r) => circ(cx, cy, r, 'body c-inst s-edge') + circ(cx, cy, r * .82, 's-head') + circ(cx, cy, r * .08, 's-thin');
@@ -2210,15 +2254,16 @@ const SYM = (() => {
     stagebox: box(2, 1.4, 'infra') + rect(-.92, -.62, 1.84, 1.24, 's-head', .05) + grid(-.75, -.45, 8, 3, .214, .2, .07, 's-port') + grid(-.75, .2, 8, 1, .214, 0, .055, 's-white') + rect(-.82, .38, .16, .14, 's-port', .02) + rect(-.6, .38, .16, .14, 's-port', .02) + circ(.78, .45, .045, 's-led'),
     foh: console_(6, 3),
     mon_desk: console_(4, 2.5),
-    drum_kit: rect(-3.25, -2.75, 6.5, 5.5, 's-deck', .3) +
-      circ(0, -1.85, .55, 's-dark') + circ(0, -1.85, .4, 's-line') +            // throne
-      rect(-.92, -.05, 1.84, 1.5, 'body c-inst s-edge', .2) + rect(-.8, .05, 1.6, .2, 's-head', .05) + rect(-.8, 1.15, 1.6, .2, 's-head', .05) + // kick on its side
-      drum(.95, -.8, .58) +                                                      // snare (drummer's left)
-      drum(.42, .15, .46) +                                                      // rack tom over the kick
-      drum(-1.35, -.55, .78) +                                                   // floor tom
-      cymbal(2.05, -.75, .62) +                                                  // hi-hat
-      cymbal(1.95, 1.15, .82) +                                                  // crash
-      cymbal(-1.95, .75, .95),                                                   // ride
+    // acoustic kit from above, drummer facing the audience: wine lacquer shells, chrome hoops and lugs, coated heads, the kick on its side
+    // with spurs and pedal, bronze cymbals with lathe rings and a bright bell, a leather throne, all on a rug
+    drum_kit: rect(-3.25, -2.75, 6.5, 5.5, 's-rug', .35) + rect(-3.02, -2.52, 6.04, 5.04, 's-rugline', .22) +
+      throne(0, -1.85, .5) + kickDrum() +
+      kDrum(-1.35, -.55, .7, 8) +                                                 // floor tom (drummer's right)
+      kDrum(.42, .2, .5, 6) +                                                     // rack tom over the kick
+      kDrum(.95, -.8, .58, 10, true) +                                            // snare (drummer's left)
+      kCym(2.05, -.75, .58, true) +                                               // hi-hat
+      kCym(1.95, 1.2, .78) +                                                      // crash
+      kCym(-1.95, .8, .92),                                                       // ride                                                   // ride
     // five acrylic panels on a shallow arc, ends wrapping back toward the kit, chrome hinges between
     drum_shield: '<rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(-3.230 -0.064) rotate(18.10)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(-3.230 -0.064) rotate(18.10)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(-1.636 0.321) rotate(9.05)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(-1.636 0.321) rotate(9.05)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(0.000 0.450) rotate(-0.00)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(0.000 0.450) rotate(-0.00)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(1.636 0.321) rotate(-9.05)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(1.636 0.321) rotate(-9.05)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(3.230 -0.064) rotate(-18.10)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(3.230 -0.064) rotate(-18.10)"/><circle class="s-white" cx="-2.441" cy="0.160" r=".08"/><circle class="s-white" cx="-0.820" cy="0.418" r=".08"/><circle class="s-white" cx="0.820" cy="0.418" r=".08"/><circle class="s-white" cx="2.441" cy="0.160" r=".08"/>',
     gtr_amp: box(2, 1, 'inst') + rect(-.92, .1, 1.84, .32, 's-grille', .04) + rect(-.35, -.22, .7, .14, 's-dark', .07) + grid(-.75, -.34, 6, 1, .12, 0, .035, 's-white') + circ(.82, -.34, .035, 's-red'),
@@ -2254,12 +2299,14 @@ const SYM = (() => {
     midi_fs: rect(-.85, -.27, 1.7, .55, 's-dark', .06) + rect(-.85, -.27, 1.7, .55, 's-line', .06) + [-.6, -.2, .2, .6].map(x => circ(x, .06, .11, 's-white') + circ(x, -.16, .03, 's-led')).join('') + rect(-.3, -.24, .6, .08, 's-glass', .02),
     usb_if: rect(-.37, -.27, .75, .55, 'body c-audio s-edge', .06) + circ(-.18, -.05, .09, 's-port') + circ(.06, -.05, .09, 's-port') + circ(.26, -.05, .06, 's-white') + grid(-.2, .16, 3, 1, .14, 0, .025, 's-led'),
     mt_ipad: tripod(.38, 's-thin') + rect(-.45, -.35, .9, .66, 's-dark', .08) + rect(-.39, -.29, .78, .54, 's-glass', .04) + rect(-.33, -.2, .66, .07, 's-ped1', .02) + rect(-.33, -.08, .45, .07, 's-ped4', .02) + rect(-.33, .04, .55, .07, 's-ped2', .02) + circ(.25, .17, .05, 's-white'),
-    edrums: rect(-2.5, -2.25, 5, 4.5, 's-deck', .3) + line(-2.1, -1.3, 2.1, -1.3, 's-line') + circ(0, -1.7, .45, 's-dark') +
-      rect(-.55, -.1, 1.1, .8, 's-dark', .08) + rect(-.45, 0, .9, .6, 's-grille', .05) +            // kick tower
-      circ(.75, -.6, .45, 'body c-inst s-edge') + circ(.75, -.6, .38, 's-grille') +                   // mesh snare
-      circ(.3, .3, .35, 'body c-inst s-edge') + circ(-.4, .3, .35, 'body c-inst s-edge') + circ(-1.1, -.4, .45, 'body c-inst s-edge') +
-      circ(1.55, -.5, .45, 's-metal') + circ(1.4, .9, .55, 's-metal') + circ(-1.5, .7, .6, 's-metal') +
-      rect(-1.95, -1.55, .7, .45, 'body c-infra s-edge', .05) + rect(-1.88, -1.48, .56, .2, 's-glass', .02),   // module
+    // electronic kit from above: a black tube rack, mesh pads in chrome hoops, rubber cymbal pads, a kick tower, the module and a throne on a rug
+    edrums: rect(-2.5, -2.25, 5, 4.5, 's-rug', .3) + rect(-2.3, -2.05, 4.6, 4.1, 's-rugline', .2) + throne(0, -1.7, .42) +
+      '<path class="s-erack" d="M-1.75 -.75L-1.55 .55H1.55L1.75 -.75"/><path class="s-erack" d="M-1.2 .55V-.2M1.2 .55V-.2"/>' +
+      rect(-.13, -.95, .26, .58, 's-pedal', .05) + rect(-.09, -.9, .18, .46, 's-pedaltop', .03) +            // kick pedal
+      rect(-.5, -.35, 1, .95, 's-etower', .1) + rect(-.4, -.25, .8, .7, 's-emesh', .06) +                      // kick tower
+      ePad(-1.1, -.4, .48) + ePad(.3, .3, .36) + ePad(-.4, .3, .36) + ePad(.75, -.6, .45) +                      // floor, toms, snare
+      eCym(1.55, -.5, .45) + eCym(1.45, .95, .55) + eCym(-1.5, .75, .62) +                                      // hi-hat, crash, ride
+      rect(-1.98, -1.6, .76, .5, 's-emod', .06) + rect(-1.9, -1.52, .42, .2, 's-escreen', .02) + circ(-1.36, -1.42, .07, 's-chrome2') + grid(-1.88, -1.22, 4, 1, .1, 0, .025, 's-led'),   // module
     // small two-channel bass pedal: brushed steel top, a knob row per channel, two footswitches with channel LEDs, jacks on the sides
     bass_pedal: rect(-.575, -.425, 1.15, .85, 's-bpbody s-edge', .07) + rect(-.53, -.385, 1.06, .77, 's-bptop', .05) +
       line(0, -.36, 0, .17, 's-bpdiv') + [-.27, .27].map((x, ch) => [-.17, 0, .17].map(dx => circ(x + dx, -.24, .055, 's-bpknob') + line(x + dx, -.24, x + dx, -.285, 's-bpmark')).join('') +
@@ -2368,7 +2415,7 @@ function shapeSvg(it, w, d) {
 const GLYPH_BOX = {};
 const GLYPH_TILT = { el_guitar: 38, bass_guitar: 38, ac_guitar: 38 };   // long instruments lean across their tile, as guitar icons do
 // …and are framed on the body, with the neck running off the corner, so the body reads at tile size: [centre x, centre y, side]
-const GLYPH_FRAME = { el_guitar: [-.46, .6, 2.32], bass_guitar: [-.64, .98, 2.45], ac_guitar: [-.44, .62, 2.5] };
+const GLYPH_FRAME = { drum_kit: [0, -.2, 5.4], edrums: [-.1, -.35, 4.3], el_guitar: [-.46, .6, 2.32], bass_guitar: [-.64, .98, 2.45], ac_guitar: [-.44, .62, 2.5] };
 function glyphBox(type) {
   if (GLYPH_BOX[type]) return GLYPH_BOX[type];
   if (GLYPH_FRAME[type]) { const [cx, cy, sd] = GLYPH_FRAME[type]; return (GLYPH_BOX[type] = [cx - sd / 2, cy - sd / 2, sd]); }
@@ -3023,11 +3070,11 @@ function renderRail() {
     // searching looks across every category; otherwise show the chosen tab
     const seen = new Set();
     const groups = GEAR_GROUPS.filter(([g]) => q || g === gearTab).map(([g, types]) => [g, types.filter(t => (!q || gearMatch(t, q)) && (!q || !seen.has(t)) && seen.add(t))]).filter(([, t]) => t.length);
+    const hits = groups.reduce((n, [, t]) => n + t.length, 0);
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
-      <div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${!q && g === gearTab}">${esc(g)}</button>`).join('')}</div>
-      ${!q && recentGear.length ? `<div class="recent"><h2 class="eyebrow">Recently used</h2><div class="recentrow">${recentGear.map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(CAT[t].short || CAT[t].name)}</span></button>`).join('')}</div></div>` : ''}
-      ${q ? '<p class="hint">Results across all categories.</p>' : recentGear.length ? '' : '<p class="hint">Click a tile, then click the stage. Or drag it on.</p>'}` +
-      (groups.map(([g, types]) => `<div class="gearcat"><h2 class="eyebrow">${esc(g)}</h2><div class="gearlist">
+      ${q ? `<p class="hint gearhits">${hits ? `${plural(hits, 'match', 'matches')} across all gear` : ''}</p>` : `<div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types, icon]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${g === gearTab}">${glyph(icon, 'tabglyph')}<span class="gtname">${esc(g)}</span></button>`).join('')}</div>`}
+      ${!q && recentGear.length ? `<div class="recent"><h2 class="eyebrow">Recent</h2><div class="recentrow">${recentGear.slice(0, 5).map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" aria-label="Add ${esc(CAT[t].name)}" title="${esc(CAT[t].name)}">${glyph(t)}</button>`).join('')}</div></div>` : ''}` +
+      (groups.map(([g, types]) => `<div class="gearcat"><div class="gearcathead"><h2 class="eyebrow">${esc(g)}</h2>${q ? '' : '<span class="hint">Tap, then tap the stage · or drag</span>'}</div><div class="gearlist">
         ${types.map(t => `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)} · ${esc(gearMeta(t))}">${glyph(t)}<span><b>${esc(tileName(t))}</b><small>${esc(/×/.test(gearMeta(t)) ? '' : gearMeta(t))}</small></span></button>`).join('')}
       </div></div>`).join('') || `<p class="hint">Nothing matches “${esc(gearQuery)}”.</p>`);
   } else {
@@ -4062,7 +4109,7 @@ $('railPane').addEventListener('click', e => {
       }
     }, `Added ${plural(lines.length, 'person', 'people')}`);
   }
-  else if (t.dataset.geartab) { gearTab = t.dataset.geartab; gearQuery = ''; renderRail(); }
+  else if (t.dataset.geartab) { gearTab = t.dataset.geartab; gearQuery = ''; try { localStorage.setItem('stageplot.gearTab', gearTab); } catch { /* memory only */ } renderRail(); }
   else if (t.dataset.add) { if (view !== 'plot') { view = 'plot'; renderAll(); } const was = placing; setMode('select'); placing = was === t.dataset.add ? null : t.dataset.add; renderRail(); renderPlot(); }
   else if (t.id === 'editStage') openDesigner(false);
   else if (t.id === 'autoBtn') mutate(autoCable, 'Cabling re-run');
