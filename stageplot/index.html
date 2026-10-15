@@ -1888,10 +1888,11 @@ const SYM_CSS = `
 .s-bg{opacity:.5}
 .s-sb1{fill:#2a120a}.s-sb2{fill:#6e2a10}.s-sb3{fill:#c9731f}.s-sb4{fill:#f0ac45}
 .s-red1{fill:#7d141c}.s-red2{fill:#b5222c}.s-red3{fill:#d43c42}
+.s-arm{fill:none;stroke:#d9dee2;stroke-width:.018;stroke-linecap:round}
 .s-gloss2{fill:none;stroke:rgba(255,255,255,.28);stroke-width:.035;stroke-linecap:round}
 .s-bodyrim{fill:none;stroke:rgba(0,0,0,.55);stroke-width:.018}
 .s-guard{fill:#f3f0e6;stroke:#bdb6a4;stroke-width:.014}
-.s-tort{fill:#3f170b}.s-tortspot{fill:#a8521f;opacity:.55}.s-guardrim{fill:none;stroke:#e9dccb;stroke-width:.012}
+.s-tort{fill:#3a160b}.s-tortspot{fill:#9c4a1c;opacity:.5}.s-tortspot2{fill:#c27a3a;opacity:.32}.s-guardrim{fill:none;stroke:#e9dccb;stroke-width:.012}
 .s-screw{fill:#cfd5da}
 .s-maple2{fill:#e6c487;stroke:#a87f3f;stroke-width:.008}.s-rosewood{fill:#3b2217;stroke:#1d100a;stroke-width:.008}
 .s-headrim{fill:none;stroke:#8c6530;stroke-width:.01}
@@ -1986,8 +1987,14 @@ const SYM = (() => {
      three-tone burst built from stacked body outlines. P-bass: 34" scale, 20 frets, split pickup, candy red with a tortoise guard. */
   const fretYs = (nut, scale, n) => Array.from({ length: n }, (_, i) => nut + scale * (1 - Math.pow(2, -(i + 1) / 12)));
   // offset double cutaway: long pointed bass-side horn, shorter treble horn, narrow waist, round lower bout
-  const STRAT_BODY = 'M.095 .44C.12 .38 .16 .28 .22 .24C.28 .2 .36 .22 .38 .3C.4 .38 .45 .46 .46 .56C.47 .66 .44 .72 .45 .8C.47 .9 .54 .98 .54 1.12C.54 1.4 .36 1.58 0 1.58C-.36 1.58 -.54 1.4 -.54 1.12C-.54 .98 -.47 .9 -.46 .8C-.45 .72 -.49 .64 -.49 .5C-.49 .34 -.45 .18 -.39 .12C-.34 .07 -.26 .08 -.24 .15C-.2 .24 -.15 .34 -.12 .4C-.11 .42 -.1 .43 -.095 .44Z';
+  const STRAT_BODY = 'M.095 .44C.12 .36 .17 .24 .23 .19C.29 .15 .36 .17 .38 .26C.4 .36 .45 .44 .46 .56C.47 .68 .44 .74 .45 .84C.46 .94 .54 1.0 .54 1.14C.54 1.42 .34 1.58 0 1.58C-.34 1.58 -.54 1.42 -.54 1.14C-.54 1.0 -.46 .94 -.45 .84C-.44 .74 -.49 .66 -.49 .52C-.49 .36 -.45 .2 -.39 .13C-.34 .07 -.26 .08 -.24 .15C-.2 .25 -.15 .34 -.12 .4C-.11 .42 -.1 .43 -.095 .44Z';
   const GLOSS = '<path class="s-gloss2" d="M-.38 .6C-.43 .78 -.44 1.0 -.4 1.18"/><path class="s-gloss2" d="M.36 .36C.39 .42 .4 .47 .4 .52"/>';   // light catching the lacquer
+  // a finish that fades smoothly from the edge in: many thin steps between colour stops (no gradients, so ids never clash in copies)
+  const mixHex = (a, b, t) => '#' + [0, 2, 4].map(k => Math.round(parseInt(a.substr(1 + k, 2), 16) * (1 - t) + parseInt(b.substr(1 + k, 2), 16) * t).toString(16).padStart(2, '0')).join('');
+  const finish = (d, stops, cy, inner, n = 14) => Array.from({ length: n }, (_, i) => {
+    const t = i / (n - 1), k = 1 - (1 - inner) * t, seg = Math.min(stops.length - 2, Math.floor(t * (stops.length - 1))), lt = t * (stops.length - 1) - seg;
+    return `<path d="${d}" style="fill:${mixHex(stops[seg], stops[seg + 1], lt)}"${i ? ` transform="translate(0 ${cy}) scale(${f(k)}) translate(0 ${-cy})"` : ''}/>`;
+  }).join('');
   const layer = (d, cls, k, cy) => `<path class="${cls}" d="${d}" transform="translate(0 ${cy}) scale(${k}) translate(0 ${-cy})"/>`;
   const neckOn = (nut, heel, wNut, wHeel, board, frets, dots, fretW) => `<path class="${board}" d="M${-wNut / 2} ${nut}L${wNut / 2} ${nut}L${wHeel / 2} ${heel}L${-wHeel / 2} ${heel}Z"/>` +
     frets.map(y => `<path class="s-fret2" d="M${f(-(wNut + (wHeel - wNut) * (y - nut) / (heel - nut)) / 2 + .004)} ${f(y)}H${f((wNut + (wHeel - wNut) * (y - nut) / (heel - nut)) / 2 - .004)}"/>`).join('') +
@@ -1998,10 +2005,10 @@ const SYM = (() => {
     const nut = -1.0, scale = 2.125, fr = fretYs(nut, scale, 21), bridgeY = nut + scale;
     const head = 'M-.068 -1.0L-.075 -1.2C-.08 -1.34 -.1 -1.46 -.09 -1.53C-.07 -1.6 .02 -1.61 .07 -1.56C.12 -1.51 .14 -1.44 .12 -1.37C.1 -1.3 .07 -1.27 .07 -1.2L.068 -1.0Z';
     const posts = [-1.08, -1.155, -1.23, -1.305, -1.38, -1.455];
-    const guard = 'M-.1 .44C-.16 .36 -.22 .3 -.27 .32C-.31 .34 -.31 .44 -.32 .56C-.33 .72 -.42 .86 -.42 1.0C-.42 1.12 -.34 1.18 -.22 1.16L-.13 1.08L.14 1.08C.2 1.18 .3 1.24 .38 1.2C.46 1.15 .47 1.04 .44 .94C.4 .82 .34 .72 .32 .6C.3 .5 .26 .44 .2 .44L.1 .44Z';
+    const guard = 'M-.1 .44C-.17 .38 -.24 .35 -.28 .38C-.32 .41 -.32 .5 -.33 .58C-.35 .74 -.42 .86 -.42 1.0C-.42 1.12 -.33 1.18 -.22 1.15L-.13 1.08L.14 1.08C.2 1.17 .3 1.23 .38 1.19C.46 1.14 .46 1.03 .43 .94C.39 .82 .36 .72 .35 .62C.34 .52 .3 .46 .25 .44C.19 .42 .14 .42 .1 .44Z';
     const coil = (y, rot) => `<g transform="translate(0 ${y}) rotate(${rot})">${R_(-.13, -.03, .26, .06, 's-coil', .03)}${[-.085, -.051, -.017, .017, .051, .085].map(x => C_(x, 0, .009, 's-pole')).join('')}</g>`;
-    return P(STRAT_BODY, 's-sb1') + layer(STRAT_BODY, 's-sb2', .9, 1.0) + layer(STRAT_BODY, 's-sb3', .74, 1.04) + layer(STRAT_BODY, 's-sb4', .45, 1.08) + P(STRAT_BODY, 's-bodyrim') + GLOSS +
-      P(guard, 's-guard') + [[-.26, .36], [-.29, .58], [-.37, .86], [-.36, 1.08], [-.2, 1.12], [.33, 1.17], [.42, 1.0], [.35, .76], [.25, .5], [.11, 1.11], [-.11, 1.11]].map(([x, y]) => C_(x, y, .009, 's-screw')).join('') +
+    return finish(STRAT_BODY, ['#1e0c06', '#4a1a09', '#8e3a10', '#cf7a22', '#eda443', '#f6bd58'], 1.06, .38) + P(STRAT_BODY, 's-bodyrim') + GLOSS +
+      P(guard, 's-guard') + [[-.27, .41], [-.3, .6], [-.37, .86], [-.36, 1.08], [-.2, 1.12], [.33, 1.16], [.41, 1.0], [.36, .78], [.31, .56], [.2, .46], [.11, 1.11], [-.11, 1.11]].map(([x, y]) => C_(x, y, .009, 's-screw')).join('') +
       neckOn(nut, .6, .14, .18, 's-maple2', fr, [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19], [21]], .011) +
       P(head, 's-maple2') + P(head, 's-headrim') + posts.map(y => C_(-.035, y, .014, 's-chrome2') + R_(-.125, f(y - .016), .055, .032, 's-chrome2', .012)).join('') +
       R_(-.025, -1.27, .05, .02, 's-chrome2', .008) +
@@ -2010,17 +2017,18 @@ const SYM = (() => {
       R_(-.115, f(bridgeY - .035), .23, .15, 's-chrome2', .02) + [-.086, -.052, -.017, .017, .052, .086].map(x => R_(f(x - .014), f(bridgeY - .025), .028, .05, 's-saddle', .006)).join('') +
       C_(.22, .93, .038, 's-knob') + C_(.28, 1.03, .038, 's-knob') + C_(.32, 1.13, .038, 's-knob') + `<path class="s-switch" d="M.17 .87L.22 .82"/>` +
       `<ellipse class="s-chrome2" cx=".44" cy="1.3" rx=".03" ry=".05" transform="rotate(-35 .44 1.3)"/>` +
+      `<path class="s-arm" d="M.11 1.2C.16 1.24 .24 1.27 .34 1.27"/>` + C_(.34, 1.27, .018, 's-knob') +   // tremolo arm
       strings2(6, bridgeY, nut, .17, .11) + posts.map((y, i) => `<path class="s-str2" d="M${f((i / 5 - .5) * .11)} ${nut}L-.035 ${y}"/>`).join('');
   };
-  const pbass2 = () => {
+  const pbass2 = () => {   // tortoise guard: fine two-tone mottle kept inside the guard's two lobes
     const nut = -1.38, scale = 2.83, fr = fretYs(nut, scale, 20), bridgeY = nut + scale;
     const dy = .38, body = `<g transform="translate(0 ${dy}) scale(1.06 1.02)">`;
     const head = 'M-.075 -1.38L-.085 -1.6C-.09 -1.74 -.12 -1.84 -.1 -1.89C-.07 -1.95 .04 -1.95 .09 -1.89C.15 -1.82 .17 -1.74 .14 -1.66C.11 -1.58 .08 -1.55 .08 -1.47L.075 -1.38Z';
     const keys = [-1.47, -1.6, -1.73, -1.86];
-    const guard = 'M-.1 .44C-.18 .36 -.26 .3 -.31 .33C-.36 .36 -.35 .48 -.36 .6C-.38 .78 -.44 .92 -.43 1.06C-.42 1.2 -.3 1.26 -.18 1.2C-.06 1.14 .02 1.06 .1 .98C.2 .88 .28 .76 .3 .62C.31 .52 .26 .44 .18 .44L.1 .44Z';
-    return body + P(STRAT_BODY, 's-red1') + layer(STRAT_BODY, 's-red2', .9, 1.0) + layer(STRAT_BODY, 's-red3', .55, 1.0) + P(STRAT_BODY, 's-bodyrim') + GLOSS +
-      P(guard, 's-tort') + [[-.25, .5, .03], [-.3, .7, .04], [-.33, .93, .035], [-.22, 1.1, .03], [-.12, .62, .025], [.2, .58, .03], [.08, .88, .03], [-.04, 1.0, .025], [-.18, .84, .03], [.24, .72, .022]].map(([x, y, r]) => `<ellipse class="s-tortspot" cx="${x}" cy="${y}" rx="${r}" ry="${f(r * .55)}" transform="rotate(35 ${x} ${y})"/>`).join('') + P(guard, 's-guardrim') +
-      [[-.28, .37], [-.32, .62], [-.39, .92], [-.32, 1.18], [-.06, 1.12], [.2, .86], [.26, .56], [.02, .47]].map(([x, y]) => C_(x, y, .009, 's-screw')).join('') +
+    const guard = 'M-.1 .44C-.18 .38 -.27 .34 -.31 .37C-.36 .41 -.36 .52 -.37 .62C-.39 .8 -.45 .94 -.43 1.08C-.41 1.22 -.28 1.27 -.16 1.2C-.05 1.13 .04 1.04 .12 .96C.22 .86 .3 .74 .33 .62C.35 .52 .31 .46 .25 .44C.19 .42 .13 .42 .1 .44Z';
+    return body + finish(STRAT_BODY, ['#5a0c13', '#9a1823', '#c4262f', '#d8424a', '#e35a5e'], 1.0, .42) + P(STRAT_BODY, 's-bodyrim') + GLOSS +
+      P(guard, 's-tort') + [[-0.146,0.564,0.018,0,137],[-0.298,0.862,0.023,0,9],[-0.303,0.749,0.012,1,15],[0.186,0.545,0.012,0,147],[-0.214,0.844,0.01,1,36],[-0.003,0.854,0.017,0,26],[-0.114,0.838,0.009,0,158],[-0.224,0.929,0.015,1,119],[-0.162,1.008,0.019,0,20],[-0.282,0.749,0.02,0,125],[-0.309,0.845,0.021,1,87],[-0.047,0.918,0.009,1,165],[-0.066,0.954,0.022,1,5],[-0.216,0.658,0.02,1,100],[-0.25,0.737,0.012,0,110],[0.21,0.652,0.015,1,97],[-0.244,0.62,0.012,1,150],[-0.24,0.655,0.01,1,156],[0.167,0.731,0.014,0,123],[-0.253,0.695,0.009,0,145],[-0.262,0.634,0.014,1,121],[-0.279,1.046,0.024,1,122],[-0.293,0.696,0.012,0,132],[-0.188,0.713,0.011,0,136],[-0.003,0.807,0.018,0,61],[-0.21,0.817,0.014,0,7],[-0.232,0.878,0.014,1,93],[-0.05,0.693,0.016,0,122],[0.24,0.697,0.018,0,99],[0.161,0.689,0.021,1,118],[0.118,0.577,0.01,0,151],[-0.264,1.03,0.024,1,39],[-0.221,0.634,0.013,0,150],[-0.145,0.836,0.021,0,90],[0.152,0.563,0.01,0,142],[-0.319,0.931,0.016,1,27],[-0.295,0.772,0.008,0,113],[-0.177,0.811,0.021,0,133],[-0.189,0.846,0.023,1,35],[-0.085,0.731,0.013,0,109],[-0.312,0.922,0.021,0,164],[0.076,0.559,0.022,1,56],[0.133,0.525,0.022,0,170],[0.189,0.571,0.015,1,86],[-0.082,0.706,0.009,1,4],[-0.137,0.776,0.019,1,84]].map(([x, y, r, k, a]) => `<ellipse class="${k ? 's-tortspot' : 's-tortspot2'}" cx="${x}" cy="${y}" rx="${r}" ry="${f(r * .6)}" transform="rotate(${a} ${x} ${y})"/>`).join('') + P(guard, 's-guardrim') +
+      [[-.28, .42], [-.32, .62], [-.39, .92], [-.32, 1.18], [-.06, 1.12], [.2, .86], [.27, .56], [.18, .46]].map(([x, y]) => C_(x, y, .009, 's-screw')).join('') +
       `<g transform="rotate(-12 .3 1.22)">${R_(.22, 1.02, .15, .42, 's-chrome2', .07)}${C_(.295, 1.13, .045, 's-knob2')}${C_(.295, 1.32, .045, 's-knob2')}</g>` + '</g>' +
       neckOn(nut, .94, .14, .2, 's-rosewood', fr, [[3], [5], [7], [9], [12, 0, 1], [15], [17], [19]], .012) +
       P(head, 's-maple2') + P(head, 's-headrim') + keys.map(y => C_(-.04, y, .02, 's-chrome2') + `<path class="s-chrome2" d="M-.07 ${f(y - .035)}L-.15 ${f(y - .045)}C-.18 ${f(y - .02)} -.18 ${f(y + .02)} -.15 ${f(y + .045)}L-.07 ${f(y + .035)}Z"/>`).join('') +
