@@ -337,6 +337,7 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .cab-inside { fill: none; stroke-width: .12; stroke-dasharray: .2 .25; opacity: .55; pointer-events: none; }
 .fl-out { fill: var(--deck); stroke-width: .07; stroke-linejoin: round; }
 .flowg.dim { opacity: .18; }
+.cab.k-inst.quiet { opacity: .85; stroke-width: var(--cw, .12); }   /* leads stay visible, they're the fun ones */
 .cab-case { fill: none; stroke: var(--deck); stroke-width: var(--cc, .3); stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
 .cab-case.quiet { stroke-width: var(--ccq, .2); }
 .cab-case.hl { stroke-width: var(--cch, .4); }
@@ -2394,6 +2395,36 @@ function applyDeckColor(el) {
   for (const k of ['--deck', '--deck-grid', '--deck-grid-major', '--deck-ink', '--deck-rim']) vars[k] ? el.style.setProperty(k, vars[k]) : el.style.removeProperty(k);
   el.classList.toggle('light-deck', light);
 }
+/* Instrument leads lie like real cables: a soft wave along the run (fading to nothing at the plugs, so both ends still land
+   on the gear), and a slack coil near the guitar. Drawing only: lengths, patching and the saved route are untouched.
+   Each lead gets its own wave and coil from its id, so neighbouring leads never look stamped out. */
+const GUITARS = new Set(['el_guitar', 'bass_guitar', 'ac_guitar']);
+function naturalLead(pts, c) {
+  const L = runLen(pts); if (L < fromM(.6)) return pts;
+  let h = 0; for (const ch of String(c.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const rnd = k => ((Math.sin(h * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
+  const amp = fromM(.08 + .05 * rnd(1)), wave = fromM(.8 + .5 * rnd(2)), phase = rnd(3) * Math.PI * 2, ease = fromM(.35);
+  const a = itemById(c.from), b = itemById(c.to), gStart = GUITARS.has(a?.type), gEnd = GUITARS.has(b?.type);
+  const off0 = g => Math.max(Number(prop(g, 'w')), Number(prop(g, 'd'))) / 2 + fromM(.25);   // just clear of the guitar
+  const coilAt = gStart && L > off0(a) + fromM(.6) ? off0(a) : gEnd && L > off0(b) + fromM(.6) ? L - off0(b) : null, R = fromM(.11), side = rnd(4) < .5 ? 1 : -1;
+  const step = fromM(.06), n = Math.max(2, Math.round(L / step));
+  const base = Array.from({ length: n + 1 }, (_, k) => pointAt(pts, L * k / n));
+  // round the right-angle corners: a moving average that shrinks to nothing at the plugs
+  const W = 7, sm = base.map((q, k) => { const w = Math.min(W, k, n - k); let x = 0, y = 0; for (let j = -w; j <= w; j++) { x += base[k + j][0]; y += base[k + j][1]; } return [x / (2 * w + 1), y / (2 * w + 1)]; });
+  const out = [];
+  for (let k = 0; k <= n; k++) {
+    const t = L * k / n, p0 = sm[Math.max(0, k - 1)], p1 = sm[Math.min(n, k + 1)];
+    const th = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), nx = -Math.sin(th), ny = Math.cos(th);
+    const fade = Math.min(1, t / ease, (L - t) / ease), off = amp * Math.sin(t / wave * Math.PI * 2 + phase) * fade;
+    const x = sm[k][0] + nx * off, y = sm[k][1] + ny * off;
+    out.push([x, y]);
+    if (coilAt !== null && t <= coilAt && t + L / n > coilAt) {   // one loose loop, lying flat beside the run
+      const cx = x + nx * side * R, cy = y + ny * side * R, a0 = Math.atan2(-ny * side, -nx * side);
+      for (let m = 1; m <= 28; m++) { const an = a0 + side * m / 28 * Math.PI * 2, drift = m / 28 * fromM(.07); out.push([cx + Math.cos(an) * R + Math.cos(th) * drift, cy + Math.sin(an) * R + Math.sin(th) * drift]); }
+    }
+  }
+  return out.map(q => [Math.round(q[0] * 1000) / 1000, Math.round(q[1] * 1000) / 1000]);
+}
 function roundPath(pts, r = fromM(.12)) {
   const P = q => `${f3(q[0])} ${f3(q[1])}`;
   let d = `M${P(pts[0])}`;
@@ -2654,7 +2685,7 @@ function renderPlot() {
     const ps = o.map(p => p.join(',')).join(' ');
     // with "inside channels" hidden, only the stretches on the open stage are drawn (a selected cable still shows all of it)
     const parts = cableView.hideInCh ? cableParts(c) : null;
-    const segs = parts?.inside && !isSel ? parts.exposed : [o];
+    const segs = parts?.inside && !isSel ? parts.exposed : [c.type === 'inst' ? naturalLead(o, c) : o];
     let out = '';
     for (const seg of segs) {
       if (seg.length < 2) continue;
