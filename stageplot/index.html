@@ -1788,8 +1788,9 @@ function autoCable() {
   const sp = stagePoly(), minX = Math.min(...sp.map(q => q[0])), maxX = Math.max(...sp.map(q => q[0])), maxY = Math.max(...sp.map(q => q[1]));
   for (const b of boxes) for (const d of desks) {
     if (plan.cables.some(c => c.type === 'cat6' && touches(c, b.id) && touches(c, d.id))) continue;
-    const offStage = d.y > maxY + 1 && b.y < maxY && !chans().length,   // a drawn cable channel takes over the routing ex = b.x > (minX + maxX) / 2 ? maxX + .8 : minX - .8, fy = maxY + 1.2;
-    addCable('cat6', b.id, d.id, { auto: true, ...(offStage ? { points: [[r2(ex), r2(b.y)], [r2(ex), r2(fy)], [r2(d.x), r2(fy)]] } : {}) });
+    // a drawn cable channel takes over the routing
+    const offStage = d.y > maxY + 1 && b.y < maxY && !chans().length, ex = b.x > (minX + maxX) / 2 ? maxX + .8 : minX - .8, fy = maxY + 1.2;
+    addCable('cat6', b.id, d.id, { auto: true, ...(offStage ? { points: [[r2(ex), r2(b.y)], [r2(ex), r2(fy)], [r2(d.x), r2(fy)]], edge: true } : {}) });
   }
   // speaker and sub feeds fly overhead unless the room setting says otherwise
   if (plan.settings.overheadSpk !== false) for (const c of plan.cables) if (c.auto && [itemById(c.from), itemById(c.to)].some(i => i && OVERHEAD_TYPES.includes(i.type))) c.level = 'ceiling';
@@ -5064,7 +5065,7 @@ function finishChannel() {
     return;
   }
   const k = CH_KINDS[chDraftKind] || CH_KINDS.trench, n = chans().filter(x => x.kind === chDraftKind).length + 1;
-  mutate(() => { const ch = { id: uid(), name: `${k.name} ${n}`, kind: chDraftKind, pts }; plan.channels.push(ch); sel = { kind: 'channel', id: ch.id }; mode = 'select'; },
+  mutate(() => { const ch = { id: uid(), name: `${k.name} ${n}`, kind: chDraftKind, pts }; plan.channels.push(ch); for (const c of plan.cables) if (c.edge && c.auto) { c.points = []; delete c.edge; } sel = { kind: 'channel', id: ch.id };   /* a channel now carries the snake */ mode = 'select'; },
     k.level ? 'Overhead path added. Ceiling runs nearby route along it.' : 'Channel added. Cables nearby now route through it.');
 }
 function startExtend(id, atEnd) {
