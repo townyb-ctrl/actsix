@@ -836,9 +836,15 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .overown { color: var(--warn, #b45309); font-weight: 600; }
 .hgear .iconbtn.armed { width: auto; padding: 0 10px; color: var(--bad, #dc2626); border-color: currentColor; }
 .armtxt { font-size: 12px; font-weight: 600; white-space: nowrap; }
-.gearform { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: start; }
-.gfprev .glyph { width: 76px; height: 76px; border-radius: 16px; padding: 8px; }
-@media (max-width: 600px) { .gearform { grid-template-columns: minmax(0, 1fr); } .gfprev { display: none; } }
+.gearform { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 16px; align-items: start; padding: 16px; border: 1px solid var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+.gfhead { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; } .gfhead h4 { margin: 0; font-size: 15px; }
+.gfprev { display: grid; gap: 8px; justify-items: center; text-align: center; }
+.gfprev .glyph, .gfprev img { width: 104px; height: 104px; border-radius: 18px; padding: 10px; }
+.gfprev img { object-fit: contain; background: var(--deck); }
+.gfprev .btn { width: 100%; justify-content: center; font-size: 13px; padding-inline: 8px; min-width: 0; }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.gfprev label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) { .gearform { grid-template-columns: minmax(0, 1fr); } }
 .hswitch { position: relative; width: 40px; height: 24px; flex: none; cursor: pointer; }
 .hswitch input { position: absolute; opacity: 0 !important; inset: 0; margin: 0; cursor: pointer; appearance: none; -webkit-appearance: none; width: 100%; height: 100%; z-index: 1; }
 .hswitch span { position: absolute; inset: 0; border-radius: 99px; background: var(--line-2); transition: background .15s; }
@@ -1468,11 +1474,16 @@ function registerCustomGear(list) {
   for (const id of Object.keys(CAT)) if (CAT[id].custom) delete CAT[id];
   for (const c of list || []) {
     const base = CAT[c.base]; if (!base || !c.id || !c.name) continue;
-    CAT[c.id] = { ...JSON.parse(JSON.stringify(base)), name: c.name, short: c.name.length > 14 ? c.name.slice(0, 13) + '…' : c.name, inputs: c.inputs?.length ? c.inputs : undefined, watts: c.watts || undefined, custom: true, base: c.base };
+    const w = c.w > 0 ? c.w : base.w, d = c.d > 0 ? c.d : base.d;
+    CAT[c.id] = { ...JSON.parse(JSON.stringify(base)), name: c.name, short: c.name.length > 14 ? c.name.slice(0, 13) + '…' : c.name, w, d, inputs: c.inputs?.length ? c.inputs : undefined, watts: c.watts || undefined, custom: true, base: c.base };
     if (!CAT[c.id].inputs) delete CAT[c.id].inputs; if (!CAT[c.id].watts) delete CAT[c.id].watts;
-    SYM[c.id] = SYM[c.base];
-    if (GLYPH_TILT[c.base] !== undefined) GLYPH_TILT[c.id] = GLYPH_TILT[c.base];
-    if (GLYPH_FRAME[c.base]) GLYPH_FRAME[c.id] = GLYPH_FRAME[c.base];
+    if (c.img) { CAT[c.id].shape = 'rect'; SYM[c.id] = `<image href="${c.img}" x="${-w / 2}" y="${-d / 2}" width="${w}" height="${d}" preserveAspectRatio="xMidYMid meet"/>`; }   // your own picture, fitted to the footprint
+    else {
+      SYM[c.id] = w === base.w && d === base.d ? SYM[c.base] : `<g transform="scale(${+(w / base.w).toFixed(4)} ${+(d / base.d).toFixed(4)})">${SYM[c.base]}</g>`;
+      if (GLYPH_TILT[c.base] !== undefined) GLYPH_TILT[c.id] = GLYPH_TILT[c.base];
+      if (GLYPH_FRAME[c.base] && w === base.w && d === base.d) GLYPH_FRAME[c.id] = GLYPH_FRAME[c.base];
+    }
+    delete GLYPH_BOX[c.id];
     (GEAR_GROUPS.find(([g]) => g === c.group) || GEAR_GROUPS.find(([, ts]) => ts.includes(c.base)) || GEAR_GROUPS[0])[1].push(c.id);
   }
 }
@@ -5580,35 +5591,60 @@ function homeGear() {
   const removed = GEAR_GROUPS.flatMap(([, ts]) => ts).filter(gearHidden);
   const bases = GEAR_GROUPS.map(([gname, types]) => `<optgroup label="${esc(gname)}">${types.filter(t => !CAT[t].custom).map(t => `<option value="${t}" ${t === gearForm.base ? 'selected' : ''}>${esc(CAT[t].name)}</option>`).join('')}</optgroup>`).join('');
   const baseGroup = GEAR_GROUPS.find(([, ts]) => ts.includes(gearForm.base))?.[0];
-  const form = `<div class="gearform">
-      <div class="gfprev">${glyph(gearForm.base)}</div>
+  const form = `<div class="gearform" id="gearForm">
+      <div class="gfhead"><h4>Add your own gear</h4><button class="iconbtn" id="gf-cancel" aria-label="Cancel" title="Cancel">${ic('x', 'sm')}</button></div>
+      <div class="gfprev">${gearForm.img ? `<img src="${gearForm.img}" alt="Your picture">` : glyph(gearForm.base)}
+        <label class="btn" for="gf-img">${ic('plus', 'sm')}${gearForm.img ? 'Change picture' : 'Upload picture'}</label><input id="gf-img" type="file" accept="image/*" class="visually-hidden">
+        ${gearForm.img ? `<button class="btn quiet" id="gf-imgclear">Use the icon instead</button>` : '<small class="hint">or use the icon it looks like</small>'}
+        ${gearForm.imgErr ? `<p class="err" role="alert">${esc(gearForm.imgErr)}</p>` : ''}</div>
       <div class="grid2">
         <div class="field" style="grid-column:1/-1"><label for="gf-name">Name</label><input id="gf-name" type="text" maxlength="40" value="${esc(gearForm.name)}" placeholder="e.g. Choir mic on boom, Click & cue pack, Bass rig 2"></div>
-        <div class="field"><label for="gf-base">Looks like</label><select id="gf-base">${bases}</select></div>
+        <div class="field"><label for="gf-base">${gearForm.img ? 'Works like' : 'Looks like'}</label><select id="gf-base">${bases}</select></div>
         <div class="field"><label for="gf-group">Shows under</label><select id="gf-group">${GEAR_GROUPS.map(([gn]) => `<option ${gn === (gearForm.group || baseGroup) ? 'selected' : ''}>${esc(gn)}</option>`).join('')}</select></div>
+        <div class="field"><label for="gf-w">Width</label><div class="unit" data-unit="m"><input id="gf-w" type="number" min=".1" max="20" step=".05" value="${esc(gearForm.w)}" placeholder="${mVal(CAT[gearForm.base].w)}"></div></div>
+        <div class="field"><label for="gf-d">Depth</label><div class="unit" data-unit="m"><input id="gf-d" type="number" min=".1" max="20" step=".05" value="${esc(gearForm.d)}" placeholder="${mVal(CAT[gearForm.base].d)}"></div></div>
         <div class="field"><label for="gf-inputs">Inputs <small class="hint" style="font-weight:400">comma separated, blank for none</small></label><input id="gf-inputs" type="text" value="${esc(gearForm.inputs)}" placeholder="e.g. Choir L, Choir R"></div>
         <div class="field"><label for="gf-watts">Power</label><div class="unit" data-unit="W"><input id="gf-watts" type="number" min="0" max="20000" step="5" value="${esc(gearForm.watts)}" placeholder="0"></div></div>
+        <div class="row" style="justify-content:flex-end;gap:6px;grid-column:1/-1"><button class="btn quiet" id="gf-cancel2">Cancel</button><button class="btn primary" id="gf-add" ${gearForm.name.trim() ? '' : 'disabled'}>${ic('plus', 'sm')}Add to your library</button></div>
       </div>
-      <div class="row" style="justify-content:flex-end;gap:6px;grid-column:1/-1"><button class="btn primary" id="gf-add" ${gearForm.name.trim() ? '' : 'disabled'}>${ic('plus', 'sm')}Add to your library</button></div>
     </div>`;
-  return hsec('Add gear', 'Something you use that isn’t in the library? Give it a name and pick what it looks like. It shows in Add gear, on the plot and in the paperwork, with its own inputs and power.', form) +
-    hsec('Building from the team', '', hcheck('hd-teamgear', 'Add each person’s instruments and gear', ui.teamGear, 'Off: people are placed on stage and you add their gear yourself')) +
+  return hsec('Building from the team', '', hcheck('hd-teamgear', 'Add each person’s instruments and gear', ui.teamGear, 'Off: people are placed on stage and you add their gear yourself')) +
     hsec('Your gear', `${plural(GEAR_GROUPS.flatMap(([, ts]) => ts).length - removed.length, 'type')} in your library. Remove what you never use to keep Add gear short; enter how many you own and the checks warn when a week needs more.`,
-      `<div class="hgear-tools row" style="gap:6px"><button class="btn quiet" id="homeGearUnused">Keep only what’s on this week</button><button class="btn quiet" id="homeOwnClear">Clear owned counts</button></div>${groups}`) +
+      `${gearForm.open ? form : ''}<div class="hgear-tools row" style="gap:6px"><button class="btn quiet" id="homeGearUnused">Keep only what’s on this week</button><button class="btn quiet" id="homeOwnClear">Clear owned counts</button></div>${groups}`, gearForm.open ? '' : `<button class="btn primary" id="gf-open">${ic('plus', 'sm')}Add gear</button>`) +
     (removed.length ? hsec('Removed from your library', 'Not in Add gear. Search still finds them, and weeks that use them are unaffected.',
       `<div class="hlist">${removed.map(t => `<div class="hlist-row">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}</b></span><button class="btn" data-gearback="${t}">${ic('undo', 'sm')}Restore</button></div>`).join('')}</div>
        <div class="row"><button class="btn quiet" id="homeGearAll">Restore all</button></div>`) : '');
 }
 let gearDelArmed = '';
-const gearForm = { name: '', base: 'vox_mic', group: '', inputs: '', watts: '' };
+const gearForm = { open: false, name: '', base: 'vox_mic', group: '', inputs: '', watts: '', img: '', w: '', d: '', imgErr: '' };
 function addCustomGear() {
   const name = gearForm.name.trim(); if (!name) return;
   const base = CAT[gearForm.base] ? gearForm.base : 'vox_mic', g = gearPrefs(), id = 'cu_' + uid();
   const inputs = gearForm.inputs.split(',').map(x => x.trim()).filter(Boolean).slice(0, 32), watts = Math.max(0, Math.round(Number(gearForm.watts) || 0));
-  (g.custom ||= []).push({ id, name, base, group: gearForm.group || GEAR_GROUPS.find(([, ts]) => ts.includes(base))?.[0], inputs, watts });
+  const w = Number(gearForm.w) > 0 ? fromM(Number(gearForm.w)) : 0, d = Number(gearForm.d) > 0 ? fromM(Number(gearForm.d)) : 0;
+  (g.custom ||= []).push({ id, name, base, group: gearForm.group || GEAR_GROUPS.find(([, ts]) => ts.includes(base))?.[0], inputs, watts, ...(w ? { w } : {}), ...(d ? { d } : {}), ...(gearForm.img ? { img: gearForm.img } : {}) });
   registerCustomGear(g.custom); save();
-  Object.assign(gearForm, { name: '', inputs: '', watts: '', group: '' });
+  Object.assign(gearForm, { open: false, name: '', inputs: '', watts: '', group: '', img: '', w: '', d: '', imgErr: '' });
   renderHome(); renderRail(); toast(`${name} added to your library`);
+}
+/* an uploaded picture becomes a small WebP (longest side 320 px) so a whole library still fits in browser storage */
+function loadGearImage(file) {
+  gearForm.imgErr = '';
+  if (!file) return;
+  if (!/^image\//.test(file.type)) { gearForm.imgErr = 'That isn’t an image. Use a PNG, JPG, WebP or SVG.'; renderHome(); return; }
+  if (file.size > 15e6) { gearForm.imgErr = 'That image is over 15 MB. Pick a smaller one.'; renderHome(); return; }
+  const url = URL.createObjectURL(file), im = new Image();
+  im.onload = () => {
+    const k = Math.min(1, 320 / Math.max(im.naturalWidth || 320, im.naturalHeight || 320)), cw = Math.max(1, Math.round((im.naturalWidth || 320) * k)), ch = Math.max(1, Math.round((im.naturalHeight || 320) * k));
+    const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; cv.getContext('2d').drawImage(im, 0, 0, cw, ch); URL.revokeObjectURL(url);
+    let data = cv.toDataURL('image/webp', .85); if (!data.startsWith('data:image/webp')) data = cv.toDataURL('image/png');
+    gearForm.img = data;
+    const base = CAT[gearForm.base], wm = Number(gearForm.w) || +mVal(base.w);   // keep the width, match the depth to the picture's shape
+    gearForm.w = String(wm); gearForm.d = String(Math.round(wm * ch / cw * 100) / 100);
+    renderHome();
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); gearForm.imgErr = 'Couldn’t read that image.'; renderHome(); };
+  im.src = url;
 }
 function removeGear(t) {
   const g = gearPrefs();
@@ -5685,6 +5721,9 @@ $('homeView').addEventListener('click', e => {
   if (t.dataset.gearback) { const g = gearPrefs(); g.hidden = g.hidden.filter(x => x !== t.dataset.gearback); save(); renderHome(); renderRail(); return; }
   if (t.dataset.gearrm) { const k = t.dataset.gearrm; if (CAT[k]?.custom && gearDelArmed !== k) { gearDelArmed = k; renderHome(); return; } gearDelArmed = ''; removeGear(k); return; }
   if (t.id === 'gf-add') { addCustomGear(); return; }
+  if (t.id === 'gf-open') { gearForm.open = true; renderHome(); setTimeout(() => { $('gearForm')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); $('gf-name')?.focus(); }, 30); return; }
+  if (t.id === 'gf-cancel' || t.id === 'gf-cancel2') { Object.assign(gearForm, { open: false, name: '', inputs: '', watts: '', group: '', img: '', w: '', d: '', imgErr: '' }); renderHome(); return; }
+  if (t.id === 'gf-imgclear') { gearForm.img = ''; gearForm.w = ''; gearForm.d = ''; renderHome(); return; }
   if (t.id === 'homeGearUnused') { const on = new Set(plan.items.map(i => i.type)); const g = gearPrefs(), before = [...g.hidden]; g.hidden = GEAR_GROUPS.flatMap(([, ts]) => ts).filter(x => !on.has(x)); save(); renderHome(); renderRail(); toast('Your library now has only what’s on this week’s plot', { label: 'Undo', fn: () => { g.hidden = before; save(); renderHome(); renderRail(); } }); return; }
   if (t.id === 'homeOwnClear') { gearPrefs().owned = {}; save(); renderHome(); return; }
   if (t.id === 'hp-test') { pcoLoadTypes(); return; }
@@ -5693,7 +5732,7 @@ $('homeView').addEventListener('click', e => {
   if (t.id === 'homeDataDlg') { $('dataBtn').click(); return; }
 });
 $('homeView').addEventListener('input', e => {
-  const t = e.target, k = { 'gf-name': 'name', 'gf-inputs': 'inputs', 'gf-watts': 'watts' }[t.id];
+  const t = e.target, k = { 'gf-name': 'name', 'gf-inputs': 'inputs', 'gf-watts': 'watts', 'gf-w': 'w', 'gf-d': 'd' }[t.id];
   if (k) { gearForm[k] = t.value; const b = $('gf-add'); if (b) b.disabled = !gearForm.name.trim(); }
 });
 $('homeView').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'gf-name' && gearForm.name.trim()) addCustomGear(); });
@@ -5701,6 +5740,7 @@ $('homeView').addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'gf-base') { gearForm.base = t.value; const c = CAT[t.value]; if (!gearForm.inputs) gearForm.inputs = (c.inputs || []).join(', '); if (!gearForm.watts && c.watts) gearForm.watts = String(c.watts); gearForm.group = ''; renderHome(); return; }
   if (t.id === 'gf-group') { gearForm.group = t.value; return; }
+  if (t.id === 'gf-img') { loadGearImage(t.files?.[0]); t.value = ''; return; }
   if (t.dataset.def) { const v = Number(t.value); if (!Number.isFinite(v)) return; setDefault(t.dataset.def, t.dataset.raw ? v : fromM(v)); return; }
   if (t.dataset.deftext) { setDefault(t.dataset.deftext, t.value.trim()); if (t.dataset.deftext === 'org') { renderHome(); renderPaper(); } return; }
   if (t.dataset.defsel) { setDefault(t.dataset.defsel, t.dataset.defsel === 'day' ? Number(t.value) : t.value); return; }
