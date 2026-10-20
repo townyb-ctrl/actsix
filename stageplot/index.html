@@ -1546,23 +1546,15 @@ function seed() {
   const p = blankPlan(); p.name = 'Example week — replace with your team';
   plan = p;
   const W = p.stage.w, D = p.stage.d;
-  addItem('stagebox', 9.5, 1.4, { label: 'Stage box A 32×16' });
-  addItem('stagebox', W / 2, D - 1.2, { label: 'Stage box B 16×8', ins: 16, outsMax: 8 });
-  addItem('distro', 5, 1.2, { label: 'Distro SL' });
-  addItem('distro', W - 5, 1.2, { label: 'Distro SR' });
+  // a simple four-piece: one stage box, one distro, IEMs, mains and FOH
+  addItem('stagebox', W / 2 + 6, 1.4, { label: 'Stage box' });
+  addItem('distro', W / 2 - 6, 1.2, { label: 'Distro' });
   addItem('iem_rack', W - 2, 3.6, { label: 'IEM rack' });
   addItem('main_spk', -3, D + 1.5, { label: 'Main L' });
   addItem('main_spk', W + 3, D + 1.5, { label: 'Main R' });
-  addItem('sub', W / 2 - 4, D + 2, { label: 'Sub L' });
-  addItem('sub', W / 2 + 4, D + 2, { label: 'Sub R' });
   addItem('foh', W / 2, D + 28, { label: 'FOH console' });
   addItem('wall_outlet', W / 2 + 4.2, D + 30, { label: 'FOH outlet' });
-  const team = [
-    ['Alex Rivera', 'Worship Leader'], ['Sam Ortiz', 'Vocalist'], ['Jordan Lee', 'Vocalist'],
-    ['Casey Brooks', 'Drums'], ['Morgan Hale', 'Bass'], ['Taylor Kim', 'Electric Guitar'],
-    ['Riley Chen', 'Keys', true], ['Jamie Park', 'Tracks / MD'], ['Pastor Chris', 'Pastor / Speaker'],
-    ['Dana Moss', 'FOH Engineer'],
-  ];
+  const team = [['Alex Rivera', 'Worship Leader'], ['Taylor Kim', 'Electric Guitar'], ['Morgan Hale', 'Bass'], ['Casey Brooks', 'Drums']];
   p.team = team.map(([name, role, sings]) => ({ id: uid(), name, role, sings: !!sings }));
   buildFromTeam(); autoCable();
   return { plans: { [p.id]: p }, currentId: p.id };
@@ -4795,8 +4787,8 @@ function dsgKey(e) {
   else if ((e.key === 'Delete' || e.key === 'Backspace') && dsg.sel >= 0 && dsg.pts.length > 3) { e.preventDefault(); dsg.pts.splice(dsg.sel, 1); dsg.sel = -1; dsg.preset = 'custom'; renderDesigner(); }
   else if (e.key === 'Enter' && dsg.tool === 'draw') dsgFinish();
 }
-$('welcomeDraw').onclick = () => { $('welcomeDlg').hidden = true; openDesigner(true); };
-$('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = true; save(); toast('This is an example. Draw your own stage any time from the Room tab.'); };
+$('welcomeDraw').onclick = () => { $('welcomeDlg').hidden = true; view = 'plot'; renderAll(); openDesigner(true); };
+$('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = true; save(); view = 'plot'; renderAll(); needFit = true; renderPlot(); toast('This is an example. Draw your own stage any time from the Room tab.'); };
 
 /* ===================================================================
    Cable visibility (per browser)
@@ -5771,6 +5763,7 @@ $('plotView').classList.toggle('rail-collapsed', !railOpen);
 $('plotView').classList.toggle('insp-collapsed', !inspOpen);
 document.head.insertAdjacentHTML('beforeend', `<style id="symcss">${SYM_CSS}</style>`);
 try { const t = localStorage.getItem('stageplot.theme'); if (t === 'light' || t === 'dark') { themePref = t; document.documentElement.dataset.theme = t; } } catch { /* ignore */ }
+view = 'home'; homeTab = 'library';   // the app always opens on the library
 db = load();
 if (db) plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]];
 else { db = seed(); plan = db.plans[db.currentId]; if (!unreadable) save(); $('welcomeDlg').hidden = !!unreadable; }

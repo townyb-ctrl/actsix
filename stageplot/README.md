@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 39 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 40 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -37,6 +37,7 @@ Open `index.html` in a modern browser to run it.
 - **Paperwork**: one sheet at a time, picked from tabs: **Overview** (a clean drawing of the stage plot, plus anything to check before load-in), Inputs (with stage box port patching), Outputs, Monitor mixes, Cable pull list, Power, Team and Racks. *Everything* shows them all on one page, and printing always includes every sheet. Each table copies straight into a spreadsheet.
 - **People only** (Team tab, above the Build button): untick *Add each person’s instruments & gear* and building from the team places just the people; you add instruments, mics and monitors yourself. Unticking removes the gear it had added (undoable), new team members arrive without gear, and the choice is remembered in this browser. Tick it again to bring the gear back.
 - **Clear this week** (week menu, or Ctrl+K): *Keep the stage* removes the team, gear, cables, channels and notes but keeps the stage shape, size and colour and the room settings; *Clear everything* also resets the stage to a blank 10 × 6 m rectangle. Both ask for a second click and can be undone (Undo in the notice or Ctrl+Z). The date and name stay.
+- **Opening the app**: Stageplot always opens on Home → Library. The first time, a welcome offers *Draw my stage* or *Explore an example first*, a simple four-piece band (worship leader on acoustic and vocals, electric guitar, bass, drums) with one stage box, one distro, in-ears, mains and FOH, fully patched and powered; both go straight to the plot.
 - **Home** (the logo, *Home* in the header, or *Home: library & settings* in the ⋯ menu): one place for everything that isn't a single week. Sections on the left (a strip of chips on phones):
   - **Library**: the next service up front (status, Open the plot, Paperwork), then every saved week grouped by month, newest first, with its team, gear, inputs and cables and a status (Ready, checks to look at, No team yet, Empty); the open week is outlined. Search by name or date, open a week, copy it to the following free service day, or delete it (click twice; Undo in the notice). *New week* starts a fresh week from your stage defaults on the next free service day; *Copy latest* copies the most recent week.
   - **Setups**: every saved stage layout, with *Use on this week*, *Make default* (new weeks start from it) and delete; save the open week as a setup.
@@ -46,7 +47,7 @@ Open `index.html` in a modern browser to run it.
   - **Preferences**: theme, Simple or Advanced detail, gear snap and the setup guide.
   - **Data & backup**: storage used, download a full backup, copy/paste restore, and *Reset to default* (type RESET; a safety copy is kept and can be restored).
   Settings live with your weeks, so a full backup carries them too.
-- **Reset to default** (in the Library): type RESET to confirm. It clears every week, setup and preference in this browser and starts again from the example week. *Back up first* saves a backup file, and a safety copy is always kept: *Restore* in the notice after the reset, or *Restore before reset* in the Library, brings everything back.
+- **Reset to default** (Home → Data & backup): type RESET to confirm. It clears every week, setup and preference in this browser and starts again from the example week. *Back up first* saves a backup file, and a safety copy is always kept: *Restore* in the notice after the reset, or *Restore before reset* in the Library, brings everything back.
 - **Weeks**: every week saved separately. *Next week (copy)* clones everything; *Next week (stage only)* keeps the room and infrastructure and clears the team.
 
 ## Stage-plot symbols
