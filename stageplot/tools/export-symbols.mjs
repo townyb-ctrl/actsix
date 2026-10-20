@@ -11,7 +11,7 @@ const block = (name) => {
   if (!m) throw new Error(`Missing ${name} block in index.html`);
   return m[1];
 };
-const { CAT, SYM, SYM_CSS, ART_DEFS } = new Function(`${block('CAT')}\n${block('SYMBOLS')}\nreturn { CAT, SYM, SYM_CSS, ART_DEFS };`)();
+const { CAT, SYM, SYM_CSS, ART_DEFS } = new Function(`${block('CAT')}\n${block('GUITARS')}\n${block('SYMBOLS')}\nreturn { CAT, SYM, SYM_CSS, ART_DEFS };`)();
 
 const PX_PER_FT = 48;
 const outDir = join(root, 'symbols');

@@ -28,9 +28,9 @@ Downstage (toward the audience) is the bottom of each drawing. Regenerate with `
 | ![MIDI keyboard controller](midi_keys.svg) | `midi_keys` | MIDI keyboard controller | 1.52 × 0.61 m |
 | ![Keyboard rig](keys.svg) | `keys` | Keyboard rig | 1.52 × 0.61 m |
 | ![Multi-effects floor unit](multifx.svg) | `multifx` | Multi-effects floor unit | 0.64 × 0.30 m |
-| ![Acoustic guitar (on stand)](ac_guitar.svg) | `ac_guitar` | Acoustic guitar (on stand) | 0.43 × 1.04 m |
+| ![Acoustic guitar (on stand)](ac_guitar.svg) | `ac_guitar` | Acoustic guitar (on stand) | 0.39 × 1.04 m |
 | ![Electric guitar (on stand)](el_guitar.svg) | `el_guitar` | Electric guitar (on stand) | 0.37 × 0.98 m |
-| ![Bass guitar (on stand)](bass_guitar.svg) | `bass_guitar` | Bass guitar (on stand) | 0.37 × 1.19 m |
+| ![Bass guitar (on stand)](bass_guitar.svg) | `bass_guitar` | Bass guitar (on stand) | 0.35 × 1.19 m |
 | ![Trumpet](trumpet.svg) | `trumpet` | Trumpet | 0.24 × 0.52 m |
 | ![Cajón](cajon.svg) | `cajon` | Cajón | 0.34 × 0.34 m |
 | ![Upright piano](up_piano.svg) | `up_piano` | Upright piano | 1.52 × 0.61 m |
