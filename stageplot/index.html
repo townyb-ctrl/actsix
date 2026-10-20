@@ -1237,11 +1237,11 @@ const CABLES = {
 /* Roles: anchor = [fraction of stage width, fraction of stage depth] where depth 0 is upstage.
    spread = x offsets (ft) used when several people share a role. gear = [type, dx, dy, opts]. */
 const ROLES = {
-  'Worship Leader':  { anchor: [.5, .64], spread: [0, -5, 5], gear: [['person', 0, 0], ['vox_mic', 0, .9], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['iem', -1, -.3], ['ipad_stand', 1.4, 1.3]] },
+  'Worship Leader':  { anchor: [.5, .64], spread: [0, -5, 5], gear: [['person', 0, 0], ['vox_mic', 0, .9], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['ac_guitar', -2.1, .6], ['iem', -1, -.3], ['ipad_stand', 1.4, 1.3]] },
   'Vocalist':        { anchor: [.5, .8], spread: [-4.5, 4.5, -8.5, 8.5, -12, 12], gear: [['person', 0, 0], ['vox_mic', 0, .9], ['iem', -1, -.3]] },
-  'Acoustic Guitar': { anchor: [.32, .6], spread: [0, -4, 4], gear: [['person', 0, 0], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['iem', -1, -.3], ['ipad_stand', 0, 1.4]] },
-  'Electric Guitar': { anchor: [.74, .38], spread: [0, 4, -4], gear: [['person', 0, 0], ['gtr_amp', 0, -2.2], ['pedalboard', 0, 1.2], ['iem', -1.3, -.3]] },
-  'Bass':            { anchor: [.27, .36], spread: [0, -4], gear: [['person', 0, 0], ['bass_amp', 0, -2.4], ['di_mono', 1.2, -1.2, { inputs: ['Bass DI'] }], ['iem', -1.2, -.3]] },
+  'Acoustic Guitar': { anchor: [.32, .6], spread: [0, -4, 4], gear: [['person', 0, 0], ['di_mono', 1, -.3, { inputs: ['Ac Gtr'] }], ['ac_guitar', -2.1, .6], ['iem', -1, -.3], ['ipad_stand', 0, 1.4]] },
+  'Electric Guitar': { anchor: [.74, .38], spread: [0, 4, -4], gear: [['person', 0, 0], ['gtr_amp', 0, -2.2], ['pedalboard', 0, 1.2], ['el_guitar', 2, .3], ['iem', -1.3, -.3]] },
+  'Bass':            { anchor: [.27, .36], spread: [0, -4], gear: [['person', 0, 0], ['bass_amp', 0, -2.4], ['di_mono', 1.2, -1.2, { inputs: ['Bass DI'] }], ['bass_guitar', -2, .5], ['iem', -1.2, -.3]] },
   'Keys':            { anchor: [.13, .52], spread: [0, 0], gear: [['person', 0, -1.4], ['midi_keys', 0, 0], ['usb_if', 2.95, -.7], ['iem', -2.2, -1.4]] },
   'Drums':           { anchor: [.5, .22], spread: [0, 9], gear: [['drum_riser', 0, 0], ['drum_kit', 0, .4], ['drum_shield', 0, 4.3], ['person', 0, -.9], ['iem', 2.2, -2.2]] },
   'Tracks / MD':     { anchor: [.8, .14], spread: [0, 4], gear: [['person', 0, -1], ['laptop', 0, 0], ['iem', 1.4, -1]] },
@@ -1764,6 +1764,19 @@ function autoCable() {
     if (!usbHosts.length || has(it, 'usb')) continue;
     const host = nearest(it, usbHosts);
     addCable('usb', it.id, host.id, { auto: true });
+  }
+  // each player's instrument runs on jack leads through their pedals to their amp or DI (a bass DI also feeds the bass amp)
+  const LEAD_DEST = { el_guitar: ['gtr_amp', 'di_mono', 'di_stereo'], bass_guitar: ['di_mono', 'bass_amp', 'di_stereo'], ac_guitar: ['di_mono', 'di_stereo', 'ac_preamp'] };
+  const leaded = it => plan.cables.some(c => c.type === 'inst' && touches(c, it.id));
+  for (const g of plan.items.filter(i => GUITARS.has(i.type) && i.personId && !leaded(i))) {
+    const mine = plan.items.filter(i => i.personId === g.personId && i !== g), dests = LEAD_DEST[g.type];
+    const fx = mine.filter(i => PEDALS.has(i.type) && !leaded(i)).sort((a, b) => dist(g, a) - dist(g, b));
+    const dest = mine.filter(i => dests.includes(i.type) && !leaded(i)).sort((a, b) => dests.indexOf(a.type) - dests.indexOf(b.type))[0];
+    if (!dest && !fx.length) continue;
+    let prev = g; for (const x of fx) { addCable('inst', prev.id, x.id, { auto: true }); prev = x; }
+    if (dest) addCable('inst', prev.id, dest.id, { auto: true });
+    const amp = g.type === 'bass_guitar' && dest?.type === 'di_mono' && mine.find(i => i.type === 'bass_amp' && !leaded(i));
+    if (amp) addCable('inst', dest.id, amp.id, { auto: true });
   }
   for (const b of boxes) for (const d of desks) if (!plan.cables.some(c => c.type === 'cat6' && touches(c, b.id) && touches(c, d.id))) addCable('cat6', b.id, d.id, { auto: true });
   // speaker and sub feeds fly overhead unless the room setting says otherwise
@@ -5323,7 +5336,6 @@ function renderLibrary() {
   const before = (() => { try { return localStorage.getItem('stageplot.beforeReset'); } catch { return null; } })();
   const el = $('libBody'); if (!el) return;
   el.innerHTML = `
-    <div class="libstats"><div><b>${Object.keys(db.plans).length}</b><span>weeks</span></div><div><b>${su.length}</b><span>setups</span></div><div><b>${esc(sortedWeekIds().length ? new Date(db.plans[sortedWeekIds()[0]].date + 'T12:00').toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—')}</b><span>first week</span></div><div><b>${fmtBytes(storageUse())}</b><span>in this browser</span></div></div>
     <div class="search">${ic('search', 'sm')}<input id="libSearch" type="search" placeholder="Find a week by name or date" value="${esc(lib.q)}" aria-label="Find a week"></div>
     <div class="liblist">${rows || `<p class="hint">No weeks match “${esc(lib.q)}”.</p>`}</div>
     ${su.length ? `<details class="more"><summary>${ic('room', 'sm')}<span><b>Setups</b><small>${plural(su.length, 'saved layout')}</small></span>${ic('chevD', 'sm')}</summary><div class="liblist" style="padding:0 10px 10px">${su.sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, x]) => `<div class="librow"><span class="libmain" style="padding:6px 8px"><b>${esc(x.name)}</b><small>${plural(x.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(x.saved || '')}</small></span><button class="iconbtn" data-libsetupdel="${id}" aria-label="Delete setup ${esc(x.name)}" title="Delete setup">${ic('trash', 'sm')}</button></div>`).join('')}</div></details>` : ''}
