@@ -515,8 +515,8 @@ svg text { font-family: var(--f-ui); }
 .droptarget #plot { outline: 2px dashed var(--accent); outline-offset: 4px; }
 
 /* ---------- inspector ---------- */
-.inspector { background: var(--surface); border-left: 1px solid var(--line); overflow: auto; min-width: 0; }
-.insp { display: grid; gap: 0; }
+.inspector { background: var(--surface); border-left: 1px solid var(--line); overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; min-width: 0; }   /* a scrollbar never pushes the panel sideways */
+.insp { display: grid; gap: 0; grid-template-columns: minmax(0, 1fr); }
 .insp-head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 14px 14px 12px 16px; border-bottom: 1px solid var(--line); }
 .insp-head .glyph { width: 44px; height: 44px; border-radius: 10px; }
 .insp-head h2 { font-size: 17px; font-weight: 700; line-height: 1.25; }
@@ -871,7 +871,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .doc-head { display: grid; gap: 10px; padding: 26px 28px; border-radius: var(--r-lg); background: var(--deck); color: #f2f4f6; position: relative; overflow: hidden; }
 .doc-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: repeating-linear-gradient(90deg, var(--accent) 0 26px, transparent 26px 40px); }
 .doc-head .eyebrow { color: rgba(255,255,255,.6); }
-.doc-head h1 { font-size: 30px; font-weight: 750; letter-spacing: -.02em; font-stretch: 105%; }
+.doc-head h1 { font-size: clamp(22px, 6vw, 30px); font-weight: 750; letter-spacing: -.02em; font-stretch: 105%; }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; color: rgba(255,255,255,.75); font-size: 13px; }
 .doc-meta b { color: #fff; font: 500 13px var(--f-mono); }
 .doc-notes { max-width: 70ch; white-space: pre-wrap; color: rgba(255,255,255,.85); margin: 4px 0 0; }
@@ -957,6 +957,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   .tabs .collapse, #railToggle { display: none !important; }
   .f-tr { display: none; }
   .canvas { order: -1; height: 62vh; min-height: 380px; }
+  .work.has-sel .inspector { order: 0; } .work.has-sel .rail { order: 1; }
   .rail { max-height: none; min-height: 0; border-right: 0; border-top: 1px solid var(--line); }
   .railbody { overflow: visible; }
   .weeknav { order: 5; flex: 1 1 100%; }
@@ -967,6 +968,11 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   .tool .tl, .searchbtn .kbd, .zoomval { display: none; }
   .f-dock .panel { gap: 2px; }
   .brand span { display: none; }
+  .top { gap: 6px 6px; padding: 6px 10px; }
+  #inspToggle, .hgroup .vsep, #savedInd { display: none !important; }
+  .seg button { padding-inline: 9px; }
+  .toast { top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; width: max-content; max-width: calc(100vw - 24px); }
+  .toast button { white-space: nowrap; }
 }
 /* the canvas, not the window, decides when the tool dock drops its labels (iPad portrait, panels open) */
 .canvas { container-type: inline-size; }
@@ -1778,7 +1784,13 @@ function autoCable() {
     const amp = g.type === 'bass_guitar' && dest?.type === 'di_mono' && mine.find(i => i.type === 'bass_amp' && !leaded(i));
     if (amp) addCable('inst', dest.id, amp.id, { auto: true });
   }
-  for (const b of boxes) for (const d of desks) if (!plan.cables.some(c => c.type === 'cat6' && touches(c, b.id) && touches(c, d.id))) addCable('cat6', b.id, d.id, { auto: true });
+  // the snake to an off-stage desk leaves by the nearer side of the stage and runs along the front, never across the deck
+  const sp = stagePoly(), minX = Math.min(...sp.map(q => q[0])), maxX = Math.max(...sp.map(q => q[0])), maxY = Math.max(...sp.map(q => q[1]));
+  for (const b of boxes) for (const d of desks) {
+    if (plan.cables.some(c => c.type === 'cat6' && touches(c, b.id) && touches(c, d.id))) continue;
+    const offStage = d.y > maxY + 1 && b.y < maxY && !chans().length,   // a drawn cable channel takes over the routing ex = b.x > (minX + maxX) / 2 ? maxX + .8 : minX - .8, fy = maxY + 1.2;
+    addCable('cat6', b.id, d.id, { auto: true, ...(offStage ? { points: [[r2(ex), r2(b.y)], [r2(ex), r2(fy)], [r2(d.x), r2(fy)]] } : {}) });
+  }
   // speaker and sub feeds fly overhead unless the room setting says otherwise
   if (plan.settings.overheadSpk !== false) for (const c of plan.cables) if (c.auto && [itemById(c.from), itemById(c.to)].some(i => i && OVERHEAD_TYPES.includes(i.type))) c.level = 'ceiling';
 }
@@ -2504,7 +2516,7 @@ function stageRegion() {
   return { x: -mx, y: -fromM(.9), w: w + mx * 2, h: d + fromM(2.4) };
 }
 function fitScale() {
-  const b = bounds(), aw = Math.max(200, scroller.clientWidth - 48), ah = Math.max(200, scroller.clientHeight - 150);   // room for the floating bars
+  const narrow = scroller.clientWidth < 600, b = bounds(), aw = Math.max(200, scroller.clientWidth - (narrow ? 14 : 48)), ah = Math.max(200, scroller.clientHeight - (narrow ? 130 : 150));   // room for the floating bars; phones use every pixel of width
   if (fitMode === 'room') return Math.max(3, Math.min(aw / b.vw, ah / b.vh));
   const r = stageRegion(); return Math.max(3, Math.min(aw / r.w, ah / r.h));
 }
@@ -3213,7 +3225,7 @@ function renderRail() {
           </div>
           <button class="iconbtn" data-sing="${p.id}" aria-pressed="${!!p.sings}" title="${p.sings ? 'Sings: has a vocal mic' : 'Also sings? Add a vocal mic'}" aria-label="Also sings">${ic('mic', 'sm')}</button>
           <button class="iconbtn del" data-del="${p.id}" aria-label="Remove ${esc(p.name)}" title="Remove">${ic('x', 'sm')}</button>
-        </div>`).join('')}</div>` : `<div class="empty-state">${ic('users')}<strong>No one scheduled yet</strong><span>Import from Planning Center, add people one by one, or paste a list.</span></div>`}
+        </div>`).join('')}</div>` : `<div class="empty-state">${ic('users')}<strong>No one scheduled yet</strong><span>${window.claude?.use ? 'Import from Planning Center, add people one by one, or paste a list.' : 'Add people one by one, or paste a list.'}</span></div>`}
       <button class="addrow" id="addPerson"><span class="avatar">${ic('plus', 'sm')}</span>Add person</button>
       <details class="paste"><summary>${ic('clip', 'sm')}Paste a list instead ${ic('chevD', 'sm')}</summary><div>
         <textarea id="bulk" rows="5" placeholder="One per line, e.g.&#10;Alex Rivera - Worship Leader&#10;Casey Brooks, Drums&#10;Riley Chen	Keys / BGV"></textarea>
@@ -3337,6 +3349,7 @@ function applySetup(id) {
 }
 
 function renderInspector() {
+  $('plotView').classList.toggle('has-sel', !!sel);   // phones: a selection's details sit right under the plot
   const el = $('inspector');
   if (sel && !tipsSeen) { tipsSeen = true; try { localStorage.setItem('stageplot.tips', '1'); } catch { /* ignore */ } }
   // commit a half-typed field first: replacing a focused input mid-blur throws, and the edit would be lost
@@ -3503,7 +3516,7 @@ function renderInspector() {
       </section>`;
     el.innerHTML = `<div class="insp">
       ${guide}
-      ${prevWeekId() ? `<section class="isec" style="padding-top:${ui.guide ? 0 : 14}px"><button class="btn block" data-go="compare" aria-pressed="${!!compare}">${ic('diff', 'sm')}${compare ? 'Hide changes' : `What changed since ${esc(longDate(db.plans[prevWeekId()].date))}`}</button></section>` : ''}
+      ${prevWeekId() ? `<section class="isec" style="padding-top:${ui.guide ? 0 : 14}px"><button class="btn block" data-go="compare" aria-pressed="${!!compare}" title="Compare with ${esc(longDate(db.plans[prevWeekId()].date))}">${ic('diff', 'sm')}${compare ? 'Hide changes' : 'Changes since last week'}</button></section>` : ''}
       <section class="isec"><h3>Stage <span style="display:flex;gap:6px;align-items:center">${st.poly ? 'custom shape' : 'rectangle'}${ui.guide ? '' : hide}</span></h3>
         <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
         <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap" title="Hold Alt while dragging to place freely">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
@@ -3591,7 +3604,7 @@ function renderAll() { renderHeader(); renderRail(); renderPlot(); renderInspect
    =================================================================== */
 function pcoHtml() {
   const head = (sub) => `<div class="card-head"><span class="badge">${ic('calendar', 'sm')}</span><div><h3>Planning Center</h3><p>${sub}</p></div></div>`;
-  if (!window.claude?.use) return `<div class="card soft">${head('Import works when this page is opened in Claude. Here, paste a list below.')}</div>`;
+  if (!window.claude?.use) return '';   // no connector here: the paste and add-person options below say it all
   if (pco.mcp === undefined) return `<div class="card soft">${head('Checking your connection…')}</div>`;
   if (pco.mcp === null) return `<div class="card soft">${head('Connectors aren’t available in this view. Paste a list below.')}</div>`;
   const busy = pco.busy ? `<div class="loading" role="status"><span class="spin"></span>${esc(pco.busy)}</div>` : '';
@@ -4694,7 +4707,7 @@ function dsgKey(e) {
   else if (e.key === 'Enter' && dsg.tool === 'draw') dsgFinish();
 }
 $('welcomeDraw').onclick = () => { $('welcomeDlg').hidden = true; view = 'plot'; renderAll(); openDesigner(true); };
-$('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = true; save(); view = 'plot'; renderAll(); needFit = true; renderPlot(); toast('This is an example. Draw your own stage any time from the Room tab.'); };
+$('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = true; save(); view = 'plot'; renderAll(); needFit = true; renderPlot(); toast('This is an example week to play with', { label: 'Draw my stage', fn: () => openDesigner() }); };
 
 /* ===================================================================
    Cable visibility (per browser)
