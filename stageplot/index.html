@@ -834,6 +834,11 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .hgear .own { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .hgear .own input { width: 58px; text-align: center; padding: 5px 6px; }
 .overown { color: var(--warn, #b45309); font-weight: 600; }
+.hgear .iconbtn.armed { width: auto; padding: 0 10px; color: var(--bad, #dc2626); border-color: currentColor; }
+.armtxt { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.gearform { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: start; }
+.gfprev .glyph { width: 76px; height: 76px; border-radius: 16px; padding: 8px; }
+@media (max-width: 600px) { .gearform { grid-template-columns: minmax(0, 1fr); } .gfprev { display: none; } }
 .hswitch { position: relative; width: 40px; height: 24px; flex: none; cursor: pointer; }
 .hswitch input { position: absolute; opacity: 0 !important; inset: 0; margin: 0; cursor: pointer; appearance: none; -webkit-appearance: none; width: 100%; height: 100%; z-index: 1; }
 .hswitch span { position: absolute; inset: 0; border-radius: 99px; background: var(--line-2); transition: background .15s; }
@@ -1456,6 +1461,21 @@ function blankPlan(date) {   // a new week starts from the stage defaults on Hom
   return p;
 }
 // Bring plans saved by older versions up to date: renamed gear, and gear that no longer exists (with its cables).
+/* Your own gear: a named type that looks like a built-in one, in the group you choose, with its own inputs and power draw.
+   Stored with the weeks (db.gear.custom) and registered into the catalogue, symbols and Add gear before any week loads. */
+function registerCustomGear(list) {
+  for (const [g, types] of GEAR_GROUPS) for (let i = types.length - 1; i >= 0; i--) if (CAT[types[i]]?.custom) types.splice(i, 1);
+  for (const id of Object.keys(CAT)) if (CAT[id].custom) delete CAT[id];
+  for (const c of list || []) {
+    const base = CAT[c.base]; if (!base || !c.id || !c.name) continue;
+    CAT[c.id] = { ...JSON.parse(JSON.stringify(base)), name: c.name, short: c.name.length > 14 ? c.name.slice(0, 13) + '…' : c.name, inputs: c.inputs?.length ? c.inputs : undefined, watts: c.watts || undefined, custom: true, base: c.base };
+    if (!CAT[c.id].inputs) delete CAT[c.id].inputs; if (!CAT[c.id].watts) delete CAT[c.id].watts;
+    SYM[c.id] = SYM[c.base];
+    if (GLYPH_TILT[c.base] !== undefined) GLYPH_TILT[c.id] = GLYPH_TILT[c.base];
+    if (GLYPH_FRAME[c.base]) GLYPH_FRAME[c.id] = GLYPH_FRAME[c.base];
+    (GEAR_GROUPS.find(([g]) => g === c.group) || GEAR_GROUPS.find(([, ts]) => ts.includes(c.base)) || GEAR_GROUPS[0])[1].push(c.id);
+  }
+}
 function tidyPlan(p) {
   p.items ||= []; p.cables ||= [];
   for (const i of p.items) if (i.type === 'reel') i.type = 'pboard4';
@@ -1472,6 +1492,7 @@ function load() {
     if (raw) {
       const d = JSON.parse(raw);
       if (d && d.plans && Object.keys(d.plans).length) {
+        registerCustomGear(d.gear?.custom);
         for (const p of Object.values(d.plans)) tidyPlan(p);
         return d;
       }
@@ -4535,6 +4556,7 @@ function importJson(text) {
   let d; try { d = JSON.parse(text); } catch { toast('That isn’t valid JSON. Check you copied all of it.'); return; }
   const plans = d?.plans || (d?.stage && d?.items ? { [d.id || uid()]: d } : null);
   if (!plans) { toast('No weeks found in that backup'); return; }
+  if (d?.gear?.custom) { const mine = db.gear?.custom || [], ids = new Set(mine.map(c => c.id)); (db.gear ||= { hidden: [], owned: {} }).custom = [...mine, ...d.gear.custom.filter(c => !ids.has(c.id))]; registerCustomGear(db.gear.custom); }
   let n = 0, last = null;
   for (const [id, p] of Object.entries(plans)) {
     if (!p?.stage || !Array.isArray(p.items)) continue;
@@ -4542,7 +4564,8 @@ function importJson(text) {
     db.plans[id] = p; n++; last = p;
   }
   if (d?.setups && typeof d.setups === 'object') Object.assign(setups(), d.setups);
-  for (const k of ['defaults', 'gear', 'pcoPrefs']) if (d?.[k] && typeof d[k] === 'object') db[k] = d[k];
+  for (const k of ['defaults', 'pcoPrefs']) if (d?.[k] && typeof d[k] === 'object') db[k] = d[k];
+  if (d?.gear && typeof d.gear === 'object') db.gear = { ...d.gear, custom: db.gear?.custom || d.gear.custom || [] };
   if (!n) { toast('No weeks found in that backup'); return; }
   $('dataDlg').hidden = true; switchWeek(last.id); toast(`Restored ${plural(n, 'week')}`);
 }
@@ -5544,19 +5567,56 @@ function homeStage() {
 const gearPrefs = () => (db.gear ||= { hidden: [], owned: {} });
 const gearHidden = t => (db?.gear?.hidden || []).includes(t);
 function homeGear() {
-  const g = gearPrefs(), counts = {};
+  const g = gearPrefs(), counts = {}, custom = g.custom || [];
   for (const i of plan.items) counts[i.type] = (counts[i.type] || 0) + 1;
-  const models = Object.entries(ITEM_MODELS).map(([t, ms]) => `<div class="field"><label for="hm-${t}">${esc(CAT[t].name)}</label><select id="hm-${t}" data-defmodel="${t}">${Object.entries(ms).map(([k, m]) => `<option value="${k}" ${(lastModel[t] || Object.keys(ms)[0]) === k ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></div>`).join('');
-  const groups = GEAR_GROUPS.map(([gname, types]) => `<div class="hgear-group"><h4 class="eyebrow">${esc(gname)}</h4>${types.map(t => {
-    const own = g.owned[t], used = counts[t] || 0, over = own != null && used > own;
-    return `<div class="hgear${gearHidden(t) ? ' off' : ''}">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}</b><small>${used ? `${used} on this week’s plot` : 'Not on this week’s plot'}${over ? ' · <span class="overown">more than you own</span>' : ''}</small></span>
+  const weeksUsing = t => Object.values(db.plans).filter(p => p.items.some(i => i.type === t)).length;
+  const row = t => {
+    const own = g.owned[t], used = counts[t] || 0, over = own != null && used > own, mine = CAT[t].custom, n = mine ? weeksUsing(t) : 0;
+    return `<div class="hgear">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}${mine ? ' <span class="chip">Yours</span>' : ''}</b><small>${used ? `${used} on this week’s plot` : 'Not on this week’s plot'}${mine ? ` · looks like ${esc(CAT[CAT[t].base].name)}${CAT[t].inputs ? ` · ${plural(CAT[t].inputs.length, 'input')}` : ''}${CAT[t].watts ? ` · ${CAT[t].watts} W` : ''}` : ''}${over ? ' · <span class="overown">more than you own</span>' : ''}</small></span>
       <label class="own" for="ho-${t}"><span>Own</span><input id="ho-${t}" type="number" min="0" max="999" step="1" inputmode="numeric" data-own="${t}" value="${own ?? ''}" placeholder="–" aria-label="How many ${esc(CAT[t].name)} you own"></label>
-      <label class="hswitch" title="Show in Add gear"><input type="checkbox" data-show="${t}" ${gearHidden(t) ? '' : 'checked'} aria-label="Show ${esc(CAT[t].name)} in Add gear"><span></span></label></div>`;
-  }).join('')}</div>`).join('');
-  return hsec('Default types', 'What a new guitar or mic starts as. You can change any one in its details.', `<div class="grid2">${models}</div>`) +
+      <button class="iconbtn${gearDelArmed === t ? ' armed' : ''}" data-gearrm="${t}" aria-label="Remove ${esc(CAT[t].name)}" title="${mine ? 'Delete this gear' : 'Remove from your library'}">${gearDelArmed === t ? `<span class="armtxt">${n ? `Also remove from ${plural(n, 'week')}?` : 'Delete?'}</span>` : ic('trash', 'sm')}</button></div>`;
+  };
+  const groups = GEAR_GROUPS.map(([gname, types]) => { const on = types.filter(t => !gearHidden(t)); return on.length ? `<div class="hgear-group"><h4 class="eyebrow">${esc(gname)}</h4>${on.map(row).join('')}</div>` : ''; }).join('');
+  const removed = GEAR_GROUPS.flatMap(([, ts]) => ts).filter(gearHidden);
+  const bases = GEAR_GROUPS.map(([gname, types]) => `<optgroup label="${esc(gname)}">${types.filter(t => !CAT[t].custom).map(t => `<option value="${t}" ${t === gearForm.base ? 'selected' : ''}>${esc(CAT[t].name)}</option>`).join('')}</optgroup>`).join('');
+  const baseGroup = GEAR_GROUPS.find(([, ts]) => ts.includes(gearForm.base))?.[0];
+  const form = `<div class="gearform">
+      <div class="gfprev">${glyph(gearForm.base)}</div>
+      <div class="grid2">
+        <div class="field" style="grid-column:1/-1"><label for="gf-name">Name</label><input id="gf-name" type="text" maxlength="40" value="${esc(gearForm.name)}" placeholder="e.g. Choir mic on boom, Click & cue pack, Bass rig 2"></div>
+        <div class="field"><label for="gf-base">Looks like</label><select id="gf-base">${bases}</select></div>
+        <div class="field"><label for="gf-group">Shows under</label><select id="gf-group">${GEAR_GROUPS.map(([gn]) => `<option ${gn === (gearForm.group || baseGroup) ? 'selected' : ''}>${esc(gn)}</option>`).join('')}</select></div>
+        <div class="field"><label for="gf-inputs">Inputs <small class="hint" style="font-weight:400">comma separated, blank for none</small></label><input id="gf-inputs" type="text" value="${esc(gearForm.inputs)}" placeholder="e.g. Choir L, Choir R"></div>
+        <div class="field"><label for="gf-watts">Power</label><div class="unit" data-unit="W"><input id="gf-watts" type="number" min="0" max="20000" step="5" value="${esc(gearForm.watts)}" placeholder="0"></div></div>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:6px;grid-column:1/-1"><button class="btn primary" id="gf-add" ${gearForm.name.trim() ? '' : 'disabled'}>${ic('plus', 'sm')}Add to your library</button></div>
+    </div>`;
+  return hsec('Add gear', 'Something you use that isn’t in the library? Give it a name and pick what it looks like. It shows in Add gear, on the plot and in the paperwork, with its own inputs and power.', form) +
     hsec('Building from the team', '', hcheck('hd-teamgear', 'Add each person’s instruments and gear', ui.teamGear, 'Off: people are placed on stage and you add their gear yourself')) +
-    hsec('Your gear', 'Switch off gear you never use to keep Add gear short (search still finds it). Enter how many you own and the checks warn when a week needs more.',
-      `<div class="hgear-tools row" style="gap:6px"><button class="btn quiet" id="homeGearAll">Show all</button><button class="btn quiet" id="homeGearUnused">Hide what’s not on this week</button><button class="btn quiet" id="homeOwnClear">Clear owned counts</button></div>${groups}`);
+    hsec('Your gear', `${plural(GEAR_GROUPS.flatMap(([, ts]) => ts).length - removed.length, 'type')} in your library. Remove what you never use to keep Add gear short; enter how many you own and the checks warn when a week needs more.`,
+      `<div class="hgear-tools row" style="gap:6px"><button class="btn quiet" id="homeGearUnused">Keep only what’s on this week</button><button class="btn quiet" id="homeOwnClear">Clear owned counts</button></div>${groups}`) +
+    (removed.length ? hsec('Removed from your library', 'Not in Add gear. Search still finds them, and weeks that use them are unaffected.',
+      `<div class="hlist">${removed.map(t => `<div class="hlist-row">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}</b></span><button class="btn" data-gearback="${t}">${ic('undo', 'sm')}Restore</button></div>`).join('')}</div>
+       <div class="row"><button class="btn quiet" id="homeGearAll">Restore all</button></div>`) : '');
+}
+let gearDelArmed = '';
+const gearForm = { name: '', base: 'vox_mic', group: '', inputs: '', watts: '' };
+function addCustomGear() {
+  const name = gearForm.name.trim(); if (!name) return;
+  const base = CAT[gearForm.base] ? gearForm.base : 'vox_mic', g = gearPrefs(), id = 'cu_' + uid();
+  const inputs = gearForm.inputs.split(',').map(x => x.trim()).filter(Boolean).slice(0, 32), watts = Math.max(0, Math.round(Number(gearForm.watts) || 0));
+  (g.custom ||= []).push({ id, name, base, group: gearForm.group || GEAR_GROUPS.find(([, ts]) => ts.includes(base))?.[0], inputs, watts });
+  registerCustomGear(g.custom); save();
+  Object.assign(gearForm, { name: '', inputs: '', watts: '', group: '' });
+  renderHome(); renderRail(); toast(`${name} added to your library`);
+}
+function removeGear(t) {
+  const g = gearPrefs();
+  if (!CAT[t].custom) { if (!g.hidden.includes(t)) g.hidden.push(t); save(); renderHome(); renderRail(); toast(`${CAT[t].name} removed from your library`, { label: 'Undo', fn: () => { g.hidden = g.hidden.filter(x => x !== t); save(); renderHome(); renderRail(); } }); return; }
+  const name = CAT[t].name;
+  for (const p of Object.values(db.plans)) { const gone = new Set(p.items.filter(i => i.type === t).map(i => i.id)); if (!gone.size) continue; p.items = p.items.filter(i => !gone.has(i.id)); p.cables = p.cables.filter(c => !gone.has(c.from) && !gone.has(c.to)); }
+  g.custom = g.custom.filter(c => c.id !== t); delete g.owned[t]; g.hidden = g.hidden.filter(x => x !== t);
+  registerCustomGear(g.custom); save(); renderAll(); toast(`Deleted ${name}`);
 }
 
 /* ----- Planning Center ----- */
@@ -5621,16 +5681,26 @@ $('homeView').addEventListener('click', e => {
   if (t.dataset.defcolor !== undefined) { setDefault('stage.color', t.dataset.defcolor); renderHome(); return; }
   if (t.id === 'homeDefFromWeek') { const s = plan.stage; db.defaults = { ...(db.defaults || {}), stage: { w: s.w, d: s.d, house: s.house, houseW: s.houseW, color: s.color || '' }, settings: { ...plan.settings } }; save(); renderHome(); toast('This week’s stage is now the default for new weeks'); return; }
   if (t.id === 'homeDefApply') { const D = defaultsOf(); mutate(() => { Object.assign(plan.stage, D.stage); if (!D.stage.color) delete plan.stage.color; delete plan.stage.poly; Object.assign(plan.settings, D.settings); needFit = true; }, 'Stage defaults applied to this week'); return; }
-  if (t.id === 'homeGearAll') { gearPrefs().hidden = []; save(); renderHome(); return; }
-  if (t.id === 'homeGearUnused') { const on = new Set(plan.items.map(i => i.type)); gearPrefs().hidden = GEAR_GROUPS.flatMap(([, ts]) => ts).filter(x => !on.has(x)); save(); renderHome(); toast('Only gear on this week’s plot shows in Add gear. Search still finds the rest'); return; }
+  if (t.id === 'homeGearAll') { gearPrefs().hidden = []; save(); renderHome(); renderRail(); return; }
+  if (t.dataset.gearback) { const g = gearPrefs(); g.hidden = g.hidden.filter(x => x !== t.dataset.gearback); save(); renderHome(); renderRail(); return; }
+  if (t.dataset.gearrm) { const k = t.dataset.gearrm; if (CAT[k]?.custom && gearDelArmed !== k) { gearDelArmed = k; renderHome(); return; } gearDelArmed = ''; removeGear(k); return; }
+  if (t.id === 'gf-add') { addCustomGear(); return; }
+  if (t.id === 'homeGearUnused') { const on = new Set(plan.items.map(i => i.type)); const g = gearPrefs(), before = [...g.hidden]; g.hidden = GEAR_GROUPS.flatMap(([, ts]) => ts).filter(x => !on.has(x)); save(); renderHome(); renderRail(); toast('Your library now has only what’s on this week’s plot', { label: 'Undo', fn: () => { g.hidden = before; save(); renderHome(); renderRail(); } }); return; }
   if (t.id === 'homeOwnClear') { gearPrefs().owned = {}; save(); renderHome(); return; }
   if (t.id === 'hp-test') { pcoLoadTypes(); return; }
   if (t.dataset.pref === 'theme') { setTheme(t.dataset.v); renderHome(); return; }
   if (t.dataset.pref === 'detail') { setDetail(t.dataset.v === 'adv'); renderHome(); return; }
   if (t.id === 'homeDataDlg') { $('dataBtn').click(); return; }
 });
+$('homeView').addEventListener('input', e => {
+  const t = e.target, k = { 'gf-name': 'name', 'gf-inputs': 'inputs', 'gf-watts': 'watts' }[t.id];
+  if (k) { gearForm[k] = t.value; const b = $('gf-add'); if (b) b.disabled = !gearForm.name.trim(); }
+});
+$('homeView').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'gf-name' && gearForm.name.trim()) addCustomGear(); });
 $('homeView').addEventListener('change', e => {
   const t = e.target;
+  if (t.id === 'gf-base') { gearForm.base = t.value; const c = CAT[t.value]; if (!gearForm.inputs) gearForm.inputs = (c.inputs || []).join(', '); if (!gearForm.watts && c.watts) gearForm.watts = String(c.watts); gearForm.group = ''; renderHome(); return; }
+  if (t.id === 'gf-group') { gearForm.group = t.value; return; }
   if (t.dataset.def) { const v = Number(t.value); if (!Number.isFinite(v)) return; setDefault(t.dataset.def, t.dataset.raw ? v : fromM(v)); return; }
   if (t.dataset.deftext) { setDefault(t.dataset.deftext, t.value.trim()); if (t.dataset.deftext === 'org') { renderHome(); renderPaper(); } return; }
   if (t.dataset.defsel) { setDefault(t.dataset.defsel, t.dataset.defsel === 'day' ? Number(t.value) : t.value); return; }
