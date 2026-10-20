@@ -7,6 +7,7 @@ Status of Stageplot for a public launch. Facts only: what has been checked, how,
 | Area | How it was checked |
 |---|---|
 | Core workflow: stage size and shape, team, build, gear placement, exact positions, rotation | End-to-end browser tests (Playwright, Chromium) |
+| Home: library, setups, stage defaults, gear, Planning Center, preferences, data | End-to-end test (defaults feed new weeks, venue on paperwork, hidden gear and owned counts, backup carries settings, library actions, reset); every section checked at desktop and phone width with no sideways scroll; axe clean in light and dark |
 | Audio and power cabling: auto-patch, hand-run cables, overhead and channel routes, cable lengths | End-to-end tests, including the overhead length adding the climb at both ends |
 | Undo / redo, autosave, reload keeps stage, positions, cables, layers and properties | End-to-end test compares the saved plan before and after reload |
 | Layers hide only the view, never the data; paperwork always shows everything | Test compares plan data before and after hiding every layer |
