@@ -87,6 +87,7 @@ html, body { height: 100%; }
 body { margin: 0; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font: 14px/1.45 var(--f-ui); -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+td, .ch, .chip, .cablen, .zoomval, .hint b, .doc-meta b { font-variant-numeric: tabular-nums; }
 ::selection { background: var(--accent-soft); }
 
 .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
@@ -286,7 +287,7 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .saved.ok .ic { color: var(--ok); }
 .saved.bad { color: var(--bad); }
 .saved.flash { color: var(--ink); }
-.saved.idle { opacity: 0; visibility: hidden; transition: opacity .6s, visibility 0s .6s; }
+.saved.idle { opacity: 0; visibility: hidden; transition: none; }   /* hides at once: a half-faded label would be unreadable */
 .saved.idle:hover { opacity: 1; }
 .searchbtn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); border-radius: var(--r-md); padding: 6px 8px 6px 10px; cursor: pointer; min-width: 200px; font-size: 13px; }
 .searchbtn:hover { border-color: var(--line-2); color: var(--ink-2); }
@@ -411,7 +412,9 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .rk-mini div { min-height: 12px; border-radius: 2px; font-size: 9.5px; color: #fff; padding: 0 6px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
 .rk-mini .empty { background: rgba(255,255,255,.05); height: 12px; }
 @media (max-width: 900px) { .rk-body { grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto auto; overflow: auto; } .rk-lib, .rk-side { border: 0; border-top: 1px solid var(--line); } .rk-center { order: -1; } }
-.guide { stroke: #ff4fa3; stroke-width: .05; stroke-dasharray: .25 .15; pointer-events: none; }
+.guide { stroke: #ff4fa3; stroke-width: var(--csh, .05px); pointer-events: none; }
+.gdim { pointer-events: none; } .gdim line { stroke: #7dd3fc; stroke-width: var(--csh, .04px); } .gdim text { font: 600 var(--lab, .5px)/1 var(--f-mono, monospace); fill: #7dd3fc; paint-order: stroke; stroke: rgba(0,0,0,.75); stroke-width: var(--labs, .1px); }
+.gdim.eq line { stroke: #ff4fa3; } .gdim.eq text { fill: #ff4fa3; }
 .f-tr { top: 60px; right: 12px; width: 260px; }
 .quick { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
 .quick .qh { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
@@ -441,11 +444,11 @@ svg text { font-family: var(--f-ui); }
 .dotp { fill: var(--house-dot); }
 .deck { fill: var(--deck); stroke: var(--deck-rim, rgba(255,255,255,.07)); stroke-width: .06; }
 .deck-shadow { fill: var(--deck-edge); opacity: .45; filter: url(#deckblur); }
-.g-minor { stroke: var(--deck-grid); stroke-width: .03; opacity: .6; }
-.g-major { stroke: var(--deck-grid-major); stroke-width: .05; }
+.g-minor { stroke: var(--deck-grid); stroke-width: var(--hair, .03px); opacity: .7; shape-rendering: crispEdges; }
+.g-major { stroke: var(--deck-grid-major); stroke-width: var(--hair2, .05px); shape-rendering: crispEdges; }
 .edge { stroke: var(--tape); stroke-width: .16; stroke-dasharray: .7 .35; }
-.ruler line { stroke: var(--house-ink); stroke-width: .045; }
-.ruler text { fill: var(--house-ink); font-size: .52px; font-family: var(--f-mono); }
+.ruler line { stroke: var(--house-ink); stroke-width: var(--hair, .045px); shape-rendering: crispEdges; }
+.ruler text { fill: var(--house-ink); font-size: min(.52px, calc(var(--lab, .5px) * .95)); font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 .zone { fill: var(--house-ink); font-size: .62px; letter-spacing: .14px; font-weight: 650; }
 .zone.on-deck { fill: var(--deck-ink, rgba(255,255,255,.28)); }
 .item { cursor: pointer; touch-action: none; }
@@ -915,7 +918,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .sheetgrid { display: grid; gap: 22px; }
 .sheetgrid:not([data-tab="all"]) .sheet { display: none; }
 .sheetgrid[data-tab="overview"] [data-sheet="overview"], .sheetgrid[data-tab="inputs"] [data-sheet="inputs"], .sheetgrid[data-tab="outputs"] [data-sheet="outputs"], .sheetgrid[data-tab="mixes"] [data-sheet="mixes"],
-.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"] { display: grid; }
+.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"] { display: grid; }
 .sheetgrid:not([data-tab="all"]) .sheets2 { display: contents; }
 .docnav button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .docnav button[aria-selected="true"] .hint { color: inherit; opacity: .7; }
@@ -999,6 +1002,46 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 @container (max-width: 780px) { .tool .tl, .zoomval { display: none; } .f-dock .panel { gap: 2px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 
+.grptag { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; } .grptag::before { content: ''; width: 9px; height: 9px; border-radius: 3px; background: var(--g); }
+.p48 { font: 600 11px/1 var(--f-mono, monospace); color: #b4540a; background: #fff3e0; border: 1px solid #f5c27a; border-radius: 4px; padding: 2px 4px; }
+:root[data-theme="dark"] .p48 { color: #ffb45c; background: #3a2508; border-color: #7a4a10; }
+.histmodal { width: min(560px, calc(100vw - 32px)); display: grid; gap: 12px; max-height: min(80vh, 720px); grid-template-rows: auto minmax(0, 1fr); }
+.histbody { display: grid; gap: 10px; overflow: auto; align-content: start; }
+.histlist { list-style: none; margin: 0; padding: 0; display: grid; }
+.histlist li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--line); position: relative; }
+.histlist li small { display: block; color: var(--muted); font-size: 12px; } .histlist li b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.histlist .hdot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2, var(--muted)); justify-self: center; }
+.histlist li.named .hdot { background: #f5b544; box-shadow: 0 0 0 3px color-mix(in srgb, #f5b544 25%, transparent); } .histlist li.now .hdot { background: var(--accent); }
+.histlist li .btn { padding: 4px 10px; }
+.rider { background: #fff; color: #111; border: 1px solid #d8d8d8; border-radius: 10px; padding: 22px 24px; display: grid; gap: 14px; font-size: 12.5px; color-scheme: light; }
+.rider .eyebrow { color: #555; } .rider h2 { margin: 2px 0; font-size: 24px; color: #111; } .rider h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #333; }
+.rhead { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 10px; } .rhead p { margin: 0; color: #444; }
+.rblock { display: grid; grid-template-columns: repeat(4, auto); gap: 4px 0; margin: 0; border: 1px solid #111; }
+.rblock div { padding: 4px 10px; border-left: 1px solid #ccc; } .rblock div:nth-child(4n+1) { border-left: 0; } .rblock div:nth-child(n+5) { border-top: 1px solid #ccc; }
+.rblock dt { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: #666; } .rblock dd { white-space: nowrap; margin: 0; font-weight: 700; font-family: var(--f-mono, monospace); font-size: 12px; }
+.riderplot { position: relative; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; background: #fff; }
+.riderplot .snap { filter: grayscale(1) contrast(1.12); display: block; width: 100%; max-height: 112mm; }
+.riderplot .house-fill { fill: #fff; } .riderplot .house-dots, .riderplot .ov-own, .riderplot .notebadge { display: none; }
+.riderplot path[class^="cab"], .riderplot .lead-shadow, .riderplot .fl, .riderplot .chport, .riderplot .cab-inside { display: none; }
+.riderplot .scalebar text { font-size: .55px; fill: #111; font-family: var(--f-mono, monospace); }
+.riderplot .zone:not(.on-deck) { display: none; }
+.raud { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font: 700 10px/1 var(--f-ui); letter-spacing: .3em; color: #444; }
+.rcols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; }
+.rins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+.rtab { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; } .rtab td, .rtab th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .rtab th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: #555; border-bottom: 1px solid #111; padding: 2px 4px; }
+.rtab td { border-bottom: 1px solid #e2e2e2; padding: 2px 4px; color: #111; } .rtab td:first-child { font-weight: 700; } .rtab td:last-child, .rtab th:last-child { text-overflow: clip; }
+.rlegend { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.rlegend li { display: flex; align-items: center; gap: 6px; min-width: 0; color: #111; } .rlegend li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .rlegend li b { margin-left: auto; font-family: var(--f-mono, monospace); font-size: 11px; }
+.rlegend .glyph, .rlegend svg { width: 22px; height: 22px; flex: none; filter: grayscale(1); }
+.rteam { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; color: #333; }
+.rfoot { display: flex; justify-content: space-between; border-top: 1px solid #111; padding-top: 6px; font-size: 10px; color: #555; }
+@media (max-width: 760px) { .rcols, .rins { grid-template-columns: 1fr; } .rhead { flex-direction: column; } }
+@media print {
+  #sec-rider { display: none !important; }
+  body.print-rider .doc-head, body.print-rider .sheetgrid > :not(#sec-rider), body.print-rider .sheets2 { display: none !important; }
+  body.print-rider #sec-rider { display: block !important; break-before: auto !important; } body.print-rider #sec-rider > header { display: none !important; }
+  body.print-rider .rider { border: 0; padding: 0; gap: 8px; font-size: 11px; } body.print-rider .riderplot .snap { max-height: 108mm; } body.print-rider .rlegend .glyph, body.print-rider .rlegend svg { width: 16px; height: 16px; } body.print-rider .rlegend { gap: 2px 8px; } body.print-rider .rtab { font-size: 9.5px; } body.print-rider .rtab td { padding: 1px 4px; } body.print-rider .paper { padding: 0 !important; } .rider * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 /* views: overlays, walkways, textures, trace, side view, before/after, presentation */
 .cm-h .cm-sub { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 4px; }
 .ov-own, .ov-own-ring { pointer-events: none; } .ov-own-ring { fill: none; stroke-width: var(--cwh, .12px); stroke-opacity: .9; }
@@ -1177,6 +1220,12 @@ body.presenting #plot .rotstem, body.presenting #plot .roth { display: none; }
   </div>
 </div>
 
+<div class="overlay" id="histDlg" hidden>
+  <div class="modal histmodal" role="dialog" aria-modal="true" aria-labelledby="histTitle">
+    <div class="row" style="justify-content:space-between"><div><h2 id="histTitle" style="margin:0">Version history</h2><p class="hint" style="margin:2px 0 0">Every change to this week. Restoring can be undone.</p></div><button class="iconbtn" id="histClose" aria-label="Close"></button></div>
+    <div id="histBody" class="histbody"></div>
+  </div>
+</div>
 <div class="overlay" id="aboutDlg" hidden>
   <div class="modal about" role="dialog" aria-labelledby="aboutTitle">
     <div class="row" style="justify-content:space-between;align-items:flex-start">
@@ -1609,9 +1658,10 @@ function save() {
   try { localStorage.setItem(STORE, JSON.stringify(db)); markSaved(true); } catch { markSaved(false); /* storage blocked: work continues in memory */ }
 }
 function mutate(fn, msg) {
-  history.push(JSON.stringify(plan)); if (history.length > 80) history.shift();
+  const before = JSON.stringify(plan);
+  history.push(before); if (history.length > 80) history.shift();
   future = [];
-  fn(); save(); renderAll();
+  fn(); recordRev(msg, before); save(); renderAll();
   if (msg) toast(msg, true);
 }
 function undo() {
@@ -1623,6 +1673,74 @@ function redo() {
   const next = future.pop(); if (!next) { toast('Nothing to redo'); return; }
   history.push(JSON.stringify(plan));
   plan = JSON.parse(next); sel = null; pending = null; save(); renderAll();
+}
+/* Version history: a timeline of every change to a week, kept beside the weeks (not in them), so any point can be restored.
+   Rapid edits of the same kind fold into one entry; named versions are never trimmed. */
+const HIST_KEY = 'stageplot.hist', HIST_AUTO = 40;
+let histDb = null;
+const histLoad = () => histDb ||= (() => { let h; try { h = JSON.parse(localStorage.getItem(HIST_KEY) || '{}') || {}; } catch { h = {}; } for (const id of Object.keys(h)) if (!db?.plans?.[id]) delete h[id]; return h; })();   // weeks deleted in an earlier session drop their history
+const weekHist = id => (histLoad()[id] ||= []);
+function histSave() {
+  for (let tries = 0; tries < 60; tries++) {
+    try { localStorage.setItem(HIST_KEY, JSON.stringify(histDb)); return; }
+    catch {   // storage full: drop the oldest unnamed entry across all weeks and try again
+      let best = null; for (const [id, l] of Object.entries(histDb)) l.forEach((e, i) => { if (!e.name && i > 0 && (!best || e.t < best.e.t)) best = { id, i, e }; });
+      if (!best) return; histDb[best.id].splice(best.i, 1);
+    }
+  }
+}
+function describeChange(beforeJson) {
+  let was; try { was = JSON.parse(beforeJson); } catch { return 'Edited'; }
+  const old = new Map(was.items.map(i => [i.id, i])), now = new Map(plan.items.map(i => [i.id, i])), nm = i => itemName(i);
+  const added = plan.items.filter(i => !old.has(i.id)), removed = was.items.filter(i => !now.has(i.id));
+  const moved = plan.items.filter(i => { const o = old.get(i.id); return o && (o.x !== i.x || o.y !== i.y || (o.rot || 0) !== (i.rot || 0)); });
+  const edited = plan.items.filter(i => { const o = old.get(i.id); return o && !moved.includes(i) && JSON.stringify(o) !== JSON.stringify(i); });
+  const list = (verb, l) => l.length === 1 ? `${verb} ${nm(l[0])}` : `${verb} ${l.length} items`;
+  if (added.length) return list('Added', added);
+  if (removed.length) return list('Removed', removed);
+  if (moved.length) return list(moved.some(i => old.get(i.id).x === i.x && old.get(i.id).y === i.y) ? 'Turned' : 'Moved', moved);
+  if (edited.length) return list('Edited', edited);
+  const dc = plan.cables.length - was.cables.length;
+  if (dc) return `${dc > 0 ? 'Added' : 'Removed'} ${plural(Math.abs(dc), 'cable')}`;
+  if (JSON.stringify(was.cables) !== JSON.stringify(plan.cables)) return 'Rerouted cables';
+  if (JSON.stringify(was.team) !== JSON.stringify(plan.team)) return 'Changed the team';
+  if (JSON.stringify(was.stage) !== JSON.stringify(plan.stage)) return 'Changed the stage';
+  if (was.name !== plan.name || was.date !== plan.date) return 'Renamed the week';
+  return 'Edited';
+}
+function recordRev(msg, beforeJson) {
+  if (!plan?.id) return;
+  const l = weekHist(plan.id), now = Date.now(), label = (msg && String(msg).split(' · ')[0].replace(/\s*Undo$/, '')) || describeChange(beforeJson);
+  if (!l.length) l.push({ t: now - 1, label: 'Before these changes', rev: plan.rev || 0, snap: beforeJson });
+  const last = l[l.length - 1];
+  if (!last.name && last.label === label && now - last.t < 90000 && l.length > 1) { last.t = now; last.snap = null; }   // the same kind of change, moments apart: one entry
+  else { plan.rev = (plan.rev || 0) + 1; l.push({ t: now, label, rev: plan.rev, snap: null }); }
+  l[l.length - 1].snap = JSON.stringify(plan);
+  const auto = l.filter((e, i) => !e.name && i > 0); if (auto.length > HIST_AUTO) l.splice(l.indexOf(auto[0]), 1);
+  histSave();
+}
+function nameVersion(text) {
+  const l = weekHist(plan.id), name = text.trim().slice(0, 60); if (!name) return;
+  const last = l[l.length - 1];
+  if (last && last.snap === JSON.stringify(plan)) last.name = name;
+  else { plan.rev = (plan.rev || 0) + 1; save(); l.push({ t: Date.now(), label: 'Saved version', rev: plan.rev, name, snap: JSON.stringify(plan) }); }
+  histSave(); renderHist(); toast(`Saved “${name}”`);
+}
+function restoreVersion(i) {
+  const e = weekHist(plan.id)[i]; if (!e?.snap) return;
+  const p = JSON.parse(e.snap), id = plan.id;
+  mutate(() => { plan = { ...p, id, rev: plan.rev }; sel = null; }, `Restored ${e.name ? '“' + e.name + '”' : 'r' + e.rev}`);
+  renderHist();
+}
+let histOnlyNamed = false;
+const agoText = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+function openHist() { closePops?.(); renderHist(); $('histDlg').hidden = false; setTimeout(() => $('histName')?.focus(), 30); }
+function renderHist() {
+  if (!$('histDlg')) return;
+  const l = weekHist(plan.id), cur = JSON.stringify(plan), rows = l.map((e, i) => ({ e, i })).reverse().filter(({ e }) => !histOnlyNamed || e.name);
+  $('histBody').innerHTML = `<div class="row" style="gap:6px;flex-wrap:nowrap"><input id="histName" type="text" placeholder="Name this version, e.g. Christmas final" style="flex:1;min-width:0" maxlength="60"><button class="btn primary" id="histSave">${ic('save', 'sm')}Save</button></div>
+    <div class="row" style="justify-content:space-between"><span class="hint">${plural(l.length ? l.length - 1 : 0, 'change')} recorded · now at r${plan.rev || 0}</span><label class="row hint" style="gap:6px"><input type="checkbox" id="histNamed" ${histOnlyNamed ? 'checked' : ''}>Named only</label></div>
+    ${rows.length ? `<ol class="histlist">${rows.map(({ e, i }) => `<li class="${e.snap === cur ? 'now' : ''}${e.name ? ' named' : ''}"><span class="hdot"></span><div><b>${e.name ? esc(e.name) : esc(e.label)}</b><small>${e.name ? esc(e.label) + ' · ' : ''}r${e.rev} · <time datetime="${new Date(e.t).toISOString()}" title="${new Date(e.t).toLocaleString()}">${agoText(e.t)}</time></small></div>${e.snap === cur ? '<span class="chip">Current</span>' : `<button class="btn" data-hrestore="${i}">Restore</button>`}</li>`).join('')}</ol>` : `<p class="hint">${histOnlyNamed ? 'No named versions yet.' : 'Changes to this week appear here as you make them.'}</p>`}`;
 }
 function addItem(type, x, y, extra = {}) {
   const it = { id: uid(), type, x: r2(x), y: r2(y), rot: 0, ...extra };
@@ -1917,6 +2035,37 @@ function inputList() {
     }
   }
   return rows;
+}
+/* what an engineer expects on a pro input list: the mic or DI, its stand, phantom power, a group and a scribble-strip colour */
+const IN_GROUPS = { Drums: '#e5484d', Bass: '#3e63dd', Guitars: '#f5a524', Acoustic: '#a07553', Keys: '#30a46c', Playback: '#00a2c7', Vocals: '#8e4ec6', Speech: '#e93d82', Horns: '#d6409f', Other: '#8b8d98' };
+function inputMeta(r) {
+  const it = itemById(r.itemId), t = it?.type || '', n = r.name.toLowerCase(), C = it ? cat(it) : {};
+  let mic = C.name || '', stand = '—', p48 = false;
+  if (/kick in/.test(n)) { mic = 'Boundary (inside kick)'; stand = 'Inside drum'; p48 = true; }
+  else if (/kick/.test(n)) { mic = 'Kick dynamic'; stand = 'Short boom'; }
+  else if (/snare/.test(n)) { mic = 'Dynamic'; stand = 'Clip'; }
+  else if (/hi-?hat|\bhh\b/.test(n)) { mic = 'Small condenser'; stand = 'Short boom'; p48 = true; }
+  else if (/tom/.test(n)) { mic = 'Dynamic'; stand = 'Clip'; }
+  else if (/\boh\b|overhead/.test(n)) { mic = 'Condenser'; stand = 'Tall boom'; p48 = true; }
+  else if (t === 'di_mono' || t === 'di_stereo' || /\bdi\b/.test(n)) { mic = t === 'di_stereo' ? 'Stereo DI' : 'DI'; p48 = true; }
+  else if (MIC_MODELS[t]) { const m = MIC_MODELS[t][modelKey(it)]; mic = (m?.name || m || C.name) + (C.wireless ? ' (RF)' : ''); const k = modelKey(it);
+    stand = t === 'inst_mic' ? 'Short boom' : t === 'vox_wl' ? 'Handheld' : k === 'gooseneck' ? 'Lectern' : /vintage|podcast/.test(k) ? 'Desk stand' : 'Tall boom'; }
+  else if (t === 'headset') mic = 'Headset (RF)';
+  else if (/amp/.test(t)) { mic = 'Dynamic'; stand = 'Short boom'; }
+  else if (['usb_if', 'laptop', 'mt_ipad', 'keys', 'midi_keys', 'edrums', 'multifx', 'ac_preamp'].includes(t)) mic = 'Line (DI)';
+  const role = (it?.personId && personById(it.personId)?.role || '').toLowerCase();
+  const group = /kick|snare|tom|\boh\b|hi-?hat|cajon/.test(n) || ['drum_kit', 'edrums', 'cajon'].includes(t) ? 'Drums' : /tracks|click|playback/.test(n) || ['laptop', 'mt_ipad'].includes(t) ? 'Playback'
+    : /bass/.test(n) || t === 'bass_amp' ? 'Bass' : /ac gtr|acoustic/.test(n) || t === 'ac_preamp' ? 'Acoustic' : /gtr|guitar/.test(n) || t === 'gtr_amp' ? 'Guitars' : /keys|piano|synth/.test(n) ? 'Keys'
+    : t === 'trumpet' || /trumpet|sax|horn/.test(n) ? 'Horns' : t === 'headset' || /pastor|speech|lectern|pulpit|host/.test(n + ' ' + role) ? 'Speech' : /vox|vocal/.test(n) || ['vox_mic', 'vox_wl'].includes(t) ? 'Vocals' : 'Other';
+  return { mic, stand, p48, group, colour: IN_GROUPS[group] };
+}
+const inputSheet = () => inputList().map(r => ({ ...r, ...inputMeta(r) }));
+const csvCell = v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+const csv = (rows, cols) => [cols.map(c => c[0]), ...rows.map(r => cols.map(c => typeof c[1] === 'function' ? c[1](r) : r[c[1]]))].map(l => l.map(csvCell).join(',')).join('\r\n') + '\r\n';
+function exportInputs(kind) {
+  const rows = inputSheet(), base = `${(plan.name || 'service').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'service'}-${plan.date}`;
+  if (kind === 'names') offerFile(`${base}-channel-names.csv`, csv(rows, [['Channel', 'ch'], ['Name', r => { const fn = r.person && firstName(r.person); return (fn && r.name.startsWith(fn + ' ') ? r.name.slice(fn.length + 1) : r.name).slice(0, 12).trim(); }], ['Colour', 'group'], ['Hex', 'colour'], ['Phantom', r => r.p48 ? 'On' : 'Off']]), 'text/csv');   // short names fit a desk's scribble strip
+  else offerFile(`${base}-input-list.csv`, csv(rows, [['Ch', 'ch'], ['Input', 'name'], ['Group', 'group'], ['Mic / DI', 'mic'], ['Stand', 'stand'], ['48V', r => r.p48 ? 'yes' : ''], ['Person', 'person'], ['Patch', 'port']]), 'text/csv');
 }
 function outputList() {
   const rows = [], counters = new Map();
@@ -2616,6 +2765,63 @@ function viewBoxFor(b) {
   const hw = Math.max(cx - b.x0, b.x0 + b.vw - cx, (scroller.clientWidth / scale - pad) / 2), hh = Math.max(cy - b.y0, b.y0 + b.vh - cy, (scroller.clientHeight / scale - pad) / 2);
   return { x0: cx - hw, y0: cy - hh, vw: hw * 2, vh: hh * 2 };
 }
+/* Smart guides while dragging. Centres and edges line up with other gear and the stage (centre line and edges); a gap equal to
+   the one on the other side, or to the spacing of a row already there, snaps too; and the clear space to the nearest neighbour
+   each way is read out. */
+const halfExt = it => { const w = Number(prop(it, 'w')), d = Number(prop(it, 'd')), r = (it.rot || 0) * Math.PI / 180, c = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r)); return [(w * c + d * sn) / 2, (w * sn + d * c) / 2]; };
+function smartSnap(it, px, py, moving, nx, ny) {
+  const tol = 7 / scale, [hw, hd] = halfExt(it), others = plan.items.filter(o => !moving.has(o.id) && itemShown(o));
+  const W = plan.stage.w, D = plan.stage.d, guides = [], dims = [];
+  let bx = { d: tol }, by = { d: tol };
+  const tryX = (target, off, from) => { const d = Math.abs(target - (px + off)); if (d < bx.d) bx = { d, x: target - off, line: target, from }; };
+  const tryY = (target, off, from) => { const d = Math.abs(target - (py + off)); if (d < by.d) by = { d, y: target - off, line: target, from }; };
+  for (const [t, from] of [[W / 2, 'stage'], [0, 'stage'], [W, 'stage']]) for (const off of [-hw, 0, hw]) tryX(t, off, from);
+  for (const [t, from] of [[0, 'stage'], [D, 'stage'], [D / 2, 'stage']]) for (const off of [-hd, 0, hd]) tryY(t, off, from);
+  for (const o of others) {
+    const [ow, od] = halfExt(o), plat = cat(o).shape === 'platform';
+    for (const t of plat ? [o.x - ow, o.x + ow] : [o.x - ow, o.x, o.x + ow]) for (const off of [-hw, 0, hw]) tryX(t, off, o);
+    for (const t of plat ? [o.y - od, o.y + od] : [o.y - od, o.y, o.y + od]) for (const off of [-hd, 0, hd]) tryY(t, off, o);
+  }
+  // equal spacing along a row (or column): neighbours that overlap it across the other axis
+  const eqSnap = (axis) => {
+    const H = axis === 'x', pos = H ? px : py, half = H ? hw : hd, crossHalf = H ? hd : hw, cross = H ? py : px;
+    const row = others.filter(o => { const [ow, od] = halfExt(o); return Math.abs((H ? o.y : o.x) - cross) < (H ? od : ow) + crossHalf && cat(o).shape !== 'platform'; })
+      .map(o => { const [ow, od] = halfExt(o); const c = H ? o.x : o.y, h = H ? ow : od; return { o, lo: c - h, hi: c + h }; }).sort((a, b) => a.lo - b.lo);
+    const before = row.filter(r => r.hi <= pos - half + tol), after = row.filter(r => r.lo >= pos + half - tol);
+    const A = before[before.length - 1], B = after[0];
+    let best = null;
+    if (A && B) { const mid = (A.hi + B.lo) / 2; if (Math.abs(mid - pos) < tol && B.lo - A.hi > half * 2) best = { at: mid, pairs: [[A.hi, mid - half], [mid + half, B.lo]] }; }
+    if (!best && before.length >= 2) { const P = before[before.length - 2], g = A.lo - P.hi, at = A.hi + g + half; if (g > 0 && Math.abs(at - pos) < tol) best = { at, pairs: [[P.hi, A.lo], [A.hi, at - half]] }; }
+    if (!best && after.length >= 2) { const Q = after[1], g = Q.lo - B.hi, at = B.lo - g - half; if (g > 0 && Math.abs(at - pos) < tol) best = { at, pairs: [[B.hi, Q.lo], [at + half, B.lo]] }; }
+    return best;
+  };
+  const ex = eqSnap('x'), ey = eqSnap('y');
+  let x = nx, y = ny, key = '';
+  if (ex) { x = ex.at; key += 'ex' + f3(x); } else if (bx.x !== undefined) { x = bx.x; key += 'gx' + f3(bx.line); }
+  if (ey) { y = ey.at; key += 'ey' + f3(y); } else if (by.y !== undefined) { y = by.y; key += 'gy' + f3(by.line); }
+  const lineSpan = (from, isX) => { if (from === 'stage') return isX ? [Math.min(0, y - hd), Math.max(D, y + hd)] : [Math.min(0, x - hw), Math.max(W, x + hw)]; const [ow, od] = halfExt(from);
+    return isX ? [Math.min(from.y - od, y - hd) - .4, Math.max(from.y + od, y + hd) + .4] : [Math.min(from.x - ow, x - hw) - .4, Math.max(from.x + ow, x + hw) + .4]; };
+  if (!ex && bx.x !== undefined) { const [a, b] = lineSpan(bx.from, true); guides.push([bx.line, a, bx.line, b]); }
+  if (!ey && by.y !== undefined) { const [a, b] = lineSpan(by.from, false); guides.push([a, by.line, b, by.line]); }
+  if (ex) for (const [a, b] of ex.pairs) dims.push({ p: [a, y, b, y], eq: true });
+  if (ey) for (const [a, b] of ey.pairs) dims.push({ p: [x, a, x, b], eq: true });
+  // clear space to the nearest neighbour on each side (within 3 m), where no equal-gap marks are shown
+  const reach = fromM(3);
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+    if ((dx && ex) || (dy && ey)) continue;
+    let near = null;
+    for (const o of others) {
+      if (cat(o).shape === 'platform') continue;
+      const [ow, od] = halfExt(o);
+      if (dx && Math.abs(o.y - y) < od + hd) { const gap = dx < 0 ? (x - hw) - (o.x + ow) : (o.x - ow) - (x + hw); if (gap > .05 && gap < reach && (!near || gap < near.gap)) near = { gap, o }; }
+      if (dy && Math.abs(o.x - x) < ow + hw) { const gap = dy < 0 ? (y - hd) - (o.y + od) : (o.y - od) - (y + hd); if (gap > .05 && gap < reach && (!near || gap < near.gap)) near = { gap, o }; }
+    }
+    if (!near) continue;
+    if (dx) { const a = dx < 0 ? x - hw : x + hw, b = a + dx * near.gap; dims.push({ p: [Math.min(a, b), y, Math.max(a, b), y] }); }
+    else { const a = dy < 0 ? y - hd : y + hd, b = a + dy * near.gap; dims.push({ p: [x, Math.min(a, b), x, Math.max(a, b)] }); }
+  }
+  return { x: r2(x), y: r2(y), guides, dims, key: key || null };
+}
 function stageRegion() {
   const { w, d } = plan.stage, mx = fromM(1.4);
   return { x: -mx, y: -fromM(.9), w: w + mx * 2, h: d + fromM(2.4) };
@@ -2977,7 +3183,7 @@ function renderPlot() {
   applyDeckColor(svg);
   // cable weights are set in screen pixels, so runs stay fine and crisp at any zoom; the caps keep them inside their lanes when zoomed out
   const W = (px, cap) => `${f3(Math.min(px / scale, cap))}px`;
-  for (const [k, px, cap] of [['cw', 1.8, .12], ['cwq', 1.3, .09], ['cwh', 2.5, .17], ['cws', 3.1, .22], ['cc', 4.6, .26], ['ccq', 3.4, .18], ['cch', 5.6, .32], ['ccs', 6.6, .4], ['csh', .7, .04], ['cshs', .9, .055], ['cg', 11, .8], ['cwa', 2.4, .16], ['cl', 3.2, .2], ['cls', 4, .26], ['cl2', 5.6, .34]]) svg.style.setProperty('--' + k, W(px, cap));
+  for (const [k, px, cap] of [['cw', 1.8, .12], ['cwq', 1.3, .09], ['cwh', 2.5, .17], ['cws', 3.1, .22], ['cc', 4.6, .26], ['ccq', 3.4, .18], ['cch', 5.6, .32], ['ccs', 6.6, .4], ['csh', .7, .04], ['cshs', .9, .055], ['cg', 11, .8], ['cwa', 2.4, .16], ['cl', 3.2, .2], ['cls', 4, .26], ['cl2', 5.6, .34], ['hair', 1, .08], ['hair2', 1.5, .1]]) svg.style.setProperty('--' + k, W(px, cap));
   svg.style.setProperty('--cd', `${f3(Math.min(7 / scale, .55))} ${f3(Math.min(4.5 / scale, .3))}`);
   let s = `<defs><marker id="cmpHead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="cmp-head" d="M0 0L10 5L0 10z"/></marker><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
   s += `<rect class="house-fill" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>`}`;
@@ -3147,8 +3353,11 @@ function renderPlot() {
     if (it) s += `<text class="cablen" x="${f3(it.x)}" y="${f3(it.y + Math.max(Number(prop(it, 'w')), Number(prop(it, 'd'))) / 2 + 30 / scale)}" text-anchor="middle">${drag.kind === 'rot' ? `${it.rot || 0}°` : `${mVal(it.x)} m from SR · ${mVal(it.y)} m from US`}</text>`;
   }
   if (drag?.kind === 'item') {
-    if (drag.gx != null) s += `<line class="guide" x1="${drag.gx}" x2="${drag.gx}" y1="${b.y0}" y2="${b.y0 + b.vh}"/>`;
-    if (drag.gy != null) s += `<line class="guide" y1="${drag.gy}" y2="${drag.gy}" x1="${b.x0}" x2="${b.x0 + b.vw}"/>`;
+    for (const q of drag.guides || []) s += `<line class="guide" x1="${f3(q[0])}" y1="${f3(q[1])}" x2="${f3(q[2])}" y2="${f3(q[3])}"/>`;
+    for (const q of drag.dims || []) {   // gap readouts: a fine dimension line with end ticks and the distance; equal gaps in the guide colour
+      const [x1, y1, x2, y2] = q.p, h = y1 === y2, t = 4 / scale, mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      s += `<g class="gdim${q.eq ? ' eq' : ''}"><line x1="${f3(x1)}" y1="${f3(y1)}" x2="${f3(x2)}" y2="${f3(y2)}"/>${h ? `<line x1="${f3(x1)}" y1="${f3(y1 - t)}" x2="${f3(x1)}" y2="${f3(y1 + t)}"/><line x1="${f3(x2)}" y1="${f3(y2 - t)}" x2="${f3(x2)}" y2="${f3(y2 + t)}"/>` : `<line x1="${f3(x1 - t)}" y1="${f3(y1)}" x2="${f3(x1 + t)}" y2="${f3(y1)}"/><line x1="${f3(x2 - t)}" y1="${f3(y2)}" x2="${f3(x2 + t)}" y2="${f3(y2)}"/>`}<text x="${f3(mx + (h ? 0 : 6 / scale))}" y="${f3(my + (h ? -6 / scale : 3.5 / scale))}" text-anchor="${h ? 'middle' : 'start'}">${mVal(Math.hypot(x2 - x1, y2 - y1))}</text></g>`;
+    }
   }
   if (pending) {
     const a = itemById(pending.from);
@@ -3308,6 +3517,7 @@ function renderWeekPop() {
       ${Object.keys(setups()).length ? `<div class="setuplist">${Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, su]) => `<div class="setuprow"><button class="setupuse" data-setup="${id}" title="Lay out this week's stage like this"><b>${esc(su.name)}</b><small>${plural(su.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(su.saved || '')}</small><span class="go">Use</span></button><button class="iconbtn" data-setupdel="${id}" aria-label="Delete setup ${esc(su.name)}" title="Delete setup">${ic('x', 'sm')}</button></div>`).join('')}</div>` : ''}
       <div class="row" style="gap:6px;flex-wrap:nowrap"><input id="setupName" type="text" placeholder="Name this stage, e.g. Full band" style="flex:1;min-width:0"><button class="btn" id="setupSave">${ic('save', 'sm')}Save</button></div>
     </div>
+    <button class="btn block" id="openHist">${ic('undo', 'sm')}Version history <span class="hint">r${plan.rev || 0}</span></button>
     <div class="field"><span>Start next week</span><div class="grid2">
       <button class="btn" id="newCopy" title="Copy everything, team included">${ic('copy', 'sm')}Copy this week</button>
       <button class="btn" id="newStage" title="Same stage and infrastructure, no team">${ic('room', 'sm')}Stage only</button>
@@ -3672,6 +3882,36 @@ function plotSnapshot() {
   finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); layersBypass = false; cableView.quiet = quietWas; cableView.noFlow = flowWas; cableView.anim = animWas; if (view === 'plot') renderPlot(); }
   return html;
 }
+/* ---------- the rider: one clean black-and-white page every venue understands ---------- */
+function riderPlot() {
+  const keep = { color: plan.stage.color, texture: plan.stage.texture };
+  plan.stage.color = '#ffffff'; delete plan.stage.texture;
+  let svgHtml = '';
+  try { svgHtml = plotSnapshot(); } finally { if (keep.color) plan.stage.color = keep.color; else delete plan.stage.color; if (keep.texture) plan.stage.texture = keep.texture; }
+  const step = fromM(1), y = plan.stage.d + fromM(.55), x0 = 0;   // a 3 m scale bar under stage right
+  let bar = `<g class="scalebar"><rect x="${x0}" y="${f3(y)}" width="${f3(step * 3)}" height=".28" fill="#fff" stroke="#111" stroke-width=".05"/>`;
+  for (let i = 0; i < 3; i += 2) bar += `<rect x="${f3(x0 + i * step)}" y="${f3(y)}" width="${f3(step)}" height=".28" fill="#111"/>`;
+  for (const i of [0, 1, 2, 3]) bar += `<text x="${f3(x0 + i * step)}" y="${f3(y + 1)}" text-anchor="middle">${i}${i === 3 ? ' m' : ''}</text>`;
+  bar += '</g>';
+  const D = plan.stage.d, near = plan.items.filter(i => i.y < D + fromM(2.5));   // crop to the stage and what stands at its edge; the FOH distance goes in the title block
+  const xs = near.map(i => i.x), vx0 = Math.min(-fromM(.8), ...xs.map(x => x - 2)), vx1 = Math.max(plan.stage.w + fromM(.8), ...xs.map(x => x + 2)), vy0 = -fromM(.9), vy1 = D + fromM(1.6);
+  return svgHtml.replace(/viewBox="[^"]*"/, `viewBox="${f3(vx0)} ${f3(vy0)} ${f3(vx1 - vx0)} ${f3(vy1 - vy0)}"`).replace(/<\/svg>$/, bar + '</svg>');
+}
+function riderHtml(ins) {
+  const D = defaultsOf(), counts = new Map();
+  for (const it of plan.items) { const C = cat(it); if (C.shape === 'person') continue; counts.set(it.type, (counts.get(it.type) || 0) + 1); }
+  const legend = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([t, n]) => `<li>${glyph(t)}<span>${esc(CAT[t]?.short || CAT[t]?.name || t)}</span>${n > 1 ? `<b>×${n}</b>` : ''}</li>`).join('');
+  const half = Math.ceil(ins.length / 2), col = rows => `<table class="rtab"><colgroup><col style="width:12%"><col style="width:41%"><col style="width:35%"><col style="width:12%"></colgroup><thead><tr><th>#</th><th>Input</th><th>Mic / DI</th><th>48V</th></tr></thead><tbody>${rows.map(r => `<tr><td class="mono">${r.ch}</td><td>${esc(r.name)}</td><td>${esc(r.mic)}</td><td>${r.p48 ? '●' : ''}</td></tr>`).join('')}</tbody></table>`;
+  const t = totals(), mons = outputList().filter(r => /wedge|iem|in-ear/i.test(r.type + ' ' + r.dest)).length;
+  return `<div class="rider">
+    <div class="rhead"><div><div class="eyebrow">${esc(D.org || 'Stage plot')}</div><h2>${esc(plan.name || 'Untitled service')}</h2><p>${esc(longDate(plan.date))}</p></div>
+      <dl class="rblock"><div><dt>Revision</dt><dd>r${plan.rev || 0}</dd></div><div><dt>Stage</dt><dd>${mVal(plan.stage.w)} × ${mVal(plan.stage.d)} m</dd></div><div><dt>Inputs</dt><dd>${ins.length}</dd></div><div><dt>Monitors</dt><dd>${mons}</dd></div><div><dt>Power</dt><dd>${(t.watts / 1000).toFixed(1)} kW</dd></div>${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh ? `<div><dt>FOH</dt><dd>${mVal(Math.max(0, foh.y - plan.stage.d))} m out</dd></div>` : ''; })()}<div><dt>Printed</dt><dd>${esc(new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))}</dd></div></dl></div>
+    <div class="riderplot">${riderPlot()}<div class="raud">AUDIENCE</div></div>
+    <div class="rcols"><div><h3>Inputs</h3><div class="rins">${col(ins.slice(0, half))}${ins.length > half ? col(ins.slice(half)) : ''}</div></div>
+      <div><h3>Legend</h3><ul class="rlegend">${legend}</ul>${plan.team.length ? `<h3>On stage</h3><p class="rteam">${plan.team.map(m => `<span><b>${esc(m.name)}</b> ${esc(m.role || '')}</span>`).join('')}</p>` : ''}</div></div>
+    <footer class="rfoot"><span>${esc(D.org ? D.org + ' · ' : '')}${esc(plan.name || '')} · r${plan.rev || 0}</span><span>Made with Stageplot</span></footer>
+  </div>`;
+}
 /* ---------- what changed since last week, what to borrow, and the load-in checklist ---------- */
 function weekChanges(old) {
   const keep = plan;
@@ -3705,9 +3945,9 @@ const loadinState = () => (plan.loadin ||= {});
 function loadinProgress() { const all = loadinTasks().flatMap(([, , l]) => l), st = loadinState(); return { done: all.filter(t => st[t.key]).length, total: all.length }; }
 function renderPaper() {
   if (view !== 'paper') return;
-  const ins = inputList(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
+  const ins = inputSheet(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
   const sources = plan.items.filter(isPowerSource);
-  const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Source', 'source'], ['Person', 'person'], ['Patch', 'port']];
+  const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Mic / DI', 'mic'], ['Stand', 'stand'], ['48V', r => r.p48 ? '48V' : ''], ['Group', 'group'], ['Person', 'person'], ['Patch', 'port']];
   const outCols = [['Destination', 'dest'], ['Type', 'type'], ['Patch', 'port']];
   const mixCols = [['Mix', 'mix'], ['Person', 'person'], ['Position', 'role'], ['Monitor', 'kind']];
   const pullCols = [['Cable', r => r.label || CABLES[r.type].name], ['Length', r => `${r.len} m`], ['Qty', 'n']];
@@ -3715,7 +3955,10 @@ function renderPaper() {
   paperData = { inputs: tsv(ins, inCols), outputs: tsv(outs, outCols), mixes: tsv(mixes, mixCols), pull: tsv(pull, pullCols), team: tsv(plan.team, teamCols) };
   const cell = (r, c, i) => {
     const v = typeof c[1] === 'function' ? c[1](r) : r[c[1]];
+    if (c[0] === 'Ch' && r.colour) return `<td><span class="ch" style="box-shadow:inset 3px 0 0 ${r.colour}">${esc(v)}</span></td>`;
     if (c[0] === 'Ch' || c[0] === 'Mix') return `<td><span class="ch">${esc(v)}</span></td>`;
+    if (c[0] === 'Group') return `<td><span class="grptag" style="--g:${r.colour}">${esc(v)}</span></td>`;
+    if (c[0] === '48V') return `<td>${v ? '<span class="p48">48V</span>' : '<span class="hint">—</span>'}</td>`;
     if (c[0] === 'Cable') return `<td><span class="row" style="gap:8px;flex-wrap:nowrap"><span class="dot bg-${r.type}"></span>${esc(v)}</span></td>`;
     if (c[0] === 'Qty') return `<td class="num">${esc(v)}</td>`;
     return `<td class="${['Patch', 'Length'].includes(c[0]) ? 'mono' : ''}">${esc(v) || (i ? '<span class="hint">—</span>' : '')}</td>`;
@@ -3731,7 +3974,7 @@ function renderPaper() {
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
-  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()]].filter(n => n[0] !== 'checks' || w.length);
+  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
     <header class="doc-head"><div class="eyebrow">${defaultsOf().org ? esc(defaultsOf().org) + ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
@@ -3747,7 +3990,8 @@ function renderPaper() {
       return `<section class="sheet" id="sec-changes" data-sheet="overview">${head(`What’s different from ${esc(longDate(old.date))}`, '', li.length ? 'Read this before load-in' : '')}${li.length ? `<ul class="changelist">${li.join('')}</ul>` : `<p class="hint">Same team and gear as ${esc(longDate(old.date))}.</p>`}</section>`; })()}
     ${(() => { const sh = shortages(); return sh.length ? `<section class="sheet" id="sec-borrow" data-sheet="overview">${head('To borrow', '', 'More than you own (Home → Gear)')}<div class="tablewrap"><table><thead><tr><th>Gear</th><th style="text-align:right">Needed</th><th style="text-align:right">Own</th><th style="text-align:right">Borrow</th></tr></thead><tbody>${sh.map(x => `<tr><td>${esc(CAT[x.t].name)}</td><td class="num">${x.need}</td><td class="num">${x.own}</td><td class="num"><b>${x.short}</b></td></tr>`).join('')}</tbody></table></div></section>` : ''; })()}
     ${(() => { const nt = plan.items.filter(i => i.note); return nt.length ? `<section class="sheet" id="sec-notes" data-sheet="overview">${head('Notes', '', 'Pinned to people and gear on the plot')}<ul class="notelist">${nt.map(i => `<li><b>${esc(itemName(i))}</b><span>${esc(i.note)}</span></li>`).join('')}</ul></section>` : ''; })()}
-    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', 'inputs', `${plural(ins.length, 'channel')} in band order. Stage box ports fill in the same order.`)}${table(ins, inCols, 'flag')}</section>
+    ${paperTab === 'rider' ? `<section class="sheet" id="sec-rider" data-sheet="rider"><header><div><h2>Rider</h2><p class="hint">One black-and-white page for the venue: plot, scale, legend and inputs.</p></div><button class="btn primary" id="printRider">${ic('sheet', 'sm')}Print the rider</button></header>${riderHtml(ins)}</section>` : ''}
+    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')} in band order. Stage box ports fill in the same order. ${ins.filter(r => r.p48).length} need phantom power.`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${table(ins, inCols, 'flag')}</section>
     <div class="sheets2">
       <section class="sheet" id="sec-outputs" data-sheet="outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag')}</section>
       <section class="sheet" id="sec-mixes" data-sheet="mixes">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols)}</section>
@@ -3809,7 +4053,20 @@ function zoomAt(f, cx, cy) {
   scroller.scrollLeft += before.x * m.a + m.e - cx;
   scroller.scrollTop += before.y * m.d + m.f - cy;
 }
-function zoomCenter(f) { const r = scroller.getBoundingClientRect(); zoomAt(f, r.left + r.width / 2, r.top + r.height / 2); }
+let zoomAnim = null;
+function zoomCenter(f) {   // buttons and keys ease into the new zoom instead of jumping; reduced motion jumps
+  const r = scroller.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { zoomAt(f, cx, cy); return; }
+  const target = clamp((zoomAnim?.target ?? scale) * f, 3, 200), start = scale, t0 = performance.now(), dur = 170;
+  zoomAnim = { target };
+  const step = now => {
+    if (zoomAnim?.target !== target) return;
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3), want = start * Math.pow(target / start, e);
+    zoomAt(want / scale, cx, cy);
+    if (k < 1) requestAnimationFrame(step); else zoomAnim = null;
+  };
+  requestAnimationFrame(step);
+}
 function fit(m) { if (m) fitMode = m; zoom = null; needFit = true; renderPlot(); }
 
 svg.addEventListener('pointerdown', e => {
@@ -4000,13 +4257,10 @@ svg.addEventListener('pointermove', e => {
     let nx = snapTo(p.x - drag.ox), ny = snapTo(p.y - drag.oy);
     drag.gx = drag.gy = null; drag.alt = e.altKey;
     drag.hoverCh = !e.altKey && !grp && canSitInChannel(it) ? channelAt({ x: p.x - drag.ox, y: p.y - drag.oy }) : null;
-    if (!e.altKey) {   // snap to other items' centres and the stage centreline
-      const tol = 7 / scale; let bx = tol, by = tol;
-      const xs = [plan.stage.w / 2], ys = [];
-      const moving = new Set([it.id, ...drag.others.map(o => o.id)]);
-      for (const o of plan.items) if (!moving.has(o.id) && cat(o).shape !== 'platform') { xs.push(o.x); ys.push(o.y); }
-      for (const x of xs) { const dd = Math.abs(x - (p.x - drag.ox)); if (dd < bx) { bx = dd; nx = x; drag.gx = x; } }
-      for (const y of ys) { const dd = Math.abs(y - (p.y - drag.oy)); if (dd < by) { by = dd; ny = y; drag.gy = y; } }
+    drag.guides = []; drag.dims = [];
+    if (!e.altKey) {   // smart guides: line up centres and edges, keep equal gaps, and read out the space around it
+      const g = smartSnap(it, p.x - drag.ox, p.y - drag.oy, new Set([it.id, ...drag.others.map(o => o.id)]), nx, ny);
+      nx = g.x; ny = g.y; drag.guides = g.guides; drag.dims = g.dims; drag.gx = g.key;
     }
     if (nx !== it.x || ny !== it.y || drag.gx !== drag.pgx || drag.gy !== drag.pgy) {
       it.x = nx; it.y = ny; drag.moved = true; drag.pgx = drag.gx; drag.pgy = drag.gy;
@@ -4050,7 +4304,7 @@ function endDrag() {
     if (hit) { placeInChannel(it, hit); if (was !== hit.ch.id) toast(`${itemName(it)} sits inside ${hit.ch.name}`); }
     else if (it.chan) { delete it.chan; toast(`${itemName(it)} taken out of the channel`); }
   }
-  if (d.moved) { history.push(d.snap); future = []; save(); renderAll(); }
+  if (d.moved) { history.push(d.snap); future = []; recordRev(null, d.snap); save(); renderAll(); }
   else if (d.kind === 'item') {   // a plain click on one of a group narrows to it
     if (d.keep) { sel = { kind: 'item', id: d.id }; group = null; renderInspector(); }
     if (d.toggleOff) { setGroup(selIds().filter(x => x !== d.id)); renderInspector(); }
@@ -4295,6 +4549,7 @@ function setTheme(t) {
 function closePops() { $('weekPop').hidden = true; $('weekBtn').setAttribute('aria-expanded', 'false'); delArmed = false; clearArmed = ''; }
 
 document.addEventListener('keydown', e => {
+  if (!$('histDlg').hidden) { if (e.key === 'Escape') $('histDlg').hidden = true; return; }
   if (!$('cmdk').hidden) return;
   if (!$('rackDlg').hidden) {
     const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
@@ -4405,6 +4660,14 @@ $('helpBtn').onclick = () => { $('helpDlg').hidden = false; };
 const APP_VERSION = '1.0';
 function openAbout() { $('aboutVer').textContent = `Version ${APP_VERSION} · ${Object.keys(db.plans).length} saved ${Object.keys(db.plans).length === 1 ? 'week' : 'weeks'}`; $('aboutClose').innerHTML = ic('x'); $('aboutDlg').hidden = false; }
 $('aboutClose').onclick = () => { $('aboutDlg').hidden = true; };
+$('histClose').innerHTML = ic('x'); $('histClose').onclick = () => { $('histDlg').hidden = true; };
+$('histDlg').addEventListener('click', e => {
+  if (e.target.id === 'histDlg') { $('histDlg').hidden = true; return; }
+  if (e.target.closest('#histSave')) { nameVersion($('histName').value); return; }
+  const r = e.target.closest('[data-hrestore]'); if (r) restoreVersion(Number(r.dataset.hrestore));
+});
+$('histDlg').addEventListener('change', e => { if (e.target.id === 'histNamed') { histOnlyNamed = e.target.checked; renderHist(); } });
+$('histDlg').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'histName') nameVersion(e.target.value); });
 $('aboutDlg').addEventListener('click', e => { if (e.target.id === 'aboutDlg') $('aboutDlg').hidden = true; });
 $('aboutKeys').onclick = () => { $('aboutDlg').hidden = true; $('helpDlg').hidden = false; };
 $('aboutData').onclick = () => { $('aboutDlg').hidden = true; $('dataBtn').click(); };
@@ -4433,6 +4696,7 @@ $('weekPop').addEventListener('click', e => {
   else if (b.dataset.setupdel) { const n = setups()[b.dataset.setupdel]?.name; delete setups()[b.dataset.setupdel]; save(); renderWeekPop(); toast(`Setup “${n}” deleted`); }
   else if (b.id === 'setupSave') saveSetup($('setupName').value);
   else if (b.id === 'openLib') { closePops(); openLibrary2(); }
+  else if (b.id === 'openHist') { closePops(); openHist(); }
   else if (b.id === 'newCopy') newWeek(false);
   else if (b.id === 'newStage') newWeek(true);
   else if (b.id === 'clearKeepStage' || b.id === 'clearAll') {
@@ -4633,8 +4897,10 @@ $('inspector').addEventListener('click', e => {
 /* paperwork */
 $('paperInner').addEventListener('click', e => {
   const t = e.target.closest('[data-copy]'); if (t) { copyText(paperData[t.dataset.copy], $('copyFallback')); return; }
+  const ex = e.target.closest('[data-exp]'); if (ex) { exportInputs(ex.dataset.exp); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn')) { window.print(); return; }
+  if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); window.print(); setTimeout(done, 1500); return; }
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
   const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
@@ -5654,6 +5920,7 @@ function cmdItems() {
     ['Open the paperwork (P)', 'sheet', () => { view = 'paper'; renderAll(); }],
     ['Load-in checklist', 'check', () => { view = 'paper'; paperTab = 'loadin'; renderAll(); }],
     ['Present on a screen (F)', 'fit', () => setPresent(true)],
+    ['Version history', 'undo', () => openHist()],
     [sideOpen ? 'Close the side view (E)' : 'Side view: heights (E)', 'ruler', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } toggleSide(); }],
     ...OVERLAYS.map(([k, n]) => [`${cableView.over.has(k) ? 'Hide' : 'Show'} ${n.toLowerCase()}`, 'eye', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } setCableView(() => { cableView.over.has(k) ? cableView.over.delete(k) : cableView.over.add(k); }); }]),
     ['Build stage from team', 'wand', () => buildNow()],
