@@ -1032,7 +1032,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .rtab td { border-bottom: 1px solid #e2e2e2; padding: 2px 4px; color: #111; } .rtab td:first-child { font-weight: 700; } .rtab td:last-child, .rtab th:last-child { text-overflow: clip; }
 .rlegend { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
 .rlegend li { display: flex; align-items: center; gap: 6px; min-width: 0; color: #111; } .rlegend li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .rlegend li b { margin-left: auto; font-family: var(--f-mono, monospace); font-size: 11px; }
-.rlegend .glyph, .rlegend svg { width: 22px; height: 22px; flex: none; filter: grayscale(1); }
+.rlegend .ricon { width: 24px; height: 24px; flex: none; filter: grayscale(1) contrast(1.15); overflow: visible; } .rlegend .ricon .hit { fill: none; } .rlegend .ricon.faint *:not(.hit) { stroke: #333 !important; stroke-width: .12px !important; } .rlegend .ricon.faint .hit { stroke: none !important; }
 .rteam { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; color: #333; }
 .rfoot { display: flex; justify-content: space-between; border-top: 1px solid #111; padding-top: 6px; font-size: 10px; color: #555; }
 @media (max-width: 760px) { .rcols, .rins { grid-template-columns: 1fr; } .rhead { flex-direction: column; } }
@@ -1040,7 +1040,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   #sec-rider { display: none !important; }
   body.print-rider .doc-head, body.print-rider .sheetgrid > :not(#sec-rider), body.print-rider .sheets2 { display: none !important; }
   body.print-rider #sec-rider { display: block !important; break-before: auto !important; } body.print-rider #sec-rider > header { display: none !important; }
-  body.print-rider .rider { border: 0; padding: 0; gap: 8px; font-size: 11px; } body.print-rider .riderplot .snap { max-height: 108mm; } body.print-rider .rlegend .glyph, body.print-rider .rlegend svg { width: 16px; height: 16px; } body.print-rider .rlegend { gap: 2px 8px; } body.print-rider .rtab { font-size: 9.5px; } body.print-rider .rtab td { padding: 1px 4px; } body.print-rider .paper { padding: 0 !important; } .rider * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.print-rider .rider { border: 0; padding: 0; gap: 8px; font-size: 11px; } body.print-rider .riderplot .snap { max-height: 108mm; } body.print-rider .rlegend .ricon { width: 17px; height: 17px; } body.print-rider .rlegend { gap: 2px 8px; } body.print-rider .rtab { font-size: 9.5px; } body.print-rider .rtab td { padding: 1px 4px; } body.print-rider .paper { padding: 0 !important; } .rider * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 .chtools { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 4px 0 10px; }
 .chedit input[type=number] { width: 64px; } .chedit input[type=text] { width: 100%; min-width: 120px; } .chedit td { vertical-align: middle; } .chedit tr.edited td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
@@ -1055,7 +1055,8 @@ td.spare { color: var(--muted); font-style: italic; }
 .spotplot { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
 .spotplot .snap { display: block; width: 100%; height: auto; }
 .spotplot .snap path[class^="cab"], .spotplot .snap .fl, .spotplot .snap .lead-shadow, .spotplot .snap .chport { opacity: .12; }
-.spot-you circle { fill: none; stroke: #f5b544; stroke-width: .16; stroke-dasharray: .5 .25; } .spot-you text { font: 800 .75px var(--f-ui); fill: #f5b544; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: .12px; letter-spacing: .05em; }
+.spot-you circle { fill: none; stroke: #f5b544; stroke-width: .16; stroke-dasharray: .5 .25; } .spot-you line { stroke: #f5b544; stroke-width: .1; } .spot-you rect { fill: #f5b544; stroke: rgba(0,0,0,.35); stroke-width: .05; } .spot-you text { font: 800 .72px var(--f-ui); fill: #1b1e26; letter-spacing: .08em; }
+.spottimes { margin: 0; display: flex; gap: 8px; flex-wrap: wrap; } .spottimes span { display: grid; padding: 6px 12px; border-radius: 10px; background: var(--surface-2); } .spottimes small { font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); } .spottimes b { font-size: 16px; font-variant-numeric: tabular-nums; }
 .spotwhere { margin: 0; display: grid; gap: 2px; font-size: 15px; } .spotwhere span { color: var(--muted); font-size: 13.5px; }
 .spotgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 18px; }
 .spotsec.many { grid-column: 1 / -1; } .spotsec.many ul { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
@@ -1070,6 +1071,10 @@ td.spare { color: var(--muted); font-style: italic; }
   body.print-spots .spotcard { break-after: page; break-inside: avoid; border: 0; max-width: none; padding: 0; gap: 8px; } body.print-spots .spotcard:last-child { break-after: auto; }
   body.print-spots .spotplot .snap { max-height: 100mm; } body.print-spots .spotsec.many { grid-column: 1 / -1; } body.print-spots .spotsec.many ul { grid-template-columns: repeat(3, 1fr); } body.print-spots .spotcard * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+.f-foh { right: 14px; bottom: 78px; display: inline-flex; gap: 6px; align-items: center; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-2, 0 4px 14px rgba(0,0,0,.18)); font: 500 13px/1 var(--f-ui); cursor: pointer; flex-wrap: nowrap; }
+.f-foh b { font-weight: 700; } .f-foh span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; } .f-foh .fohar { font-size: 15px; color: var(--accent); }
+.f-foh-up { top: 62px; bottom: auto; right: 14px; } .f-foh-left { left: 14px; right: auto; } .f-foh:hover { border-color: var(--ink-2); }
+.times3 { gap: 8px; } .times3 input { min-width: 0; width: 100%; }
 /* views: overlays, walkways, textures, trace, side view, before/after, presentation */
 .cm-h .cm-sub { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 4px; }
 .ov-own, .ov-own-ring { pointer-events: none; } .ov-own-ring { fill: none; stroke-width: var(--cwh, .12px); stroke-opacity: .9; }
@@ -1185,6 +1190,7 @@ body.presenting #plot .rotstem, body.presenting #plot .roth { display: none; }
     <div class="float f-top" id="fzoom"></div>
     <div class="float f-tr" id="fquick" hidden></div>
     <div class="float f-side" id="fside" hidden></div>
+    <button class="float f-foh" id="ffoh" hidden></button>
     <div class="float f-present" id="fpresent" hidden></div>
   </section>
 
@@ -1685,8 +1691,11 @@ function save() {
   db.plans[plan.id] = plan; db.currentId = plan.id;
   try { localStorage.setItem(STORE, JSON.stringify(db)); markSaved(true); } catch { markSaved(false); /* storage blocked: work continues in memory */ }
 }
+// a snapshot for undo and version history: the week plus the channel numbers and edits (those live beside the weeks)
+const snapState = () => JSON.stringify(db?.channels ? { ...plan, __ch: db.channels } : plan);
+function loadState(json) { const p = JSON.parse(json); if ('__ch' in p) { if (p.__ch) db.channels = p.__ch; else delete db.channels; delete p.__ch; } return p; }
 function mutate(fn, msg) {
-  const before = JSON.stringify(plan);
+  const before = snapState();
   history.push(before); if (history.length > 80) history.shift();
   future = [];
   fn(); recordRev(msg, before); save(); renderAll();
@@ -1694,13 +1703,13 @@ function mutate(fn, msg) {
 }
 function undo() {
   const prev = history.pop(); if (!prev) { toast('Nothing to undo'); return; }
-  future.push(JSON.stringify(plan));
-  plan = JSON.parse(prev); sel = null; pending = null; save(); renderAll();
+  future.push(snapState());
+  plan = loadState(prev); sel = null; pending = null; save(); renderAll();
 }
 function redo() {
   const next = future.pop(); if (!next) { toast('Nothing to redo'); return; }
-  history.push(JSON.stringify(plan));
-  plan = JSON.parse(next); sel = null; pending = null; save(); renderAll();
+  history.push(snapState());
+  plan = loadState(next); sel = null; pending = null; save(); renderAll();
 }
 /* Version history: a timeline of every change to a week, kept beside the weeks (not in them), so any point can be restored.
    Rapid edits of the same kind fold into one entry; named versions are never trimmed. */
@@ -1719,6 +1728,7 @@ function histSave() {
 }
 function describeChange(beforeJson) {
   let was; try { was = JSON.parse(beforeJson); } catch { return 'Edited'; }
+  if (JSON.stringify(was.__ch || null) !== JSON.stringify(db.channels || null)) return 'Changed channels';
   const old = new Map(was.items.map(i => [i.id, i])), now = new Map(plan.items.map(i => [i.id, i])), nm = i => itemName(i);
   const added = plan.items.filter(i => !old.has(i.id)), removed = was.items.filter(i => !now.has(i.id));
   const moved = plan.items.filter(i => { const o = old.get(i.id); return o && (o.x !== i.x || o.y !== i.y || (o.rot || 0) !== (i.rot || 0)); });
@@ -1743,21 +1753,21 @@ function recordRev(msg, beforeJson) {
   const last = l[l.length - 1];
   if (!last.name && last.label === label && now - last.t < 90000 && l.length > 1) { last.t = now; last.snap = null; }   // the same kind of change, moments apart: one entry
   else { plan.rev = (plan.rev || 0) + 1; l.push({ t: now, label, rev: plan.rev, snap: null }); }
-  l[l.length - 1].snap = JSON.stringify(plan);
+  l[l.length - 1].snap = snapState();
   const auto = l.filter((e, i) => !e.name && i > 0); if (auto.length > HIST_AUTO) l.splice(l.indexOf(auto[0]), 1);
   histSave();
 }
 function nameVersion(text) {
   const l = weekHist(plan.id), name = text.trim().slice(0, 60); if (!name) return;
   const last = l[l.length - 1];
-  if (last && last.snap === JSON.stringify(plan)) last.name = name;
-  else { plan.rev = (plan.rev || 0) + 1; save(); l.push({ t: Date.now(), label: 'Saved version', rev: plan.rev, name, snap: JSON.stringify(plan) }); }
+  if (last && last.snap === snapState()) last.name = name;
+  else { plan.rev = (plan.rev || 0) + 1; save(); l.push({ t: Date.now(), label: 'Saved version', rev: plan.rev, name, snap: snapState() }); }
   histSave(); renderHist(); toast(`Saved “${name}”`);
 }
 function restoreVersion(i) {
   const e = weekHist(plan.id)[i]; if (!e?.snap) return;
-  const p = JSON.parse(e.snap), id = plan.id;
-  mutate(() => { plan = { ...p, id, rev: plan.rev }; sel = null; }, `Restored ${e.name ? '“' + e.name + '”' : 'r' + e.rev}`);
+  const id = plan.id;
+  mutate(() => { const p = loadState(e.snap); plan = { ...p, id, rev: plan.rev }; sel = null; }, `Restored ${e.name ? '“' + e.name + '”' : 'r' + e.rev}`);
   renderHist();
 }
 let histOnlyNamed = false;
@@ -1765,7 +1775,7 @@ const agoText = t => { const m = Math.round((Date.now() - t) / 60000); return m 
 function openHist() { closePops?.(); renderHist(); $('histDlg').hidden = false; setTimeout(() => $('histName')?.focus(), 30); }
 function renderHist() {
   if (!$('histDlg')) return;
-  const l = weekHist(plan.id), cur = JSON.stringify(plan), rows = l.map((e, i) => ({ e, i })).reverse().filter(({ e }) => !histOnlyNamed || e.name);
+  const l = weekHist(plan.id), cur = snapState(), rows = l.map((e, i) => ({ e, i })).reverse().filter(({ e }) => !histOnlyNamed || e.name);
   $('histBody').innerHTML = `<div class="row" style="gap:6px;flex-wrap:nowrap"><input id="histName" type="text" placeholder="Name this version, e.g. Christmas final" style="flex:1;min-width:0" maxlength="60"><button class="btn primary" id="histSave">${ic('save', 'sm')}Save</button></div>
     <div class="row" style="justify-content:space-between"><span class="hint">${plural(l.length ? l.length - 1 : 0, 'change')} recorded · now at r${plan.rev || 0}</span><label class="row hint" style="gap:6px"><input type="checkbox" id="histNamed" ${histOnlyNamed ? 'checked' : ''}>Named only</label></div>
     ${rows.length ? `<ol class="histlist">${rows.map(({ e, i }) => `<li class="${e.snap === cur ? 'now' : ''}${e.name ? ' named' : ''}"><span class="hdot"></span><div><b>${e.name ? esc(e.name) : esc(e.label)}</b><small>${e.name ? esc(e.label) + ' · ' : ''}r${e.rev} · <time datetime="${new Date(e.t).toISOString()}" title="${new Date(e.t).toLocaleString()}">${agoText(e.t)}</time></small></div>${e.snap === cur ? '<span class="chip">Current</span>' : `<button class="btn" data-hrestore="${i}">Restore</button>`}</li>`).join('')}</ol>` : `<p class="hint">${histOnlyNamed ? 'No named versions yet.' : 'Changes to this week appear here as you make them.'}</p>`}`;
@@ -2100,20 +2110,17 @@ function spareChannels(rows) {   // channels below the highest in use that nobod
 }
 function setChannel(key, n) {
   const C = chans_(); n = Math.max(1, Math.min(256, Math.round(Number(n) || 0))); if (!n || C.map[key] === n) return;
-  const before = JSON.stringify(C), other = Object.keys(C.map).find(k => C.map[k] === n);
-  if (other) C.map[other] = C.map[key];   // whoever had that number takes this one's: a swap, so nothing doubles up
-  C.map[key] = n; save(); renderPaper();
-  toast(other ? `Swapped with channel ${n}` : `Moved to channel ${n}`, { label: 'Undo', fn: () => { db.channels = JSON.parse(before); save(); renderPaper(); } });
+  const other = Object.keys(C.map).find(k => C.map[k] === n), was = C.map[key], name = key.split('|')[1].replace(/#(\d+)$/, ' $1');
+  mutate(() => { const M = chans_().map; if (other) M[other] = was; M[key] = n; },   // whoever had that number takes this one's: a swap, so nothing doubles up
+    other ? `${name}: swapped to channel ${n}` : `${name}: moved to channel ${n}`);
 }
 function setChanMeta(key, field, v) {
-  const C = chans_(), m = (C.meta[key] ||= {});
-  if (v === '' || v == null) delete m[field]; else m[field] = v;
-  if (!Object.keys(m).length) delete C.meta[key];
-  save(); renderPaper();
+  const name = key.split('|')[1].replace(/#(\d+)$/, ' $1');
+  mutate(() => { const C = chans_(), m = (C.meta[key] ||= {}); if (v === '' || v == null) delete m[field]; else m[field] = v; if (!Object.keys(m).length) delete C.meta[key]; },
+    `${name}: ${field === 'p48' ? (v ? '48V on' : '48V off') : field === 'mic' ? (v || 'mic reset') : v}`);
 }
 function renumberChannels() {
-  const before = JSON.stringify(chans_()); chans_().map = {}; save(); renderPaper();
-  toast('Channels renumbered in band order', { label: 'Undo', fn: () => { db.channels = JSON.parse(before); save(); renderPaper(); } });
+  mutate(() => { chans_().map = {}; }, 'Channels renumbered in band order');
 }
 let chEdit = false;
 const STANDS = ['Tall boom', 'Short boom', 'Straight', 'Clip', 'Inside drum', 'Desk stand', 'Lectern', 'Handheld', '—'];
@@ -2146,8 +2153,8 @@ const inputSheet = () => inputList().map(r => ({ ...r, ...inputMeta(r) }));
 const csvCell = v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
 const csv = (rows, cols) => [cols.map(c => c[0]), ...rows.map(r => cols.map(c => typeof c[1] === 'function' ? c[1](r) : r[c[1]]))].map(l => l.map(csvCell).join(',')).join('\r\n') + '\r\n';
 function exportInputs(kind) {
-  const rows = inputSheet(), base = `${(plan.name || 'service').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'service'}-${plan.date}`;
-  if (kind === 'names') offerFile(`${base}-channel-names.csv`, csv(rows, [['Channel', 'ch'], ['Name', r => { const fn = r.person && firstName(r.person); return (fn && r.name.startsWith(fn + ' ') ? r.name.slice(fn.length + 1) : r.name).slice(0, 12).trim(); }], ['Colour', 'group'], ['Hex', 'colour'], ['Phantom', r => r.p48 ? 'On' : 'Off']]), 'text/csv');   // short names fit a desk's scribble strip
+  const rows = [...inputSheet(), ...spareChannels(inputList()).map(x => ({ ch: x.ch, name: 'Spare', group: 'Spare', colour: '#8b8d98', p48: false, mic: x.usual ? `usually ${x.usual}` : '', stand: '', person: '', port: '', spare: true }))].sort((a, b) => a.ch - b.ch), base = `${(plan.name || 'service').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'service'}-${plan.date}`;
+  if (kind === 'names') offerFile(`${base}-channel-names.csv`, csv(rows, [['Channel', 'ch'], ['Name', r => { if (r.spare) return 'Spare'; const fn = r.person && firstName(r.person); return (fn && r.name.startsWith(fn + ' ') ? r.name.slice(fn.length + 1) : r.name).slice(0, 12).trim(); }], ['Colour', 'group'], ['Hex', 'colour'], ['Phantom', r => r.p48 ? 'On' : 'Off']]), 'text/csv');   // short names fit a desk's scribble strip
   else offerFile(`${base}-input-list.csv`, csv(rows, [['Ch', 'ch'], ['Input', 'name'], ['Group', 'group'], ['Mic / DI', 'mic'], ['Stand', 'stand'], ['48V', r => r.p48 ? 'yes' : ''], ['Person', 'person'], ['Patch', 'port']]), 'text/csv');
 }
 function outputList() {
@@ -2270,8 +2277,9 @@ const pcoLoadTypes = () => pcoRun('Loading services…', async () => {
 });
 async function pcoLoadPlansInner() {
   pco.plans = []; pco.planId = ''; pco.roster = null;
-  const r = await pcoCall('services_plans', { service_type_id: pco.typeId, filter: 'future', order_by: 'sort_date', per_page: 15, output_fields: ['id', 'title', 'dates', 'sort_date', 'series_title'] });
-  pco.plans = (r?.data || []).map(p => ({ id: p.id, title: p.attributes?.title || p.attributes?.series_title || '', dates: p.attributes?.dates || '', date: String(p.attributes?.sort_date || '').slice(0, 10) }));
+  const r = await pcoCall('services_plans', { service_type_id: pco.typeId, filter: 'future', order_by: 'sort_date', per_page: 15, output_fields: ['id', 'title', 'dates', 'sort_date', 'series_title'], include: ['plan_times'] });
+  const pt = new Map((r?.included || []).filter(x => x.type === 'PlanTime').map(x => [x.id, x.attributes || {}]));
+  pco.plans = (r?.data || []).map(p => ({ id: p.id, title: p.attributes?.title || p.attributes?.series_title || '', dates: p.attributes?.dates || '', date: String(p.attributes?.sort_date || '').slice(0, 10), times: pcoTimes((p.relationships?.plan_times?.data || []).map(d => pt.get(d.id)).filter(Boolean)) }));
   pco.planId = (pco.plans.find(p => p.date === plan.date) || pco.plans[0])?.id || '';
   if (!pco.plans.length) pco.err = 'No upcoming plans in this service type.';
 }
@@ -2330,7 +2338,7 @@ function pcoApply() {
       if (plan.team.some(p => p.pcoId === e.key)) continue;
       plan.team.push({ id: uid(), name: e.name, role: e.role, sings: e.sings, pcoId: e.key });
     }
-    if (pcoPrefs().usePlan !== false) { if (pl?.date) plan.date = pl.date; if (pl) plan.name = pl.title || pl.dates || plan.name; }
+    if (pcoPrefs().usePlan !== false) { if (pl?.date) plan.date = pl.date; if (pl) plan.name = pl.title || pl.dates || plan.name; if (pl?.times && Object.keys(pl.times).length) plan.times = { ...(plan.times || {}), ...pl.times }; }
     buildFromTeam(); autoCable();
   });
   toast(su && fresh ? `Added ${chosen.length} from Planning Center on the “${su.name}” stage` : `Added ${chosen.length} from Planning Center`);
@@ -2904,6 +2912,34 @@ function smartSnap(it, px, py, moving, nx, ny) {
     else { const a = dy < 0 ? y - hd : y + hd, b = a + dy * near.gap; dims.push({ p: [x, Math.min(a, b), x, Math.max(a, b)] }); }
   }
   return { x: r2(x), y: r2(y), guides, dims, key: key || null };
+}
+/* the FOH desk often sits out in the house, past the edge of the screen: a small pointer says where and how far, and takes you there */
+function placeFohPointer() {
+  const el = $('ffoh'); if (!el) return;
+  const foh = view === 'plot' && !presenting && plan.items.find(i => i.type === 'foh'), m = foh && svg.getScreenCTM();
+  if (!foh || !m) { el.hidden = true; return; }
+  const r = scroller.getBoundingClientRect(), x = foh.x * m.a + m.e, y = foh.y * m.d + m.f, pad = 24;
+  const dir = y > r.bottom - pad ? 'down' : y < r.top + pad ? 'up' : x > r.right - pad ? 'right' : x < r.left + pad ? 'left' : '';
+  el.hidden = !dir; if (!dir) return;
+  const dist = mVal(Math.max(0, foh.y - plan.stage.d));
+  el.className = `float f-foh f-foh-${dir}`; el.dataset.dir = dir;
+  el.innerHTML = `<span class="fohar" aria-hidden="true">${{ down: '↓', up: '↑', left: '←', right: '→' }[dir]}</span><b>FOH</b><span>${dist} m out</span>`;
+  el.setAttribute('aria-label', `FOH desk is ${dist} metres out in the house, off screen. Show it`); el.title = 'Scroll to the FOH desk';
+}
+let fohRaf = 0;
+scroller.addEventListener('scroll', () => { if (!fohRaf) fohRaf = requestAnimationFrame(() => { fohRaf = 0; placeFohPointer(); }); }, { passive: true });
+$('ffoh').addEventListener('click', () => {
+  const foh = plan.items.find(i => i.type === 'foh'), m = foh && svg.getScreenCTM(); if (!m) return;
+  const r = scroller.getBoundingClientRect(), x = foh.x * m.a + m.e, y = foh.y * m.d + m.f;
+  scroller.scrollBy({ left: x - (r.left + r.width / 2), top: y - (r.top + r.height * .6), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+});
+// Planning Center plan times → arrive by (the earliest time of the day), soundcheck (the first rehearsal) and service (the first service)
+function pcoTimes(list) {
+  const hm = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  const sorted = list.filter(t => t.starts_at).sort((a, b) => a.starts_at.localeCompare(b.starts_at)), first = k => sorted.find(t => t.time_type === k);
+  const out = {}; if (sorted.length) out.call = hm(sorted[0].starts_at); if (first('rehearsal')) out.check = hm(first('rehearsal').starts_at); if (first('service')) out.service = hm(first('service').starts_at);
+  if (out.call && out.call === out.service) delete out.call;   // only a service time: no separate arrival
+  return out;
 }
 function stageRegion() {
   const { w, d } = plan.stage, mx = fromM(1.4);
@@ -3487,7 +3523,7 @@ function renderPlot() {
       }
     }
   }
-  renderFloat();
+  renderFloat(); placeFohPointer();
 }
 
 /* floating canvas controls */
@@ -3595,6 +3631,7 @@ function renderWeekPop() {
       <div class="field" style="grid-column:1/-1"><label for="planName">Service name</label><input id="planName" type="text" value="${esc(plan.name)}" placeholder="e.g. Sunday 9am"></div>
       <div class="field" style="grid-column:1/-1"><label for="planDate">Date</label><input id="planDate" type="date" value="${esc(plan.date)}"></div>
     </div>
+    <div class="grid3 times3">${TIME_KINDS.map(([k, l]) => `<div class="field"><label for="tm-${k}">${l}</label><input id="tm-${k}" type="time" data-time="${k}" value="${esc(plan.times?.[k] || '')}"></div>`).join('')}</div>
     <div class="field"><span class="row" style="justify-content:space-between">Saved weeks <button class="btn quiet" id="openLib" style="padding:2px 8px;font-size:12px">${ic('calendar', 'sm')}Library</button></span><div class="weeklist">${ids.map(id => `<button data-week="${id}" aria-current="${id === plan.id}"><span class="d">${esc(db.plans[id].date)}</span><span class="n">${esc(db.plans[id].name || 'Untitled')}</span></button>`).join('')}</div></div>
     <div class="field"><span>Setups <small class="hint" style="font-weight:400">reusable layouts</small></span>
       ${Object.keys(setups()).length ? `<div class="setuplist">${Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, su]) => `<div class="setuprow"><button class="setupuse" data-setup="${id}" title="Lay out this week's stage like this"><b>${esc(su.name)}</b><small>${plural(su.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(su.saved || '')}</small><span class="go">Use</span></button><button class="iconbtn" data-setupdel="${id}" aria-label="Delete setup ${esc(su.name)}" title="Delete setup">${ic('x', 'sm')}</button></div>`).join('')}</div>` : ''}
@@ -3967,6 +4004,10 @@ function plotSnapshot() {
 }
 /* ---------- My spot: one card per person, for their phone or a printout ---------- */
 let spotSel = '';
+const TIME_KINDS = [['call', 'Arrive by'], ['check', 'Soundcheck'], ['service', 'Service']];
+const fmtTime = hm => { if (!hm) return ''; const [h, m] = hm.split(':').map(Number); return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); };
+const timesLine = () => TIME_KINDS.filter(([k]) => plan.times?.[k]).map(([k, l]) => `${l} ${fmtTime(plan.times[k])}`).join(' · ');
+const timesHtml = () => TIME_KINDS.filter(([k]) => plan.times?.[k]).map(([k, l]) => `<span><small>${l}</small><b>${esc(fmtTime(plan.times[k]))}</b></span>`).join('');
 const cropToStage = svgHtml => { const D = plan.stage.d, near = plan.items.filter(i => i.y < D + fromM(2.5)), xs = near.map(i => i.x);
   const x0 = Math.min(-fromM(.8), ...xs.map(x => x - 2)), x1 = Math.max(plan.stage.w + fromM(.8), ...xs.map(x => x + 2)), y0 = -fromM(.9), y1 = D + fromM(1.4);
   return svgHtml.replace(/viewBox="[^"]*"/, `viewBox="${f3(x0)} ${f3(y0)} ${f3(x1 - x0)} ${f3(y1 - y0)}"`); };
@@ -3988,10 +4029,13 @@ function spotData(p) {
   const power = [...new Set(plan.cables.filter(c => c.type === 'power' && gear.some(g => touches(c, g.id))).map(c => { const g = gear.find(x => touches(c, x.id)), src = other(c, g.id);
     return `${strip(itemName(g))} → ${itemName(src)}${isPowerSource(src) && !isExt(src) ? ` circuit ${c.circuit || 1}` : ''}`; }))];
   const notes = [me?.note, ...gear.filter(g => g.note).map(g => `${strip(itemName(g))}: ${g.note}`)].filter(Boolean);
-  return { p, me, where, left, right, gear: gear.map(g => strip(itemName(g))), ins, mons, power, notes, ids: [me?.id, ...gear.map(g => g.id)].filter(Boolean) };
+  const full = g => { const C = cat(g), nice = C.name.replace(/\s*\([^)]*\)/g, '').trim(), own = g.label && strip(g.label);
+    return own && ![C.short, C.name, nice].some(x => x && x.toLowerCase() === own.toLowerCase()) ? own : nice; };   // a name someone typed stays   // "Electric guitar", "In-ear monitor pack": the full name, not the plot's short one
+  return { p, me, where, left, right, gear: gear.map(full), ins, mons, power, notes, ids: [me?.id, ...gear.map(g => g.id)].filter(Boolean) };
 }
 function spotText(d) {
   const L = [`${plan.name || 'Service'} · ${longDate(plan.date)}`, `${d.p.name}${d.p.role ? ` (${d.p.role})` : ''}`, '', `Where: ${d.where}`];
+  const tm = timesLine(); if (tm) L.push(tm);
   if (d.left || d.right) L.push(`Next to you: ${[d.left && `${firstName(personById(d.left.personId)?.name || d.left.label)} on your left`, d.right && `${firstName(personById(d.right.personId)?.name || d.right.label)} on your right`].filter(Boolean).join(', ')}`);
   if (d.ins.length) L.push('', 'Your channels:', ...d.ins.map(r => `  Ch ${r.ch} ${r.text} (${r.sub})`));
   if (d.mons.length) L.push('', `Monitor: ${d.mons.join(', ')}`);
@@ -4005,11 +4049,13 @@ function spotsHtml() {
   if (!spotSel || (spotSel !== 'all' && !plan.team.some(t => t.id === spotSel))) spotSel = plan.team[0].id;
   const snap = cropToStage(plotSnapshot()), show = spotSel === 'all' ? plan.team : plan.team.filter(t => t.id === spotSel);
   const card = p => { const d = spotData(p), css = `#spot-${p.id} .snap .item:not(${d.ids.map(id => `[data-id="${id}"]`).join(',') || '*'}) { opacity: .2; }`;
-    const ring = d.me ? `<g class="spot-you"><circle cx="${d.me.x}" cy="${d.me.y}" r="${f3(Number(prop(d.me, 'w')) / 2 + .55)}"/><text x="${d.me.x}" y="${f3(d.me.y - Number(prop(d.me, 'w')) / 2 - .9)}" text-anchor="middle">YOU</text></g>` : '';
+    const ring = (() => { if (!d.me) return ''; const R = Number(prop(d.me, 'w')) / 2 + .55, up = d.me.y > fromM(1.6), ty = up ? d.me.y - R - 2.1 : d.me.y + R + 2.1;   // a tag on a short stalk, clear of the gear, below when there's no room above
+      return `<g class="spot-you"><circle cx="${d.me.x}" cy="${d.me.y}" r="${f3(R)}"/><line x1="${d.me.x}" y1="${f3(up ? d.me.y - R : d.me.y + R)}" x2="${d.me.x}" y2="${f3(up ? ty + .55 : ty - .55)}"/><rect x="${f3(d.me.x - 1.35)}" y="${f3(ty - .55)}" width="2.7" height="1.1" rx=".55"/><text x="${d.me.x}" y="${f3(ty + .28)}" text-anchor="middle">YOU</text></g>`; })();
     const li = (h, items) => items.length ? `<div class="spotsec${items.length > 5 ? ' many' : ''}"><h4>${h}</h4><ul>${items.join('')}</ul></div>` : '';
     return `<article class="spotcard" id="spot-${p.id}"><style>${css}</style>
       <header><div><div class="eyebrow">${esc(longDate(plan.date))} · ${esc(plan.name || '')}</div><h3>${esc(p.name)}</h3><p>${esc(p.role || '')}</p></div><button class="btn" data-spotcopy="${p.id}" title="Copy as text to send by message">${ic('copy', 'sm')}Copy text</button></header>
       <div class="spotplot">${snap.replace(/<\/svg>$/, ring + '</svg>')}</div>
+      ${timesLine() ? `<p class="spottimes">${timesHtml()}</p>` : ''}
       <p class="spotwhere"><b>${esc(d.where)}</b>${d.left || d.right ? `<span>${[d.left && `${esc(firstName(personById(d.left.personId)?.name || ''))} on your left`, d.right && `${esc(firstName(personById(d.right.personId)?.name || ''))} on your right`].filter(Boolean).join(' · ')}</span>` : ''}</p>
       <div class="spotgrid">
         ${li('Your channels', d.ins.map(r => `<li><span class="ch">${r.ch}</span><span><b>${esc(r.text)}</b><small>${esc(r.sub)}</small></span></li>`))}
@@ -4036,10 +4082,16 @@ function riderPlot() {
   const xs = near.map(i => i.x), vx0 = Math.min(-fromM(.8), ...xs.map(x => x - 2)), vx1 = Math.max(plan.stage.w + fromM(.8), ...xs.map(x => x + 2)), vy0 = -fromM(.9), vy1 = D + fromM(1.6);
   return svgHtml.replace(/viewBox="[^"]*"/, `viewBox="${f3(vx0)} ${f3(vy0)} ${f3(vx1 - vx0)} ${f3(vy1 - vy0)}"`).replace(/<\/svg>$/, bar + '</svg>');
 }
+// the gear's own plot symbol, drawn small and grey: it matches the drawing above it and prints as clean line work
+function legendIcon(type) {
+  const C = CAT[type] || {}, w = Number(C.w) || 1, d = Number(C.d) || 1, m = Math.max(w, d) / 2 + .15;
+  const faint = C.shape === 'platform' || /shield/.test(type);   // pale on paper: trace their edges
+  return `<svg class="ricon${faint ? ' faint' : ''}" viewBox="${f3(-m)} ${f3(-m)} ${f3(m * 2)} ${f3(m * 2)}" aria-hidden="true">${shapeSvg({ type, id: 'legend-' + type }, w, d)}</svg>`;
+}
 function riderHtml(ins) {
   const D = defaultsOf(), counts = new Map();
   for (const it of plan.items) { const C = cat(it); if (C.shape === 'person') continue; counts.set(it.type, (counts.get(it.type) || 0) + 1); }
-  const legend = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([t, n]) => `<li>${glyph(t)}<span>${esc(CAT[t]?.short || CAT[t]?.name || t)}</span>${n > 1 ? `<b>×${n}</b>` : ''}</li>`).join('');
+  const legend = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([t, n]) => `<li>${legendIcon(t)}<span>${esc(CAT[t]?.short || CAT[t]?.name || t)}</span>${n > 1 ? `<b>×${n}</b>` : ''}</li>`).join('');
   const half = Math.ceil(ins.length / 2), col = rows => `<table class="rtab"><colgroup><col style="width:12%"><col style="width:41%"><col style="width:35%"><col style="width:12%"></colgroup><thead><tr><th>#</th><th>Input</th><th>Mic / DI</th><th>48V</th></tr></thead><tbody>${rows.map(r => `<tr><td class="mono">${r.ch}</td><td>${esc(r.name)}</td><td>${esc(r.mic)}</td><td>${r.p48 ? '●' : ''}</td></tr>`).join('')}</tbody></table>`;
   const t = totals(), mons = outputList().filter(r => /wedge|iem|in-ear/i.test(r.type + ' ' + r.dest)).length;
   return `<div class="rider">
@@ -4840,6 +4892,7 @@ $('weekPop').addEventListener('change', e => {
   if (e.target.id === 'planName') { renderAll(); }
   if (e.target.id === 'setupName') return;
   if (e.target.id === 'planDate' && e.target.value) { plan.date = e.target.value; save(); renderAll(); }
+  if (e.target.dataset.time) { const k = e.target.dataset.time, v = e.target.value; mutate(() => { plan.times ||= {}; if (v) plan.times[k] = v; else delete plan.times[k]; if (!Object.keys(plan.times).length) delete plan.times; }, `${TIME_KINDS.find(([x]) => x === k)[1]}: ${v ? fmtTime(v) : 'cleared'}`); }
 });
 $('weekPop').addEventListener('keydown', e => { if (e.target.id === 'setupName' && e.key === 'Enter') { e.preventDefault(); saveSetup(e.target.value); } });
 $('weekPop').addEventListener('click', e => {
@@ -6260,7 +6313,7 @@ $('homeView').addEventListener('keydown', e => { if (e.target.id === 'libType' &
 // load-in ticks: saved with the week straight away (not an undo step), progress updates as you go
 $('paperView').addEventListener('change', e => {
   const t0 = e.target;
-  if (t0.id === 'chFixed') { chans_().fixed = t0.checked; save(); renderPaper(); return; }
+  if (t0.id === 'chFixed') { const on = t0.checked; mutate(() => { chans_().fixed = on; }, on ? 'Channel numbers fixed' : 'Channels numbered in band order each week'); return; }
   if (t0.dataset.chnum) { setChannel(t0.dataset.chnum, t0.value); return; }
   if (t0.dataset.chmic !== undefined) { setChanMeta(t0.dataset.chmic, 'mic', t0.value.trim().slice(0, 40)); return; }
   if (t0.dataset.chstand !== undefined) { setChanMeta(t0.dataset.chstand, 'stand', t0.value); return; }
