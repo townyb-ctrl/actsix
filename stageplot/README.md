@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 43 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 44 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -46,12 +46,12 @@ Open `index.html` in a modern browser to run it.
 - **Library editing**: the pen on a library row renames a week or moves it to another date in place (Undo in the notice).
 - **Keys**: `G` goes Home, `P` toggles Paperwork; both are in Ctrl K too, along with the load-in checklist.
 - **Views** (Layers → Views; on screen only, never printed or saved into the week, remembered in this browser):
-  - **Whose gear**: a soft colour tag around everything each person owns, one colour per person.
+  - **Whose gear**: one soft colour blob per person around them and everything they own. Things within about 90 cm of each other melt into a single outline; drag gear away and the blob pulls apart, drag it back and they join with a little bubble pop. The blobs swell in when you switch the view on (no motion with reduced-motion set).
   - **Lighting wash**: a warm pool where each light on a stand points.
   - **Sightlines from FOH**: two lines from the desk to the stage corners and a shadow behind anything tall (speakers on stands, drum shield, lights, cameras, pulpit, racks). Anyone standing in a shadow gets a red eye marker, with who's blocking them on hover.
   - **Sound coverage**: a heat map from the mains, subs, line arrays and wedges (level falls with distance and off-axis), red loudest to blue quiet, over 24 dB.
 - **Walkways**: *Walkway (keep clear)* in Gear → Stage & power is a hatched area you size like a riser. Any floor cable crossing it shows in Checks as a trip hazard; overhead and channel runs don't count.
-- **Stage surface**: Room's stage section has *Plain*, *Boards*, *Carpet* or *Matte paint* next to the stage colour; it shows on the plot and the paperwork.
+- **Stage surface**: Room's stage section has *Plain*, *Boards*, *Vinyl* (1.5 m rolls with taped seams and a soft gloss), *Carpet* or *Matte* next to the stage colour, each tile previewing the surface in your stage colour; it shows on the plot and the paperwork.
 - **Trace the signal**: pick an instrument, mic or anything carrying audio and press *Trace the signal*. A pulse runs from it through its leads, DI and stage box to the desk, and back out to that person's monitors; everything else fades. Picking something else or Esc ends it.
 - **Side view** (`E`, or Layers): the stage seen from the house with heights in metres: risers, people, mic heights, speakers on stands, flown hangs, the ceiling and every overhead run.
 - **Before and after**: in *Changes since last week*, the *Before / After* slider wipes between last week's plot and this week's, in the same place.
