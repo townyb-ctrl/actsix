@@ -1085,6 +1085,30 @@ td.spare { color: var(--muted); font-style: italic; }
 .rfmark { pointer-events: none; } .rfmark circle:first-child { fill: rgba(16,18,23,.78); stroke: rgba(255,255,255,.25); stroke-width: .6; } .rfmark path { fill: none; stroke: #7dd3fc; stroke-width: .9; stroke-linecap: round; } .rfmark .rfdot { fill: #7dd3fc; }
 .gbadge { cursor: pointer; } .gbadge circle { fill: var(--surface); stroke: var(--accent); stroke-width: var(--cwh, .12px); } .gbadge text { fill: var(--ink); font-weight: 750; font-variant-numeric: tabular-nums; }
 .gbadge:hover circle { fill: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+/* one style for everything that floats over the canvas */
+:root { --fl-r: 14px; --fl-blur: blur(14px) saturate(1.25); }
+.float .panel, .emptycard, .cabmenu, .f-foh, .pres-title, .ctxmenu, .moremenu, #weekPop, .hovercard {
+  border-radius: var(--fl-r) !important; background: var(--glass); -webkit-backdrop-filter: var(--fl-blur); backdrop-filter: var(--fl-blur);
+  border: 1px solid color-mix(in srgb, var(--line-2, var(--line)) 80%, transparent); box-shadow: var(--shadow-2); }
+.float .panel { padding: 5px; } .f-foh { padding: 7px 12px; }
+.float .panel .btn, .float .panel .tool, .float .panel .iconbtn { border-radius: 10px; }
+.vin { animation: vin .16s ease-out; } #plotView.vin { animation-name: vinFade; }
+@keyframes vin { from { opacity: 0; transform: translateY(4px); } } @keyframes vinFade { from { opacity: 0; } }
+.snapwrap .snap { animation: vinFade .25s ease-out; }
+@media (prefers-reduced-motion: reduce) { .vin, .snapwrap .snap { animation: none; } }
+.monlink { fill: none; stroke: #7dd3fc; stroke-width: var(--cwq, .09px); stroke-dasharray: var(--cd, .5 .3); opacity: .35; pointer-events: none; }
+.monlink.hl { opacity: .95; stroke-width: var(--cw, .12px); } .monlink.off { stroke: #f87171; opacity: .95; stroke-width: var(--cwh, .17px); }
+.mondot { fill: #7dd3fc; opacity: .45; pointer-events: none; } .mondot.hl { opacity: 1; } .mondot.off { fill: #f87171; opacity: .8; }
+.boomlink { stroke: #cbd5e1; stroke-width: var(--cwh, .17px); stroke-linecap: round; opacity: .45; pointer-events: none; } .boomlink.hl { opacity: .9; }
+.light-deck .monlink:not(.off), .light-deck .mondot:not(.off) { stroke: #0369a1; fill: #0369a1; } .light-deck .mondot:not(.off) { stroke: none; } .light-deck .boomlink { stroke: #475569; }
+/* dark mode: the stage stands off the house, the paperwork header has an edge */
+:root[data-theme="dark"] { --house: #121419; --house-dot: rgba(255,255,255,.07); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --house: #121419; --house-dot: rgba(255,255,255,.07); } }
+:root[data-theme="dark"] #plot:not(.light-deck) .deck, :root[data-theme="dark"] .snap:not(.light-deck) .deck { stroke: rgba(255,255,255,.12); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #plot:not(.light-deck) .deck { stroke: rgba(255,255,255,.12); } }
+:root[data-theme="dark"] .doc-head { box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); background: linear-gradient(160deg, #2a2e39, var(--deck)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .doc-head { box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); background: linear-gradient(160deg, #2a2e39, var(--deck)); } }
+:root[data-theme="dark"] .seats rect { opacity: .08; } :root[data-theme="dark"] .itag.out rect { fill: var(--surface-3); }
 /* visual pass: name tags, depth, seats, hover, empty state, calmer inspector */
 #plot .itag, .snap .itag { pointer-events: none; }
 .itag rect { fill: rgba(16,18,23,.74); stroke: rgba(255,255,255,.12); stroke-width: var(--hair, .03px); }
@@ -2264,6 +2288,8 @@ function warnings() {
   for (const { w, c } of walkwayCrossings()) out.push({ lvl: 'warn', id: w.id, msg: `${CABLES[c.type].name} from ${itemName(itemById(c.from))} to ${itemName(itemById(c.to))} crosses ${itemName(w)}: a trip hazard. Reroute it, fly it or tape it down.` });
   for (const [t, n] of Object.entries(db?.gear?.owned || {})) { const used = plan.items.filter(i => i.type === t).length; if (CAT[t] && used > n) out.push({ lvl: 'warn', id: plan.items.find(i => i.type === t)?.id, msg: `${used} × ${CAT[t].name} on the plot, but you own ${n} (Home → Gear).` }); }
   const W = plan.stage.w, D = plan.stage.d, hw = Math.max(W, plan.stage.houseW);
+  for (const w of plan.items.filter(i => i.type === 'wedge' && i.personId)) { const p = plan.items.find(i => i.personId === w.personId && cat(i).shape === 'person');
+    if (p && Math.hypot(p.x - w.x, p.y - w.y) > 1 && wedgeAim(w, p) > 75) out.push({ lvl: 'warn', id: w.id, msg: `${itemName(w)} points away from ${firstName(personById(w.personId)?.name || 'its owner')}. Turn it to face them (R rotates).` }); }
   for (const b of plan.items.filter(isBox)) {
     const used = inputList().filter(r => r.port.startsWith(itemName(b) + ' · in')).length;
     if (used > Number(prop(b, 'ins'))) out.push({ lvl: 'bad', id: b.id, msg: `${itemName(b)}: ${used} inputs patched, only ${prop(b, 'ins')} available.` });
@@ -3301,6 +3327,29 @@ function plugPoint(seg, end, it) {
     for (let t = 0; t <= L; t += .06) { const p = [a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L]; if (!inside(p)) return p; } }
   return null;
 }
+/* wedges get a soft link to the person they're for (red when it points away from them); a vocal mic more than 30 cm from its
+   singer gets a boom line to them. Faint until you pick the person, the wedge or the mic. */
+const wedgeAim = (w, p) => { const r = (w.rot || 0) * Math.PI / 180, fx = Math.sin(r), fy = -Math.cos(r), vx = p.x - w.x, vy = p.y - w.y, L = Math.hypot(vx, vy) || 1; return Math.acos(Math.max(-1, Math.min(1, (fx * vx + fy * vy) / L))) * 180 / Math.PI; };
+function aimLinks(selSet) {
+  let s = '';
+  const personOf = pid => plan.items.find(i => i.personId === pid && cat(i).shape === 'person');
+  for (const it of plan.items) {
+    if (!it.personId || !itemShown(it)) continue;
+    const p = personOf(it.personId); if (!p) continue;
+    const hl = selSet.has(it.id) || selSet.has(p.id) ? ' hl' : '', pr = Number(prop(p, 'w')) / 2;
+    if (it.type === 'wedge') {
+      const r = (it.rot || 0) * Math.PI / 180, fx = Math.sin(r), fy = -Math.cos(r), ax = it.x + fx * .85, ay = it.y + fy * .85;
+      const vx = p.x - ax, vy = p.y - ay, L = Math.hypot(vx, vy); if (L < pr + .3) continue;
+      const ex = p.x - vx / L * (pr + .15), ey = p.y - vy / L * (pr + .15), mx = (ax + ex) / 2 - vy / L * .5, my = (ay + ey) / 2 + vx / L * .5, off = wedgeAim(it, p) > 75;
+      s += `<path class="monlink${off ? ' off' : ''}${hl}" d="M${f3(ax)} ${f3(ay)}Q${f3(mx)} ${f3(my)} ${f3(ex)} ${f3(ey)}"><title>${esc(itemName(it))} is ${esc(firstName(personById(p.personId)?.name || ''))}'s${off ? ' and points away from them' : ''}</title></path><circle class="mondot${off ? ' off' : ''}${hl}" cx="${f3(ex)}" cy="${f3(ey)}" r="${f3(Math.max(.1, 2.6 / scale))}"/>`;
+    } else if (it.type === 'vox_mic') {
+      const d = Math.hypot(it.x - p.x, it.y - p.y); if (d < fromM(.3) + pr) continue;
+      const ux = (p.x - it.x) / d, uy = (p.y - it.y) / d;
+      s += `<line class="boomlink${hl}" x1="${f3(it.x)}" y1="${f3(it.y)}" x2="${f3(p.x - ux * pr)}" y2="${f3(p.y - uy * pr)}"/>`;
+    }
+  }
+  return s;
+}
 const TUCK_TYPES = new Set(['di_mono', 'di_stereo', 'iem', 'usb_if', 'midi_fs', 'ac_preamp']);
 const lastPos = new Map(); let lastPlanId = '';
 function glide() {
@@ -3535,6 +3584,7 @@ function renderPlot() {
     obstacles.push([cx - r, cy - r, cx + r, cy + r]);   // names find room around the badge
     top += `<g class="gbadge" data-badge="${pid}" transform="translate(${f3(cx)} ${f3(cy)})" role="button" aria-label="${esc(fn)}'s ${l.length} small items, select to show"><title>${esc(fn)}: ${esc(l.map(i => cat(i).short || cat(i).name).join(', '))} (click to show)</title><circle r="${f3(r)}"/><text y="${f3(r * .38)}" text-anchor="middle" style="font-size:${f3(r * 1.05)}px">${l.length}</text></g>`;
   }
+  if (!layersBypass && !layerOff('people')) s += aimLinks(selSet);
   let hits = '', lens = '', wps = '', ceil = '', floorQ = '', bundleTags = '';
   const bundleCands = [];
 
@@ -3740,6 +3790,13 @@ function renderFloat() {
 /* ===================================================================
    Rendering: header, rail, inspector
    =================================================================== */
+let shownView = '';
+function viewIn() {   // the view you switch to fades in instead of snapping
+  if (view === shownView) return; const was = shownView; shownView = view;
+  if (!was || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const el = $({ home: 'homeView', plot: 'plotView', paper: 'paperView' }[view]); if (!el) return;
+  el.classList.remove('vin'); void el.offsetWidth; el.classList.add('vin');
+}
 function renderHeader() {
   $('wkDate').textContent = longDate(plan.date);
   $('wkName').textContent = plan.name || 'Untitled service';
@@ -3751,7 +3808,7 @@ function renderHeader() {
   $('vHome').innerHTML = `${ic('calendar', 'sm')}<span class="vlabel">Home</span>`; $('vPlot').innerHTML = `${ic('plot', 'sm')}<span class="vlabel">Plot</span>`; $('vPaper').innerHTML = `${ic('sheet', 'sm')}<span class="vlabel">Paperwork</span>`;
   $('vHome').setAttribute('aria-pressed', view === 'home'); $('homeView').hidden = view !== 'home';
   $('vPlot').setAttribute('aria-pressed', view === 'plot'); $('vPaper').setAttribute('aria-pressed', view === 'paper');
-  $('plotView').hidden = view !== 'plot'; $('paperView').hidden = view !== 'paper';
+  $('plotView').hidden = view !== 'plot'; $('paperView').hidden = view !== 'paper'; viewIn();
   $('undoBtn').innerHTML = ic('undo'); $('redoBtn').innerHTML = ic('redo');
   $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length;
   $('moreBtn').innerHTML = ic('dots');
