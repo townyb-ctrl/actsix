@@ -1076,6 +1076,32 @@ td.spare { color: var(--muted); font-style: italic; }
 .f-foh-up { top: 62px; bottom: auto; right: 14px; } .f-foh-left { left: 14px; right: auto; } .f-foh:hover { border-color: var(--ink-2); }
 .times3 { gap: 8px; } .times3 input { min-width: 0; width: 100%; }
 .boxkey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; font-size: 12.5px; color: var(--muted); } .boxkey b { font-family: var(--f-mono, monospace); color: var(--ink); margin-right: 4px; }
+/* visual pass: name tags, depth, seats, hover, empty state, calmer inspector */
+#plot .itag, .snap .itag { pointer-events: none; }
+.itag rect { fill: rgba(16,18,23,.74); stroke: rgba(255,255,255,.12); stroke-width: var(--hair, .03px); }
+.itag .ilabel { fill: #fff; stroke: none; paint-order: normal; }
+.itag.pname rect { fill: rgba(16,18,23,.86); } .itag.sel rect { fill: var(--accent); stroke: none; }
+.itag.out rect { fill: var(--surface); stroke: var(--line-2, rgba(0,0,0,.18)); } .itag.out .ilabel { fill: var(--ink); }
+.light-deck .itag:not(.sel) rect { fill: rgba(255,255,255,.9); stroke: rgba(0,0,0,.14); } .light-deck .itag:not(.sel) .ilabel { fill: #1b1e26; }
+.deck-lip { fill: var(--deck); } .deck-sheen { pointer-events: none; }
+.s-riser-shadow { fill: #000; opacity: .32; } .s-riser-lip { fill: #000; opacity: .28; } .s-riser-hi { stroke: #fff; stroke-opacity: .16; stroke-width: .06; }
+.seats rect { fill: var(--house-ink); opacity: .055; } .seats { pointer-events: none; }
+#plot .item:hover { filter: drop-shadow(0 .12px .2px rgba(0,0,0,.55)) brightness(1.06); }
+#plot.cabling .item:hover, #plot .item.locked:hover { filter: none; }
+.emptyart { width: 220px; height: 110px; margin: 0 auto 4px; display: block; }
+.ea-deck { fill: var(--deck); } .ea-tape { stroke: var(--tape); stroke-width: 2.4; stroke-dasharray: 7 4; } .ea-lip { fill: var(--deck); opacity: .55; }
+.ea-riser { fill: none; stroke: var(--deck-ink, rgba(255,255,255,.3)); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.ea-p { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 3 2.5; } .ea-lead { fill: color-mix(in srgb, var(--accent) 22%, transparent); stroke-dasharray: none; }
+.ea-house { stroke: var(--line-2, var(--muted)); stroke-width: 1.2; stroke-dasharray: 2 4; }
+.emptysetups { display: grid; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.emptysetups .chipbtn { display: inline-flex; align-items: center; gap: 6px; }
+.insp .isec { padding: 16px 18px; gap: 12px; }
+.insp .isec > h3 { margin: 0; }
+.insp .swatches { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.insp .swatch { width: 100%; height: auto; aspect-ratio: 1; border-width: 1px; }
+.insp .field { gap: 6px; }
+.insp .glance { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.insp .grid2 { gap: 10px; }
 /* views: overlays, walkways, textures, trace, side view, before/after, presentation */
 .cm-h .cm-sub { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 4px; }
 .ov-own, .ov-own-ring { pointer-events: none; } .ov-own-ring { fill: none; stroke-width: var(--cwh, .12px); stroke-opacity: .9; }
@@ -2964,6 +2990,20 @@ function pcoTimes(list) {
   if (out.call && out.call === out.service) delete out.call;   // only a service time: no separate arrival
   return out;
 }
+/* faint rows of seats in the house give the drawing its scale; a centre aisle, and no seats under FOH or anything else out there */
+function seatsSvg() {
+  const { w: W, d: D, house, houseW } = plan.stage, hw = Math.max(W, houseW), y0 = D + fromM(2.2), y1 = D + house - fromM(1.4);
+  if (y1 - y0 < fromM(1.5)) return '';
+  const pitch = fromM(.55), row = fromM(.95), sw = fromM(.42), sd = fromM(.34), aisle = fromM(1.4), xL = (W - hw) / 2 + fromM(.9), xR = (W + hw) / 2 - fromM(.9);
+  const keepOut = plan.items.filter(i => i.y > D).map(i => { const [a, b] = halfExt(i), m = fromM(.5); return [i.x - a - m, i.y - b - m, i.x + a + m, i.y + b + m]; });
+  let s = '<g class="seats" aria-hidden="true">';
+  for (let y = y0; y + sd <= y1; y += row) {
+    for (const [from, to, dir] of [[W / 2 - aisle / 2 - sw, xL, -1], [W / 2 + aisle / 2, xR - sw, 1]])
+      for (let x = from; dir < 0 ? x >= to : x <= to; x += dir * pitch)
+        if (!keepOut.some(q => x + sw > q[0] && x < q[2] && y + sd > q[1] && y < q[3])) s += `<rect x="${f3(x)}" y="${f3(y)}" width="${f3(sw)}" height="${f3(sd)}" rx=".22"/>`;
+  }
+  return s + '</g>';
+}
 function stageRegion() {
   const { w, d } = plan.stage, mx = fromM(1.4);
   return { x: -mx, y: -fromM(.9), w: w + mx * 2, h: d + fromM(2.4) };
@@ -2978,10 +3018,11 @@ function shapeSvg(it, w, d) {
   if (c.walk) return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><rect class="s-walk" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".15"/><rect class="s-walk-edge" x="${f3(-hw + .12)}" y="${f3(-hd + .12)}" width="${f3(w - .24)}" height="${f3(d - .24)}" rx=".1"/>`;
   if (c.shape === 'platform') {   // drawn at its real size: 2 × 1 m deck panels and legs
     const long = w >= d, px = fromM(long ? 2 : 1), py = fromM(long ? 1 : 2);
-    let g = `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><rect class="s-deck" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".1"/>`;
+    let g = `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><rect class="s-riser-shadow" x="${f3(-hw + .12)}" y="${f3(-hd + .22)}" width="${w}" height="${d}" rx=".14"/><rect class="s-deck" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".1"/>`;
     for (let x = -hw + px; x < hw - .05; x += px) g += `<line class="s-thin" x1="${f3(x)}" x2="${f3(x)}" y1="${-hd}" y2="${hd}"/>`;
     for (let y = -hd + py; y < hd - .05; y += py) g += `<line class="s-thin" x1="${-hw}" x2="${hw}" y1="${f3(y)}" y2="${f3(y)}"/>`;
     for (const [x, y] of [[-hw + .2, -hd + .2], [hw - .2, -hd + .2], [-hw + .2, hd - .2], [hw - .2, hd - .2]]) g += `<circle class="s-thin" cx="${f3(x)}" cy="${f3(y)}" r=".12"/>`;
+    g += `<rect class="s-riser-lip" x="${-hw}" y="${f3(hd - .24)}" width="${w}" height=".24" rx=".08"/><line class="s-riser-hi" x1="${f3(-hw + .12)}" y1="${f3(-hd + .05)}" x2="${f3(hw - .12)}" y2="${f3(-hd + .05)}"/>`;
     return g;
   }
   if (it.type === 'rack') {
@@ -3330,10 +3371,12 @@ function renderPlot() {
   let s = `<defs><marker id="cmpHead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="cmp-head" d="M0 0L10 5L0 10z"/></marker><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
   s += `<rect class="house-fill" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>`}`;
   const poly = stagePoly(), deckD = polyPath(poly);
+  if (!layerOff('seats')) s += seatsSvg();
   s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath></defs>`);
-  s = s.replace('</defs>', '<filter id="deckblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".22"/></filter></defs>');
+  s = s.replace('</defs>', '<filter id="deckblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".22"/></filter><linearGradient id="lipShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient><linearGradient id="deckSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".08"/></linearGradient></defs>');
   s += `<path class="deck-shadow" transform="translate(.06 .22)" d="${deckD}"/>`;
-  s += `<path class="deck" d="${deckD}"/>`;
+  for (const [a, c] of frontEdges(poly)) { const lip = fromM(.16), q = `${a[0]},${a[1]} ${c[0]},${c[1]} ${c[0]},${f3(c[1] + lip)} ${a[0]},${f3(a[1] + lip)}`; s += `<polygon class="deck-lip" points="${q}"/><polygon points="${q}" fill="url(#lipShade)"/>`; }   // the deck's front face, seen from above
+  s += `<path class="deck" d="${deckD}"/><path class="deck-sheen" d="${deckD}" fill="url(#deckSheen)"/>`;
   const tex = plan.stage.texture;
   if (tex === 'boards') s += `<path class="deck-tex" d="${deckD}" fill="url(#spTexBoards)"/>`;
   else if (tex === 'vinyl') s += `<path class="deck-tex t-vinyl" d="${deckD}" fill="url(#spTexVinyl)"/><path class="deck-tex t-vinyl" d="${deckD}" fill="url(#spVinylGloss)"/>`;
@@ -3398,8 +3441,9 @@ function renderPlot() {
       const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
       const fs = (person ? 11.5 : 10.5) * LK / scale;
       const above = big ? [] : [it.y - Math.max(iw, id) / 2 - (isSel ? .3 + 24 / scale : 4 / scale)];   // a selected name clears the ring and the rotate knob
-      labCands.push({ x: it.x, y: ly, alt: above, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: String(text).length * fs * .58 + fs * .4, h: fs * 1.05, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
-        mk: y => `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text>` });
+      const tw = String(text).length * fs * .57 + fs * 1.1;   // a rounded name tag instead of outlined text: reads on any deck colour
+      labCands.push({ x: it.x, y: ly + (big ? 0 : 2 / scale), alt: above, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: tw, h: fs * 1.1, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
+        mk: y => `<g class="itag${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}${isSel ? ' sel' : ''}"><rect x="${f3(it.x - tw / 2)}" y="${f3(y - fs * .9)}" width="${f3(tw)}" height="${f3(fs * 1.25)}" rx="${f3(fs * .62)}"/><text class="ilabel${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text></g>` });
     } else if (C.shape === 'platform' && showBig && !layerOff('labels')) {
       const own = it.personId && personById(it.personId), fnr = own && firstName(own.name), nm = fnr && itemName(it).startsWith(fnr + ' ') ? itemName(it).slice(fnr.length + 1) : itemName(it);
       const cap = C.walk ? 'KEEP CLEAR' : `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = C.walk ? it.y + .25 : it.y + id / 2 - .35;
@@ -3424,14 +3468,16 @@ function renderPlot() {
       let m = Math.max(iw, id) / 2 + .3;
       // round things (people, mics, headsets) get a ring that hugs them; everything else a rounded square
       if (C.shape === 'person' || ROUND_SEL.has(it.type)) { const r = (C.shape === 'person' ? iw / 2 : Math.min(iw, id) / 2) + .28; m = r; selb += `<circle class="selglow" cx="${it.x}" cy="${it.y}" r="${f3(r)}"/><circle class="selbox" cx="${it.x}" cy="${it.y}" r="${f3(r)}"/>`; }
-      else selb += `<rect class="selglow" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/><rect class="selbox" x="${it.x - m}" y="${it.y - m}" width="${2 * m}" height="${2 * m}" rx=".35"/>`;
+      else { const pad = .26, ew = iw / 2 + pad, ed = id / 2 + pad, rx = f3(Math.min(ew, ed) * .4), tr = `translate(${it.x} ${it.y}) rotate(${it.rot || 0})`;   // the ring follows the gear's own shape and angle
+        m = halfExt(it)[1] + pad;
+        selb += `<rect class="selglow" transform="${tr}" x="${f3(-ew)}" y="${f3(-ed)}" width="${f3(2 * ew)}" height="${f3(2 * ed)}" rx="${rx}"/><rect class="selbox" transform="${tr}" x="${f3(-ew)}" y="${f3(-ed)}" width="${f3(2 * ew)}" height="${f3(2 * ed)}" rx="${rx}"/>`; }
       if (solo && !it.locked && (mode === 'select' || mode === 'box')) {   // drag the knob to rotate (15° steps, Alt for free)
         const ky = it.y - m - 16 / scale;
         selb += `<line class="rotstem" x1="${it.x}" y1="${f3(it.y - m)}" x2="${it.x}" y2="${f3(ky)}"/><circle class="roth" data-rot="${it.id}" cx="${it.x}" cy="${f3(ky)}" r="${f3(6 / scale)}"><title>Drag to rotate</title></circle>`;
       }
     }
   }
-  let hits = '', lens = '', wps = '', ceil = '';
+  let hits = '', lens = '', wps = '', ceil = '', floorQ = '';
   const drawn = plan.cables.map(c => ({ c, o: cableGeom(c) })).filter(({ c, o }) => o && ((sel?.kind === 'cable' && sel.id === c.id) || cableShown(c)));
   const lanes = laneGeoms(cableView.hideInCh ? drawn.filter(({ c }) => !cableParts(c)?.inside) : drawn);
   const quiet = cableView.quiet !== false && !sel;   // nothing picked: cables recede so the stage reads first
@@ -3468,7 +3514,7 @@ function renderPlot() {
       const r = Math.max(.12, 3.2 / scale);
       for (const q of parts.ports) out += `<circle class="chport${rel}" cx="${f3(q[0])}" cy="${f3(q[1])}" r="${f3(r)}" style="fill:var(${KVAR[c.type]})"/>`;
     }
-    if (c.level === 'ceiling') ceil += out; else s += out;
+    if (c.level === 'ceiling') ceil += out; else if (quiet) floorQ += out; else s += out;
     if (isSel || (solo && touches(c, selItem))) {
       const m = midpoint(o);
       const lt = `${fmtLen(cableLen(c))}${cableQty(c) > 1 ? ` ×${cableQty(c)}` : ''}`, lf = 10.5 / scale;
@@ -3481,6 +3527,10 @@ function renderPlot() {
       }
     }
     if (isSel) c.points.forEach((p, k) => { if (isHop(p)) return; wps += `<circle class="wp" data-wp="${c.id}:${k}" cx="${p[0]}" cy="${p[1]}" r=".35"/>`; });
+  }
+  if (floorQ) {   // nothing picked: runs out in the house fade back, so the stage reads first and the floor isn't a tangle
+    s = s.replace('</defs>', `<mask id="houseFade" maskUnits="userSpaceOnUse" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"><rect x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}" fill="#5a5a5a"/><path d="${deckD}" fill="#fff"/></mask></defs>`);
+    s += `<g mask="url(#houseFade)">${floorQ}</g>`;
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
   // ceiling runs pass over the gear when you're looking at cables; while they're quiet they tuck under it, so names and symbols stay clean
@@ -5423,7 +5473,7 @@ function setCableView(fn) {
 let layersBypass = false;   // the paperwork snapshot always draws every layer
 const layerOff = k => !layersBypass && cableView.layers.has(k);
 const itemShown = it => { const sh = cat(it).shape; return sh === 'platform' || !layerOff(sh === 'person' ? 'people' : 'gear'); };
-const LAYERS = [['people', 'People', 'users'], ['gear', 'Gear', 'box'], ['labels', 'Labels', 'pen'], ['dims', 'Rulers & stage words', 'ruler'], ['grid', 'Floor grid', 'plot']];
+const LAYERS = [['people', 'People', 'users'], ['gear', 'Gear', 'box'], ['labels', 'Labels', 'pen'], ['dims', 'Rulers & stage words', 'ruler'], ['grid', 'Floor grid', 'plot'], ['seats', 'Seating', 'room']];
 /* ===================================================================
    Views: overlays you switch on in Layers (never saved into the week, never printed)
    =================================================================== */
@@ -6013,20 +6063,26 @@ function renderEmpty() {
   const el = $('fempty');
   const show = view === 'plot' && plan.items.length === 0 && !placing && mode === 'select';   // out of the way while you place gear or use a tool
   el.hidden = !show; if (!show) { el.innerHTML = ''; return; }
+  const su = Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)).slice(0, 4);
   el.innerHTML = `<div class="emptycard">
-    <div class="eyebrow">Empty stage</div><h3>Let’s put something on it</h3>
-    <p class="hint">Add your team and press Build, or drop in gear yourself.</p>
+    <svg class="emptyart" viewBox="0 0 220 110" aria-hidden="true"><rect x="20" y="14" width="180" height="70" rx="6" class="ea-deck"/><path d="M20 84h180" class="ea-tape"/><rect x="24" y="84" width="172" height="6" rx="2" class="ea-lip"/>
+      <rect x="84" y="22" width="52" height="26" rx="4" class="ea-riser"/><circle cx="110" cy="35" r="7" class="ea-p"/><circle cx="58" cy="52" r="7" class="ea-p"/><circle cx="162" cy="52" r="7" class="ea-p"/><circle cx="110" cy="66" r="8" class="ea-p ea-lead"/>
+      <path d="M50 100h120" class="ea-house"/></svg>
+    <div class="eyebrow">Empty stage</div><h3>Let’s set up this week</h3>
+    <p class="hint">Add who’s playing and press Build: gear, patching and power are done for you.</p>
     <div class="row" style="justify-content:center">
       <button class="btn primary" data-go="team">${ic('users', 'sm')}Add the team</button>
       <button class="btn" data-empty="starter">${ic('wand', 'sm')}Add starter gear</button>
       <button class="btn" data-empty="gear">${ic('box', 'sm')}Browse gear</button>
-    </div></div>`;
+    </div>
+    ${su.length ? `<div class="emptysetups"><span class="hint">Or start from a setup</span><div class="row" style="justify-content:center;gap:6px">${su.map(([id, x]) => `<button class="chipbtn" data-empty-setup="${id}">${ic('room', 'sm')}${esc(x.name)}</button>`).join('')}</div></div>` : ''}</div>`;
 }
 $('fempty').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.go === 'team') { railTab = 'team'; togglePanel('rail', true); }
   if (b.dataset.empty === 'gear') { railTab = 'gear'; togglePanel('rail', true); }
   if (b.dataset.empty === 'starter') mutate(() => { addStarterGear(); autoCable(); }, 'Starter gear added');
+  if (b.dataset.emptySetup) applySetup(b.dataset.emptySetup);
 });
 
 /* hover card */
