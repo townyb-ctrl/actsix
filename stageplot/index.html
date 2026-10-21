@@ -918,7 +918,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .sheetgrid { display: grid; gap: 22px; }
 .sheetgrid:not([data-tab="all"]) .sheet { display: none; }
 .sheetgrid[data-tab="overview"] [data-sheet="overview"], .sheetgrid[data-tab="inputs"] [data-sheet="inputs"], .sheetgrid[data-tab="outputs"] [data-sheet="outputs"], .sheetgrid[data-tab="mixes"] [data-sheet="mixes"],
-.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"] { display: grid; }
+.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"], .sheetgrid[data-tab="spots"] [data-sheet="spots"] { display: grid; }
 .sheetgrid:not([data-tab="all"]) .sheets2 { display: contents; }
 .docnav button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .docnav button[aria-selected="true"] .hint { color: inherit; opacity: .7; }
@@ -1041,6 +1041,34 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   body.print-rider .doc-head, body.print-rider .sheetgrid > :not(#sec-rider), body.print-rider .sheets2 { display: none !important; }
   body.print-rider #sec-rider { display: block !important; break-before: auto !important; } body.print-rider #sec-rider > header { display: none !important; }
   body.print-rider .rider { border: 0; padding: 0; gap: 8px; font-size: 11px; } body.print-rider .riderplot .snap { max-height: 108mm; } body.print-rider .rlegend .glyph, body.print-rider .rlegend svg { width: 16px; height: 16px; } body.print-rider .rlegend { gap: 2px 8px; } body.print-rider .rtab { font-size: 9.5px; } body.print-rider .rtab td { padding: 1px 4px; } body.print-rider .paper { padding: 0 !important; } .rider * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+.chtools { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 4px 0 10px; }
+.chedit input[type=number] { width: 64px; } .chedit input[type=text] { width: 100%; min-width: 120px; } .chedit td { vertical-align: middle; } .chedit tr.edited td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+td.spare { color: var(--muted); font-style: italic; }
+.spotpick { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipbtn { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 5px 12px; font: 600 13px/1.2 var(--f-ui); cursor: pointer; }
+.chipbtn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.spotlist { display: grid; gap: 18px; }
+.spotcard { border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; background: var(--surface); max-width: 720px; }
+.spotcard > header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.spotcard h3 { margin: 2px 0 0; font-size: 22px; } .spotcard header p { margin: 0; color: var(--muted); }
+.spotplot { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.spotplot .snap { display: block; width: 100%; height: auto; }
+.spotplot .snap path[class^="cab"], .spotplot .snap .fl, .spotplot .snap .lead-shadow, .spotplot .snap .chport { opacity: .12; }
+.spot-you circle { fill: none; stroke: #f5b544; stroke-width: .16; stroke-dasharray: .5 .25; } .spot-you text { font: 800 .75px var(--f-ui); fill: #f5b544; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: .12px; letter-spacing: .05em; }
+.spotwhere { margin: 0; display: grid; gap: 2px; font-size: 15px; } .spotwhere span { color: var(--muted); font-size: 13.5px; }
+.spotgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 18px; }
+.spotsec.many { grid-column: 1 / -1; } .spotsec.many ul { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.spotsec h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.spotsec ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.spotsec li { display: flex; gap: 8px; align-items: flex-start; } .spotsec li small { display: block; color: var(--muted); font-size: 12px; } .spotsec li b { font-weight: 600; }
+@media (max-width: 560px) { .spotcard { padding: 12px; } .spotcard > header { flex-direction: column; } }
+@media print {
+  #sec-spots { display: none !important; }
+  body.print-spots .doc-head, body.print-spots .sheetgrid > :not(#sec-spots), body.print-spots .sheets2 { display: none !important; }
+  body.print-spots #sec-spots { display: block !important; break-before: auto !important; } body.print-spots #sec-spots > header, body.print-spots .spotpick, body.print-spots [data-spotcopy] { display: none !important; }
+  body.print-spots .spotcard { break-after: page; break-inside: avoid; border: 0; max-width: none; padding: 0; gap: 8px; } body.print-spots .spotcard:last-child { break-after: auto; }
+  body.print-spots .spotplot .snap { max-height: 100mm; } body.print-spots .spotsec.many { grid-column: 1 / -1; } body.print-spots .spotsec.many ul { grid-template-columns: repeat(3, 1fr); } body.print-spots .spotcard * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 /* views: overlays, walkways, textures, trace, side view, before/after, presentation */
 .cm-h .cm-sub { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 4px; }
@@ -2034,8 +2062,61 @@ function inputList() {
       rows.push({ ch, name, source: cat(it).name, person: person?.name || '', port, flag, unpatched: !patch, itemId: it.id });
     }
   }
-  return rows;
+  return fixChannels(rows);
 }
+/* Fixed channel numbers: each input keeps its desk channel from week to week, so saved desk scenes stay right when someone
+   is away (their channel is simply spare). An input is known by its stage role and name ("Drums|Kick In", "Vocalist|Vox#2"),
+   not the person, so a new drummer lands on the same channels. Numbers live beside the weeks, in db.channels. */
+const chans_ = () => (db.channels ||= { fixed: true, map: {}, meta: {} });
+let chanSaveQueued = false;
+function chanKey(r, it, seen) {
+  const person = it?.personId && personById(it.personId), fn = person && firstName(person.name);
+  const base = fn && r.name.startsWith(fn + ' ') ? r.name.slice(fn.length + 1) : r.name;
+  const k0 = `${person?.role || (it ? cat(it).name : '')}|${base}`, n = (seen.get(k0) || 0) + 1; seen.set(k0, n);
+  return n > 1 ? `${k0}#${n}` : k0;
+}
+function fixChannels(rows) {
+  const C = chans_(), seen = new Map();
+  for (const r of rows) r.key = chanKey(r, itemById(r.itemId), seen);
+  if (C.fixed === false) return rows;
+  const taken = new Set(), used = new Set(Object.values(C.map));
+  let added = false;
+  for (const r of rows) {
+    let n = C.map[r.key];
+    if (n == null || taken.has(n)) {   // new input (or a clash): the lowest channel no input has ever held
+      n = 1; while (used.has(n) || taken.has(n)) n++;
+      C.map[r.key] = n; used.add(n); added = true;
+    }
+    r.ch = n; taken.add(n);
+  }
+  if (added && !chanSaveQueued) { chanSaveQueued = true; queueMicrotask(() => { chanSaveQueued = false; save(); }); }
+  return rows.sort((a, b) => a.ch - b.ch);
+}
+function spareChannels(rows) {   // channels below the highest in use that nobody has this week, and whose they usually are
+  const C = chans_(); if (C.fixed === false || !rows.length) return [];
+  const used = new Set(rows.map(r => r.ch)), max = Math.max(...rows.map(r => r.ch)), byCh = new Map(Object.entries(C.map).map(([k, n]) => [n, k])), out = [];
+  for (let n = 1; n < max; n++) if (!used.has(n)) { const k = byCh.get(n); out.push({ ch: n, usual: k ? k.replace(/#\d+$/, '').split('|').reverse().join(' · ') : '' }); }
+  return out;
+}
+function setChannel(key, n) {
+  const C = chans_(); n = Math.max(1, Math.min(256, Math.round(Number(n) || 0))); if (!n || C.map[key] === n) return;
+  const before = JSON.stringify(C), other = Object.keys(C.map).find(k => C.map[k] === n);
+  if (other) C.map[other] = C.map[key];   // whoever had that number takes this one's: a swap, so nothing doubles up
+  C.map[key] = n; save(); renderPaper();
+  toast(other ? `Swapped with channel ${n}` : `Moved to channel ${n}`, { label: 'Undo', fn: () => { db.channels = JSON.parse(before); save(); renderPaper(); } });
+}
+function setChanMeta(key, field, v) {
+  const C = chans_(), m = (C.meta[key] ||= {});
+  if (v === '' || v == null) delete m[field]; else m[field] = v;
+  if (!Object.keys(m).length) delete C.meta[key];
+  save(); renderPaper();
+}
+function renumberChannels() {
+  const before = JSON.stringify(chans_()); chans_().map = {}; save(); renderPaper();
+  toast('Channels renumbered in band order', { label: 'Undo', fn: () => { db.channels = JSON.parse(before); save(); renderPaper(); } });
+}
+let chEdit = false;
+const STANDS = ['Tall boom', 'Short boom', 'Straight', 'Clip', 'Inside drum', 'Desk stand', 'Lectern', 'Handheld', '—'];
 /* what an engineer expects on a pro input list: the mic or DI, its stand, phantom power, a group and a scribble-strip colour */
 const IN_GROUPS = { Drums: '#e5484d', Bass: '#3e63dd', Guitars: '#f5a524', Acoustic: '#a07553', Keys: '#30a46c', Playback: '#00a2c7', Vocals: '#8e4ec6', Speech: '#e93d82', Horns: '#d6409f', Other: '#8b8d98' };
 function inputMeta(r) {
@@ -2057,7 +2138,9 @@ function inputMeta(r) {
   const group = /kick|snare|tom|\boh\b|hi-?hat|cajon/.test(n) || ['drum_kit', 'edrums', 'cajon'].includes(t) ? 'Drums' : /tracks|click|playback/.test(n) || ['laptop', 'mt_ipad'].includes(t) ? 'Playback'
     : /bass/.test(n) || t === 'bass_amp' ? 'Bass' : /ac gtr|acoustic/.test(n) || t === 'ac_preamp' ? 'Acoustic' : /gtr|guitar/.test(n) || t === 'gtr_amp' ? 'Guitars' : /keys|piano|synth/.test(n) ? 'Keys'
     : t === 'trumpet' || /trumpet|sax|horn/.test(n) ? 'Horns' : t === 'headset' || /pastor|speech|lectern|pulpit|host/.test(n + ' ' + role) ? 'Speech' : /vox|vocal/.test(n) || ['vox_mic', 'vox_wl'].includes(t) ? 'Vocals' : 'Other';
-  return { mic, stand, p48, group, colour: IN_GROUPS[group] };
+  const o = (r.key && db?.channels?.meta?.[r.key]) || {};   // anything typed in Edit channels wins
+  if (o.mic) mic = o.mic; if (o.stand) stand = o.stand; if (o.p48 !== undefined) p48 = !!o.p48;
+  return { mic, stand, p48, group, colour: IN_GROUPS[group], edited: !!(r.key && db?.channels?.meta?.[r.key]) };
 }
 const inputSheet = () => inputList().map(r => ({ ...r, ...inputMeta(r) }));
 const csvCell = v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
@@ -3882,6 +3965,62 @@ function plotSnapshot() {
   finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); layersBypass = false; cableView.quiet = quietWas; cableView.noFlow = flowWas; cableView.anim = animWas; if (view === 'plot') renderPlot(); }
   return html;
 }
+/* ---------- My spot: one card per person, for their phone or a printout ---------- */
+let spotSel = '';
+const cropToStage = svgHtml => { const D = plan.stage.d, near = plan.items.filter(i => i.y < D + fromM(2.5)), xs = near.map(i => i.x);
+  const x0 = Math.min(-fromM(.8), ...xs.map(x => x - 2)), x1 = Math.max(plan.stage.w + fromM(.8), ...xs.map(x => x + 2)), y0 = -fromM(.9), y1 = D + fromM(1.4);
+  return svgHtml.replace(/viewBox="[^"]*"/, `viewBox="${f3(x0)} ${f3(y0)} ${f3(x1 - x0)} ${f3(y1 - y0)}"`); };
+function spotData(p) {
+  const me = plan.items.find(i => cat(i).shape === 'person' && i.personId === p.id), W = plan.stage.w, D = plan.stage.d, fn = firstName(p.name);
+  const gear = plan.items.filter(i => i.personId === p.id && cat(i).shape !== 'person');
+  const strip = n => n.startsWith(fn + ' ') ? n.slice(fn.length + 1) : n;
+  let where = 'Not placed on the stage yet', riser = null, left = null, right = null;
+  if (me) {
+    const across = me.x < W / 3 ? 'stage right' : me.x > W * 2 / 3 ? 'stage left' : 'centre stage', depth = me.y < D / 3 ? 'upstage' : me.y > D * 2 / 3 ? 'downstage' : 'mid-stage';
+    riser = plan.items.find(r => cat(r).shape === 'platform' && !cat(r).walk && inPoly(me.x, me.y, footCorners(r)));
+    where = `${across === 'centre stage' ? 'Centre' : across[0].toUpperCase() + across.slice(1)}, ${depth}, ${mVal(Math.max(0, D - me.y))} m from the front edge${riser ? `, on the ${itemName(riser).toLowerCase()} (${Math.round(toM(riser.h ?? fromM(.4)) * 100)} cm)` : ''}`;
+    const others = plan.items.filter(i => cat(i).shape === 'person' && i.id !== me.id && Math.abs(i.y - me.y) < fromM(2.5));
+    const pick = side => others.filter(o => side * (o.x - me.x) > .3).sort((a, b) => Math.abs(a.x - me.x) - Math.abs(b.x - me.x))[0];
+    left = pick(1); right = pick(-1);   // facing the audience, your left is stage left
+  }
+  const ins = inputSheet().filter(r => itemById(r.itemId)?.personId === p.id).map(r => ({ ch: r.ch, text: strip(r.name), sub: `${r.mic}${r.stand && r.stand !== '—' ? ' · ' + r.stand.toLowerCase() : ''}${r.p48 ? ' · 48V' : ''}` }));
+  const mons = monitorMixes().filter(m => m.person === p.name).map(m => `${m.kind === 'IEM' ? 'In-ear pack' : 'Wedge'} · mix ${m.mix}`);
+  const power = [...new Set(plan.cables.filter(c => c.type === 'power' && gear.some(g => touches(c, g.id))).map(c => { const g = gear.find(x => touches(c, x.id)), src = other(c, g.id);
+    return `${strip(itemName(g))} → ${itemName(src)}${isPowerSource(src) && !isExt(src) ? ` circuit ${c.circuit || 1}` : ''}`; }))];
+  const notes = [me?.note, ...gear.filter(g => g.note).map(g => `${strip(itemName(g))}: ${g.note}`)].filter(Boolean);
+  return { p, me, where, left, right, gear: gear.map(g => strip(itemName(g))), ins, mons, power, notes, ids: [me?.id, ...gear.map(g => g.id)].filter(Boolean) };
+}
+function spotText(d) {
+  const L = [`${plan.name || 'Service'} · ${longDate(plan.date)}`, `${d.p.name}${d.p.role ? ` (${d.p.role})` : ''}`, '', `Where: ${d.where}`];
+  if (d.left || d.right) L.push(`Next to you: ${[d.left && `${firstName(personById(d.left.personId)?.name || d.left.label)} on your left`, d.right && `${firstName(personById(d.right.personId)?.name || d.right.label)} on your right`].filter(Boolean).join(', ')}`);
+  if (d.ins.length) L.push('', 'Your channels:', ...d.ins.map(r => `  Ch ${r.ch} ${r.text} (${r.sub})`));
+  if (d.mons.length) L.push('', `Monitor: ${d.mons.join(', ')}`);
+  if (d.power.length) L.push('', 'Power:', ...d.power.map(x => `  ${x}`));
+  if (d.gear.length) L.push('', `Your gear: ${d.gear.join(', ')}`);
+  if (d.notes.length) L.push('', 'Notes:', ...d.notes.map(x => `  ${x}`));
+  return L.join('\n');
+}
+function spotsHtml() {
+  if (!plan.team.length) return '<p class="hint">Add the team first: every person gets a card here.</p>';
+  if (!spotSel || (spotSel !== 'all' && !plan.team.some(t => t.id === spotSel))) spotSel = plan.team[0].id;
+  const snap = cropToStage(plotSnapshot()), show = spotSel === 'all' ? plan.team : plan.team.filter(t => t.id === spotSel);
+  const card = p => { const d = spotData(p), css = `#spot-${p.id} .snap .item:not(${d.ids.map(id => `[data-id="${id}"]`).join(',') || '*'}) { opacity: .2; }`;
+    const ring = d.me ? `<g class="spot-you"><circle cx="${d.me.x}" cy="${d.me.y}" r="${f3(Number(prop(d.me, 'w')) / 2 + .55)}"/><text x="${d.me.x}" y="${f3(d.me.y - Number(prop(d.me, 'w')) / 2 - .9)}" text-anchor="middle">YOU</text></g>` : '';
+    const li = (h, items) => items.length ? `<div class="spotsec${items.length > 5 ? ' many' : ''}"><h4>${h}</h4><ul>${items.join('')}</ul></div>` : '';
+    return `<article class="spotcard" id="spot-${p.id}"><style>${css}</style>
+      <header><div><div class="eyebrow">${esc(longDate(plan.date))} · ${esc(plan.name || '')}</div><h3>${esc(p.name)}</h3><p>${esc(p.role || '')}</p></div><button class="btn" data-spotcopy="${p.id}" title="Copy as text to send by message">${ic('copy', 'sm')}Copy text</button></header>
+      <div class="spotplot">${snap.replace(/<\/svg>$/, ring + '</svg>')}</div>
+      <p class="spotwhere"><b>${esc(d.where)}</b>${d.left || d.right ? `<span>${[d.left && `${esc(firstName(personById(d.left.personId)?.name || ''))} on your left`, d.right && `${esc(firstName(personById(d.right.personId)?.name || ''))} on your right`].filter(Boolean).join(' · ')}</span>` : ''}</p>
+      <div class="spotgrid">
+        ${li('Your channels', d.ins.map(r => `<li><span class="ch">${r.ch}</span><span><b>${esc(r.text)}</b><small>${esc(r.sub)}</small></span></li>`))}
+        ${li('Monitor', d.mons.map(m => `<li><span>${esc(m)}</span></li>`))}
+        ${li('Power', d.power.map(x => `<li><span>${esc(x)}</span></li>`))}
+        ${li('Your gear', d.gear.map(x => `<li><span>${esc(x)}</span></li>`))}
+        ${li('Notes', d.notes.map(x => `<li><span>${esc(x)}</span></li>`))}
+      </div></article>`; };
+  return `<div class="spotpick" role="group" aria-label="Whose card">${plan.team.map(t => `<button class="chipbtn" data-spot="${t.id}" aria-pressed="${spotSel === t.id}">${esc(firstName(t.name))}</button>`).join('')}<button class="chipbtn" data-spot="all" aria-pressed="${spotSel === 'all'}">Everyone</button></div>
+    <div class="spotlist">${show.map(card).join('')}</div>`;
+}
 /* ---------- the rider: one clean black-and-white page every venue understands ---------- */
 function riderPlot() {
   const keep = { color: plan.stage.color, texture: plan.stage.texture };
@@ -3943,6 +4082,18 @@ function loadinTasks() {   // what the crew does on the day, in the order they d
 }
 const loadinState = () => (plan.loadin ||= {});
 function loadinProgress() { const all = loadinTasks().flatMap(([, , l]) => l), st = loadinState(); return { done: all.filter(t => st[t.key]).length, total: all.length }; }
+function chEditHtml(ins) {
+  const C = chans_();
+  return `<div class="chtools"><label class="row" style="gap:8px"><input type="checkbox" id="chFixed" ${C.fixed !== false ? 'checked' : ''}><span><b>Keep channel numbers fixed</b><small class="hint" style="display:block">Each input keeps its channel every week; someone away leaves theirs spare.</small></span></label><button class="btn" id="chRenumber" ${C.fixed === false ? 'disabled' : ''}>${ic('undo', 'sm')}Renumber in band order</button></div>
+    <div class="tablewrap"><table class="chedit"><thead><tr><th>Ch</th><th>Input</th><th>Mic / DI</th><th>Stand</th><th>48V</th></tr></thead><tbody>${ins.map(r => `<tr${r.edited ? ' class="edited"' : ''}>
+      <td><input type="number" min="1" max="256" value="${r.ch}" data-chnum="${esc(r.key)}" aria-label="Channel for ${esc(r.name)}" ${C.fixed === false ? 'disabled title="Turn on fixed channel numbers to choose them"' : ''}></td>
+      <td>${esc(r.name)}<small class="hint" style="display:block">${esc(r.group)}</small></td>
+      <td><input type="text" value="${esc(r.mic)}" data-chmic="${esc(r.key)}" aria-label="Mic or DI for ${esc(r.name)}" list="micList"></td>
+      <td><select data-chstand="${esc(r.key)}" aria-label="Stand for ${esc(r.name)}">${[...new Set([r.stand, ...STANDS])].map(v => `<option ${v === r.stand ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></td>
+      <td><input type="checkbox" data-ch48="${esc(r.key)}" ${r.p48 ? 'checked' : ''} aria-label="48V phantom for ${esc(r.name)}"></td></tr>`).join('')}</tbody></table></div>
+    <datalist id="micList">${['Dynamic', 'Condenser', 'Small condenser', 'Kick dynamic', 'Boundary (inside kick)', 'Ribbon', 'DI', 'Stereo DI', 'Line (DI)', 'Headset (RF)', 'Handheld (RF)'].map(v => `<option value="${v}">`).join('')}</datalist>
+    <p class="hint">Typing a number another input already has swaps the two. Mic, stand and 48V changes follow the input to every week.</p>`;
+}
 function renderPaper() {
   if (view !== 'paper') return;
   const ins = inputSheet(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
@@ -3955,6 +4106,7 @@ function renderPaper() {
   paperData = { inputs: tsv(ins, inCols), outputs: tsv(outs, outCols), mixes: tsv(mixes, mixCols), pull: tsv(pull, pullCols), team: tsv(plan.team, teamCols) };
   const cell = (r, c, i) => {
     const v = typeof c[1] === 'function' ? c[1](r) : r[c[1]];
+    if (r.spare && c[0] !== 'Ch') return `<td class="spare">${c[0] === 'Input' ? 'Spare' : c[0] === 'Mic / DI' ? esc(r.mic) : ''}</td>`;
     if (c[0] === 'Ch' && r.colour) return `<td><span class="ch" style="box-shadow:inset 3px 0 0 ${r.colour}">${esc(v)}</span></td>`;
     if (c[0] === 'Ch' || c[0] === 'Mix') return `<td><span class="ch">${esc(v)}</span></td>`;
     if (c[0] === 'Group') return `<td><span class="grptag" style="--g:${r.colour}">${esc(v)}</span></td>`;
@@ -3974,7 +4126,7 @@ function renderPaper() {
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
-  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()]].filter(n => n[0] !== 'checks' || w.length);
+  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
     <header class="doc-head"><div class="eyebrow">${defaultsOf().org ? esc(defaultsOf().org) + ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
@@ -3990,8 +4142,9 @@ function renderPaper() {
       return `<section class="sheet" id="sec-changes" data-sheet="overview">${head(`What’s different from ${esc(longDate(old.date))}`, '', li.length ? 'Read this before load-in' : '')}${li.length ? `<ul class="changelist">${li.join('')}</ul>` : `<p class="hint">Same team and gear as ${esc(longDate(old.date))}.</p>`}</section>`; })()}
     ${(() => { const sh = shortages(); return sh.length ? `<section class="sheet" id="sec-borrow" data-sheet="overview">${head('To borrow', '', 'More than you own (Home → Gear)')}<div class="tablewrap"><table><thead><tr><th>Gear</th><th style="text-align:right">Needed</th><th style="text-align:right">Own</th><th style="text-align:right">Borrow</th></tr></thead><tbody>${sh.map(x => `<tr><td>${esc(CAT[x.t].name)}</td><td class="num">${x.need}</td><td class="num">${x.own}</td><td class="num"><b>${x.short}</b></td></tr>`).join('')}</tbody></table></div></section>` : ''; })()}
     ${(() => { const nt = plan.items.filter(i => i.note); return nt.length ? `<section class="sheet" id="sec-notes" data-sheet="overview">${head('Notes', '', 'Pinned to people and gear on the plot')}<ul class="notelist">${nt.map(i => `<li><b>${esc(itemName(i))}</b><span>${esc(i.note)}</span></li>`).join('')}</ul></section>` : ''; })()}
+    ${paperTab === 'spots' ? `<section class="sheet" id="sec-spots" data-sheet="spots"><header><div><h2>My spot</h2><p class="hint">A card for each person: where they stand, their channels, monitor, power and notes. Copy it into a message, or print one per page.</p></div><button class="btn primary" id="printSpots">${ic('sheet', 'sm')}Print every card</button></header>${spotsHtml()}</section>` : ''}
     ${paperTab === 'rider' ? `<section class="sheet" id="sec-rider" data-sheet="rider"><header><div><h2>Rider</h2><p class="hint">One black-and-white page for the venue: plot, scale, legend and inputs.</p></div><button class="btn primary" id="printRider">${ic('sheet', 'sm')}Print the rider</button></header>${riderHtml(ins)}</section>` : ''}
-    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')} in band order. Stage box ports fill in the same order. ${ins.filter(r => r.p48).length} need phantom power.`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${table(ins, inCols, 'flag')}</section>
+    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')}. ${chans_().fixed !== false ? 'Channel numbers stay the same every week' + (spareChannels(ins).length ? `; ${plural(spareChannels(ins).length, 'spare channel')} this week` : '') : 'Numbered in band order'}. ${ins.filter(r => r.p48).length} need phantom power.`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn${chEdit ? ' primary' : ''}" id="chEditBtn" aria-pressed="${chEdit}">${ic('pen', 'sm')}${chEdit ? 'Done' : 'Edit channels'}</button><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${chEdit ? chEditHtml(ins) : table([...ins, ...spareChannels(ins).map(x => ({ ch: x.ch, name: 'Spare', mic: x.usual ? `usually ${x.usual}` : '', stand: '', spare: true }))].sort((a, b) => a.ch - b.ch), inCols, 'flag')}</section>
     <div class="sheets2">
       <section class="sheet" id="sec-outputs" data-sheet="outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag')}</section>
       <section class="sheet" id="sec-mixes" data-sheet="mixes">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols)}</section>
@@ -4898,6 +5051,11 @@ $('inspector').addEventListener('click', e => {
 $('paperInner').addEventListener('click', e => {
   const t = e.target.closest('[data-copy]'); if (t) { copyText(paperData[t.dataset.copy], $('copyFallback')); return; }
   const ex = e.target.closest('[data-exp]'); if (ex) { exportInputs(ex.dataset.exp); return; }
+  const sp = e.target.closest('[data-spot]'); if (sp) { spotSel = sp.dataset.spot; renderPaper(); return; }
+  const sc = e.target.closest('[data-spotcopy]'); if (sc) { const p = plan.team.find(t => t.id === sc.dataset.spotcopy); if (p) copyText(spotText(spotData(p)), $('copyFallback')); return; }
+  if (e.target.closest('#printSpots')) { const was = spotSel; spotSel = 'all'; renderPaper(); document.body.classList.add('print-spots'); const done = () => { document.body.classList.remove('print-spots'); removeEventListener('afterprint', done); spotSel = was; renderPaper(); }; addEventListener('afterprint', done); window.print(); setTimeout(done, 1500); return; }
+  if (e.target.closest('#chEditBtn')) { chEdit = !chEdit; renderPaper(); return; }
+  if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn')) { window.print(); return; }
   if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); window.print(); setTimeout(done, 1500); return; }
@@ -4910,7 +5068,7 @@ $('paperInner').addEventListener('click', e => {
 $('dataBtn').onclick = () => { $('dataText').value = ''; $('dataDlg').hidden = false; };
 $('dataClose').onclick = () => { $('dataDlg').hidden = true; };
 $('dataDlg').addEventListener('click', e => { if (e.target.id === 'dataDlg') $('dataDlg').hidden = true; });
-const backup = all => JSON.stringify({ app: 'stageplot', version: 1, plans: all ? db.plans : { [plan.id]: plan }, ...(all && db.setups ? { setups: db.setups } : {}), ...(all ? { defaults: db.defaults, gear: db.gear, pcoPrefs: db.pcoPrefs } : {}) }, null, 1);
+const backup = all => JSON.stringify({ app: 'stageplot', version: 1, plans: all ? db.plans : { [plan.id]: plan }, ...(all && db.setups ? { setups: db.setups } : {}), ...(all ? { defaults: db.defaults, gear: db.gear, pcoPrefs: db.pcoPrefs, channels: db.channels } : {}) }, null, 1);
 $('copyAll').onclick = () => { const s = backup(true); $('dataText').value = s; copyText(s, $('dataText')); };
 $('copyOne').onclick = () => { const s = backup(false); $('dataText').value = s; copyText(s, $('dataText')); };
 /* files out: inside Claude the viewer confirms each save; on a plain web page it's an ordinary download */
@@ -4948,7 +5106,7 @@ function importJson(text) {
     db.plans[id] = p; n++; last = p;
   }
   if (d?.setups && typeof d.setups === 'object') Object.assign(setups(), d.setups);
-  for (const k of ['defaults', 'pcoPrefs']) if (d?.[k] && typeof d[k] === 'object') db[k] = d[k];
+  for (const k of ['defaults', 'pcoPrefs', 'channels']) if (d?.[k] && typeof d[k] === 'object') db[k] = d[k];
   if (d?.gear && typeof d.gear === 'object') db.gear = { ...d.gear, custom: db.gear?.custom || d.gear.custom || [] };
   if (!n) { toast('No weeks found in that backup'); return; }
   $('dataDlg').hidden = true; switchWeek(last.id); toast(`Restored ${plural(n, 'week')}`);
@@ -6101,6 +6259,12 @@ $('homeView').addEventListener('keydown', e => { if (e.target.id === 'libType' &
 
 // load-in ticks: saved with the week straight away (not an undo step), progress updates as you go
 $('paperView').addEventListener('change', e => {
+  const t0 = e.target;
+  if (t0.id === 'chFixed') { chans_().fixed = t0.checked; save(); renderPaper(); return; }
+  if (t0.dataset.chnum) { setChannel(t0.dataset.chnum, t0.value); return; }
+  if (t0.dataset.chmic !== undefined) { setChanMeta(t0.dataset.chmic, 'mic', t0.value.trim().slice(0, 40)); return; }
+  if (t0.dataset.chstand !== undefined) { setChanMeta(t0.dataset.chstand, 'stand', t0.value); return; }
+  if (t0.dataset.ch48 !== undefined) { setChanMeta(t0.dataset.ch48, 'p48', t0.checked); return; }
   const k = e.target.dataset?.chk; if (!k) return;
   const st = loadinState(); if (e.target.checked) st[k] = 1; else delete st[k];
   save(); const y = $('paperView').scrollTop; renderPaper(); $('paperView').scrollTop = y;
