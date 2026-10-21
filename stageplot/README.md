@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 42 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 43 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -45,6 +45,17 @@ Open `index.html` in a modern browser to run it.
 - **Setups by service type**: link a setup to a Planning Center service type (Home → Setups). Importing a plan of that type into an empty week lays the stage out from that setup first.
 - **Library editing**: the pen on a library row renames a week or moves it to another date in place (Undo in the notice).
 - **Keys**: `G` goes Home, `P` toggles Paperwork; both are in Ctrl K too, along with the load-in checklist.
+- **Views** (Layers → Views; on screen only, never printed or saved into the week, remembered in this browser):
+  - **Whose gear**: a soft colour tag around everything each person owns, one colour per person.
+  - **Lighting wash**: a warm pool where each light on a stand points.
+  - **Sightlines from FOH**: two lines from the desk to the stage corners and a shadow behind anything tall (speakers on stands, drum shield, lights, cameras, pulpit, racks). Anyone standing in a shadow gets a red eye marker, with who's blocking them on hover.
+  - **Sound coverage**: a heat map from the mains, subs, line arrays and wedges (level falls with distance and off-axis), red loudest to blue quiet, over 24 dB.
+- **Walkways**: *Walkway (keep clear)* in Gear → Stage & power is a hatched area you size like a riser. Any floor cable crossing it shows in Checks as a trip hazard; overhead and channel runs don't count.
+- **Stage surface**: Room's stage section has *Plain*, *Boards*, *Carpet* or *Matte paint* next to the stage colour; it shows on the plot and the paperwork.
+- **Trace the signal**: pick an instrument, mic or anything carrying audio and press *Trace the signal*. A pulse runs from it through its leads, DI and stage box to the desk, and back out to that person's monitors; everything else fades. Picking something else or Esc ends it.
+- **Side view** (`E`, or Layers): the stage seen from the house with heights in metres: risers, people, mic heights, speakers on stands, flown hangs, the ceiling and every overhead run.
+- **Before and after**: in *Changes since last week*, the *Before / After* slider wipes between last week's plot and this week's, in the same place.
+- **Present on a screen** (`F`, ⋯ menu or Ctrl K): full screen, no toolbars, bigger names, with the church, date and service name on top. `Esc` leaves.
 - **Install and offline**: served from its own address, Stageplot is an installable app (manifest, icons, service worker). Once opened it runs with no signal; pages are fetched fresh when online so updates always arrive. Home → Preferences shows an *Install* button where the browser offers one, and the Add to Home Screen hint on iPhone and iPad.
 - **Opening the app**: Stageplot always opens on Home → Library. The first time, a welcome offers *Draw my stage* or *Explore an example first*, a simple four-piece band (worship leader on acoustic and vocals, electric guitar, bass, drums) with one stage box, one distro, in-ears, mains and FOH, fully patched and powered; both go straight to the plot.
 - **Home** (the logo, *Home* in the header, or *Home: library & settings* in the ⋯ menu): one place for everything that isn't a single week. Sections on the left (a strip of chips on phones):
@@ -134,4 +145,4 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Shortcuts
 
-`A` add gear · `V` move · `S` select · `C` run cable · `M` measure · `H` hide cables · `T` draw channel · `Esc` cancel · `R` rotate (Shift+R 45°) · `D` duplicate · `Del` delete · `+`/`−` zoom · `0` fit · `?` help · arrows nudge 5 cm (Shift 50 cm) · `Ctrl/Cmd+Z` undo (add Shift to redo)
+`A` add gear · `E` side view · `F` present · `V` move · `S` select · `C` run cable · `M` measure · `H` hide cables · `T` draw channel · `Esc` cancel · `R` rotate (Shift+R 45°) · `D` duplicate · `Del` delete · `+`/`−` zoom · `0` fit · `?` help · arrows nudge 5 cm (Shift 50 cm) · `Ctrl/Cmd+Z` undo (add Shift to redo)

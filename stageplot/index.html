@@ -998,6 +998,51 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .canvas { container-type: inline-size; }
 @container (max-width: 780px) { .tool .tl, .zoomval { display: none; } .f-dock .panel { gap: 2px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+/* views: overlays, walkways, textures, trace, side view, before/after, presentation */
+.cm-h .cm-sub { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 4px; }
+.ov-owner { fill-opacity: .13; stroke-width: .07; stroke-opacity: .75; pointer-events: none; }
+.ov-owner-ring { fill: none; stroke-width: .16; stroke-dasharray: .5 .25; pointer-events: none; }
+.ov-wash { fill: url(#spWash); mix-blend-mode: screen; pointer-events: none; }
+.light-deck .ov-wash { mix-blend-mode: multiply; opacity: .7; }
+.ov-shadow { fill: #000; fill-opacity: .34; pointer-events: none; }
+.light-deck .ov-shadow { fill-opacity: .16; }
+.ov-sightline { stroke: #7dd3fc; stroke-width: var(--cw, .06px); stroke-dasharray: .6 .35; fill: none; opacity: .8; pointer-events: none; }
+.ov-hidden circle { fill: #e5484d; stroke: #fff; stroke-width: .06; } .ov-hidden path { fill: none; stroke: #fff; stroke-width: .07; stroke-linecap: round; }
+.ov-heat { pointer-events: none; }
+.s-walk { fill: url(#spHatch); stroke: #f5b544; stroke-width: .07; stroke-dasharray: .45 .25; }
+.s-walk-edge { fill: none; stroke: #f5b544; stroke-opacity: .25; stroke-width: .04; }
+.deck-tex { pointer-events: none; }
+.light-deck .deck-tex { opacity: .75; } .light-deck .deck-tex.t-carpet, .light-deck .deck-tex.t-matte { filter: invert(1); }
+.texseg { display: flex; flex-wrap: wrap; }
+.tracing .item:not(.intrace) { opacity: .28; transition: opacity .2s; }
+.tracepulse { fill: none; stroke: #fff; stroke-width: var(--cws, .2px); stroke-linecap: round; stroke-dasharray: 6 94; animation: tracerun 1.6s linear infinite; pointer-events: none; filter: drop-shadow(0 0 .12px #fff); }
+@keyframes tracerun { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .tracepulse { animation: none; stroke-dasharray: none; stroke-opacity: .5; } }
+.f-side { left: 50%; transform: translateX(-50%); bottom: 72px; width: min(760px, calc(100% - 24px)); }
+.sidepanel { display: block; width: 100%; padding: 8px 10px 10px; }
+.sv-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; } .sv-head .hint { flex: 1; }
+.sideview { display: block; width: 100%; height: clamp(150px, 26vh, 250px); }
+.sv-house { fill: var(--surface-2); } .sv-deck { fill: var(--deck); }
+.sv-ceil { stroke: var(--muted); stroke-width: .06; stroke-dasharray: .4 .3; } .sv-tick { stroke: var(--line-2, var(--muted)); stroke-width: .05; }
+.sv-cap { font-size: .62px; fill: var(--muted); font-family: var(--f-mono, monospace); }
+.sv-riser { fill: color-mix(in srgb, var(--deck) 70%, var(--ink-2)); stroke: var(--line-2, var(--muted)); stroke-width: .05; }
+.sv-person circle, .sv-person path { fill: #8b80ff; } .sv-mic line { stroke: var(--ink-2); stroke-width: .08; } .sv-mic circle { fill: var(--ink); }
+.sv-gear line { stroke: var(--ink-2); stroke-width: .1; } .sv-gear rect { fill: color-mix(in srgb, var(--ink-2) 30%, transparent); stroke: var(--ink-2); stroke-width: .05; } .sv-spk rect { fill: #3a3f4a; }
+.sv-rig { stroke-dasharray: .2 .15; } .sv-gear-b { fill: color-mix(in srgb, var(--ink-2) 30%, transparent); stroke: var(--ink-2); stroke-width: .05; }
+.sv-run { fill: none; stroke-width: .1; stroke-dasharray: .45 .25; stroke: var(--ink-2); opacity: .35; }
+.cmpsplit { display: flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 12px; color: var(--muted); } .cmpsplit input { width: 120px; }
+.splitline line { stroke: #fff; stroke-width: var(--cwh, .12px); filter: drop-shadow(0 0 .1px #000); } .light-deck .splitline line { stroke: #111; }
+.split-tag { font-size: var(--lab, .5px); font-weight: 700; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: var(--labs, .1px); }
+.beforeview { pointer-events: none; }
+.f-present { top: 18px; left: 24px; right: 24px; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.pres-title { max-width: min(900px, 70%); background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); border-radius: 14px; padding: 12px 18px; }
+.pres-title h1 { margin: 2px 0 0; font-size: clamp(22px, 3vw, 38px); line-height: 1.1; }
+.pres-exit { pointer-events: auto; opacity: .55; } .pres-exit:hover, .pres-exit:focus-visible { opacity: 1; }
+body.presenting > header, body.presenting .float:not(#fpresent) { display: none !important; }
+body.presenting .rail, body.presenting #inspector { visibility: hidden; overflow: hidden; min-width: 0; border: 0; }
+body.presenting .work { --railw: 0px; --inspw: 0px; }
+body.presenting #plot .rotstem, body.presenting #plot .roth { display: none; }
 </style>
 </head>
 <body>
@@ -1059,6 +1104,8 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
     <div class="float f-tl" id="fstats"></div>
     <div class="float f-top" id="fzoom"></div>
     <div class="float f-tr" id="fquick" hidden></div>
+    <div class="float f-side" id="fside" hidden></div>
+    <div class="float f-present" id="fpresent" hidden></div>
   </section>
 
   <aside class="inspector" id="inspector" aria-label="Details"></aside>
@@ -1147,6 +1194,8 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
       <dt><span class="kbd">S</span></dt><dd>Select tool: tap or box-select several (no Shift needed)</dd>
       <dt><span class="kbd">C</span></dt><dd>Run a cable</dd>
       <dt><span class="kbd">M</span></dt><dd>Measure between two points</dd>
+      <dt><span class="kbd">E</span></dt><dd>Side view: heights from the house</dd>
+      <dt><span class="kbd">F</span></dt><dd>Present on a screen (Esc leaves)</dd>
       <dt><span class="kbd">Esc</span></dt><dd>Cancel / deselect</dd>
       <dt><span class="kbd">R</span></dt><dd>Rotate 90° (Shift: 45°), or drag the knob above selected gear</dd>
       <dt><span class="kbd">D</span></dt><dd>Duplicate</dd>
@@ -1225,6 +1274,7 @@ const CAT = {
   music_stand: { name: 'Music stand', short: 'Stand', cat: 'staging', w: 1.5, d: .8, shape: 'rect' },
   pulpit:      { name: 'Pulpit', short: 'Pulpit', cat: 'staging', w: 2.5, d: 2, shape: 'rect' },
   rack:        { name: 'Custom rack', short: 'Rack', cat: 'infra', w: 2, d: 2.4, shape: 'rack' },
+  walkway:     { name: 'Walkway (keep clear)', short: 'Walkway', cat: 'staging', w: 4, d: 10, shape: 'platform', walk: true },
   riser:       { name: 'Riser 2.4 × 2.4 m', short: 'Riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   drum_riser:  { name: 'Drum riser', short: 'Drum riser', cat: 'staging', w: 8, d: 8, shape: 'platform' },
   // Power
@@ -1246,7 +1296,7 @@ const GEAR_GROUPS = [
   ['Mics & DI', ['vox_mic', 'vox_wl', 'headset', 'inst_mic', 'di_mono', 'di_stereo', 'usb_if'], 'vox_mic'],
   ['Monitors & PA', ['wedge', 'iem', 'iem_rack', 'main_spk', 'sub', 'la_main', 'la_sub'], 'wedge'],
   ['Desks & tech', ['stagebox', 'rack', 'foh', 'mon_desk', 'mt_ipad', 'laptop', 'camera', 'conf_mon', 'light_stand'], 'foh'],
-  ['Stage & power', ['riser', 'drum_riser', 'drum_shield', 'pulpit', 'music_stand', 'ipad_stand', 'distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6'], 'distro'],
+  ['Stage & power', ['riser', 'drum_riser', 'walkway', 'drum_shield', 'pulpit', 'music_stand', 'ipad_stand', 'distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6'], 'distro'],
 ];
 const OVERHEAD_TYPES = ['main_spk', 'sub', 'la_main', 'la_sub'];
 // Line arrays: boxes in the hang are editable; power draw scales per box unless typed in by hand.
@@ -1903,6 +1953,7 @@ function pullList() {
 }
 function warnings() {
   const out = [];
+  for (const { w, c } of walkwayCrossings()) out.push({ lvl: 'warn', id: w.id, msg: `${CABLES[c.type].name} from ${itemName(itemById(c.from))} to ${itemName(itemById(c.to))} crosses ${itemName(w)}: a trip hazard. Reroute it, fly it or tape it down.` });
   for (const [t, n] of Object.entries(db?.gear?.owned || {})) { const used = plan.items.filter(i => i.type === t).length; if (CAT[t] && used > n) out.push({ lvl: 'warn', id: plan.items.find(i => i.type === t)?.id, msg: `${used} × ${CAT[t].name} on the plot, but you own ${n} (Home → Gear).` }); }
   const W = plan.stage.w, D = plan.stage.d, hw = Math.max(W, plan.stage.houseW);
   for (const b of plan.items.filter(isBox)) {
@@ -2376,7 +2427,11 @@ const SYM = (() => {
   const stops = (...a) => a.map(([o, c, op]) => `<stop offset="${o}" stop-color="${c}"${op !== undefined ? ` stop-opacity="${op}"` : ''}/>`).join('');
   const lin = (id, st, v) => `<linearGradient id="${id}" x1="0" y1="0" x2="${v ? 0 : 1}" y2="${v ? 1 : 0}">${stops(...st)}</linearGradient>`;
   const rad = (id, st, cx = .5, cy = .5) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r=".6">${stops(...st)}</radialGradient>`;
-  ART_DEFS = '<filter id="spPhoto" x="-25%" y="-15%" width="150%" height="130%"><feDropShadow dx=".05" dy=".08" stdDeviation=".05" flood-color="#000" flood-opacity=".5"/></filter>' + '<filter id="spShadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation=".045"/></filter>' +
+  ART_DEFS = '<pattern id="spHatch" width=".9" height=".9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width=".9" height=".9" fill="#f5b544" fill-opacity=".1"/><rect width=".34" height=".9" fill="#f5b544" fill-opacity=".38"/></pattern>' +
+    '<pattern id="spTexBoards" width="12" height="1.4" patternUnits="userSpaceOnUse"><path d="M0 .7H12M0 1.4H12M3.1 0V.7M9.4 0V.7M6.3 .7V1.4M.8 .7V1.4" fill="none" stroke="#000" stroke-opacity=".32" stroke-width=".05"/><path d="M0 .74H12M0 .04H12" fill="none" stroke="#fff" stroke-opacity=".07" stroke-width=".04"/><rect y="0" width="3.1" height=".7" fill="#fff" fill-opacity=".03"/><rect x="6.3" y=".7" width="5.7" height=".7" fill="#000" fill-opacity=".05"/></pattern>' +
+    '<filter id="spTexCarpet" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="5" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 0 0 0 -.1"/></filter>' +
+    '<filter id="spTexMatte" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".07" numOctaves="3" seed="9"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .2 0 0 0 -.05"/></filter>' +
+    '<radialGradient id="spWash"><stop offset="0" stop-color="#ffe7a8" stop-opacity=".55"/><stop offset=".55" stop-color="#ffd27a" stop-opacity=".22"/><stop offset="1" stop-color="#ffc861" stop-opacity="0"/></radialGradient>' + '<filter id="spPhoto" x="-25%" y="-15%" width="150%" height="130%"><feDropShadow dx=".05" dy=".08" stdDeviation=".05" flood-color="#000" flood-opacity=".5"/></filter>' + '<filter id="spShadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation=".045"/></filter>' +
     '<filter id="spMic" x="-35%" y="-35%" width="170%" height="170%"><feMorphology in="SourceAlpha" operator="dilate" radius=".007" result="d"/><feFlood flood-color="#fff" flood-opacity=".16"/><feComposite in2="d" operator="in" result="rim"/>' +
       '<feGaussianBlur in="SourceAlpha" stdDeviation=".025" result="b"/><feOffset in="b" dx=".025" dy=".04" result="o"/><feComponentTransfer in="o" result="sh"><feFuncA type="linear" slope=".65"/></feComponentTransfer>' +
       '<feMerge><feMergeNode in="sh"/><feMergeNode in="rim"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
@@ -2552,6 +2607,7 @@ function fitScale() {
 }
 function shapeSvg(it, w, d) {
   const c = cat(it), hw = w / 2, hd = d / 2, cls = `body c-${c.cat}`;
+  if (c.walk) return `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><rect class="s-walk" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".15"/><rect class="s-walk-edge" x="${f3(-hw + .12)}" y="${f3(-hd + .12)}" width="${f3(w - .24)}" height="${f3(d - .24)}" rx=".1"/>`;
   if (c.shape === 'platform') {   // drawn at its real size: 2 × 1 m deck panels and legs
     const long = w >= d, px = fromM(long ? 2 : 1), py = fromM(long ? 1 : 2);
     let g = `<rect class="hit" x="${-hw}" y="${-hd}" width="${w}" height="${d}"/><rect class="s-deck" x="${-hw}" y="${-hd}" width="${w}" height="${d}" rx=".1"/>`;
@@ -2677,6 +2733,7 @@ function pointAt(o, d) {
 }
 // a run as a path with its right-angle bends rounded off (each bend takes at most half of either leg, so short jogs stay true)
 /* stage colour: one per week, saved with setups; light decks flip the grid and stage words to dark ink */
+const STAGE_TEX = [['', 'Plain'], ['boards', 'Boards'], ['carpet', 'Carpet'], ['matte', 'Matte paint']];
 const STAGE_COLORS = [['', 'Charcoal'], ['#121417', 'Black'], ['#3b424a', 'Slate'], ['#1d2943', 'Navy'], ['#4a3426', 'Walnut'], ['#8a6a48', 'Oak'], ['#d8d3c6', 'Light']];
 const lum = hex => { const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 0; const n = parseInt(m[1], 16); return (.2126 * (n >> 16 & 255) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255; };
 function applyDeckColor(el) {
@@ -2892,8 +2949,8 @@ function renderPlot() {
   $('scroller').classList.toggle('cabling', mode === 'cable' || mode === 'measure' || mode === 'box');
   $('scroller').classList.toggle('placing', !!placing);
   const { w, d, house } = plan.stage;
-  const showSmall = scale >= 34, showBig = scale >= 11;
-  svg.style.setProperty('--lab', `${f3(10.5 / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 / scale)}px`); svg.style.setProperty('--labs', `${f3(3 / scale)}px`);
+  const showSmall = scale >= (presenting ? 22 : 34), showBig = scale >= 11;
+  const LK = presenting ? 1.7 : 1; svg.style.setProperty('--lab', `${f3(10.5 * LK / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 * LK / scale)}px`); svg.style.setProperty('--labs', `${f3(3 * LK / scale)}px`);
   applyDeckColor(svg);
   // cable weights are set in screen pixels, so runs stay fine and crisp at any zoom; the caps keep them inside their lanes when zoomed out
   const W = (px, cap) => `${f3(Math.min(px / scale, cap))}px`;
@@ -2906,6 +2963,9 @@ function renderPlot() {
   s = s.replace('</defs>', '<filter id="deckblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".22"/></filter></defs>');
   s += `<path class="deck-shadow" transform="translate(.06 .22)" d="${deckD}"/>`;
   s += `<path class="deck" d="${deckD}"/>`;
+  const tex = plan.stage.texture;
+  if (tex === 'boards') s += `<path class="deck-tex" d="${deckD}" fill="url(#spTexBoards)"/>`;
+  else if (tex === 'carpet' || tex === 'matte') s += `<rect class="deck-tex t-${tex}" clip-path="url(#deckclip)" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}" filter="url(#spTex${tex === 'carpet' ? 'Carpet' : 'Matte'})"/>`;
   const half = fromM(.5);
   if (!layerOff('grid')) {
   s += '<g clip-path="url(#deckclip)">';
@@ -2938,7 +2998,10 @@ function renderPlot() {
   ];
   if (!layerOff('dims')) s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
 
+  if (!layersBypass) s += overlaySvg(deckD);
   const selItem = sel?.kind === 'item' ? sel.id : null, selSet = new Set(selIds()), solo = selSet.size === 1;
+  const tr = tracing && selItem === tracing && !layersBypass ? traceSets(tracing) : null;   // signal trace runs while its source stays picked
+  svg.classList.toggle('tracing', !!tr);
   syncChanItems();
   const zOf = it => layerOf(it) + (selSet.has(it.id) && cat(it).shape !== 'platform' ? 10 : 0);   // picked gear comes to the front, so it never hides under a person
   const sorted = plan.items.filter(it => selSet.has(it.id) || (itemShown(it) && !(cableView.hideInCh && it.chan))).sort((a, c) => zOf(a) - zOf(c));
@@ -2948,7 +3011,7 @@ function renderPlot() {
   const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}</title>${shapeSvg(it, iw, id)}</g>`;
+    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}</title>${shapeSvg(it, iw, id)}</g>`;
     if (L < 1) s += g; else top += g;
     if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
     if (C.shape === 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; risers.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
@@ -2961,13 +3024,13 @@ function renderPlot() {
       const text = person ? firstName(owner?.name || it.label) : (fn && itemName(it).startsWith(fn + ' ') ? itemName(it).slice(fn.length + 1) : itemName(it));
       const onDeck = inPoly(it.x, it.y, stagePoly());
       const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
-      const fs = (person ? 11.5 : 10.5) / scale;
+      const fs = (person ? 11.5 : 10.5) * LK / scale;
       const above = big ? [] : [it.y - Math.max(iw, id) / 2 - (isSel ? .3 + 24 / scale : 4 / scale)];   // a selected name clears the ring and the rotate knob
       labCands.push({ x: it.x, y: ly, alt: above, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: String(text).length * fs * .58 + fs * .4, h: fs * 1.05, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
         mk: y => `<text class="ilabel${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text>` });
     } else if (C.shape === 'platform' && showBig && !layerOff('labels')) {
       const own = it.personId && personById(it.personId), fnr = own && firstName(own.name), nm = fnr && itemName(it).startsWith(fnr + ' ') ? itemName(it).slice(fnr.length + 1) : itemName(it);
-      const cap = `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = it.y + id / 2 - .35;
+      const cap = C.walk ? 'KEEP CLEAR' : `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = C.walk ? it.y + .25 : it.y + id / 2 - .35;
       labCands.push({ pri: selSet.has(it.id) ? 0 : 6, avoid: !selSet.has(it.id), box: [it.x - zw(cap) / 2, cy - .55, it.x + zw(cap) / 2, cy + .1], svg: `<text class="zone on-deck" x="${it.x}" y="${cy}" text-anchor="middle">${esc(cap)}</text>` });
     }
     if (isSel && it.locked) {   // padlock on the corner of a locked selection
@@ -3006,7 +3069,7 @@ function renderPlot() {
   for (const { c, o: raw } of drawn) {
     const o = lanes.get(c.id) || raw;
     const isSel = sel?.kind === 'cable' && sel.id === c.id;
-    const rel = selItem ? (selSet.has(c.from) || selSet.has(c.to) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : quiet ? ' quiet' : '');
+    const rel = tr ? (tr.cables.has(c.id) ? ' hl' : ' dim') : selItem ? (selSet.has(c.from) || selSet.has(c.to) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : quiet ? ' quiet' : '');
     const ps = o.map(p => p.join(',')).join(' ');
     // with "inside channels" hidden, only the stretches on the open stage are drawn (a selected cable still shows all of it)
     const parts = cableView.hideInCh ? cableParts(c) : null;
@@ -3024,6 +3087,7 @@ function renderPlot() {
       if (age > 1200) freshLeads.delete(c.id);
       out += `<path class="cab${c.level === 'ceiling' ? ' ceil' : ''} k-${c.type}${st}${age < 1200 ? ' drawin' : ''}" d="${d}" data-pts="${sp}"${age < 1200 ? ` pathLength="1" style="animation-delay:-${Math.round(age)}ms"` : ''}/>`;
       if ((isSel || rel === ' hl' || (lead && rel !== ' dim')) && c.level !== 'ceiling') out += `<path class="cab-sheen${st}" d="${d}"/>`;   // a fine light core so the run reads as a cable, not a line
+      if (tr?.cables.has(c.id)) out += `<path class="tracepulse" d="${d}" pathLength="100" style="animation-delay:-${(traceOrder(tr, c) * 260) % 1600}ms"/>`;
       out += flowMarks(c, seg, isSel ? '' : rel, rel === ' quiet' || (rel === ' dim' && cableView.quiet !== false));   // quiet cables keep the animation, not the arrows
       hits += `<polyline class="cabhit" data-cid="${c.id}" points="${sp}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
     }
@@ -3089,9 +3153,13 @@ function renderPlot() {
     s += `<g class="ghost" transform="translate(${f3(snapTo(hoverPt.x))} ${f3(snapTo(hoverPt.y))})">${shapeSvg({ type: placing }, C.w, C.d)}</g>`;
     if (q && canSitInChannel({ type: placing })) s += `<text class="cablen" x="${f3(hoverPt.x + 12 / scale)}" y="${f3(hoverPt.y - 12 / scale)}">Into ${esc(q.ch.name)}</text>`;
   }
+  if (compare && !capturing && db.plans[compare]) s += beforeSvg(b);
   if (compare) s += compareSvg();
   s += measureSvg();
   svg.innerHTML = s;
+  if (capturing) return;
+  const fs = $('fside'); fs.hidden = !sideOpen || presenting; if (sideOpen && !presenting) fs.innerHTML = `<div class="panel sidepanel"><div class="sv-head"><b>Side view</b><span class="hint">from the house · heights in metres</span><button class="iconbtn" id="sideClose" aria-label="Close side view" title="Close (E)">${ic('x', 'sm')}</button></div>${sideSvg()}</div>`;
+  $('fpresent').hidden = !presenting; if (presenting) $('fpresent').innerHTML = `<div class="pres-title"><div class="eyebrow">${esc(defaultsOf().org || 'Stage plot')} · ${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Sunday service')}</h1></div><button class="btn pres-exit" id="presExit">${ic('x', 'sm')}Exit · Esc</button>`;
   if (needFit && !zoom) {
     needFit = false;
     if (fitMode === 'stage') {
@@ -3159,7 +3227,7 @@ function renderFloat() {
     : placing && CAT[placing] ? `<div class="panel" style="display:flex;align-items:center;flex-wrap:nowrap"><span class="toolhint" style="white-space:nowrap">Click the stage to place <b>${esc(CAT[placing].name)}</b> · Shift-click for several</span><button class="btn quiet" id="placeCancel" style="padding:5px 10px">Cancel</button></div>`
     : mode === 'box' ? `<div class="panel"><span class="toolhint">${selIds().length > 1 ? `<b>${selIds().length} picked</b> · drag one to move them all · ` : ''}Tap gear to pick it, or drag a box over the floor</span><button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
     : mode === 'measure' ? `<div class="panel"><span class="toolhint">${measure && !measure.live ? `<b>${mVal(Math.hypot(measure.b[0] - measure.a[0], measure.b[1] - measure.a[1]))} m</b> · drag again for a new measurement` : 'Drag between two points (gear snaps to its centre) · Shift keeps it straight'}</span>${measure ? '<button class="btn quiet" id="msrClear" style="padding:5px 10px">Clear</button>' : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Done</button></div>`
-    : compare && db.plans[compare] ? (() => { const d = weekDiff(); return `<div class="panel cmpbar"><span class="toolhint"><b>Since ${esc(longDate(d.old.date))}</b><span class="cmpdot" style="background:#30a46c"></span>${d.added.length} new<span class="cmpdot" style="background:#f5a524"></span>${d.moved.length} moved<span class="cmpdot" style="background:#e5484d"></span>${d.removed.length} removed</span><button class="iconbtn" id="cmpClose" aria-label="Hide changes" title="Hide changes (Esc)">${ic('x', 'sm')}</button></div>`; })() : '';
+    : compare && db.plans[compare] ? (() => { const d = weekDiff(); return `<div class="panel cmpbar"><span class="toolhint"><b>Since ${esc(longDate(d.old.date))}</b><span class="cmpdot" style="background:#30a46c"></span>${d.added.length} new<span class="cmpdot" style="background:#f5a524"></span>${d.moved.length} moved<span class="cmpdot" style="background:#e5484d"></span>${d.removed.length} removed</span><label class="cmpsplit" title="Drag to wipe between last week and this week"><span>Before</span><input type="range" id="cmpSplit" min="0" max="100" value="${cmpSplit}" aria-label="Before and after: how much of last week to show"><span>After</span></label><button class="iconbtn" id="cmpClose" aria-label="Hide changes" title="Hide changes (Esc)">${ic('x', 'sm')}</button></div>`; })() : '';
   if (!$('fzoom').innerHTML) {   // a hidden layer is never a mystery: say what's off, one click brings it all back
     const off = hiddenLayers();
     if (off.length) $('fzoom').innerHTML = `<div class="panel laychip"><span class="toolhint">${ic('eyeOff', 'sm')}<span><b>Hidden:</b> ${esc(off.slice(0, 3).join(', '))}${off.length > 3 ? ` +${off.length - 3}` : ''}</span></span><button class="btn quiet" id="layShowAll2">Show all</button></div>`;
@@ -3443,7 +3511,7 @@ function renderInspector() {
         <p class="hint">Power draw follows the box count (${Math.round(cat(it).watts / LA_BOXES[it.type].def)} W a box).</p></section>`;
     }
     // risers are sized by hand, so their size stays up front; everything else is set by its type
-    if (isRiser) basic += `<section class="isec"><h3>Riser size</h3><div class="grid3">${field('iW', 'Width', mVal(prop(it, 'w')), 'number', 'step=".1" min=".5"', 'm')}${field('iD', 'Depth', mVal(prop(it, 'd')), 'number', 'step=".1" min=".5"', 'm')}${field('iH', 'Height', mVal(it.h ?? fromM(.4)), 'number', 'step=".05" min="0"', 'm')}</div><p class="hint">Or drag a corner on the plot.</p></section>`;
+    if (isRiser) basic += `<section class="isec"><h3>${C.walk ? 'Walkway size' : 'Riser size'}</h3><div class="grid3">${field('iW', 'Width', mVal(prop(it, 'w')), 'number', 'step=".1" min=".5"', 'm')}${field('iD', 'Depth', mVal(prop(it, 'd')), 'number', 'step=".1" min=".5"', 'm')}${C.walk ? '' : field('iH', 'Height', mVal(it.h ?? fromM(.4)), 'number', 'step=".05" min="0"', 'm')}</div><p class="hint">${C.walk ? 'Floor cables crossing it show up in Checks. ' : ''}Or drag a corner on the plot.</p></section>`;
     adv.push(`<section class="isec"><h3>Position${isRiser ? '' : ' &amp; size'}</h3>
         <div class="grid2">
           ${field('iX', 'Across from SR', mVal(it.x), 'number', 'step=".05"', 'm')}${field('iY', 'Back from US', mVal(it.y), 'number', 'step=".05"', 'm')}
@@ -3469,6 +3537,7 @@ function renderInspector() {
       </section>` : ''}
       ${basic}
       <section class="isec"><div class="field"><label for="iNote">Note <small class="hint" style="font-weight:400">shows on the plot and the paperwork</small></label><textarea id="iNote" rows="2" placeholder="${C.shape === 'person' ? 'e.g. Bring a 9V battery, uses the left IEM pack' : 'e.g. Borrowed from youth room, needs fresh strings'}">${esc(it.note || '')}</textarea></div></section>
+      ${plan.cables.some(x => touches(x, it.id) && ['inst', 'xlr', 'usb', 'cat6'].includes(x.type)) ? `<section class="isec"><button class="btn block" id="iTrace" aria-pressed="${tracing === it.id}" title="Follow this signal from the stage to the desk and back to the monitors">${ic('zap', 'sm')}${tracing === it.id ? 'Stop tracing' : 'Trace the signal'}</button></section>` : ''}
       <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div></section>
       ${C.shape === 'person' && !conns.length ? '' : `<section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.slice(0, showAllConns === it.id ? conns.length : 4).map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>${conns.length > 4 && showAllConns !== it.id ? `<button class="btn quiet" data-allconns="${it.id}">Show all ${conns.length}</button>` : ''}` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>`}
       ${moreFold(adv, moreWhat)}
@@ -3553,6 +3622,7 @@ function renderInspector() {
         <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
         <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap" title="Hold Alt while dragging to place freely">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
         <div class="field"><span>Stage colour</span><div class="swatches" role="group" aria-label="Stage colour">${STAGE_COLORS.map(([v, n]) => `<button class="swatch" data-deckcolor="${v}" aria-pressed="${(st.color || '') === v}" title="${n}" aria-label="${n}" style="background:${v || 'var(--deck)'}"></button>`).join('')}<label class="swatch custom${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? ' on' : ''}" title="Pick any colour" style="${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? `background:${st.color}` : ''}"><input type="color" id="iDeckColor" value="${esc(st.color || '#20272d')}" aria-label="Custom stage colour"></label></div></div>
+        <div class="field"><span>Surface</span><div class="cm-seg texseg" role="group" aria-label="Stage surface">${STAGE_TEX.map(([v, n]) => `<button data-decktex="${v}" aria-pressed="${(st.texture || '') === v}">${n}</button>`).join('')}</div></div>
         <p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW</p>
       </section>
       ${w.length && !ui.guide ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}
@@ -3994,7 +4064,7 @@ function syncChanItems() {
 }
 const canSitInChannel = it => it && cableEnd(it) && it.type !== 'rack';
 // personal gear (instruments, mics, DIs, pedals, monitors) dropped within 1.5 m of a person token belongs to that person
-const SHARED_TYPES = new Set(['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack', 'main_spk', 'sub', 'la_main', 'la_sub', 'distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6', 'camera', 'conf_mon', 'light_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']);
+const SHARED_TYPES = new Set(['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack', 'main_spk', 'sub', 'la_main', 'la_sub', 'distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6', 'camera', 'conf_mon', 'light_stand', 'riser', 'drum_riser', 'walkway', 'drum_shield', 'pulpit']);
 function ownerNear(it) {
   if (!plan.team.length || SHARED_TYPES.has(it.type) || cat(it).shape === 'person' || cat(it).shape === 'platform' || !['inst', 'audio', 'infra'].includes(cat(it).cat)) return null;
   const people = plan.items.filter(i => cat(i).shape === 'person' && i.personId && personById(i.personId));
@@ -4024,6 +4094,8 @@ $('ftools').addEventListener('click', e => {
   if (e.target.closest('#cabBtn')) { cableView.menu = !cableView.menu; renderFloat(); return; }
   const ct = e.target.closest('[data-cabtype]');
   if (ct) { const k = ct.dataset.cabtype; setCableView(() => { cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
+  const ov = e.target.closest('[data-over]'); if (ov) { const k = ov.dataset.over; setCableView(() => { cableView.over.has(k) ? cableView.over.delete(k) : cableView.over.add(k); }); if (k === 'sight' && cableView.over.has(k) && !plan.items.some(i => i.type === 'foh')) toast('Add the FOH desk to see its sightlines'); return; }
+  if (e.target.closest('#sideBtn')) { toggleSide(); return; }
   const ly = e.target.closest('[data-layer]'); if (ly) { const k = ly.dataset.layer; setCableView(() => { cableView.layers.has(k) ? cableView.layers.delete(k) : cableView.layers.add(k); if (k === 'people' || k === 'gear') group = null; }); return; }
   if (e.target.closest('#layShowAll')) { showAllLayers(); return; }
   if (e.target.closest('#cabFlow')) { setCableView(() => { cableView.noFlow = !cableView.noFlow; }); return; }
@@ -4044,6 +4116,9 @@ $('ftools').addEventListener('change', e => { if (e.target.id === 'cabAll') setC
 const closeLayers = () => { cableView.menu = false; document.querySelector('.cabmenu')?.remove(); $('cabBtn')?.setAttribute('aria-expanded', 'false'); };
 document.addEventListener('pointerdown', e => { if (cableView.menu && !e.target.closest('.cabwrap')) closeLayers(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && cableView.menu) { closeLayers(); $('cabBtn')?.focus(); } }, true);
+$('fzoom').addEventListener('input', e => { if (e.target.id === 'cmpSplit') setSplit(e.target.value); });
+$('fside').addEventListener('click', e => { if (e.target.closest('#sideClose')) toggleSide(false); });
+$('fpresent').addEventListener('click', e => { if (e.target.closest('#presExit')) setPresent(false); });
 $('fzoom').addEventListener('click', e => {
   const t = e.target.closest('[data-ctype]'); if (t) { cableType = t.dataset.ctype; renderFloat(); }
   if (e.target.closest('#chFinish')) finishChannel();
@@ -4221,6 +4296,9 @@ document.addEventListener('keydown', e => {
   }
   if (typing || !$('dataDlg').hidden || !$('helpDlg').hidden) return;
   if (e.key === '?') { $('helpDlg').hidden = false; return; }
+  if (presenting && e.key === 'Escape') { setPresent(false); return; }
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && k === 'f' && view !== 'home') { setPresent(!presenting); return; }
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && k === 'e' && view === 'plot') { toggleSide(); return; }
   if (!e.ctrlKey && !e.metaKey && !e.altKey && (k === 'g' || k === 'p') && $('cmdk').hidden) { if (k === 'g') goHome(); else { view = view === 'paper' ? 'plot' : 'paper'; renderAll(); } return; }   // G: Home · P: paperwork and back
   if (view !== 'plot') return;
   if (mode === 'channel' && e.key === 'Enter') { finishChannel(); return; }
@@ -4272,6 +4350,7 @@ function renderMoreMenu() {
     <div class="mm-row"><span>Theme</span><div class="seg detailseg">${th('system', 'Auto')}${th('light', 'Light')}${th('dark', 'Dark')}</div></div>
     <div class="mm-list">
       <button data-mm="library">${ic('calendar', 'sm')}Home: library &amp; settings</button>
+      <button data-mm="present">${ic('fit', 'sm')}Present on a screen <span class="kbd">F</span></button>
       <button data-mm="guide">${ic('check', 'sm')}${ui.guide ? 'Hide' : 'Show'} the setup guide</button>
       <button data-mm="help">${ic('keyboard', 'sm')}Keyboard shortcuts<span class="kbd">?</span></button>
       <button data-mm="about">${ic('sheet', 'sm')}About Stageplot</button>
@@ -4290,6 +4369,7 @@ $('moreMenu').addEventListener('click', e => {
   if (m.dataset.mm === 'guide') { setGuide(!ui.guide); if (ui.guide) { sel = null; group = null; togglePanel('insp', true); renderAll(); } }
   if (m.dataset.mm === 'help') $('helpBtn').click();
   if (m.dataset.mm === 'about') openAbout();
+  if (m.dataset.mm === 'present') setPresent(true);
   if (m.dataset.mm === 'library') openLibrary2();
   if (m.dataset.mm === 'data') $('dataBtn').click();
 });
@@ -4495,6 +4575,7 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.go === 'runcable') { setMode('cable'); return; }
   if (t.dataset.go === 'powersheet') { openPaper('sec-power'); return; }
   if (t.id === 'guideOff') { setGuide(false); return; }
+  if (t.dataset.decktex !== undefined) { const v = t.dataset.decktex; mutate(() => { if (v) plan.stage.texture = v; else delete plan.stage.texture; }, `Stage surface: ${STAGE_TEX.find(([k]) => k === v)?.[1]}`); return; }
   if (t.dataset.deckcolor !== undefined) { const v = t.dataset.deckcolor; mutate(() => { if (v) plan.stage.color = v; else delete plan.stage.color; }, `Stage colour: ${STAGE_COLORS.find(([k]) => k === v)?.[1] || 'custom'}`); return; }
   if (t.dataset.step) {   // each step takes you to where that work happens
     const k = t.dataset.step;
@@ -4516,6 +4597,7 @@ $('inspector').addEventListener('click', e => {
   if (t.id === 'openRack') { openRack(sel.id); return; }
   if (t.id === 'iOutCh') { const it = itemById(sel.id); mutate(() => { delete it.chan; it.y = r2(it.y + fromM(.5)); }, `${itemName(it)} taken out of the channel`); return; }
   if (t.id === 'iRotate') rotateSelected(90);
+  if (t.id === 'iTrace') { tracing = tracing === sel.id ? null : sel.id; renderPlot(); renderInspector(); if (tracing) { const tr = traceSets(tracing); toast(`${itemName(itemById(tracing))}: ${plural(tr.cables.size, 'cable')} to the desk${tr.items.size > 1 ? ` and ${plural([...tr.items].filter(i => ['iem', 'wedge'].includes(itemById(i)?.type)).length, 'monitor')}` : ''}`); } return; }
   if (t.id === 'iLock' || t.id === 'gLock') toggleLock(selIds());
   if (t.dataset.align) alignSelected(t.dataset.align);
   if (t.dataset.selone) { sel = { kind: 'item', id: t.dataset.selone }; group = null; renderPlot(); renderInspector(); return; }
@@ -4802,12 +4884,12 @@ $('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = 
 /* ===================================================================
    Cable visibility (per browser)
    =================================================================== */
-const cableView = { all: true, hidden: new Set(), menu: false, layers: new Set() };   // layers: 'people' | 'gear' | 'labels' | 'dims' | 'grid' switched off (view only, never the data)
-try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; cableView.hideInCh = !!v.hideInCh; cableView.quiet = v.quiet !== false; cableView.layers = new Set(v.layers || []); } } catch { /* ignore */ }
+const cableView = { all: true, hidden: new Set(), menu: false, layers: new Set(), over: new Set() };   // layers: 'people' | 'gear' | 'labels' | 'dims' | 'grid' switched off (view only, never the data)
+try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; cableView.hideInCh = !!v.hideInCh; cableView.quiet = v.quiet !== false; cableView.layers = new Set(v.layers || []); cableView.over = new Set(v.over || []); } } catch { /* ignore */ }
 const cableShown = c => layersBypass || cableView.all && !cableView.hidden.has(c.type) && !(c.level === 'ceiling' && cableView.hideCeil);
 function setCableView(fn) {
   fn();
-  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim, hideInCh: !!cableView.hideInCh, quiet: cableView.quiet !== false, layers: [...cableView.layers] })); } catch { /* ignore */ }
+  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim, hideInCh: !!cableView.hideInCh, quiet: cableView.quiet !== false, layers: [...cableView.layers], over: [...cableView.over], side: sideOpen })); } catch { /* ignore */ }
   if (sel?.kind === 'cable') { const c = plan.cables.find(x => x.id === sel.id); if (c && !cableShown(c)) sel = null; }
   renderPlot(); renderInspector();
 }
@@ -4815,6 +4897,184 @@ let layersBypass = false;   // the paperwork snapshot always draws every layer
 const layerOff = k => !layersBypass && cableView.layers.has(k);
 const itemShown = it => { const sh = cat(it).shape; return sh === 'platform' || !layerOff(sh === 'person' ? 'people' : 'gear'); };
 const LAYERS = [['people', 'People', 'users'], ['gear', 'Gear', 'box'], ['labels', 'Labels', 'pen'], ['dims', 'Rulers & stage words', 'ruler'], ['grid', 'Floor grid', 'plot']];
+/* ===================================================================
+   Views: overlays you switch on in Layers (never saved into the week, never printed)
+   =================================================================== */
+const OVERLAYS = [['owners', 'Whose gear', 'users', 'A colour halo around each person’s gear'], ['light', 'Lighting wash', 'sun', 'Pools from the light stands'],
+  ['sight', 'Sightlines from FOH', 'eye', 'What the desk can’t see past'], ['heat', 'Sound coverage', 'zap', 'Loudest red, quietest blue']];
+const overOn = k => !layersBypass && !!cableView.over?.has(k);
+const PERSON_HUES = ['#f472b6', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa', '#fb7185', '#22d3ee', '#fb923c'];
+const personHue = pid => { const i = plan.team.findIndex(p => p.id === pid); return i < 0 ? null : PERSON_HUES[i % PERSON_HUES.length]; };
+const aimOf = (it, s) => { const r = (it.rot || 0) * Math.PI / 180; return [-s * Math.sin(r), s * Math.cos(r)]; };   // where a speaker or lamp points: local ±y, turned with the item
+const footCorners = it => { const w = Number(prop(it, 'w')) / 2, d = Number(prop(it, 'd')) / 2, r = (it.rot || 0) * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r);
+  return [[-w, -d], [w, -d], [w, d], [-w, d]].map(([x, y]) => [it.x + x * c - y * sn, it.y + x * sn + y * c]); };
+const SIGHT_BLOCKERS = new Set(['main_spk', 'drum_shield', 'light_stand', 'camera', 'pulpit', 'iem_rack', 'rack']);
+const LOUD = { main_spk: [104, 1, 'wide'], la_main: [108, 1, 'wide'], sub: [100, 0, 'omni'], wedge: [96, -1, 'narrow'] };   // level at 1 m, which way it faces, pattern
+function overlaySvg(deckD) {
+  let s = '';
+  if (overOn('heat')) s += heatSvg();
+  if (overOn('light')) for (const it of plan.items.filter(i => i.type === 'light_stand')) {
+    const [dx, dy] = aimOf(it, -1), throwFt = fromM(3.2), cx = it.x + dx * throwFt, cy = it.y + dy * throwFt;
+    s += `<ellipse class="ov-wash" cx="${f3(cx)}" cy="${f3(cy)}" rx="${f3(fromM(2.2))}" ry="${f3(fromM(1.8))}" transform="rotate(${f3((it.rot || 0))} ${f3(cx)} ${f3(cy)})"/>`;
+  }
+  if (overOn('sight')) s += sightSvg(deckD);
+  if (overOn('owners')) for (const it of plan.items) {
+    const hue = it.personId && personHue(it.personId); if (!hue || !itemShown(it)) continue;
+    if (cat(it).shape === 'person') { s += `<circle class="ov-owner-ring" cx="${it.x}" cy="${it.y}" r="${f3(Math.max(prop(it, 'w'), prop(it, 'd')) / 2 + .35)}" style="stroke:${hue}"/>`; continue; }
+    const w = Number(prop(it, 'w')) + .5, d = Number(prop(it, 'd')) + .5;   // a soft tag hugging the footprint, turned with the gear
+    s += `<rect class="ov-owner" x="${f3(-w / 2)}" y="${f3(-d / 2)}" width="${f3(w)}" height="${f3(d)}" rx="${f3(Math.min(w, d) * .3)}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" style="fill:${hue};stroke:${hue}"/>`;
+  }
+  return s;
+}
+function sightSvg(deckD) {
+  const desk = plan.items.find(i => i.type === 'foh'); if (!desk) return '';
+  const sp = stagePoly(), xs = sp.map(q => q[0]), maxY = Math.max(...sp.map(q => q[1]));
+  let s = `<path class="ov-sightline" d="M${f3(desk.x)} ${f3(desk.y)}L${f3(Math.min(...xs))} ${f3(maxY)}M${f3(desk.x)} ${f3(desk.y)}L${f3(Math.max(...xs))} ${f3(maxY)}"/>`;
+  const shadows = [];
+  for (const o of plan.items.filter(i => SIGHT_BLOCKERS.has(i.type) && i.y < desk.y)) {
+    const cs = footCorners(o).map(q => ({ q, a: Math.atan2(q[1] - desk.y, q[0] - desk.x) }));
+    cs.sort((a, b) => a.a - b.a); const A = cs[0].q, B = cs[cs.length - 1].q, far = 400;
+    const ext = q => { const dx = q[0] - desk.x, dy = q[1] - desk.y, L = Math.hypot(dx, dy) || 1; return [q[0] + dx / L * far, q[1] + dy / L * far]; };
+    const poly = [A, ext(A), ext(B), B, ...cs.slice(1, -1).map(c => c.q).sort((p, q) => Math.hypot(q[0] - desk.x, q[1] - desk.y) - Math.hypot(p[0] - desk.x, p[1] - desk.y))];
+    shadows.push({ o, poly });
+    s += `<path class="ov-shadow" clip-path="url(#deckclip)" d="M${poly.map(q => `${f3(q[0])} ${f3(q[1])}`).join('L')}Z"/>`;
+  }
+  for (const p of plan.items.filter(i => cat(i).shape === 'person')) {   // people the engineer can't see get a marker
+    const hid = shadows.find(sh => sh.o.id !== p.id && inPoly(p.x, p.y, sh.poly));
+    if (hid) s += `<g class="ov-hidden" transform="translate(${f3(p.x - .9)} ${f3(p.y - .9)})"><title>${esc(itemName(p))} is hidden from FOH by ${esc(itemName(hid.o))}</title><circle r=".42"/><path d="M-.22 0Q0 -.2 .22 0Q0 .2 -.22 0ZM-.26 .22L.26 -.22"/></g>`;
+  }
+  return s;
+}
+function heatSvg() {
+  const src = plan.items.filter(i => LOUD[i.type]); if (!src.length) return '';
+  const b = bounds(), step = Math.max(.8, b.vw / 90), cells = [];
+  let top = -Infinity;
+  for (let y = b.y0 + step / 2; y < b.y0 + b.vh; y += step) for (let x = b.x0 + step / 2; x < b.x0 + b.vw; x += step) {
+    let sum = 0;
+    for (const it of src) {
+      const [L0, face, pat] = LOUD[it.type], dx = x - it.x, dy = y - it.y, r = Math.max(fromM(.6), Math.hypot(dx, dy)), rm = r * .3048;
+      let off = 0;
+      if (face) { const [ax, ay] = aimOf(it, face), cos = (dx * ax + dy * ay) / r, th = Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI, half = pat === 'narrow' ? 30 : 45;
+        off = th < half ? 0 : th < 90 ? (th - half) / (90 - half) * 9 : 9 + (th - 90) / 90 * 12; }
+      sum += Math.pow(10, (L0 - 20 * Math.log10(Math.max(rm, .3)) - off) / 10);
+    }
+    const db = 10 * Math.log10(sum); top = Math.max(top, db); cells.push([x, y, db]);
+  }
+  let s = `<filter id="heatBlur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="${f3(step * .9)}"/></filter><g class="ov-heat" filter="url(#heatBlur)">`;
+  for (const [x, y, db] of cells) { const rel = db - top; if (rel < -27) continue; const t = Math.max(0, Math.min(1, (rel + 24) / 24)), hue = Math.round(220 - 220 * t);   // 24 dB from the loudest spot down to quiet
+    s += `<rect x="${f3(x - step / 2)}" y="${f3(y - step / 2)}" width="${f3(step + .02)}" height="${f3(step + .02)}" style="fill:hsl(${hue} 90% 55%);fill-opacity:${f3(.12 + t * .3)}"/>`; }
+  return s + '</g>';
+}
+/* walkways and cable-free zones: a floor cable crossing one is a trip hazard */
+function walkwayCrossings() {
+  const out = [];
+  for (const w of plan.items.filter(i => i.type === 'walkway')) {
+    const poly = footCorners(w);
+    for (const c of plan.cables) {
+      if (c.level === 'ceiling' || routeInfo(c)?.via) continue;
+      const g = cableGeom(c); if (!g) continue;
+      let hit = false;
+      for (let k = 0; k < g.length - 1 && !hit; k++) { const a = g[k], bb = g[k + 1];
+        if (inPoly(a[0], a[1], poly) || inPoly(bb[0], bb[1], poly)) hit = true;
+        else for (let e = 0; e < 4 && !hit; e++) if (segX(a, bb, poly[e], poly[(e + 1) % 4])) hit = true; }
+      if (hit && ![c.from, c.to].includes(w.id)) out.push({ w, c });
+    }
+  }
+  return out;
+}
+const segX = (p, q, r, s2) => { const d = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]); return d(p, q, r) * d(p, q, s2) < 0 && d(r, s2, p) * d(r, s2, q) < 0; };
+/* signal trace: from a source through its leads and the snake to the desk, and back to that person's monitors */
+let tracing = false;
+function traceSets(id) {
+  const it = itemById(id); if (!it) return null;
+  const cables = new Set(), items = new Set([id]), q = [id], SIG = ['inst', 'xlr', 'usb', 'cat6', 'speakon'];
+  while (q.length) {
+    const cur = itemById(q.shift()); if (!cur) continue;
+    for (const c of plan.cables) {
+      if (!SIG.includes(c.type) || !touches(c, cur.id) || cables.has(c.id)) continue;
+      const o = other(c, cur.id); if (!o) continue;
+      if ((isBox(cur) || cat(cur).desk) && c.type !== 'cat6') continue;   // at the stage box only the snake carries on
+      cables.add(c.id); if (!items.has(o.id)) { items.add(o.id); if (!cat(o).desk) q.push(o.id); }
+    }
+  }
+  const pid = it.personId || (cat(it).shape === 'person' ? it.personId : null);
+  if (pid) for (const m of plan.items.filter(i => i.personId === pid && ['iem', 'wedge'].includes(i.type))) {
+    items.add(m.id); for (const c of plan.cables) if (c.type === 'xlr' && touches(c, m.id)) { cables.add(c.id); const o = other(c, m.id); if (o) items.add(o.id); }
+  }
+  return { cables, items };
+}
+const traceOrder = (tr, c) => [...tr.cables].indexOf(c.id);   // pulses ripple outward from the source, hop by hop
+/* side view: the stage seen from the house, so risers, mic heights, speakers and overhead runs read at a glance */
+const SIDE_H = { person: 1.75, vox_mic: 1.55, vox_wl: 1.55, inst_mic: .7, headset: 1.7, drum_kit: 1.15, edrums: 1.2, cajon: .5, keys: .95, midi_keys: .95, up_piano: 1.25, grand_piano: 1, gtr_amp: .6, bass_amp: 1.1, wedge: .35,
+  main_spk: 2.6, sub: .6, la_sub: .6, light_stand: 2.5, camera: 1.6, drum_shield: 1.7, pulpit: 1.15, music_stand: 1.2, ipad_stand: 1.2, foh: 1.1, mon_desk: 1.1, conf_mon: 1.3, iem_rack: 1, stagebox: .45, rack: 1.1, distro: .4, laptop: 1 };
+let sideOpen = (() => { try { return !!JSON.parse(localStorage.getItem('stageplot.cables') || 'null')?.side; } catch { return false; } })();
+function toggleSide(on = !sideOpen) { setCableView(() => { sideOpen = on; }); }
+function sideSvg() {
+  const st = plan.stage, W = st.w, ceil = plan.settings.ceilH ?? fromM(4.5), near = plan.items.filter(i => i.y < st.d + 3).map(i => i.x);
+  const x0 = Math.min(-1, ...near.map(x => x - 1.5)), vw = Math.max(W + 1, ...near.map(x => x + 1.5)) - x0, top = ceil + .9;
+  const riserH = (x, y) => Math.max(0, ...plan.items.filter(r => cat(r).shape === 'platform' && !CAT[r.type]?.walk && inPoly(x, y, footCorners(r))).map(r => r.h ?? fromM(.4)));
+  let s = `<rect class="sv-house" x="${x0}" y="${f3(-top)}" width="${vw}" height="${f3(top + 1.2)}"/>`;
+  s += `<line class="sv-ceil" x1="${x0}" x2="${x0 + vw}" y1="${f3(-ceil)}" y2="${f3(-ceil)}"/><text class="sv-cap" x="${x0 + .3}" y="${f3(-ceil - .3)}">Ceiling ${mVal(ceil)} m</text>`;
+  s += `<rect class="sv-deck" x="0" y="0" width="${W}" height=".7"/>`;
+  for (let m = 1; fromM(m) < ceil; m++) s += `<line class="sv-tick" x1="${x0}" x2="${x0 + .5}" y1="${f3(-fromM(m))}" y2="${f3(-fromM(m))}"/><text class="sv-cap" x="${x0 + .7}" y="${f3(-fromM(m) + .25)}">${m} m</text>`;
+  const items = plan.items.filter(i => itemShown(i) && !CAT[i.type]?.walk && inPoly(i.x, i.y, [[-6, -6], [W + 6, -6], [W + 6, st.d + 2], [-6, st.d + 2]])).sort((a, b) => a.y - b.y);   // upstage first, so the front row draws over it
+  for (const r of items.filter(i => cat(i).shape === 'platform')) { const hw = Number(prop(r, 'w')) / 2, h = r.h ?? fromM(.4);
+    s += `<rect class="sv-riser" x="${f3(r.x - hw)}" y="${f3(-h)}" width="${f3(hw * 2)}" height="${f3(h)}"><title>${esc(itemName(r))} · ${mVal(h)} m</title></rect>`; }
+  for (const it of items.filter(i => cat(i).shape !== 'platform')) {
+    const type = cat(it).shape === 'person' ? 'person' : it.type, hm = SIDE_H[type] ?? .5, base = riserH(it.x, it.y), hw = Math.max(.35, Math.min(Number(prop(it, 'w')), 4) / 2);
+    const h = fromM(hm), fade = f3(.55 + .45 * Math.min(1, Math.max(0, it.y / Math.max(1, st.d)))), tip = `<title>${esc(itemName(it))} · ${mVal(base + h)} m up${base ? ` (on a ${mVal(base)} m riser)` : ''}</title>`;
+    if (type === 'person') s += `<g class="sv-person" style="opacity:${fade}">${tip}<circle cx="${it.x}" cy="${f3(-base - h + .42)}" r=".42"/><path d="M${f3(it.x - .62)} ${f3(-base)}V${f3(-base - h * .62)}Q${f3(it.x - .62)} ${f3(-base - h * .8)} ${it.x} ${f3(-base - h * .8)}Q${f3(it.x + .62)} ${f3(-base - h * .8)} ${f3(it.x + .62)} ${f3(-base - h * .62)}V${f3(-base)}Z"/></g>`;
+    else if (/mic|headset/.test(type)) s += `<g class="sv-mic">${tip}<line x1="${it.x}" x2="${it.x}" y1="${f3(-base)}" y2="${f3(-base - h)}"/><circle cx="${it.x}" cy="${f3(-base - h)}" r=".22"/><text class="sv-cap" x="${f3(it.x + .35)}" y="${f3(-base - h - .2)}">${mVal(base + h)}</text></g>`;
+    else if (type === 'light_stand' || type === 'main_spk') { const box = type === 'main_spk' ? fromM(.7) : fromM(.3);
+      s += `<g class="sv-gear${type === 'main_spk' ? ' sv-spk' : ''}">${tip}<line x1="${it.x}" x2="${it.x}" y1="${f3(-base)}" y2="${f3(-base - h + box)}"/><rect x="${f3(it.x - hw * .6)}" y="${f3(-base - h)}" width="${f3(hw * 1.2)}" height="${f3(box)}" rx=".12"/></g>`; }
+    else if (type === 'la_main') { const hang = fromM(2); s += `<g class="sv-gear sv-spk">${tip}<line class="sv-rig" x1="${it.x}" x2="${it.x}" y1="${f3(-ceil)}" y2="${f3(-ceil + .6)}"/><rect x="${f3(it.x - hw)}" y="${f3(-ceil + .6)}" width="${f3(hw * 2)}" height="${f3(hang)}" rx=".1"/></g>`; }
+    else s += `<rect class="sv-gear-b" style="opacity:${fade}" x="${f3(it.x - hw)}" y="${f3(-base - h)}" width="${f3(hw * 2)}" height="${f3(h)}" rx=".12">${tip}</rect>`;
+  }
+  for (const c of plan.cables.filter(c => c.level === 'ceiling')) {   // overhead runs: up, across under the ceiling, back down
+    const a = itemById(c.from), z = itemById(c.to); if (!a || !z) continue; const y = -ceil + .25;
+    s += `<path class="sv-run k-${c.type}" d="M${f3(a.x)} ${f3(-riserH(a.x, a.y) - .3)}V${f3(y)}H${f3(z.x)}V${f3(-riserH(z.x, z.y) - .3)}"><title>${esc(CABLES[c.type].name)} overhead · ${fmtLen(cableLen(c))}</title></path>`;
+  }
+  return `<svg class="sideview" viewBox="${x0} ${f3(-top)} ${vw} ${f3(top + 1.2)}" role="img" aria-label="Side view of the stage from the house">${s}</svg>`;
+}
+/* presentation mode: full screen, no chrome, big names and the service on top */
+let presenting = false;
+function setPresent(on) {
+  presenting = on; document.body.classList.toggle('presenting', on);
+  if (on) { sel = null; pending = null; placing = null; measure = null; tracing = null; if (view !== 'plot') view = 'plot'; document.documentElement.requestFullscreen?.().catch(() => {}); }
+  else if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  zoom = null; needFit = true; renderAll();
+  setTimeout(() => { needFit = true; zoom = null; renderPlot(); }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 30 : 260);   // after the panels have slid away
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presenting) setPresent(false); });
+/* before / after: last week's plot under a slider, same coordinates as this week */
+let cmpSplit = 50, beforeCache = { key: '', html: '' };
+function beforeHtml() {
+  const old = db.plans[compare]; if (!old) return '';
+  const key = `${compare}|${scale}|${svg.getAttribute('viewBox')}|${old.updated || ''}|${document.documentElement.dataset.theme || ''}`;
+  if (beforeCache.key === key) return beforeCache.html;
+  const keep = { plan, sel, group, mode, pending, measure, compare, tracing, placing, needFit, zoom, sideOpen }, inner = { html: '' };
+  plan = old; sel = null; group = null; mode = 'select'; pending = null; measure = null; compare = null; tracing = null; placing = null; needFit = false; sideOpen = false;
+  const box = { vb: svg.getAttribute('viewBox'), w: svg.style.width, h: svg.style.height };
+  zoom = scale; capturing = true;
+  try { renderPlot(); inner.html = svg.innerHTML; }
+  finally { ({ plan, sel, group, mode, pending, measure, compare, tracing, placing, needFit, zoom, sideOpen } = keep); capturing = false; svg.setAttribute('viewBox', box.vb); svg.style.width = box.w; svg.style.height = box.h; applyDeckColor(svg); }
+  const ids = new Set([...inner.html.matchAll(/ id="([^"]+)"/g)].map(m => m[1]));
+  let h = inner.html.replace(/<polyline class="cabhit[^>]*>(<title>[^<]*<\/title>)?<\/polyline>/g, '').replace(/ data-(id|cid|wp|rh|rot)="/g, ' data-old$1="');
+  for (const id of ids) h = h.split(`id="${id}"`).join(`id="was-${id}"`).split(`url(#${id})`).join(`url(#was-${id})`);
+  beforeCache = { key, html: h };
+  return h;
+}
+let capturing = false;
+function beforeSvg(b) {
+  const x = b.x0 + b.vw * cmpSplit / 100, old = db.plans[compare];
+  return `<clipPath id="beforeClip"><rect id="beforeRect" x="${f3(b.x0)}" y="${f3(b.y0)}" width="${f3(x - b.x0)}" height="${f3(b.vh)}"/></clipPath><g class="beforeview" clip-path="url(#beforeClip)">${beforeHtml()}</g>` +
+    `<g class="splitline" id="splitLine" transform="translate(${f3(x)} 0)"><line x1="0" x2="0" y1="${f3(b.y0)}" y2="${f3(b.y0 + b.vh)}"/><text class="split-tag" x="${f3(-8 / scale)}" y="${f3(plan.stage.d + 2)}" text-anchor="end">◀ ${esc(longDate(old.date))}</text><text class="split-tag" x="${f3(8 / scale)}" y="${f3(plan.stage.d + 2)}">This week ▶</text></g>`;
+}
+function setSplit(v) {
+  cmpSplit = Math.max(0, Math.min(100, Number(v) || 0));
+  const b = bounds(), x = b.x0 + b.vw * cmpSplit / 100, r = document.getElementById('beforeRect'), l = document.getElementById('splitLine');
+  if (r) r.setAttribute('width', f3(x - b.x0)); if (l) l.setAttribute('transform', `translate(${f3(x)} 0)`);
+}
 function hiddenLayers() {   // what's switched off right now, in words, for the "hidden" chip
   const counts = {}; for (const c of plan.cables) counts[c.type] = (counts[c.type] || 0) + 1;
   const out = LAYERS.filter(([k]) => cableView.layers.has(k)).map(([, n]) => n);
@@ -4846,6 +5106,9 @@ function cableMenuHtml() {
       <div class="cm-top"><b>Layers</b>${off.length ? `<button class="btn quiet" id="layShowAll">${ic('eye', 'sm')}Show everything</button>` : '<span class="hint">Hiding never deletes anything</span>'}</div>
       <div class="cm-h">On stage</div>
       ${LAYERS.map(([k, n, icn]) => `<button class="cm-row cm-type" data-layer="${k}" aria-pressed="${!cableView.layers.has(k)}" role="menuitemcheckbox" aria-checked="${!cableView.layers.has(k)}">${ic(icn, 'sm')}<span>${n}</span><span class="cm-n">${lcount[k] ?? ''}</span>${eye(!cableView.layers.has(k))}</button>`).join('')}
+      <div class="cm-h">Views <small class="cm-sub">on screen only, never printed</small></div>
+      ${OVERLAYS.map(([k, n, icn, sub]) => `<button class="cm-row cm-tog" data-over="${k}" role="menuitemcheckbox" aria-checked="${cableView.over.has(k)}">${ic(icn, 'sm')}<span class="cm-lbl">${n}<small>${sub}</small></span>${sw(cableView.over.has(k))}</button>`).join('')}
+      ${tog('sideBtn', sideOpen, 'Side view', 'Heights from the house · E')}
       <div class="cm-h">Cables</div>
       ${tog('cabAllBtn', cableView.all, '<b>Show cables</b>', 'Shortcut: H')}
       <div class="cm-seg" role="group" aria-label="Focus on">
@@ -5325,6 +5588,9 @@ function cmdItems() {
     ['Go to Home (G)', 'calendar', () => goHome()],
     ['Open the paperwork (P)', 'sheet', () => { view = 'paper'; renderAll(); }],
     ['Load-in checklist', 'check', () => { view = 'paper'; paperTab = 'loadin'; renderAll(); }],
+    ['Present on a screen (F)', 'fit', () => setPresent(true)],
+    [sideOpen ? 'Close the side view (E)' : 'Side view: heights (E)', 'ruler', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } toggleSide(); }],
+    ...OVERLAYS.map(([k, n]) => [`${cableView.over.has(k) ? 'Hide' : 'Show'} ${n.toLowerCase()}`, 'eye', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } setCableView(() => { cableView.over.has(k) ? cableView.over.delete(k) : cableView.over.add(k); }); }]),
     ['Build stage from team', 'wand', () => buildNow()],
     ['Run a cable', 'cable', () => setMode('cable')],
     ['Draw a cable channel', 'trench', () => setMode('channel')],
