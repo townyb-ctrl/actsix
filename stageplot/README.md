@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 44 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 45 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -46,7 +46,7 @@ Open `index.html` in a modern browser to run it.
 - **Library editing**: the pen on a library row renames a week or moves it to another date in place (Undo in the notice).
 - **Keys**: `G` goes Home, `P` toggles Paperwork; both are in Ctrl K too, along with the load-in checklist.
 - **Views** (Layers → Views; on screen only, never printed or saved into the week, remembered in this browser):
-  - **Whose gear**: one soft colour blob per person around them and everything they own. Things within about 90 cm of each other melt into a single outline; drag gear away and the blob pulls apart, drag it back and they join with a little bubble pop. The blobs swell in when you switch the view on (no motion with reduced-motion set).
+  - **Whose gear**: each person wears a ring in their colour, and their gear gets a soft blob in the same colour. Gear within about 90 cm melts into one outline; instruments get blobs of their own and never join the other gear, and blobs never join the person. Drag gear away and its blob pulls apart, drag it back and it rejoins with a little bubble pop. The blobs swell in when you switch the view on (no motion with reduced-motion set).
   - **Lighting wash**: a warm pool where each light on a stand points.
   - **Sightlines from FOH**: two lines from the desk to the stage corners and a shadow behind anything tall (speakers on stands, drum shield, lights, cameras, pulpit, racks). Anyone standing in a shadow gets a red eye marker, with who's blocking them on hover.
   - **Sound coverage**: a heat map from the mains, subs, line arrays and wedges (level falls with distance and off-axis), red loudest to blue quiet, over 24 dB.
