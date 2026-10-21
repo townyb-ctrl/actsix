@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 45 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 46 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -45,6 +45,7 @@ Open `index.html` in a modern browser to run it.
 - **Setups by service type**: link a setup to a Planning Center service type (Home → Setups). Importing a plan of that type into an empty week lays the stage out from that setup first.
 - **Library editing**: the pen on a library row renames a week or moves it to another date in place (Undo in the notice).
 - **Keys**: `G` goes Home, `P` toggles Paperwork; both are in Ctrl K too, along with the load-in checklist.
+- **Centred stage**: the plot always opens with the stage dead centre in the canvas (desktop, tablet and phone), and *Fit the stage* (`0`) puts it back there. *Show the whole room* centres the whole room instead; scroll or drag to reach the house.
 - **Views** (Layers → Views; on screen only, never printed or saved into the week, remembered in this browser):
   - **Whose gear**: each person wears a ring in their colour, and their gear gets a soft blob in the same colour. Gear within about 90 cm melts into one outline; instruments get blobs of their own and never join the other gear, and blobs never join the person. Drag gear away and its blob pulls apart, drag it back and it rejoins with a little bubble pop. The blobs swell in when you switch the view on (no motion with reduced-motion set).
   - **Lighting wash**: a warm pool where each light on a stand points.

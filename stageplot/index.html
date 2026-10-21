@@ -2607,6 +2607,15 @@ function bounds() {
   const x0 = Math.min(0, (w - hw) / 2), x1 = Math.max(w, (w + hw) / 2);
   return { x0: x0 - 3, y0: -3, vw: (x1 - x0) + 6, vh: d + house + 5 };
 }
+// the drawing grows evenly around the stage, at least as big as the canvas, so the stage can always sit dead centre
+// (the house below it would otherwise push the stage up whenever the whole room fits on screen)
+const deckCentre = () => { const p = stagePoly(), xs = p.map(q => q[0]), ys = p.map(q => q[1]); return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]; };
+function viewBoxFor(b) {
+  if (layersBypass || capturing) return b;
+  const [cx, cy] = fitMode === 'room' && !zoom ? [b.x0 + b.vw / 2, b.y0 + b.vh / 2] : deckCentre(), pad = 32 / scale;   // "whole room" centres the room instead
+  const hw = Math.max(cx - b.x0, b.x0 + b.vw - cx, (scroller.clientWidth / scale - pad) / 2), hh = Math.max(cy - b.y0, b.y0 + b.vh - cy, (scroller.clientHeight / scale - pad) / 2);
+  return { x0: cx - hw, y0: cy - hh, vw: hw * 2, vh: hh * 2 };
+}
 function stageRegion() {
   const { w, d } = plan.stage, mx = fromM(1.4);
   return { x: -mx, y: -fromM(.9), w: w + mx * 2, h: d + fromM(2.4) };
@@ -2957,8 +2966,9 @@ function renderPlot() {
   if (view !== 'plot') return;
   const b = bounds();
   scale = zoom || fitScale();
-  svg.style.width = `${b.vw * scale}px`; svg.style.height = `${b.vh * scale}px`;
-  svg.setAttribute('viewBox', `${b.x0} ${b.y0} ${b.vw} ${b.vh}`);
+  const v = viewBoxFor(b);
+  svg.style.width = `${f3(v.vw * scale)}px`; svg.style.height = `${f3(v.vh * scale)}px`;
+  svg.setAttribute('viewBox', `${f3(v.x0)} ${f3(v.y0)} ${f3(v.vw)} ${f3(v.vh)}`);
   $('scroller').classList.toggle('cabling', mode === 'cable' || mode === 'measure' || mode === 'box');
   $('scroller').classList.toggle('placing', !!placing);
   const { w, d, house } = plan.stage;
@@ -2970,7 +2980,7 @@ function renderPlot() {
   for (const [k, px, cap] of [['cw', 1.8, .12], ['cwq', 1.3, .09], ['cwh', 2.5, .17], ['cws', 3.1, .22], ['cc', 4.6, .26], ['ccq', 3.4, .18], ['cch', 5.6, .32], ['ccs', 6.6, .4], ['csh', .7, .04], ['cshs', .9, .055], ['cg', 11, .8], ['cwa', 2.4, .16], ['cl', 3.2, .2], ['cls', 4, .26], ['cl2', 5.6, .34]]) svg.style.setProperty('--' + k, W(px, cap));
   svg.style.setProperty('--cd', `${f3(Math.min(7 / scale, .55))} ${f3(Math.min(4.5 / scale, .3))}`);
   let s = `<defs><marker id="cmpHead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="cmp-head" d="M0 0L10 5L0 10z"/></marker><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
-  s += `<rect class="house-fill" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}"/>`}`;
+  s += `<rect class="house-fill" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>`}`;
   const poly = stagePoly(), deckD = polyPath(poly);
   s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath></defs>`);
   s = s.replace('</defs>', '<filter id="deckblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".22"/></filter></defs>');
@@ -3177,9 +3187,9 @@ function renderPlot() {
   if (needFit && !zoom) {
     needFit = false;
     if (fitMode === 'stage') {
-      const r = stageRegion(), m = svg.getScreenCTM(), sr = scroller.getBoundingClientRect();
+      const [dx, dy] = deckCentre(), m = svg.getScreenCTM(), sr = scroller.getBoundingClientRect();
       if (m) {
-        const cx = (r.x + r.w / 2) * m.a + m.e, cy = (r.y + r.h / 2) * m.d + m.f;
+        const cx = dx * m.a + m.e, cy = dy * m.d + m.f;
         scroller.scrollLeft += cx - (sr.left + sr.width / 2);
         scroller.scrollTop += cy - (sr.top + sr.height / 2);
       }
