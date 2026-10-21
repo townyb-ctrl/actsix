@@ -1109,6 +1109,24 @@ td.spare { color: var(--muted); font-style: italic; }
 :root[data-theme="dark"] .doc-head { box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); background: linear-gradient(160deg, #2a2e39, var(--deck)); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .doc-head { box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); background: linear-gradient(160deg, #2a2e39, var(--deck)); } }
 :root[data-theme="dark"] .seats rect { opacity: .08; } :root[data-theme="dark"] .itag.out rect { fill: var(--surface-3); }
+/* people wear one colour everywhere */
+.avatar.hued { --av-bg: color-mix(in srgb, var(--hue) 34%, #fff); --av-fg: color-mix(in srgb, var(--hue) 45%, #000); }
+:root[data-theme="dark"] .avatar.hued { --av-bg: color-mix(in srgb, var(--hue) 30%, #121419); --av-fg: color-mix(in srgb, var(--hue) 70%, #fff); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .avatar.hued { --av-bg: color-mix(in srgb, var(--hue) 30%, #121419); --av-fg: color-mix(in srgb, var(--hue) 70%, #fff); } }
+/* setup guide: a line joins the steps and fills as they're done; a finished step pops */
+.steps li { position: relative; }
+.steps li:not(:last-child)::before { content: ''; position: absolute; left: 10px; top: 30px; bottom: -4px; width: 2px; border-radius: 2px; background: var(--line-2); }
+.steps li.done:not(:last-child)::before { background: color-mix(in srgb, var(--ok) 70%, transparent); }
+.steps .mark { position: relative; z-index: 1; background: var(--surface); }
+.steps li.pop .mark { animation: stepPop .5s cubic-bezier(.3, 1.7, .5, 1); } @keyframes stepPop { 0% { transform: scale(.5); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .steps li.pop .mark { animation: none; } }
+/* checks chip preview */
+.statuspill { position: relative; }
+.chkpeek { position: absolute; top: calc(100% + 8px); left: 0; width: min(340px, calc(100vw - 32px)); padding: 10px 12px; border-radius: var(--fl-r, 14px); background: var(--glass); -webkit-backdrop-filter: var(--fl-blur); backdrop-filter: var(--fl-blur); border: 1px solid var(--line-2); box-shadow: var(--shadow-2);
+  opacity: 0; visibility: hidden; transform: translateY(-3px); transition: opacity .14s, transform .14s, visibility 0s .14s; pointer-events: none; z-index: 6; }
+.statuspill:has(#checksBtn:hover, #checksBtn:focus-visible) .chkpeek { opacity: 1; visibility: visible; transform: none; transition: opacity .14s, transform .14s; }
+.chkpeek ul { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; font-size: 12.5px; } .chkpeek li { display: grid; grid-template-columns: 10px 1fr; gap: 8px; align-items: start; color: var(--ink); }
+.chkpeek .pdot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; background: var(--warn); } .chkpeek li.bad .pdot { background: var(--bad); } .chkpeek small { color: var(--muted); font-size: 11.5px; }
 /* visual pass: name tags, depth, seats, hover, empty state, calmer inspector */
 #plot .itag, .snap .itag { pointer-events: none; }
 .itag rect { fill: rgba(16,18,23,.74); stroke: rgba(255,255,255,.12); stroke-width: var(--hair, .03px); }
@@ -2501,6 +2519,8 @@ let railOpen = true, inspOpen = true;
 let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', gearTab = (() => { try { const t = localStorage.getItem('stageplot.gearTab'); return GEAR_GROUPS.some(([g]) => g === t) ? t : 'Instruments'; } catch { return 'Instruments'; } })(), themePref = 'system';
 const SHORT = { xlr: 'XLR', cat6: 'Cat6', power: 'Power', inst: 'Jack', speakon: 'Speakon', video: 'Video', usb: 'USB' };
 const KVAR = { xlr: '--k-xlr', cat6: '--k-cat', power: '--k-pow', inst: '--k-inst', speakon: '--k-spk', video: '--k-vid', usb: '--k-usb' };
+const personColour = pid => (pid && typeof PERSON_HUES !== 'undefined' && personHue(pid)) || '';
+const hueStyle = pid => { const h = personColour(pid); return h ? ` hued" style="--hue:${h}` : ''; };   // drops into an avatar's class attribute
 const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? 'word' : /Engineer|Lighting|Producer|Camera/.test(r) ? 'tech' : r ? 'band' : '';
 const longDate = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); } catch { return iso; } };
 const plural = (n, a, b = a + 's') => `${n} ${n === 1 ? a : b}`;
@@ -3087,13 +3107,14 @@ function shapeSvg(it, w, d) {
   }
   switch (c.shape) {
     case 'person': {   // a soft disc in the role's colour: shadow below, light from above, a small notch facing the audience
-      const tone = roleTone(personById(it.personId)?.role) || 'none', r = hw;
+      const tone = roleTone(personById(it.personId)?.role) || 'none', r = hw, hue = personColour(it.personId);   // the person's own colour: the same in the team list, details, cards and Whose gear
+      const fill = hue ? ` style="fill:${hue}"` : '', nose = hue ? ` style="fill:color-mix(in srgb, ${hue} 62%, #000)"` : '';
       return `<circle class="pt-shadow" cx=".05" cy=".09" r="${f3(r * 1.02)}"/>` +
-        `<path class="pt-nose pt-${tone}" d="M${f3(-r * .32)} ${f3(r * .86)}Q0 ${f3(r * 1.32)} ${f3(r * .32)} ${f3(r * .86)}Z"/>` +
-        `<circle class="${cls} pt-${tone}" r="${f3(r)}"/>` +
+        `<path class="pt-nose pt-${tone}" d="M${f3(-r * .32)} ${f3(r * .86)}Q0 ${f3(r * 1.32)} ${f3(r * .32)} ${f3(r * .86)}Z"${nose}/>` +
+        `<circle class="${cls} pt-${tone}" r="${f3(r)}"${fill}/>` +
         `<ellipse class="pt-light" cx="0" cy="${f3(-r * .38)}" rx="${f3(r * .7)}" ry="${f3(r * .44)}"/>` +
         `<circle class="pt-ring" r="${f3(r * .84)}"/>` +
-        `<text class="initials pi-${tone}" text-anchor="middle" dy=".21">${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
+        `<text class="initials pi-${tone}" text-anchor="middle" dy=".21"${hue ? ' style="fill:#10131a"' : ''}>${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
     }
     case 'round': return `<ellipse class="${cls}" rx="${hw}" ry="${hd}"/>`;
     case 'wedge': return `<polygon class="${cls}" points="${-hw},${hd} ${hw},${hd} ${hw * .65},${-hd} ${-hw * .65},${-hd}"/>`;
@@ -3729,7 +3750,7 @@ function renderQuick() {
   if (q.hidden) { q.innerHTML = ''; return; }
   const more = `<button class="btn" data-insp-show>${ic('panelR', 'sm')}Details</button>`;
   q.innerHTML = it ? `<div class="panel quick">
-      <div class="qh">${cat(it).shape === 'person' ? `<span class="avatar">${esc(initials(personById(it.personId)?.name || it.label))}</span>` : glyph(it.type, '', it)}<div><div class="eyebrow">${esc(cat(it).name)}</div><h3>${esc(itemName(it))}</h3></div></div>
+      <div class="qh">${cat(it).shape === 'person' ? `<span class="avatar${hueStyle(it.personId)}">${esc(initials(personById(it.personId)?.name || it.label))}</span>` : glyph(it.type, '', it)}<div><div class="eyebrow">${esc(cat(it).name)}</div><h3>${esc(itemName(it))}</h3></div></div>
       <div class="qa"><button class="btn" data-q="rotate" title="Rotate (R)" aria-label="Rotate">${ic('rotate', 'sm')}</button><button class="btn" data-q="dup" title="Duplicate (D)" aria-label="Duplicate">${ic('copy', 'sm')}</button><button class="btn danger" data-q="del" title="Delete" aria-label="Delete">${ic('trash', 'sm')}</button>${more}</div></div>`
     : `<div class="panel quick">
       <div class="qh"><span class="swline bg-${c.type}" style="width:28px;height:5px;border-radius:3px"></span><div><div class="eyebrow">${esc(CABLES[c.type].name)}</div><h3>${esc(itemName(itemById(c.from)))} → ${esc(itemName(itemById(c.to)))}</h3></div></div>
@@ -3780,7 +3801,8 @@ function renderFloat() {
   }
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel statuspill">
-      <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}" aria-expanded="${checksOpen}">${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${plural(w.length, 'check')}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
+      <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}" aria-expanded="${checksOpen}" ${w.length ? 'aria-describedby="chkPeek"' : ''}>${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${(() => { const nb = w.filter(x => x.lvl === 'bad').length, nw = w.length - nb; return nb ? `${plural(nb, 'problem')}${nw ? ` · ${nw} to check` : ''}` : `${plural(nw, 'thing')} to check`; })()}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
+      ${w.length && !checksOpen ? `<div class="chkpeek" id="chkPeek" role="tooltip"><ul>${w.slice().sort((a, b) => (a.lvl === 'bad' ? 0 : 1) - (b.lvl === 'bad' ? 0 : 1)).slice(0, 3).map(x => `<li class="${x.lvl}"><span class="pdot"></span><span>${esc(x.msg.length > 110 ? x.msg.slice(0, 107) + '…' : x.msg)}</span></li>`).join('')}</ul>${w.length > 3 ? `<small>and ${w.length - 3} more · click to see all</small>` : '<small>Click to see them and fix</small>'}</div>` : ''}
       <span class="stat"><b>${t.ins}</b> inputs</span>
       ${ui.adv ? `<span class="stat optional"><b>${fmtLen(t.cab, 0)}</b> cable</span>
       <span class="stat optional"><b>${(t.watts / 1000).toFixed(1)}</b> kW</span>` : ''}
@@ -3797,6 +3819,7 @@ function viewIn() {   // the view you switch to fades in instead of snapping
   const el = $({ home: 'homeView', plot: 'plotView', paper: 'paperView' }[view]); if (!el) return;
   el.classList.remove('vin'); void el.offsetWidth; el.classList.add('vin');
 }
+let guideSeen = null;   // steps already ticked, so only a newly finished one pops
 function renderHeader() {
   $('wkDate').textContent = longDate(plan.date);
   $('wkName').textContent = plan.name || 'Untitled service';
@@ -3872,7 +3895,7 @@ function renderRail() {
       <div class="sechead"><h2>This week's team</h2></div>
       ${plan.team.length ? `<div class="people">${plan.team.map(p => `
         <div class="person" data-pid="${p.id}">
-          <span class="avatar tone-${roleTone(p.role)}">${esc(initials(p.name) || '?')}</span>
+          <span class="avatar tone-${roleTone(p.role)}${hueStyle(p.id)}">${esc(initials(p.name) || '?')}</span>
           <div class="pmain">
             <input type="text" id="pn-${p.id}" value="${esc(p.name)}" aria-label="Name" data-f="name" placeholder="Name">
             <select id="pr-${p.id}" data-f="role" aria-label="Position" class="${p.role ? '' : 'empty'}">${roleOptions(p.role)}</select>
@@ -4083,7 +4106,7 @@ function renderInspector() {
     const moreWhat = [!ownerUp && plan.team.length ? 'owner' : '', 'position', isRiser ? '' : 'size', C.wireless || isPowerSource(it) || isRiser ? '' : 'power draw', ins.length || C.inputs ? 'input names' : '', isExt(it) || isPowerSource(it) ? 'ratings' : '', it.type === 'stagebox' ? 'ports' : ''].filter(Boolean).join(', ');
     const conns = plan.cables.filter(x => touches(x, it.id));
     el.innerHTML = `<div class="insp">
-      <div class="insp-head">${C.shape === 'person' ? `<span class="avatar tone-${roleTone(owner?.role)}" style="width:44px;height:44px">${esc(initials(owner?.name || it.label))}</span>` : glyph(it.type, '', it)}
+      <div class="insp-head">${C.shape === 'person' ? `<span class="avatar tone-${roleTone(owner?.role)}${owner ? ` hued" style="--hue:${personColour(owner.id)};width:44px;height:44px` : '" style="width:44px;height:44px'}">${esc(initials(owner?.name || it.label))}</span>` : glyph(it.type, '', it)}
         <div style="min-width:0"><div class="eyebrow">${esc(C.name)}</div><input id="iLabel" class="titlein" type="text" value="${esc(it.label || '')}" placeholder="${esc(itemName({ ...it, label: '' }))}" aria-label="Name" title="Click to rename"></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       ${ownerUp || it.chan ? `<section class="isec">
@@ -4168,8 +4191,9 @@ function renderInspector() {
         <div class="allset"><span class="mark">${ic('check', 'sm')}</span><div><b>All set for ${esc(new Date(plan.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'long' }))}</b><small>Stage, team, gear, audio and power all check out.</small></div></div>
         <button class="btn primary block" data-go="paper">${ic('sheet', 'sm')}Open the paperwork</button></section>`
       : `<section class="isec setupguide"><h3 title="Do these in any order. Ticks follow what's on the plan">Set up this week <span style="display:flex;gap:4px;align-items:center"><span class="gprog" aria-label="${nDone} of 6 done">${steps.map(x => `<i class="${x.done ? 'on' : ''}"></i>`).join('')}</span><button class="iconbtn" id="guideOff" aria-label="Hide the guide" title="Hide the guide (bring it back from ⋯)" style="margin:-6px -2px">${ic('x', 'sm')}</button>${hide}</span></h3>
-        <ol class="steps">${steps.map((x, i) => `<li class="${x.done ? 'done' : i === nowIdx ? 'now' : ''}"><span class="mark">${x.done ? ic('check', 'sm') : i + 1}</span><div><button class="steplink" data-step="${x.k}" title="Go to ${esc(x.t)}"><b>${esc(x.t)}</b><span class="sub">${esc(x.sub)}</span></button>${i === nowIdx ? `<div class="stepact">${x.act}</div>` : ''}</div></li>`).join('')}</ol>
+        <ol class="steps">${steps.map((x, i) => `<li class="${x.done ? 'done' : i === nowIdx ? 'now' : ''}${x.done && guideSeen && !guideSeen.has(x.k) ? ' pop' : ''}"><span class="mark">${x.done ? ic('check', 'sm') : i + 1}</span><div><button class="steplink" data-step="${x.k}" title="Go to ${esc(x.t)}"><b>${esc(x.t)}</b><span class="sub">${esc(x.sub)}</span></button>${i === nowIdx ? `<div class="stepact">${x.act}</div>` : ''}</div></li>`).join('')}</ol>
       </section>`;
+    if (ui.guide) guideSeen = new Set(steps.filter(x => x.done).map(x => x.k));
     el.innerHTML = `<div class="insp">
       ${guide}
       ${prevWeekId() ? `<section class="isec" style="padding-top:${ui.guide ? 0 : 14}px"><button class="btn block" data-go="compare" aria-pressed="${!!compare}" title="Compare with ${esc(longDate(db.plans[prevWeekId()].date))}">${ic('diff', 'sm')}${compare ? 'Hide changes' : 'Changes since last week'}</button></section>` : ''}
