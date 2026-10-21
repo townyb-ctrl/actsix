@@ -1075,6 +1075,7 @@ td.spare { color: var(--muted); font-style: italic; }
 .f-foh b { font-weight: 700; } .f-foh span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; } .f-foh .fohar { font-size: 15px; color: var(--accent); }
 .f-foh-up { top: 62px; bottom: auto; right: 14px; } .f-foh-left { left: 14px; right: auto; } .f-foh:hover { border-color: var(--ink-2); }
 .times3 { gap: 8px; } .times3 input { min-width: 0; width: 100%; }
+.boxkey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; font-size: 12.5px; color: var(--muted); } .boxkey b { font-family: var(--f-mono, monospace); color: var(--ink); margin-right: 4px; }
 /* views: overlays, walkways, textures, trace, side view, before/after, presentation */
 .cm-h .cm-sub { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 4px; }
 .ov-own, .ov-own-ring { pointer-events: none; } .ov-own-ring { fill: none; stroke-width: var(--cwh, .12px); stroke-opacity: .9; }
@@ -2101,6 +2102,28 @@ function fixChannels(rows) {
   }
   if (added && !chanSaveQueued) { chanSaveQueued = true; queueMicrotask(() => { chanSaveQueued = false; save(); }); }
   return rows.sort((a, b) => a.ch - b.ch);
+}
+/* short patch names: "Stage box A 32×16 · in 12" reads as A·12. Each box gets a code: its own letter when its name has one,
+   else its initials; a key under the input list says which code is which box. Exports keep the full names. */
+function boxCodes() {
+  const boxes = plan.items.filter(i => isBox(i) || cat(i).desk).map(i => itemName(i)).sort(), codes = new Map(), used = new Set();
+  for (const n of boxes) {
+    let c = (/\b([A-Z])\b/.exec(n.replace(/\d+×\d+/g, '')) || [])[1] || n.split(/\s+/).filter(w => /^[A-Za-z]/.test(w)).map(w => w[0].toUpperCase()).join('').slice(0, 3) || 'B';
+    for (let k = 2; used.has(c); k++) c = c.replace(/\d+$/, '') + k;
+    used.add(c); codes.set(n, c);
+  }
+  return codes;
+}
+function shortPort(port, codes = boxCodes()) {
+  const m = /^(.*) · (in|out) (\d+)$/.exec(port || '');
+  if (m && codes.has(m[1])) return m[2] === 'in' ? `${codes.get(m[1])}·${m[3]}` : `${codes.get(m[1])}·out ${m[3]}`;
+  const l = /^(.*) local$/.exec(port || ''); if (l && codes.has(l[1])) return `${codes.get(l[1])} local`;
+  return port;
+}
+function boxKey(rows) {   // only the codes this sheet actually uses
+  const codes = boxCodes(), seen = new Set(rows.map(r => /^(.*?) · (?:in|out) \d+$|^(.*) local$/.exec(r.port || '')).filter(Boolean).map(m => m[1] || m[2]));
+  const list = [...codes].filter(([n]) => seen.has(n));
+  return list.length ? `<p class="boxkey">${list.map(([n, c]) => `<span><b>${esc(c)}</b> ${esc(n)}</span>`).join('')}</p>` : '';
 }
 function spareChannels(rows) {   // channels below the highest in use that nobody has this week, and whose they usually are
   const C = chans_(); if (C.fixed === false || !rows.length) return [];
@@ -4127,9 +4150,9 @@ function loadinTasks() {   // what the crew does on the day, in the order they d
   const power = plan.cables.filter(c => c.type === 'power').map(c => { const src = [by(c, 'from'), by(c, 'to')].find(isPowerSource) || by(c, 'to'), load = other(c, src.id);
     return load && { key: `pw:${c.id}`, text: `${itemName(load)}`, sub: `into ${itemName(src)}${c.circuit ? ` · circuit ${c.circuit}` : ''} · ${fmtLen(cableLen(c))} lead` }; }).filter(Boolean);
   const snake = plan.cables.filter(c => c.type === 'cat6').map(c => ({ key: `sn:${c.id}`, text: `${itemName(by(c, 'from'))} ↔ ${itemName(by(c, 'to'))}`, sub: `Cat6 · ${fmtLen(cableLen(c))}` }));
-  const ins = inputList().map(r => ({ key: `in:${r.name}:${r.source}`, text: `${r.ch}. ${r.name}`, sub: `${r.source} → ${r.port}` }));
+  const codes = boxCodes(), ins = inputList().map(r => ({ key: `in:${r.name}:${r.source}`, text: `${r.ch}. ${r.name}`, sub: `${r.source} → ${shortPort(r.port, codes)}` }));
   const leads = plan.cables.filter(c => c.type === 'inst').map(c => ({ key: `ld:${c.id}`, text: `${itemName(by(c, 'from'))} → ${itemName(by(c, 'to'))}`, sub: `jack lead · ${fmtLen(cableLen(c))}` }));
-  const outs = outputList().map(r => ({ key: `out:${r.dest}:${r.port}`, text: r.dest, sub: `${r.type ? r.type + ' · ' : ''}${r.port}` }));
+  const outs = outputList().map(r => ({ key: `out:${r.dest}:${r.port}`, text: r.dest, sub: `${r.type ? r.type + ' · ' : ''}${shortPort(r.port, codes)}` }));
   return [['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
 }
 const loadinState = () => (plan.loadin ||= {});
@@ -4150,12 +4173,14 @@ function renderPaper() {
   if (view !== 'paper') return;
   const ins = inputSheet(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
   const sources = plan.items.filter(isPowerSource);
-  const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Mic / DI', 'mic'], ['Stand', 'stand'], ['48V', r => r.p48 ? '48V' : ''], ['Group', 'group'], ['Person', 'person'], ['Patch', 'port']];
-  const outCols = [['Destination', 'dest'], ['Type', 'type'], ['Patch', 'port']];
+  const codes = boxCodes();
+  const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Mic / DI', 'mic'], ['Stand', 'stand'], ['48V', r => r.p48 ? '48V' : ''], ['Group', 'group'], ['Person', 'person'], ['Patch', r => shortPort(r.port, codes)]];
+  const outCols = [['Destination', 'dest'], ['Type', 'type'], ['Patch', r => shortPort(r.port, codes)]];
   const mixCols = [['Mix', 'mix'], ['Person', 'person'], ['Position', 'role'], ['Monitor', 'kind']];
   const pullCols = [['Cable', r => r.label || CABLES[r.type].name], ['Length', r => `${r.len} m`], ['Qty', 'n']];
   const teamCols = [['Name', 'name'], ['Position', 'role'], ['Sings', r => r.sings ? 'yes' : '']];
-  paperData = { inputs: tsv(ins, inCols), outputs: tsv(outs, outCols), mixes: tsv(mixes, mixCols), pull: tsv(pull, pullCols), team: tsv(plan.team, teamCols) };
+  const full = cols => cols.map(c => c[0] === 'Patch' ? ['Patch', 'port'] : c);   // copies keep the full box names
+  paperData = { inputs: tsv(ins, full(inCols)), outputs: tsv(outs, full(outCols)), mixes: tsv(mixes, mixCols), pull: tsv(pull, pullCols), team: tsv(plan.team, teamCols) };
   const cell = (r, c, i) => {
     const v = typeof c[1] === 'function' ? c[1](r) : r[c[1]];
     if (r.spare && c[0] !== 'Ch') return `<td class="spare">${c[0] === 'Input' ? 'Spare' : c[0] === 'Mic / DI' ? esc(r.mic) : ''}</td>`;
@@ -4165,6 +4190,7 @@ function renderPaper() {
     if (c[0] === '48V') return `<td>${v ? '<span class="p48">48V</span>' : '<span class="hint">—</span>'}</td>`;
     if (c[0] === 'Cable') return `<td><span class="row" style="gap:8px;flex-wrap:nowrap"><span class="dot bg-${r.type}"></span>${esc(v)}</span></td>`;
     if (c[0] === 'Qty') return `<td class="num">${esc(v)}</td>`;
+    if (c[0] === 'Patch' && r.port && v !== r.port) return `<td class="mono" title="${esc(r.port)}">${esc(v)}</td>`;
     return `<td class="${['Patch', 'Length'].includes(c[0]) ? 'mono' : ''}">${esc(v) || (i ? '<span class="hint">—</span>' : '')}</td>`;
   };
   // rows that belong to the same person read as one group: the name shows once, a firmer rule marks each new person
@@ -4196,9 +4222,9 @@ function renderPaper() {
     ${(() => { const nt = plan.items.filter(i => i.note); return nt.length ? `<section class="sheet" id="sec-notes" data-sheet="overview">${head('Notes', '', 'Pinned to people and gear on the plot')}<ul class="notelist">${nt.map(i => `<li><b>${esc(itemName(i))}</b><span>${esc(i.note)}</span></li>`).join('')}</ul></section>` : ''; })()}
     ${paperTab === 'spots' ? `<section class="sheet" id="sec-spots" data-sheet="spots"><header><div><h2>My spot</h2><p class="hint">A card for each person: where they stand, their channels, monitor, power and notes. Copy it into a message, or print one per page.</p></div><button class="btn primary" id="printSpots">${ic('sheet', 'sm')}Print every card</button></header>${spotsHtml()}</section>` : ''}
     ${paperTab === 'rider' ? `<section class="sheet" id="sec-rider" data-sheet="rider"><header><div><h2>Rider</h2><p class="hint">One black-and-white page for the venue: plot, scale, legend and inputs.</p></div><button class="btn primary" id="printRider">${ic('sheet', 'sm')}Print the rider</button></header>${riderHtml(ins)}</section>` : ''}
-    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')}. ${chans_().fixed !== false ? 'Channel numbers stay the same every week' + (spareChannels(ins).length ? `; ${plural(spareChannels(ins).length, 'spare channel')} this week` : '') : 'Numbered in band order'}. ${ins.filter(r => r.p48).length} need phantom power.`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn${chEdit ? ' primary' : ''}" id="chEditBtn" aria-pressed="${chEdit}">${ic('pen', 'sm')}${chEdit ? 'Done' : 'Edit channels'}</button><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${chEdit ? chEditHtml(ins) : table([...ins, ...spareChannels(ins).map(x => ({ ch: x.ch, name: 'Spare', mic: x.usual ? `usually ${x.usual}` : '', stand: '', spare: true }))].sort((a, b) => a.ch - b.ch), inCols, 'flag')}</section>
+    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')}. ${chans_().fixed !== false ? 'Channel numbers stay the same every week' + (spareChannels(ins).length ? `; ${plural(spareChannels(ins).length, 'spare channel')} this week` : '') : 'Numbered in band order'}. ${ins.filter(r => r.p48).length} need phantom power.`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn${chEdit ? ' primary' : ''}" id="chEditBtn" aria-pressed="${chEdit}">${ic('pen', 'sm')}${chEdit ? 'Done' : 'Edit channels'}</button><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${chEdit ? chEditHtml(ins) : table([...ins, ...spareChannels(ins).map(x => ({ ch: x.ch, name: 'Spare', mic: x.usual ? `usually ${x.usual}` : '', stand: '', spare: true }))].sort((a, b) => a.ch - b.ch), inCols, 'flag')}${chEdit ? '' : boxKey(ins)}</section>
     <div class="sheets2">
-      <section class="sheet" id="sec-outputs" data-sheet="outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag')}</section>
+      <section class="sheet" id="sec-outputs" data-sheet="outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag')}${boxKey(outs)}</section>
       <section class="sheet" id="sec-mixes" data-sheet="mixes">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols)}</section>
     </div>
     <div class="sheets2">
@@ -4208,7 +4234,7 @@ function renderPaper() {
     ${plan.items.some(i => i.type === 'rack') ? `<section class="sheet" id="sec-racks" data-sheet="racks">${head('Racks', '', 'Top to bottom, as you face the front.')}${plan.items.filter(i => i.type === 'rack').map(r => `<div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(r))}</b><span class="hint">${rackStat(r).used}/${r.rackU || 8}U · ${rackStat(r).watts} W</span></div><div class="tablewrap"><table><thead><tr><th>U</th><th>Device</th><th>Details</th><th>Notes</th></tr></thead><tbody>${(r.devices || []).slice().sort((a, b) => a.at - b.at).map(d => `<tr><td><span class="ch">${(r.rackU || 8) - d.at}${d.u > 1 ? '–' + ((r.rackU || 8) - d.at - d.u + 1) : ''}</span></td><td>${esc(d.name)}</td><td class="mono">${esc(devMeta(d)) || '—'}</td><td>${esc(d.note || '')}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Empty rack.</td></tr>'}</tbody></table></div></div>`).join('')}</section>` : ''}
     <section class="sheet" id="sec-power" data-sheet="power">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it.')}${powerHtml}</section>
     ${(() => { const groups = loadinTasks(), g = loadinProgress(), st = loadinState(); if (!g.total) return ''; const pct = Math.round(g.done / g.total * 100);
-      return `<section class="sheet loadin" id="sec-loadin" data-sheet="loadin">${head('Load-in checklist', '', 'Tick things off as they’re set up. Saved with this week.')}
+      return `<section class="sheet loadin" id="sec-loadin" data-sheet="loadin">${head('Load-in checklist', '', 'Tick things off as they’re set up. Saved with this week.')}${boxKey([...inputList(), ...outputList()])}
         <div class="lprog" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Load-in progress"><div class="lbar"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} done</b>${g.done ? '<button class="btn quiet" id="loadinReset">Clear ticks</button>' : ''}</div>
         ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span></h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
       </section>`; })()}
