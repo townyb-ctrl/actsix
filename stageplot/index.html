@@ -262,7 +262,7 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .gear small { color: var(--muted); font-size: 11px; line-height: 1.3; }
 .gear small:empty { display: none; }
 .glyph { width: 34px; height: 34px; border-radius: 8px; background: radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--deck) 82%, #fff), var(--deck)); padding: 3px; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-.glyph .s-beam { display: none; }
+.glyph .s-beam, .glyph .s-cov, .glyph .s-covup, .glyph .s-lbeam { display: none; }
 .glyph .s-deck { fill: rgba(255,255,255,.12); stroke: rgba(255,255,255,.7); }
 .glyph .s-thin { stroke: rgba(255,255,255,.5); }
 
@@ -1076,6 +1076,15 @@ td.spare { color: var(--muted); font-style: italic; }
 .f-foh-up { top: 62px; bottom: auto; right: 14px; } .f-foh-left { left: 14px; right: auto; } .f-foh:hover { border-color: var(--ink-2); }
 .times3 { gap: 8px; } .times3 input { min-width: 0; width: 100%; }
 .boxkey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; font-size: 12.5px; color: var(--muted); } .boxkey b { font-family: var(--f-mono, monospace); color: var(--ink); margin-right: 4px; }
+.ruler .rbase { stroke: var(--house-ink); stroke-width: var(--hair, .03px); opacity: .55; } .ruler text { font-size: calc(var(--lab, .5px) * .82); opacity: .8; }
+.ruler .rhl { fill: var(--accent); opacity: .55; }
+.zone.zone-out { font-size: calc(var(--lab, .5px) * .78); letter-spacing: .25em; font-weight: 700; fill: var(--house-ink); opacity: .7; }
+.bundle { fill: var(--house-ink); opacity: .14; pointer-events: none; }
+.btag { pointer-events: none; } .btag rect { fill: var(--surface); stroke: var(--line-2, rgba(0,0,0,.15)); stroke-width: var(--hair, .03px); } .btag text { fill: var(--ink-2); font-weight: 650; }
+.plug { stroke: var(--deck); stroke-width: var(--csh, .04px); pointer-events: none; } .plug.dim { opacity: .25; } .plug.quiet { opacity: .7; }
+.rfmark { pointer-events: none; } .rfmark circle:first-child { fill: rgba(16,18,23,.78); stroke: rgba(255,255,255,.25); stroke-width: .6; } .rfmark path { fill: none; stroke: #7dd3fc; stroke-width: .9; stroke-linecap: round; } .rfmark .rfdot { fill: #7dd3fc; }
+.gbadge { cursor: pointer; } .gbadge circle { fill: var(--surface); stroke: var(--accent); stroke-width: var(--cwh, .12px); } .gbadge text { fill: var(--ink); font-weight: 750; font-variant-numeric: tabular-nums; }
+.gbadge:hover circle { fill: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
 /* visual pass: name tags, depth, seats, hover, empty state, calmer inspector */
 #plot .itag, .snap .itag { pointer-events: none; }
 .itag rect { fill: rgba(16,18,23,.74); stroke: rgba(255,255,255,.12); stroke-width: var(--hair, .03px); }
@@ -1721,7 +1730,9 @@ function save() {
 // a snapshot for undo and version history: the week plus the channel numbers and edits (those live beside the weeks)
 const snapState = () => JSON.stringify(db?.channels ? { ...plan, __ch: db.channels } : plan);
 function loadState(json) { const p = JSON.parse(json); if ('__ch' in p) { if (p.__ch) db.channels = p.__ch; else delete db.channels; delete p.__ch; } return p; }
+let glideNext = false;
 function mutate(fn, msg) {
+  glideNext = true;
   const before = snapState();
   history.push(before); if (history.length > 80) history.shift();
   future = [];
@@ -1731,12 +1742,12 @@ function mutate(fn, msg) {
 function undo() {
   const prev = history.pop(); if (!prev) { toast('Nothing to undo'); return; }
   future.push(snapState());
-  plan = loadState(prev); sel = null; pending = null; save(); renderAll();
+  glideNext = true; plan = loadState(prev); sel = null; pending = null; save(); renderAll();
 }
 function redo() {
   const next = future.pop(); if (!next) { toast('Nothing to redo'); return; }
   history.push(snapState());
-  plan = loadState(next); sel = null; pending = null; save(); renderAll();
+  glideNext = true; plan = loadState(next); sel = null; pending = null; save(); renderAll();
 }
 /* Version history: a timeline of every change to a week, kept beside the weeks (not in them), so any point can be restored.
    Rapid edits of the same kind fold into one entry; named versions are never trimmed. */
@@ -2587,7 +2598,7 @@ const SYM_CSS = `
 .s-red{fill:#ff6b5e}
 .s-port{fill:#14181c;stroke:rgba(255,255,255,.6);stroke-width:.03}
 .s-acrylic{fill:rgba(170,215,255,.16);stroke:rgba(190,225,255,.75);stroke-width:.05}
-.s-beam{fill:rgba(255,214,110,.09)}
+.s-beam{fill:rgba(255,214,110,.09)}.s-cov{fill:url(#spCov)}.s-covup{fill:url(#spCovUp)}.s-lbeam{fill:url(#spLBeam)}.s-cab2{fill:url(#spCabG)}.s-cabtop2{fill:#3d4956}.s-wring{fill:#161b20;stroke:rgba(255,255,255,.22);stroke-width:.03}.s-wcone{fill:url(#spWoof)}.s-wcap{fill:#262c33;stroke:rgba(255,255,255,.3);stroke-width:.02}.s-horn{fill:#12161a;stroke:rgba(255,255,255,.3);stroke-width:.02}.s-can{fill:url(#spCabG);stroke:#0d0f11;stroke-width:.03}.s-lens{fill:#fff1bd;stroke:#d6b04a;stroke-width:.025}.s-yoke{fill:none;stroke:#aab2b9;stroke-width:.07;stroke-linecap:round}.s-fin{fill:none;stroke:rgba(255,255,255,.18);stroke-width:.03}
 .s-ped1{fill:#3fb6a8}.s-ped2{fill:#e2833a}.s-ped3{fill:#d8d24a}.s-ped4{fill:#8a73d6}
 .s-deck{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.45);stroke-width:.07;stroke-dasharray:.3 .2}
 .s-spruce{fill:#d8ad6c}.s-burst{fill:#3b1d10}.s-burstin{fill:#cf7a2b}.s-navy{fill:#33507c}.s-maple{fill:#e3c389}.s-rose{fill:#2b1c13}.s-varnish{fill:#a24f25}.s-pg{fill:#f2efe8}.s-cream{fill:#efe6d2}.s-chrome{fill:#cfd5da}
@@ -2731,6 +2742,9 @@ const SYM = (() => {
     '<pattern id="spTexVinyl" width="4.92" height="40" patternUnits="userSpaceOnUse"><rect width="4.92" height="40" fill="#fff" fill-opacity=".025"/><rect x="2.46" width="2.46" height="40" fill="#000" fill-opacity=".035"/><path d="M.02 0V40" stroke="#000" stroke-opacity=".38" stroke-width=".045"/><path d="M.08 0V40" stroke="#fff" stroke-opacity=".1" stroke-width=".03"/></pattern>' +
     '<linearGradient id="spVinylGloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
     '<filter id="spTexMatte" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".07" numOctaves="3" seed="9"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .2 0 0 0 -.05"/></filter>' +
+    '<linearGradient id="spCov" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd66e" stop-opacity=".18"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient><linearGradient id="spCovUp" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd66e" stop-opacity=".24"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="spLBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff1bd" stop-opacity=".5"/><stop offset=".6" stop-color="#ffd66e" stop-opacity=".14"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="spCabG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a6774"/><stop offset="1" stop-color="#232a31"/></linearGradient><radialGradient id="spWoof" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#7b8896"/><stop offset=".6" stop-color="#3a434d"/><stop offset="1" stop-color="#1e242a"/></radialGradient>' +
     '<radialGradient id="spWash"><stop offset="0" stop-color="#ffe7a8" stop-opacity=".55"/><stop offset=".55" stop-color="#ffd27a" stop-opacity=".22"/><stop offset="1" stop-color="#ffc861" stop-opacity="0"/></radialGradient>' + '<filter id="spPhoto" x="-25%" y="-15%" width="150%" height="130%"><feDropShadow dx=".05" dy=".08" stdDeviation=".05" flood-color="#000" flood-opacity=".5"/></filter>' + '<filter id="spShadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation=".045"/></filter>' +
     '<filter id="spMic" x="-35%" y="-35%" width="170%" height="170%"><feMorphology in="SourceAlpha" operator="dilate" radius=".007" result="d"/><feFlood flood-color="#fff" flood-opacity=".16"/><feComposite in2="d" operator="in" result="rim"/>' +
       '<feGaussianBlur in="SourceAlpha" stdDeviation=".025" result="b"/><feOffset in="b" dx=".025" dy=".04" result="o"/><feComponentTransfer in="o" result="sh"><feFuncA type="linear" slope=".65"/></feComponentTransfer>' +
@@ -2771,23 +2785,21 @@ const SYM = (() => {
     di_mono: diBox(.8, [.03]),
     di_stereo: diBox(1, [-.09, .14]),
     // speakers, top-down: cabinet top with handles, grille band on the face that points where the sound goes, faint coverage
-    wedge: '<path class="s-beam" d="M-.75 -.7L-1.35 -1.55Q0 -1.9 1.35 -1.55L.75 -.7Z"/>' +
+    wedge: '<path class="s-covup" d="M-.7 -.7L-1.6 -2Q0 -2.45 1.6 -2L.7 -.7Z"/>' +
       '<path class="s-cab s-edge" d="M-.86 -.7H.86Q1 -.7 1 -.56V.56Q1 .7 .86 .7H-.86Q-1 .7 -1 .56V-.56Q-1 -.7 -.86 -.7Z"/>' +
       '<path class="s-mesh" d="M-.9 -.6H.9V.28H-.9Z"/>' + grid(-.82, -.52, 18, 8, .096, .1, .018, 's-dot') +
       circ(-.38, -.16, .34, 's-cone') + circ(-.38, -.16, .27, 's-mesh') + circ(-.38, -.16, .2, 's-cone') + circ(-.38, -.16, .08, 's-mesh') +
       '<path class="s-mesh" d="M.12 -.46H.74L.6 .1H.26Z"/>' + '<path class="s-line" d="M.12 -.46H.74L.6 .1H.26Z"/>' + rect(.38, -.1, .1, .1, 's-cone', .02) +
       rect(-.32, .42, .64, .14, 's-mesh', .07) + rect(-.12, .32, .24, .04, 's-white', .02),
-    main_spk: '<path class="s-beam" d="M-.8 1L-1.95 2.35Q0 2.85 1.95 2.35L.8 1Z"/>' +
-      '<path class="s-cab s-edge" d="M-.78 -1H.78Q.95 -1 .96 -.83L1 .86Q1 1 .86 1H-.86Q-1 1 -1 .86L-.96 -.83Q-.95 -1 -.78 -1Z"/>' +
-      rect(-.82, -.86, 1.64, 1.38, 's-cabtop', .1) + rect(-.58, -.62, .42, .13, 's-mesh', .065) + rect(.16, -.62, .42, .13, 's-mesh', .065) +
-      rect(.5, .36, .22, .05, 's-white', .025) +
-      '<path class="s-mesh" d="M-.97 .58H.97V.86Q.97 .97 .86 .97H-.86Q-.97 .97 -.97 .86Z"/>' + grid(-.88, .64, 19, 3, .098, .1, .02, 's-dot'),
-    sub: '<path class="s-cab s-edge" d="M-1.32 -1.5H1.32Q1.5 -1.5 1.5 -1.32V1.32Q1.5 1.5 1.32 1.5H-1.32Q-1.5 1.5 -1.5 1.32V-1.32Q-1.5 -1.5 -1.32 -1.5Z"/>' +
-      rect(-1.32, -1.32, 2.64, 2.2, 's-cabtop', .14) + [[-.9, -1], [.45, -1], [-.9, .45], [.45, .45]].map(([x, y]) => rect(x, y, .45, .14, 's-mesh', .07)).join('') +
-      '<text class="s-txt" x="0" y=".05" text-anchor="middle">SUB</text>' +
-      '<path class="s-mesh" d="M-1.47 .95H1.47V1.32Q1.47 1.47 1.32 1.47H-1.32Q-1.47 1.47 -1.47 1.32Z"/>' + grid(-1.38, 1.03, 28, 4, .102, .11, .022, 's-dot') +
-      rect(-1.2, 1.06, .62, .3, 's-blk', .05) + rect(.58, 1.06, .62, .3, 's-blk', .05),
-    la_main: '<path class="s-beam" d="M-1.75 .9L-3.6 2.7Q0 3.6 3.6 2.7L1.75 .9Z"/>' +
+    main_spk: '<path class="s-cov" d="M-.7 1L-3.1 3.7Q0 4.7 3.1 3.7L.7 1Z"/>' +   // coverage fan, fading as it throws
+      '<path class="s-cab2 s-edge" d="M-.8 -1H.8Q1 -1 1 -.8V.82Q1 1 .82 1H-.82Q-1 1 -1 .82V-.8Q-1 -1 -.8 -1Z"/>' + rect(-.86, -.86, 1.72, 1.36, 's-cabtop2', .14) +
+      circ(0, -.24, .55, 's-wring') + circ(0, -.24, .45, 's-wcone') + circ(0, -.24, .15, 's-wcap') + '<path class="s-horn" d="M-.44 .24H.44L.3 .48H-.3Z"/>' +
+      '<path class="s-mesh" d="M-.97 .62H.97V.82Q.97 .97 .82 .97H-.82Q-.97 .97 -.97 .82Z"/>' + grid(-.88, .68, 19, 3, .098, .1, .02, 's-dot'),
+    sub: '<path class="s-cab2 s-edge" d="M-1.32 -1.5H1.32Q1.5 -1.5 1.5 -1.32V1.32Q1.5 1.5 1.32 1.5H-1.32Q-1.5 1.5 -1.5 1.32V-1.32Q-1.5 -1.5 -1.32 -1.5Z"/>' +
+      rect(-1.34, -1.34, 2.68, 2.22, 's-cabtop2', .18) + circ(0, -.24, 1, 's-wring') + circ(0, -.24, .84, 's-wcone') + circ(0, -.24, .28, 's-wcap') +
+      '<text class="s-txt" x="0" y=".85" text-anchor="middle">SUB</text>' +
+      '<path class="s-mesh" d="M-1.47 .98H1.47V1.32Q1.47 1.47 1.32 1.47H-1.32Q-1.47 1.47 -1.47 1.32Z"/>' + grid(-1.38, 1.06, 28, 4, .102, .1, .022, 's-dot'),
+    la_main: '<path class="s-cov" d="M-1.6 .9L-4.6 4Q0 5.3 4.6 4L1.6 .9Z"/>' +
       rect(-1.42, -1.05, 2.84, .16, 's-chrome', .04) + rect(-1.62, -.95, .14, 1.6, 's-chrome', .03) + rect(1.48, -.95, .14, 1.6, 's-chrome', .03) +
       '<path class="s-cab s-edge" d="M-1.45 -.9H1.45L1.78 .74Q1.8 .9 1.62 .9H-1.62Q-1.8 .9 -1.78 .74Z"/>' +
       '<path class="s-cabtop" d="M-1.32 -.78H1.32L1.56 .4H-1.56Z"/>' + [-1, -.5, 0, .5, 1].map(x => rect(x - .16, -.6, .32, .1, 's-mesh', .05)).join('') +
@@ -2880,7 +2892,9 @@ const SYM = (() => {
     // floor screen tilted up at the stage, lyrics showing, on a low wedge stand
     conf_mon: '<polygon class="body c-infra s-bg" points="-.7,.48 .7,.48 .45,.2 -.45,.2"/>' + rect(-1.72, -.46, 3.44, .72, 'body c-video s-edge', .06) + rect(-1.6, -.37, 3.2, .54, 's-glass', .03) +
       rect(-.95, -.25, 1.9, .07, 's-lyric', .03) + rect(-.75, -.12, 1.5, .07, 's-lyric', .03) + rect(-.85, .01, 1.7, .07, 's-lyric', .03),
-    light_stand: '<polygon class="s-beam" points="-.35,-.2 .35,-.2 .75,-.75 -.75,-.75"/>' + tripod(.7, 's-thin') + '<path class="s-line" d="M-.48 -.05V-.3M.48 -.05V-.3M-.48 -.3H.48"/>' + circ(0, 0, .42, 'body c-video s-edge') + circ(0, -.12, .22, 's-glass') + circ(0, -.12, .08, 's-white'),
+    light_stand: '<path class="s-lbeam" d="M-.32 -.6L-1.15 -3Q0 -3.45 1.15 -3L.32 -.6Z"/>' + tripod(.78, 's-thin') +   // a fixture in its yoke, throwing a warm beam where it's aimed
+      '<path class="s-yoke" d="M-.55 .32V-.3M.55 .32V-.3M-.55 .32H.55"/>' + rect(-.42, -.52, .84, .78, 's-can', .14) +
+      '<path class="s-fin" d="M-.26 -.12H.26M-.26 .02H.26M-.26 .16H.26"/>' + rect(-.36, -.64, .72, .18, 's-lens', .07),
   };
 })();
 /* SYMBOLS:END */
@@ -3087,7 +3101,7 @@ function glyphBox(type) {
     let m = document.getElementById('glyphMeasure');
     if (!m) { m = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); m.id = 'glyphMeasure'; m.setAttribute('aria-hidden', 'true'); m.setAttribute('style', 'position:absolute;left:-9999px;top:0;width:10px;height:10px;visibility:hidden'); document.body.appendChild(m); }
     m.innerHTML = `<g><g${GLYPH_TILT[type] ? ` transform="rotate(${GLYPH_TILT[type]})"` : ''}>${shapeSvg({ type, rot: 0 }, c.w, c.d)}</g></g>`;
-    m.querySelectorAll('.hit, .s-beam').forEach(e => e.remove());   // the click area and the coverage fan aren't part of the picture
+    m.querySelectorAll('.hit, .s-beam, .s-cov, .s-covup, .s-lbeam').forEach(e => e.remove());   // the click area and the coverage fan aren't part of the picture
     const b = m.firstChild.getBBox(); if (b.width > 0 && b.height > 0) r = b;
     m.innerHTML = '';
   } catch { /* not in a document yet */ }
@@ -3277,8 +3291,38 @@ function midpoint(pts) {
 const f3 = n => +n.toFixed(3);
 // Cables sharing a run are drawn side by side, metro-map style, instead of stacked on one line
 const LANE_ORDER = { power: 0, xlr: 1, inst: 2, usb: 3, speakon: 4, cat6: 5, video: 6 };
+// where a run leaves its gear's outline: walk in from the end until the point is clear of the footprint
+function plugPoint(seg, end, it) {
+  if (!it || ['person', 'platform'].includes(cat(it).shape)) return null;
+  const [hw, hd] = halfExt(it), inside = p => Math.abs(p[0] - it.x) < hw - .02 && Math.abs(p[1] - it.y) < hd - .02;
+  const pts = end ? seg.slice().reverse() : seg;
+  if (!inside(pts[0])) return pts[0];
+  for (let k = 0; k < pts.length - 1; k++) { const a = pts[k], b = pts[k + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    for (let t = 0; t <= L; t += .06) { const p = [a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L]; if (!inside(p)) return p; } }
+  return null;
+}
+const TUCK_TYPES = new Set(['di_mono', 'di_stereo', 'iem', 'usb_if', 'midi_fs', 'ac_preamp']);
+const lastPos = new Map(); let lastPlanId = '';
+function glide() {
+  const go = glideNext && lastPlanId === plan.id && !drag && !layersBypass && !matchMedia('(prefers-reduced-motion: reduce)').matches && svg.animate;
+  glideNext = false;
+  if (go) {
+    let moved = 0;
+    for (const el of svg.querySelectorAll('.item[data-id]')) {
+      const it = itemById(el.dataset.id); if (!it) continue;
+      const was = lastPos.get(it.id), to = `translate(${it.x}px, ${it.y}px) rotate(${it.rot || 0}deg)`;
+      if (!was) { if (lastPos.size) el.animate([{ transform: `${to} scale(.6)`, opacity: 0 }, { transform: to, opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.3,1.4,.5,1)' }); continue; }
+      if (Math.hypot(was.x - it.x, was.y - it.y) < .05 && (was.rot || 0) === (it.rot || 0)) continue;
+      let r0 = was.rot || 0, r1 = it.rot || 0; while (r0 - r1 > 180) r0 -= 360; while (r1 - r0 > 180) r0 += 360;   // the short way round
+      el.animate([{ transform: `translate(${was.x}px, ${was.y}px) rotate(${r0}deg)` }, { transform: to }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' }); moved++;
+    }
+    if (moved) for (const el of svg.querySelectorAll('.cab, .cab-case, .lead-shadow, .cab-sheen, .plug, .fl, .itag')) el.animate([{ opacity: 0 }, { opacity: getComputedStyle(el).opacity }], { duration: 300, easing: 'ease-in' });   // runs and names fade in as the gear arrives
+  }
+  lastPos.clear(); for (const it of plan.items) lastPos.set(it.id, { x: it.x, y: it.y, rot: it.rot }); lastPlanId = plan.id;
+}
+let laneBundles = [];
 function laneGeoms(list) {
-  const lines = new Map(), segs = new Map();
+  const lines = new Map(), segs = new Map(); laneBundles = [];
   for (const { c, o } of list) {
     const ks = [];
     for (let i = 0; i < o.length - 1; i++) {
@@ -3286,7 +3330,7 @@ function laneGeoms(list) {
       if (!h && !v) { ks.push(null); continue; }
       const k = (c.level === 'ceiling' ? 'c' : 'f') + (h ? 'h' + Math.round(p[1] * 8) : 'v' + Math.round(p[0] * 8)), ax = h ? 0 : 1;
       ks.push(k);
-      (lines.get(k) || lines.set(k, []).get(k)).push({ id: c.id, i, a: Math.min(p[ax], q[ax]), b: Math.max(p[ax], q[ax]), rank: (LANE_ORDER[c.type] ?? 9) * 1e4 + (c.from > c.to ? 1 : 0) });
+      (lines.get(k) || lines.set(k, []).get(k)).push({ id: c.id, i, a: Math.min(p[ax], q[ax]), b: Math.max(p[ax], q[ax]), rank: (LANE_ORDER[c.type] ?? 9) * 1e4 + (c.from > c.to ? 1 : 0), at: h ? p[1] : p[0], hz: h, ceil: c.level === 'ceiling' });
     }
     segs.set(c.id, ks);
   }
@@ -3300,6 +3344,10 @@ function laneGeoms(list) {
       if (ids.length > 1) {
         const gap = Math.min(.2, 1.4 / (ids.length - 1));
         for (const r of cluster) off.set(r.id + '|' + r.i, (ids.indexOf(r.id) - (ids.length - 1) / 2) * gap);
+        if (ids.length >= 3 && !cluster[0].ceil) {   // three or more runs side by side for a good stretch: drawn as one soft band with a count
+          const lo = Math.max(...ids.map(id => Math.min(...cluster.filter(r => r.id === id).map(r => r.a)))), hi = Math.min(...ids.map(id => Math.max(...cluster.filter(r => r.id === id).map(r => r.b))));
+          if (hi - lo > fromM(1.2)) laneBundles.push({ hz: cluster[0].hz, at: cluster[0].at, lo, hi, n: ids.length, half: gap * (ids.length - 1) / 2, ids });
+        }
       }
       cluster = [];
     };
@@ -3390,26 +3438,21 @@ function renderPlot() {
   }
   for (const [a, c] of frontEdges(poly)) s += `<line class="edge" x1="${a[0]}" y1="${a[1]}" x2="${c[0]}" y2="${c[1]}"/>`;
   if (!layerOff('dims')) {
-  s += '<g class="ruler">';
-  const step = fromM(1);
-  for (let i = 0; i * step <= w + .001; i++) {
-    const x = i * step;
-    s += `<line x1="${x}" x2="${x}" y1="-.35" y2="${i % 2 ? -.75 : -1.1}"/>`;
-    if (i % 2 === 0) s += `<text x="${x}" y="-1.45" text-anchor="middle">${i} m</text>`;
-  }
-  for (let i = 0; i * step <= d + .001; i++) {
-    const y = i * step;
-    s += `<line y1="${y}" y2="${y}" x1="-.35" x2="${i % 2 ? -.75 : -1.1}"/>`;
-    if (i % 2 === 0 && i) s += `<text x="-1.45" y="${y + .18}" text-anchor="end">${i} m</text>`;
-  }
+  s += `<g class="ruler"><line class="rbase" x1="0" x2="${w}" y1="-.35" y2="-.35"/><line class="rbase" x1="-.35" x2="-.35" y1="0" y2="${d}"/>`;   // a slim scale strip: ticks every 50 cm, numbers every 2 m
+  const hm = fromM(.5), last = Math.floor(w / fromM(1) / 2) * 2, lastD = Math.floor(d / fromM(1) / 2) * 2;
+  for (let i = 0; i * hm <= w + .001; i++) { const x = i * hm; s += `<line x1="${f3(x)}" x2="${f3(x)}" y1="-.35" y2="${i % 2 ? -.52 : i % 4 ? -.66 : -.8}"/>`; if (i % 4 === 0) s += `<text x="${f3(x)}" y="${f3(-.8 - 5 / scale)}" text-anchor="middle">${i / 2}${i / 2 === last ? ' m' : ''}</text>`; }
+  for (let i = 0; i * hm <= d + .001; i++) { const y = i * hm; s += `<line y1="${f3(y)}" y2="${f3(y)}" x1="-.35" x2="${i % 2 ? -.52 : i % 4 ? -.66 : -.8}"/>`; if (i % 4 === 0 && i) s += `<text x="${f3(-.8 - 4 / scale)}" y="${f3(y + 3 / scale)}" text-anchor="end">${i / 2}${i / 2 === lastD ? ' m' : ''}</text>`; }
+  if (drag?.kind === 'item' && drag.moved) { const dI = itemById(drag.id); if (dI) { const [ehw, ehd] = halfExt(dI); s += `<rect class="rhl" x="${f3(dI.x - ehw)}" y="-.5" width="${f3(ehw * 2)}" height=".3" rx=".08"/><rect class="rhl" x="-.5" y="${f3(dI.y - ehd)}" width=".3" height="${f3(ehd * 2)}" rx=".08"/>`; } }
   s += '</g>';
   }
-  const zw = t => t.length * .53;   // .62 ft caps plus letter spacing
+  const zfs = 10.5 * .78 / scale, zw = t => t.length * zfs * .86;   // stage words sit just outside the deck, small, so the stage itself stays clear
+  const zt = (t, x, y, rot) => `<text class="zone zone-out" x="${f3(x)}" y="${f3(y)}" text-anchor="middle"${rot ? ` transform="rotate(${rot} ${f3(x)} ${f3(y)})"` : ''} dy="${f3(zfs * .35)}">${t}</text>`;
+  const zU = -.8 - 22 / scale, zD = d + .55 + 14 / scale, zR = -.8 - 30 / scale, zL = w + .4 + 12 / scale, zh = zfs * .7;   // a fixed screen gap past the ruler and the front edge, at any zoom
   const zoneCands = layerOff('dims') ? [] : [
-    { pri: 9, avoid: true, avoidRisers: true, box: [w / 2 - zw('UPSTAGE') / 2, .3, w / 2 + zw('UPSTAGE') / 2, 1], svg: `<text class="zone on-deck" x="${w / 2}" y=".85" text-anchor="middle">UPSTAGE</text>` },
-    { pri: 9, avoid: true, avoidRisers: true, box: [w / 2 - zw('DOWNSTAGE') / 2, d - 1, w / 2 + zw('DOWNSTAGE') / 2, d - .3], svg: `<text class="zone on-deck" x="${w / 2}" y="${d - .45}" text-anchor="middle">DOWNSTAGE</text>` },
-    { pri: 9, avoid: true, avoidRisers: true, box: [.3, d / 2 - zw('STAGE RIGHT') / 2, 1.1, d / 2 + zw('STAGE RIGHT') / 2], svg: `<text class="zone on-deck" x=".5" y="${d / 2}" transform="rotate(-90 .5 ${d / 2})" text-anchor="middle" dy=".45">STAGE RIGHT</text>` },
-    { pri: 9, avoid: true, avoidRisers: true, box: [w - 1.1, d / 2 - zw('STAGE LEFT') / 2, w - .3, d / 2 + zw('STAGE LEFT') / 2], svg: `<text class="zone on-deck" x="${w - .5}" y="${d / 2}" transform="rotate(90 ${w - .5} ${d / 2})" text-anchor="middle" dy=".45">STAGE LEFT</text>` },
+    { pri: 9, avoid: true, box: [w / 2 - zw('UPSTAGE') / 2, zU - zh, w / 2 + zw('UPSTAGE') / 2, zU + zh], svg: zt('UPSTAGE', w / 2, zU) },
+    { pri: 9, avoid: true, box: [w / 2 - zw('DOWNSTAGE') / 2, zD - zh, w / 2 + zw('DOWNSTAGE') / 2, zD + zh], svg: zt('DOWNSTAGE', w / 2, zD) },
+    { pri: 9, avoid: true, box: [zR - zh, d / 2 - zw('STAGE RIGHT') / 2, zR + zh, d / 2 + zw('STAGE RIGHT') / 2], svg: zt('STAGE RIGHT', zR, d / 2, -90) },
+    { pri: 9, avoid: true, box: [zL - zh, d / 2 - zw('STAGE LEFT') / 2, zL + zh, d / 2 + zw('STAGE LEFT') / 2], svg: zt('STAGE LEFT', zL, d / 2, 90) },
   ];
   if (!layerOff('dims')) s += `<text class="zone" x="${w / 2}" y="${d + house - .6}" text-anchor="middle">HOUSE</text>`;
 
@@ -3419,7 +3462,13 @@ function renderPlot() {
   svg.classList.toggle('tracing', !!tr);
   syncChanItems();
   const zOf = it => layerOf(it) + (selSet.has(it.id) && cat(it).shape !== 'platform' ? 10 : 0);   // picked gear comes to the front, so it never hides under a person
-  const sorted = plan.items.filter(it => selSet.has(it.id) || (itemShown(it) && !(cableView.hideInCh && it.chan))).sort((a, c) => zOf(a) - zOf(c));
+  const tucked = new Map();   // zoomed out, a person's small boxes (DIs, packs, interfaces) fold into one badge; picking the person or zooming in opens them
+  if (!layersBypass && !capturing && scale < 30) {
+    for (const it of plan.items) if (it.personId && TUCK_TYPES.has(it.type) && !selSet.has(it.id) && itemShown(it)) (tucked.get(it.personId) || tucked.set(it.personId, []).get(it.personId)).push(it);
+    for (const [pid, l] of [...tucked]) if (l.length < 2 || [...selSet].some(id => itemById(id)?.personId === pid)) tucked.delete(pid);
+  }
+  const tuckedIds = new Set([...tucked.values()].flat().map(i => i.id));
+  const sorted = plan.items.filter(it => !tuckedIds.has(it.id) && (selSet.has(it.id) || (itemShown(it) && !(cableView.hideInCh && it.chan)))).sort((a, c) => zOf(a) - zOf(c));
   const chv = renderChannels(sel?.kind === 'channel' ? sel.id : null);
   s += chv.s + '<!--HITS-->';
   let top = '', labels = '', selb = '';
@@ -3428,6 +3477,7 @@ function renderPlot() {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
     const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}</title>${shapeSvg(it, iw, id)}</g>`;
     if (L < 1) s += g; else top += g;
+    if ((C.wireless || C.iem) && !layersBypass) { const [rw, rh] = halfExt(it), k = 1 / scale; top += `<g class="rfmark" transform="translate(${f3(it.x + rw * .7)} ${f3(it.y - rh * .7)}) scale(${f3(k)})" aria-hidden="true"><circle r="5.5"/><path d="M-2.6 -.6a3.7 3.7 0 0 1 5.2 0M-1.3 .9a1.85 1.85 0 0 1 2.6 0"/><circle class="rfdot" cy="2.2" r=".9"/></g>`; }   // wireless: a little signal mark instead of a plug
     if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
     if (C.shape === 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; risers.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
     if (C.shape !== 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; obstacles.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
@@ -3477,11 +3527,27 @@ function renderPlot() {
       }
     }
   }
-  let hits = '', lens = '', wps = '', ceil = '', floorQ = '';
+  for (const [pid, l] of tucked) {
+    let cx = l.reduce((a, i) => a + i.x, 0) / l.length, cy = l.reduce((a, i) => a + i.y, 0) / l.length; const r = 8.5 / scale, fn = firstName(personById(pid)?.name || '');
+    const me = plan.items.find(i => i.personId === pid && cat(i).shape === 'person');
+    if (me) { const pr = Number(prop(me, 'w')) / 2, dx = cx - me.x, dy = cy - me.y, L = Math.hypot(dx, dy), need = pr + r * 1.25;   // never on top of the person: beside them, towards their things
+      if (L < need) { const ux = L > .05 ? dx / L : .7, uy = L > .05 ? dy / L : -.7; cx = me.x + ux * need; cy = me.y + uy * need; } }
+    obstacles.push([cx - r, cy - r, cx + r, cy + r]);   // names find room around the badge
+    top += `<g class="gbadge" data-badge="${pid}" transform="translate(${f3(cx)} ${f3(cy)})" role="button" aria-label="${esc(fn)}'s ${l.length} small items, select to show"><title>${esc(fn)}: ${esc(l.map(i => cat(i).short || cat(i).name).join(', '))} (click to show)</title><circle r="${f3(r)}"/><text y="${f3(r * .38)}" text-anchor="middle" style="font-size:${f3(r * 1.05)}px">${l.length}</text></g>`;
+  }
+  let hits = '', lens = '', wps = '', ceil = '', floorQ = '', bundleTags = '';
+  const bundleCands = [];
+
   const drawn = plan.cables.map(c => ({ c, o: cableGeom(c) })).filter(({ c, o }) => o && ((sel?.kind === 'cable' && sel.id === c.id) || cableShown(c)));
   const lanes = laneGeoms(cableView.hideInCh ? drawn.filter(({ c }) => !cableParts(c)?.inside) : drawn);
   const quiet = cableView.quiet !== false && !sel;   // nothing picked: cables recede so the stage reads first
-  // the runs you're looking at draw last, so their casing cuts clean gaps in everything they cross
+  if (quiet && !layersBypass) for (const bd of laneBundles) {
+    const t = bd.half + .32, lab = `${bd.n} cables`, fs = 9.5 / scale, tw = lab.length * fs * .56 + fs, mid = (bd.lo + bd.hi) / 2;
+    floorQ += bd.hz ? `<rect class="bundle" x="${f3(bd.lo)}" y="${f3(bd.at - t)}" width="${f3(bd.hi - bd.lo)}" height="${f3(t * 2)}" rx="${f3(t)}"/>` : `<rect class="bundle" x="${f3(bd.at - t)}" y="${f3(bd.lo)}" width="${f3(t * 2)}" height="${f3(bd.hi - bd.lo)}" rx="${f3(t)}"/>`;
+    const [bx, by] = bd.hz ? [mid, bd.at - t - fs * .9] : [bd.at + t + tw / 2 + fs * .3, mid];
+    const cand = (x, y) => ({ pri: 8, box: [x - tw / 2, y - fs * .85, x + tw / 2, y + fs * .35], svg: `<g class="btag"><rect x="${f3(x - tw / 2)}" y="${f3(y - fs * .85)}" width="${f3(tw)}" height="${f3(fs * 1.2)}" rx="${f3(fs * .6)}"/><text x="${f3(x)}" y="${f3(y)}" text-anchor="middle" style="font-size:${f3(fs)}px">${lab}</text></g>` });
+    bundleCands.push(cand(bx, by));
+  }  // the runs you're looking at draw last, so their casing cuts clean gaps in everything they cross
   const rank = c => sel?.kind === 'cable' && sel.id === c.id ? 2 : selItem && (selSet.has(c.from) || selSet.has(c.to)) ? 1 : 0;
   drawn.sort((a, b) => rank(a.c) - rank(b.c));
   for (const { c, o: raw } of drawn) {
@@ -3506,6 +3572,10 @@ function renderPlot() {
       out += `<path class="cab${c.level === 'ceiling' ? ' ceil' : ''} k-${c.type}${st}${age < 1200 ? ' drawin' : ''}" d="${d}" data-pts="${sp}"${age < 1200 ? ` pathLength="1" style="animation-delay:-${Math.round(age)}ms"` : ''}/>`;
       if ((isSel || rel === ' hl' || (lead && rel !== ' dim')) && c.level !== 'ceiling') out += `<path class="cab-sheen${st}" d="${d}"/>`;   // a fine light core so the run reads as a cable, not a line
       if (tr?.cables.has(c.id)) out += `<path class="tracepulse" d="${d}" pathLength="100" style="animation-delay:-${(traceOrder(tr, c) * 260) % 1600}ms"/>`;
+      if (seg === segs[0] || seg === segs[segs.length - 1]) for (const [end, id] of [[0, c.from], [seg.length - 1, c.to]]) {
+        if ((end === 0 && seg !== segs[0]) || (end && seg !== segs[segs.length - 1])) continue;
+        const q = plugPoint(seg, end, itemById(id)); if (q) out += `<circle class="plug${st}" cx="${f3(q[0])}" cy="${f3(q[1])}" r="${f3(Math.max(.08, 2.4 / scale))}" style="fill:var(${KVAR[c.type]})"/>`;
+      }
       out += flowMarks(c, seg, isSel ? '' : rel, rel === ' quiet' || (rel === ' dim' && cableView.quiet !== false));   // quiet cables keep the animation, not the arrows
       hits += `<polyline class="cabhit" data-cid="${c.id}" points="${sp}"><title>${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</title></polyline>`;
     }
@@ -3530,11 +3600,11 @@ function renderPlot() {
   }
   if (floorQ) {   // nothing picked: runs out in the house fade back, so the stage reads first and the floor isn't a tangle
     s = s.replace('</defs>', `<mask id="houseFade" maskUnits="userSpaceOnUse" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"><rect x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}" fill="#5a5a5a"/><path d="${deckD}" fill="#fff"/></mask></defs>`);
-    s += `<g mask="url(#houseFade)">${floorQ}</g>`;
+    s += `<g mask="url(#houseFade)">${floorQ}</g>` + bundleTags;
   }
   s = s.replace('<!--HITS-->', chv.hits + hits);
   // ceiling runs pass over the gear when you're looking at cables; while they're quiet they tuck under it, so names and symbols stay clean
-  s += (quiet ? ceil + top : top + ceil) + chv.over + labels + selb + placeLabels(labCands, obstacles, risers) + lens + wps + chv.handles;
+  s += (quiet ? ceil + top : top + ceil) + chv.over + labels + selb + placeLabels([...labCands, ...bundleCands], obstacles, risers) + lens + wps + chv.handles;
   if (drag?.kind === 'box') {
     const x = Math.min(drag.x0, drag.x1), y = Math.min(drag.y0, drag.y1);
     s += `<rect class="marquee" x="${f3(x)}" y="${f3(y)}" width="${f3(Math.abs(drag.x1 - drag.x0))}" height="${f3(Math.abs(drag.y1 - drag.y0))}" rx=".1"/>`;
@@ -3583,6 +3653,7 @@ function renderPlot() {
   s += measureSvg();
   svg.innerHTML = s;
   if (capturing) return;
+  glide();
   const fs = $('fside'); fs.hidden = !sideOpen || presenting; if (sideOpen && !presenting) fs.innerHTML = `<div class="panel sidepanel"><div class="sv-head"><b>Side view</b><span class="hint">from the house · heights in metres</span><button class="iconbtn" id="sideClose" aria-label="Close side view" title="Close (E)">${ic('x', 'sm')}</button></div>${sideSvg()}</div>`;
   $('fpresent').hidden = !presenting; if (presenting) $('fpresent').innerHTML = `<div class="pres-title"><div class="eyebrow">${esc(defaultsOf().org || 'Stage plot')} · ${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Sunday service')}</h1></div><button class="btn pres-exit" id="presExit">${ic('x', 'sm')}Exit · Esc</button>`;
   if (needFit && !zoom) {
@@ -4350,8 +4421,14 @@ function zoomCenter(f) {   // buttons and keys ease into the new zoom instead of
 }
 function fit(m) { if (m) fitMode = m; zoom = null; needFit = true; renderPlot(); }
 
+svg.addEventListener('click', e => {   // a folded badge opens by picking its person
+  const bd = e.target.closest('[data-badge]'); if (!bd) return;
+  const p = plan.items.find(i => i.personId === bd.dataset.badge && cat(i).shape === 'person') || plan.items.find(i => i.personId === bd.dataset.badge);
+  if (p) { sel = { kind: 'item', id: p.id }; group = null; renderPlot(); renderInspector(); }
+});
 svg.addEventListener('pointerdown', e => {
   if (e.button > 0) return;
+  if (e.target.closest('[data-badge]')) return;
   const p = toFt(e);
   const g = e.target.closest('[data-id]'), ch = e.target.closest('[data-cid]'), wp = e.target.closest('[data-wp]');
   const rh = e.target.closest('[data-rh]'), chp = e.target.closest('[data-chp]'), chh = e.target.closest('[data-chid]');
@@ -4638,6 +4715,7 @@ function addGear(type, x, y, hit) {
     const it = addItem(type, x, y, ITEM_MODELS[type] ? { model: ITEM_MODELS[type][lastModel[type]] ? lastModel[type] : type === 'el_guitar' ? lastGuitar : Object.keys(ITEM_MODELS[type])[0] } : {});
     if (hit && canSitInChannel(it)) placeInChannel(it, hit);
     if (type === 'stagebox') it.label = `Stage box ${String.fromCharCode(65 + n)}`;
+    if (type === 'light_stand' && !inPoly(it.x, it.y, stagePoly())) { const [cx, cy] = deckCentre(); it.rot = Math.round(Math.atan2(cx - it.x, -(cy - it.y)) * 180 / Math.PI / 15) * 15; }   // a light out front comes aimed at the stage
     if (type === 'distro') it.label = `Distro ${n + 1}`;
     if (type === 'rack') { it.label = `Rack ${n + 1}`; it.rackU = 8; it.devices = []; }
     const owner = ownerNear(it); if (owner) it.personId = owner.personId;   // dropped beside someone: it's theirs, and moves with them on a rebuild
