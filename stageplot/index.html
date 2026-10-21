@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Stageplot: stage plots for church teams</title>
 <meta name="description" content="Plan this week's stage in minutes. Place the team and gear, patch every input and power it automatically, then print a clean stage plot, input list, monitor mixes and power sheet.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f5f7f9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0d1013" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
@@ -688,7 +692,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .libstats b { font: 600 16px var(--f-mono); } .libstats span { font-size: 12px; color: var(--muted); }
 .liblist { display: grid; gap: 4px; }
 .libmonth { display: grid; gap: 4px; } .libmonth h3 { margin: 8px 0 2px; }
-.librow { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.librow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
 .librow.cur { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .librow.past .libmain b { color: var(--ink-2); }
 .libopen { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; border: 0; background: transparent; padding: 7px 8px; text-align: left; cursor: pointer; color: inherit; font: inherit; border-radius: var(--r-md); min-width: 0; }
@@ -797,6 +801,8 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .hnav[aria-current="page"] .ic { color: var(--accent); }
 .homebody { display: grid; gap: 16px; min-width: 0; }
 .hpage h2 { margin: 0; font-size: 24px; letter-spacing: -.02em; } .hpage p { margin: 2px 0 0; color: var(--muted); }
+.librow.editing { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px; }
+.librow.editing input[type=text] { flex: 1 1 180px; min-width: 0; }
 .hcard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; display: grid; gap: 14px; min-width: 0; }
 .hcard > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .hcard h3 { margin: 0; font-size: 16px; }
@@ -806,6 +812,8 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .hero h2 { margin: 4px 0 6px; font-size: 22px; letter-spacing: -.01em; }
 .hero p { margin: 0; color: rgba(255,255,255,.78); font-size: 13.5px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .hero .eyebrow { color: rgba(255,255,255,.7); }
+.herocount { font: 600 11.5px var(--f-mono); opacity: .75; }
+.herobtns { flex-wrap: wrap; }
 .hero .chip { background: rgba(255,255,255,.16); color: #fff; border-color: transparent; }
 .hero .chip.ok { background: rgba(34,197,94,.25); color: #bbf7d0; } .hero .chip.warn { background: rgba(245,158,11,.25); color: #fde68a; } .hero .chip.bad { background: rgba(239,68,68,.28); color: #fecaca; }
 .hero .btn:not(.primary) { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); color: #fff; }
@@ -891,11 +899,23 @@ td.mono { font: 12.5px var(--f-mono); color: var(--ink-2); }
 td.num { text-align: right; font: 12.5px var(--f-mono); }
 .ch { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 6px; border-radius: 6px; background: var(--surface-3); font: 600 12px var(--f-mono); }
 tr.flag td { color: var(--bad); }
+.changelist, .notelist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.changelist li { padding: 7px 12px; border-radius: 10px; background: var(--surface-2); font-size: 14px; }
+.changelist li.add { background: color-mix(in srgb, #22c55e 12%, var(--surface)); } .changelist li.rem { background: color-mix(in srgb, #ef4444 10%, var(--surface)); }
+.notelist li { display: grid; gap: 2px; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 10px 10px 0; } .notelist span { color: var(--ink-2); }
+.lprog { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .lprog b { font-size: 14px; }
+.lbar { flex: 1 1 200px; height: 10px; border-radius: 99px; background: var(--surface-3); overflow: hidden; } .lbar span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #22c55e); border-radius: inherit; transition: width .25s; }
+.lgroup { display: grid; gap: 6px; } .lgroup h3 { display: flex; align-items: center; gap: 8px; margin: 10px 0 2px; font-size: 15px; }
+.litem { display: flex; align-items: center; gap: 12px; padding: 10px 12px; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; background: var(--surface); }
+.litem input { width: 22px; height: 22px; flex: none; accent-color: #16a34a; }
+.litem span { display: grid; gap: 1px; min-width: 0; } .litem small { color: var(--muted); font-size: 12.5px; }
+.litem.done { background: color-mix(in srgb, #22c55e 9%, var(--surface)); border-color: color-mix(in srgb, #22c55e 40%, var(--line)); } .litem.done b { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent); color: var(--muted); }
+.notebadge circle { fill: var(--accent); stroke: #fff; stroke-width: .07; } .notebadge path { fill: none; stroke: #fff; stroke-width: .07; stroke-linecap: round; } .notebadge { cursor: pointer; }
 tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .sheetgrid { display: grid; gap: 22px; }
 .sheetgrid:not([data-tab="all"]) .sheet { display: none; }
 .sheetgrid[data-tab="overview"] [data-sheet="overview"], .sheetgrid[data-tab="inputs"] [data-sheet="inputs"], .sheetgrid[data-tab="outputs"] [data-sheet="outputs"], .sheetgrid[data-tab="mixes"] [data-sheet="mixes"],
-.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"] { display: grid; }
+.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"] { display: grid; }
 .sheetgrid:not([data-tab="all"]) .sheets2 { display: contents; }
 .docnav button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .docnav button[aria-selected="true"] .hint { color: inherit; opacity: .7; }
@@ -1120,6 +1140,8 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
   <div class="modal" role="dialog" aria-labelledby="helpTitle" style="width:min(460px,100%)">
     <div class="row" style="justify-content:space-between"><h2 id="helpTitle">Shortcuts</h2><button class="iconbtn" id="helpClose" aria-label="Close"></button></div>
     <dl class="shortcuts">
+      <dt><span class="kbd">G</span></dt><dd>Home: library and settings</dd>
+      <dt><span class="kbd">P</span></dt><dd>Paperwork, and back to the plot</dd>
       <dt><span class="kbd">A</span></dt><dd>Add gear: opens the library with search ready</dd>
       <dt><span class="kbd">V</span></dt><dd>Move tool</dd>
       <dt><span class="kbd">S</span></dt><dd>Select tool: tap or box-select several (no Shift needed)</dd>
@@ -2003,7 +2025,14 @@ function pcoApply() {
   const chosen = pco.roster.filter(e => pco.picked.has(e.key));
   if (!chosen.length) { toast('Tick at least one person'); return; }
   const pl = pco.plans.find(p => p.id === pco.planId);
+  const su = Object.values(setups()).find(x => x.svcType && x.svcType === pco.typeId), fresh = !plan.items.some(i => !i.gen);
   mutate(() => {
+    if (su && fresh) {   // an empty week takes the stage linked to this service type
+      const copy = o => JSON.parse(JSON.stringify(o));
+      plan.stage = copy(su.stage); plan.settings = copy(su.settings); plan.channels = copy(su.channels || []);
+      plan.items = copy((su.items || []).filter(i => !i.gen)); const ids = new Set(plan.items.map(i => i.id));
+      plan.cables = copy((su.cables || []).filter(c => ids.has(c.from) && ids.has(c.to))); needFit = true;
+    }
     if (pco.replace) plan.team = [];
     for (const e of chosen) {
       if (plan.team.some(p => p.pcoId === e.key)) continue;
@@ -2012,7 +2041,7 @@ function pcoApply() {
     if (pcoPrefs().usePlan !== false) { if (pl?.date) plan.date = pl.date; if (pl) plan.name = pl.title || pl.dates || plan.name; }
     buildFromTeam(); autoCable();
   });
-  toast(`Added ${chosen.length} from Planning Center`);
+  toast(su && fresh ? `Added ${chosen.length} from Planning Center on the “${su.name}” stage` : `Added ${chosen.length} from Planning Center`);
 }
 
 /* ===================================================================
@@ -2919,8 +2948,9 @@ function renderPlot() {
   const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}</title>${shapeSvg(it, iw, id)}</g>`;
-    if (L < 1) s += g; else top += g;   // cables run under the gear, so plugs disappear beneath it instead of crossing it
+    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}</title>${shapeSvg(it, iw, id)}</g>`;
+    if (L < 1) s += g; else top += g;
+    if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
     if (C.shape === 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; risers.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
     if (C.shape !== 'platform') { const r = (it.rot || 0) % 180 === 90, hw = (r ? id : iw) / 2, hd = (r ? iw : id) / 2; obstacles.push([it.x - hw, it.y - hd, it.x + hw, it.y + hd]); }
     const isSel = selSet.has(it.id), big = Math.min(iw, id) >= 1.6 && C.shape !== 'person';
@@ -3438,6 +3468,7 @@ function renderInspector() {
         ${it.chan ? `<div class="flowline" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Sits inside ${esc(chans().find(c => c.id === it.chan.id)?.name || 'a channel')}<button class="btn" id="iOutCh" style="padding:4px 10px">Take out</button></div>` : ''}
       </section>` : ''}
       ${basic}
+      <section class="isec"><div class="field"><label for="iNote">Note <small class="hint" style="font-weight:400">shows on the plot and the paperwork</small></label><textarea id="iNote" rows="2" placeholder="${C.shape === 'person' ? 'e.g. Bring a 9V battery, uses the left IEM pack' : 'e.g. Borrowed from youth room, needs fresh strings'}">${esc(it.note || '')}</textarea></div></section>
       <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div></section>
       ${C.shape === 'person' && !conns.length ? '' : `<section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.slice(0, showAllConns === it.id ? conns.length : 4).map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>${conns.length > 4 && showAllConns !== it.id ? `<button class="btn quiet" data-allconns="${it.id}">Show all ${conns.length}</button>` : ''}` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>`}
       ${moreFold(adv, moreWhat)}
@@ -3547,6 +3578,37 @@ function plotSnapshot() {
   finally { ({ sel, group, mode, pending, view, measure, compare, zoom, needFit } = keep); layersBypass = false; cableView.quiet = quietWas; cableView.noFlow = flowWas; cableView.anim = animWas; if (view === 'plot') renderPlot(); }
   return html;
 }
+/* ---------- what changed since last week, what to borrow, and the load-in checklist ---------- */
+function weekChanges(old) {
+  const keep = plan;
+  const tally = p => { const m = new Map(); for (const i of p.items) { if (cat(i).shape === 'person') continue; const k = i.type; m.set(k, (m.get(k) || 0) + 1); } return m; };
+  plan = old; const oldIns = inputList().length; plan = keep;
+  const names = p => new Set(p.team.map(t => t.name.trim().toLowerCase()));
+  const was = names(old), now = names(plan);
+  const joined = plan.team.filter(t => !was.has(t.name.trim().toLowerCase())).map(t => `${t.name}${t.role ? ` (${t.role})` : ''}`);
+  const left = old.team.filter(t => !now.has(t.name.trim().toLowerCase())).map(t => `${t.name}${t.role ? ` (${t.role})` : ''}`);
+  const a = tally(old), b = tally(plan), gear = [];
+  for (const t of new Set([...a.keys(), ...b.keys()])) { const d = (b.get(t) || 0) - (a.get(t) || 0); if (d && CAT[t]) gear.push({ t, d }); }
+  gear.sort((x, y) => y.d - x.d || CAT[x.t].name.localeCompare(CAT[y.t].name));
+  const byId = new Map(old.items.map(i => [i.id, i]));
+  const moved = plan.items.filter(i => cat(i).shape !== 'person' && byId.has(i.id) && Math.hypot(byId.get(i.id).x - i.x, byId.get(i.id).y - i.y) > fromM(.5)).map(itemName);
+  return { joined, left, gear, moved, ins: [oldIns, inputList().length] };
+}
+function shortages() {
+  return Object.entries(db?.gear?.owned || {}).map(([t, own]) => ({ t, own, need: plan.items.filter(i => i.type === t).length })).filter(x => CAT[x.t] && x.need > x.own).map(x => ({ ...x, short: x.need - x.own }));
+}
+function loadinTasks() {   // what the crew does on the day, in the order they do it
+  const by = (c, end) => itemById(c[end]);
+  const power = plan.cables.filter(c => c.type === 'power').map(c => { const src = [by(c, 'from'), by(c, 'to')].find(isPowerSource) || by(c, 'to'), load = other(c, src.id);
+    return load && { key: `pw:${c.id}`, text: `${itemName(load)}`, sub: `into ${itemName(src)}${c.circuit ? ` · circuit ${c.circuit}` : ''} · ${fmtLen(cableLen(c))} lead` }; }).filter(Boolean);
+  const snake = plan.cables.filter(c => c.type === 'cat6').map(c => ({ key: `sn:${c.id}`, text: `${itemName(by(c, 'from'))} ↔ ${itemName(by(c, 'to'))}`, sub: `Cat6 · ${fmtLen(cableLen(c))}` }));
+  const ins = inputList().map(r => ({ key: `in:${r.name}:${r.source}`, text: `${r.ch}. ${r.name}`, sub: `${r.source} → ${r.port}` }));
+  const leads = plan.cables.filter(c => c.type === 'inst').map(c => ({ key: `ld:${c.id}`, text: `${itemName(by(c, 'from'))} → ${itemName(by(c, 'to'))}`, sub: `jack lead · ${fmtLen(cableLen(c))}` }));
+  const outs = outputList().map(r => ({ key: `out:${r.dest}:${r.port}`, text: r.dest, sub: `${r.type ? r.type + ' · ' : ''}${r.port}` }));
+  return [['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
+}
+const loadinState = () => (plan.loadin ||= {});
+function loadinProgress() { const all = loadinTasks().flatMap(([, , l]) => l), st = loadinState(); return { done: all.filter(t => st[t.key]).length, total: all.length }; }
 function renderPaper() {
   if (view !== 'paper') return;
   const ins = inputList(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
@@ -3575,7 +3637,7 @@ function renderPaper() {
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
-  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length]].filter(n => n[0] !== 'checks' || w.length);
+  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
     <header class="doc-head"><div class="eyebrow">${defaultsOf().org ? esc(defaultsOf().org) + ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
@@ -3584,6 +3646,13 @@ function renderPaper() {
     <div class="sheetgrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${plotSnapshot()}</div></section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
+    ${(() => { const pid = prevWeekId(); if (!pid) return ''; const old = db.plans[pid], d = weekChanges(old);
+      const li = [...d.joined.map(n => `<li class="add">+ ${esc(n)} joins</li>`), ...d.left.map(n => `<li class="rem">− ${esc(n)} is off</li>`),
+        ...d.gear.map(g => `<li class="${g.d > 0 ? 'add' : 'rem'}">${g.d > 0 ? '+' : '−'} ${Math.abs(g.d) > 1 ? Math.abs(g.d) + ' × ' : ''}${esc(CAT[g.t].name)}</li>`),
+        ...(d.ins[0] !== d.ins[1] ? [`<li>Inputs ${d.ins[0]} → ${d.ins[1]}</li>`] : []), ...(d.moved.length ? [`<li>Moved: ${esc(d.moved.slice(0, 8).join(', '))}${d.moved.length > 8 ? ` and ${d.moved.length - 8} more` : ''}</li>`] : [])];
+      return `<section class="sheet" id="sec-changes" data-sheet="overview">${head(`What’s different from ${esc(longDate(old.date))}`, '', li.length ? 'Read this before load-in' : '')}${li.length ? `<ul class="changelist">${li.join('')}</ul>` : `<p class="hint">Same team and gear as ${esc(longDate(old.date))}.</p>`}</section>`; })()}
+    ${(() => { const sh = shortages(); return sh.length ? `<section class="sheet" id="sec-borrow" data-sheet="overview">${head('To borrow', '', 'More than you own (Home → Gear)')}<div class="tablewrap"><table><thead><tr><th>Gear</th><th style="text-align:right">Needed</th><th style="text-align:right">Own</th><th style="text-align:right">Borrow</th></tr></thead><tbody>${sh.map(x => `<tr><td>${esc(CAT[x.t].name)}</td><td class="num">${x.need}</td><td class="num">${x.own}</td><td class="num"><b>${x.short}</b></td></tr>`).join('')}</tbody></table></div></section>` : ''; })()}
+    ${(() => { const nt = plan.items.filter(i => i.note); return nt.length ? `<section class="sheet" id="sec-notes" data-sheet="overview">${head('Notes', '', 'Pinned to people and gear on the plot')}<ul class="notelist">${nt.map(i => `<li><b>${esc(itemName(i))}</b><span>${esc(i.note)}</span></li>`).join('')}</ul></section>` : ''; })()}
     <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', 'inputs', `${plural(ins.length, 'channel')} in band order. Stage box ports fill in the same order.`)}${table(ins, inCols, 'flag')}</section>
     <div class="sheets2">
       <section class="sheet" id="sec-outputs" data-sheet="outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag')}</section>
@@ -3595,6 +3664,11 @@ function renderPaper() {
     </div>
     ${plan.items.some(i => i.type === 'rack') ? `<section class="sheet" id="sec-racks" data-sheet="racks">${head('Racks', '', 'Top to bottom, as you face the front.')}${plan.items.filter(i => i.type === 'rack').map(r => `<div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(r))}</b><span class="hint">${rackStat(r).used}/${r.rackU || 8}U · ${rackStat(r).watts} W</span></div><div class="tablewrap"><table><thead><tr><th>U</th><th>Device</th><th>Details</th><th>Notes</th></tr></thead><tbody>${(r.devices || []).slice().sort((a, b) => a.at - b.at).map(d => `<tr><td><span class="ch">${(r.rackU || 8) - d.at}${d.u > 1 ? '–' + ((r.rackU || 8) - d.at - d.u + 1) : ''}</span></td><td>${esc(d.name)}</td><td class="mono">${esc(devMeta(d)) || '—'}</td><td>${esc(d.note || '')}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Empty rack.</td></tr>'}</tbody></table></div></div>`).join('')}</section>` : ''}
     <section class="sheet" id="sec-power" data-sheet="power">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it.')}${powerHtml}</section>
+    ${(() => { const groups = loadinTasks(), g = loadinProgress(), st = loadinState(); if (!g.total) return ''; const pct = Math.round(g.done / g.total * 100);
+      return `<section class="sheet loadin" id="sec-loadin" data-sheet="loadin">${head('Load-in checklist', '', 'Tick things off as they’re set up. Saved with this week.')}
+        <div class="lprog" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Load-in progress"><div class="lbar"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} done</b>${g.done ? '<button class="btn quiet" id="loadinReset">Clear ticks</button>' : ''}</div>
+        ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span></h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
+      </section>`; })()}
     </div>
     <textarea id="copyFallback" rows="2" aria-label="Copied text" style="opacity:.01;height:1px;padding:0;border:0"></textarea>`;
 }
@@ -3919,6 +3993,15 @@ function syncChanItems() {
   }
 }
 const canSitInChannel = it => it && cableEnd(it) && it.type !== 'rack';
+// personal gear (instruments, mics, DIs, pedals, monitors) dropped within 1.5 m of a person token belongs to that person
+const SHARED_TYPES = new Set(['stagebox', 'rack', 'foh', 'mon_desk', 'iem_rack', 'main_spk', 'sub', 'la_main', 'la_sub', 'distro', 'wall_outlet', 'pboard2', 'pboard4', 'pboard6', 'camera', 'conf_mon', 'light_stand', 'riser', 'drum_riser', 'drum_shield', 'pulpit']);
+function ownerNear(it) {
+  if (!plan.team.length || SHARED_TYPES.has(it.type) || cat(it).shape === 'person' || cat(it).shape === 'platform' || !['inst', 'audio', 'infra'].includes(cat(it).cat)) return null;
+  const people = plan.items.filter(i => cat(i).shape === 'person' && i.personId && personById(i.personId));
+  let best = null, bd = fromM(1.5);
+  for (const p of people) { const d = Math.hypot(p.x - it.x, p.y - it.y); if (d < bd) { bd = d; best = p; } }
+  return best;
+}
 function addGear(type, x, y, hit) {
   noteRecent(type);
   mutate(() => {
@@ -3928,9 +4011,12 @@ function addGear(type, x, y, hit) {
     if (type === 'stagebox') it.label = `Stage box ${String.fromCharCode(65 + n)}`;
     if (type === 'distro') it.label = `Distro ${n + 1}`;
     if (type === 'rack') { it.label = `Rack ${n + 1}`; it.rackU = 8; it.devices = []; }
+    const owner = ownerNear(it); if (owner) it.personId = owner.personId;   // dropped beside someone: it's theirs, and moves with them on a rebuild
     autoPatch();
     sel = { kind: 'item', id: it.id };
   }, hit && canSitInChannel({ type }) ? `${CAT[type].name} placed inside ${hit.ch.name} · Alt-drop to place on top` : null);
+  const it = itemById(sel?.id), who = it?.personId && personById(it.personId);
+  if (who && !(hit && canSitInChannel({ type }))) toast(`${itemName({ ...it, label: '' })} is ${firstName(who.name)}’s`, { label: 'Not theirs', fn: () => mutate(() => { delete itemById(it.id).personId; }) });
   if (type === 'rack') openRack(sel.id);
 }
 $('ftools').addEventListener('click', e => {
@@ -4135,6 +4221,7 @@ document.addEventListener('keydown', e => {
   }
   if (typing || !$('dataDlg').hidden || !$('helpDlg').hidden) return;
   if (e.key === '?') { $('helpDlg').hidden = false; return; }
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && (k === 'g' || k === 'p') && $('cmdk').hidden) { if (k === 'g') goHome(); else { view = view === 'paper' ? 'plot' : 'paper'; renderAll(); } return; }   // G: Home · P: paperwork and back
   if (view !== 'plot') return;
   if (mode === 'channel' && e.key === 'Enter') { finishChannel(); return; }
   if (mode === 'channel' && e.key === 'Escape') { if (chDraft?.pts.length) { chDraft.pts.pop(); cursorPt = null; renderPlot(); } else setMode('select'); return; }
@@ -4356,6 +4443,7 @@ $('inspector').addEventListener('change', e => {
     const n = Number(t.value);
     switch (t.id) {
       case 'iLabel': it.label = t.value; it.labelEdited = !!t.value; break;
+      case 'iNote': if (t.value.trim()) it.note = t.value.trim().slice(0, 300); else delete it.note; break;
       case 'iPerson': it.personId = t.value || undefined; break;
       case 'iX': it.x = fromM(n); delete it.chan; break; case 'iY': it.y = fromM(n); delete it.chan; break;
       case 'iW': if (n > 0) it.w = fromM(n); break; case 'iD': if (n > 0) it.d = fromM(n); break;
@@ -4441,6 +4529,7 @@ $('paperInner').addEventListener('click', e => {
   const t = e.target.closest('[data-copy]'); if (t) { copyText(paperData[t.dataset.copy], $('copyFallback')); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn')) { window.print(); return; }
+  if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
   const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
 });
@@ -5233,6 +5322,9 @@ document.addEventListener('pointerdown', e => { if (!$('ctxMenu').hidden && !e.t
 const cmdk = { q: '', i: 0, list: [] };
 function cmdItems() {
   const acts = [
+    ['Go to Home (G)', 'calendar', () => goHome()],
+    ['Open the paperwork (P)', 'sheet', () => { view = 'paper'; renderAll(); }],
+    ['Load-in checklist', 'check', () => { view = 'paper'; paperTab = 'loadin'; renderAll(); }],
     ['Build stage from team', 'wand', () => buildNow()],
     ['Run a cable', 'cable', () => setMode('cable')],
     ['Draw a cable channel', 'trench', () => setMode('channel')],
@@ -5320,13 +5412,13 @@ window.addEventListener('afterprint', () => { if (printFrom) { view = printFrom;
 /* ===================================================================
    Library: every saved week at a glance, setups, storage, and a safe reset to default
    =================================================================== */
-const lib = { q: '', resetArmed: false, typed: '' };
+const lib = { q: '', resetArmed: false, typed: '', edit: '' };
 function weekStats(p) {   // the same checks the app runs, for any saved week
   const keep = plan; plan = p;
   try {
     const w = warnings();
-    return { team: p.team.length, gear: p.items.filter(i => !['person', 'platform'].includes(cat(i).shape)).length, ins: inputList().length, cables: p.cables.length, checks: w.length, bad: w.filter(x => x.lvl === 'bad').length };
-  } catch { return { team: p.team.length, gear: p.items.length, ins: 0, cables: p.cables.length, checks: 0, bad: 0 }; }
+    return { team: p.team.length, gear: p.items.filter(i => !['person', 'platform'].includes(cat(i).shape)).length, ins: inputList().length, cables: p.cables.length, checks: w.length, bad: w.filter(x => x.lvl === 'bad').length, load: loadinProgress(), borrow: shortages().reduce((n, x) => n + x.short, 0) };
+  } catch { return { team: p.team.length, gear: p.items.length, ins: 0, cables: p.cables.length, checks: 0, bad: 0, load: { done: 0, total: 0 }, borrow: 0 }; }
   finally { plan = keep; }
 }
 function storageUse() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('stageplot')) n += (localStorage.getItem(k) || '').length + k.length; } } catch { /* blocked */ } return n * 2; }
@@ -5339,10 +5431,13 @@ function renderLibrary() {
   const monthName = k => new Date(k + '-01T12:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const rows = [...months].map(([k, list]) => `<div class="libmonth"><h3 class="eyebrow">${esc(monthName(k))}</h3>${list.map(id => {
     const p = db.plans[id], st = weekStats(p), cur = id === plan.id, past = p.date < today;
+    if (lib.edit === id) return `<form class="librow editing" data-libform="${id}"><input type="date" id="libEdDate" value="${esc(p.date)}" aria-label="Date" required><input type="text" id="libEdName" value="${esc(p.name || '')}" placeholder="Service name" aria-label="Service name" maxlength="80">
+      <button class="btn primary" type="submit">Save</button><button class="btn quiet" type="button" data-libeditcancel>Cancel</button></form>`;
     const chip = !p.items.length ? '<span class="chip">Empty</span>' : !st.team ? '<span class="chip">No team yet</span>' : st.checks ? `<span class="chip ${st.bad ? 'bad' : 'warn'}">${plural(st.checks, 'check')}</span>` : '<span class="chip ok">Ready</span>';
     return `<div class="librow${cur ? ' cur' : ''}${past ? ' past' : ''}">
       <button class="libopen" data-libopen="${id}" title="Open this week"><span class="libdate"><b>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { day: 'numeric' }))}</b><small>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' }))}</small></span>
         <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${chip}</button>
+      <button class="iconbtn" data-libedit="${id}" aria-label="Rename or move ${esc(longDate(p.date))}" title="Rename or move to another date">${ic('pen', 'sm')}</button>
       <button class="iconbtn" data-libdup="${id}" aria-label="Copy to the following week" title="Copy to the following week">${ic('copy', 'sm')}</button>
       <button class="iconbtn" data-libdel="${id}" aria-label="Delete ${esc(longDate(p.date))}" title="Delete this week">${ic('trash', 'sm')}</button></div>`;
   }).join('')}</div>`).join('');
@@ -5406,6 +5501,13 @@ $('homeView').addEventListener('input', e => {
 });
 $('homeView').addEventListener('keydown', e => { if (e.target.id === 'libType' && e.key === 'Enter' && !$('libResetGo').disabled) resetAll(); });
 
+// load-in ticks: saved with the week straight away (not an undo step), progress updates as you go
+$('paperView').addEventListener('change', e => {
+  const k = e.target.dataset?.chk; if (!k) return;
+  const st = loadinState(); if (e.target.checked) st[k] = 1; else delete st[k];
+  save(); const y = $('paperView').scrollTop; renderPaper(); $('paperView').scrollTop = y;
+  const g = loadinProgress(); if (g.total && g.done === g.total && e.target.checked) toast('Load-in done. Everything is set up');
+});
 /* ===================================================================
    Home: the library of weeks, and settings that apply to every week
    =================================================================== */
@@ -5441,8 +5543,9 @@ function homeLibrary() {
   const chip = !next ? '' : !next.items.length ? '<span class="chip">Empty</span>' : !st.team ? '<span class="chip">No team yet</span>' : st.checks ? `<span class="chip ${st.bad ? 'bad' : 'warn'}">${plural(st.checks, 'check')}</span>` : '<span class="chip ok">Ready</span>';
   const hero = next ? `<section class="hero">
       <div><div class="eyebrow">${next.date >= today ? 'Next up' : 'Most recent'} · ${esc(longDate(next.date))}</div><h2>${esc(next.name || 'Untitled service')}</h2>
-        <p>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} ${chip}</p></div>
-      <div class="row" style="gap:8px"><button class="btn primary" data-libopen="${next.id}">${ic('plot', 'sm')}Open the plot</button><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button></div>
+        <p>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} ${chip}${st.borrow ? ` <span class="chip warn">Borrow ${st.borrow}</span>` : ''}</p></div>
+      <div class="row herobtns" style="gap:8px"><button class="btn primary" data-libopen="${next.id}">${ic('plot', 'sm')}Open the plot</button><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button>
+        <button class="btn" data-libprint="${next.id}" title="Print every sheet, or save them as a PDF">${ic('save', 'sm')}Print or PDF</button><button class="btn" data-libloadin="${next.id}" title="Tick things off on the day">${ic('check', 'sm')}Load-in${st.load.total ? ` <span class="herocount">${st.load.done}/${st.load.total}</span>` : ''}</button></div>
     </section>` : '';
   return hero + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved in this browser`, '<div id="libBody"></div>',
     `<div class="row" style="gap:6px"><button class="btn" id="homeNewCopy" title="Copy the latest week to the next free ${esc(DAYS[defaultsOf().day])}">${ic('copy', 'sm')}Copy latest</button><button class="btn primary" id="homeNewBlank" title="A fresh week from your stage defaults">${ic('plus', 'sm')}New week</button></div>`);
@@ -5453,8 +5556,9 @@ function nextFreeDate(from) { let d = from || nextServiceDay(); while (Object.va
 function homeSetups() {
   const su = Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)), def = defaultsOf().setupId;
   const rows = su.map(([id, s]) => `<div class="hlist-row"><span class="hico">${ic('room', 'sm')}</span><span class="hmain"><b>${esc(s.name)}</b><small>${fmtLen(s.stage.w)} × ${fmtLen(s.stage.d)} · ${plural((s.items || []).filter(i => !i.gen).length, 'item')} · saved ${esc(longDate(s.saved))}${id === def ? ' · <b>starts every new week</b>' : ''}</small></span>
+    ${pco.types.length || s.svcType ? `<select data-setupsvc="${id}" aria-label="Planning Center service type for ${esc(s.name)}" title="Importing a plan of this service type into an empty week sets the stage up like this"><option value="">No service type</option>${(pco.types.length ? pco.types : [{ id: s.svcType, name: s.svcName }]).map(t => `<option value="${esc(t.id)}" ${t.id === s.svcType ? 'selected' : ''}>For ${esc(t.name)}</option>`).join('')}</select>` : ''}
     <button class="btn" data-setupuse="${id}">Use on this week</button><button class="btn quiet" data-setupdef="${id}" aria-pressed="${id === def}">${id === def ? 'Default' : 'Make default'}</button><button class="iconbtn" data-libsetupdel="${id}" aria-label="Delete ${esc(s.name)}" title="Delete">${ic('trash', 'sm')}</button></div>`).join('');
-  return hsec('Setups', 'A setup is a stage layout (shape, gear, channels and fixed cabling) you can drop onto any week.',
+  return hsec('Setups', `A setup is a stage layout (shape, gear, channels and fixed cabling) you can drop onto any week. ${pco.types.length ? 'Link one to a Planning Center service type and importing that kind of plan into an empty week sets the stage up for you.' : 'Load your Planning Center service types (Home → Planning Center) to link setups to them.'}`,
     `${rows ? `<div class="hlist">${rows}</div>` : '<p class="hint">No setups yet. Save one from this week below, or from the week menu.</p>'}
      <div class="row" style="gap:6px;margin-top:12px"><input id="homeSetupName" type="text" placeholder="Name this week’s stage, e.g. Full band" style="flex:1 1 200px;min-width:0"><button class="btn" id="homeSetupSave">${ic('save', 'sm')}Save this week as a setup</button></div>`);
 }
@@ -5600,7 +5704,8 @@ function homePrefs() {
   return hsec('Look', '', `<div class="hpref"><span><b>Theme</b><small>Match your device, or always light or dark</small></span>${seg('theme', themePref, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark']])}</div>
       <div class="hpref"><span><b>Detail</b><small>Simple shows everyday controls; Advanced shows every setting and tool</small></span>${seg('detail', ui.adv ? 'adv' : 'simple', [['simple', 'Simple'], ['adv', 'Advanced']])}</div>`) +
     hsec('Working on the plot', '', `<div class="hpref"><span><b>Snap gear to</b><small>Rounds positions as you move gear (hold Alt to move freely)</small></span><select id="hp-snap" aria-label="Snap gear to">${[[0, 'Off'], [.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}`);
+      ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}`) +
+    hsec('Use it offline', '', `<div class="hpref"><span><b>${matchMedia('(display-mode: standalone)').matches ? 'Installed on this device' : 'Install Stageplot on this device'}</b><small>${swState.ok ? 'Works with no signal: the app is saved on this device, and your weeks always are.' : 'Your weeks are always saved on this device. Open Stageplot from its own web address to install it and use it with no signal.'}${/iPhone|iPad/.test(navigator.userAgent) && !installPrompt ? ' On iPhone or iPad: Share → Add to Home Screen.' : ''}</small></span>${installPrompt ? `<button class="btn primary" id="hp-install">${ic('save', 'sm')}Install</button>` : ''}</div>`);
 }
 
 /* ----- Data ----- */
@@ -5620,6 +5725,10 @@ $('homeView').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.home) { homeTab = t.dataset.home; try { localStorage.setItem('stageplot.homeTab', homeTab); } catch { /* memory only */ } lib.resetArmed = false; renderHome(); $('homeView').scrollTop = 0; return; }
   if (t.dataset.libpaper) { view = 'paper'; switchWeek(t.dataset.libpaper); return; }
+  if (t.dataset.libedit) { lib.edit = t.dataset.libedit; renderLibrary(); setTimeout(() => { $('libEdName')?.focus(); $('libEdName')?.select(); }, 20); return; }
+  if (t.hasAttribute('data-libeditcancel')) { lib.edit = ''; renderLibrary(); return; }
+  if (t.dataset.libprint) { view = 'paper'; paperTab = 'overview'; switchWeek(t.dataset.libprint); setTimeout(() => window.print(), 120); return; }
+  if (t.dataset.libloadin) { view = 'paper'; paperTab = 'loadin'; switchWeek(t.dataset.libloadin); return; }
   if (t.id === 'homeNewBlank') { const np = blankPlan(nextFreeDate()); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)}`); return; }
   if (t.id === 'homeNewCopy') { const ids = sortedWeekIds(), src = db.plans[ids[ids.length - 1]], np = JSON.parse(JSON.stringify(src)); np.id = uid(); np.date = nextFreeDate(addDays(src.date, 7)); db.plans[np.id] = np; save(); renderHome(); toast(`Copied to ${longDate(np.date)}`); return; }
   if (t.dataset.setupuse) { view = 'plot'; applySetup(t.dataset.setupuse); return; }
@@ -5638,10 +5747,20 @@ $('homeView').addEventListener('click', e => {
   if (t.id === 'homeGearUnused') { const on = new Set(plan.items.map(i => i.type)); const g = gearPrefs(), before = [...g.hidden]; g.hidden = GEAR_GROUPS.flatMap(([, ts]) => ts).filter(x => !on.has(x)); save(); renderHome(); renderRail(); toast('Your library now has only what’s on this week’s plot', { label: 'Undo', fn: () => { g.hidden = before; save(); renderHome(); renderRail(); } }); return; }
   if (t.id === 'homeOwnClear') { gearPrefs().owned = {}; save(); renderHome(); return; }
   if (t.id === 'hp-test') { pcoLoadTypes(); return; }
+  if (t.id === 'hp-install' && installPrompt) { installPrompt.prompt(); installPrompt.userChoice.finally(() => { installPrompt = null; renderHome(); }); return; }
   if (t.dataset.pref === 'theme') { setTheme(t.dataset.v); renderHome(); return; }
   if (t.dataset.pref === 'detail') { setDetail(t.dataset.v === 'adv'); renderHome(); return; }
   if (t.id === 'homeDataDlg') { $('dataBtn').click(); return; }
 });
+$('homeView').addEventListener('submit', e => {
+  const f = e.target.closest('[data-libform]'); if (!f) return; e.preventDefault();
+  const p = db.plans[f.dataset.libform], d = $('libEdDate').value, n = $('libEdName').value.trim();
+  if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(d)) { toast('Pick a date'); return; }
+  const was = { date: p.date, name: p.name };
+  p.date = d; p.name = n || p.name; lib.edit = ''; save(); renderHome(); renderHeader();
+  toast(d !== was.date ? `Moved to ${longDate(d)}` : 'Renamed', { label: 'Undo', fn: () => { Object.assign(p, was); save(); renderHome(); renderHeader(); } });
+});
+$('homeView').addEventListener('keydown', e => { if (e.key === 'Escape' && lib.edit) { lib.edit = ''; renderLibrary(); } });
 $('homeView').addEventListener('input', e => {
   const t = e.target, k = { 'gf-name': 'name', 'gf-inputs': 'inputs', 'gf-watts': 'watts', 'gf-w': 'w', 'gf-d': 'd' }[t.id];
   if (k) { gearForm[k] = t.value; const b = $('gf-add'); if (b) b.disabled = !gearForm.name.trim(); }
@@ -5661,6 +5780,7 @@ $('homeView').addEventListener('change', e => {
   if (t.id === 'hd-teamgear') { ui.teamGear = t.checked; try { localStorage.setItem('stageplot.teamGear', t.checked ? 'on' : 'off'); } catch { /* memory only */ } return; }
   if (t.dataset.show) { const g = gearPrefs(); g.hidden = g.hidden.filter(x => x !== t.dataset.show); if (!t.checked) g.hidden.push(t.dataset.show); save(); t.closest('.hgear').classList.toggle('off', !t.checked); return; }
   if (t.dataset.own) { const g = gearPrefs(), n = parseInt(t.value, 10); if (t.value === '' || !(n >= 0)) delete g.owned[t.dataset.own]; else g.owned[t.dataset.own] = n; save(); renderHome(); return; }
+  if (t.dataset.setupsvc) { const x = setups()[t.dataset.setupsvc]; if (x) { if (t.value) { for (const o of Object.values(setups())) if (o !== x && o.svcType === t.value) { delete o.svcType; delete o.svcName; } x.svcType = t.value; x.svcName = pco.types.find(y => y.id === t.value)?.name || ''; } else { delete x.svcType; delete x.svcName; } save(); renderHome(); } return; }
   if (t.id === 'hp-type') { const P = pcoPrefs(); P.typeId = t.value; P.typeName = pco.types.find(x => x.id === t.value)?.name || ''; pco.typeId = t.value; save(); return; }
   if (t.id === 'hp-replace') { pcoPrefs().replace = t.checked; pco.replace = t.checked; save(); return; }
   if (t.id === 'hp-unconf') { pcoPrefs().unconfirmed = t.checked; save(); return; }
@@ -5693,6 +5813,14 @@ try {
 } catch { /* storage blocked */ }
 if (unreadable) setTimeout(() => toast('Your saved weeks couldn’t be read. A copy is kept safe in this browser', { label: 'Recover', fn: () => { $('dataText').value = unreadable; $('dataDlg').hidden = false; } }), 300);
 requestAnimationFrame(() => { needFit = true; renderPlot(); });
+/* offline and install: only where the page is served over http(s) and service workers are allowed (not file://, not every embed) */
+let installPrompt = null;
+const swState = { ok: false };
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').then(() => { swState.ok = true; renderHome(); }).catch(() => { /* blocked here: the app still works online */ });
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; renderHome(); });
+window.addEventListener('appinstalled', () => { installPrompt = null; toast('Stageplot is installed'); renderHome(); });
 if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); renderHome(); }, () => { pco.mcp = null; renderRail(); renderHome(); });
 </script>
 </body>
