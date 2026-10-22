@@ -444,8 +444,8 @@ svg text { font-family: var(--f-ui); }
 .dotp { fill: var(--house-dot); }
 .deck { fill: var(--deck); stroke: var(--deck-rim, rgba(255,255,255,.07)); stroke-width: .06; }
 .deck-shadow { fill: var(--deck-edge); opacity: .45; filter: url(#deckblur); }
-.g-minor { stroke: var(--deck-grid); stroke-width: var(--hair, .03px); opacity: .7; shape-rendering: crispEdges; }
-.g-major { stroke: var(--deck-grid-major); stroke-width: var(--hair2, .05px); shape-rendering: crispEdges; }
+.g-minor { stroke: var(--deck-grid); stroke-width: var(--hair, .03px); opacity: .45; shape-rendering: crispEdges; }
+.g-major { stroke: var(--deck-grid-major); stroke-width: var(--hair, .03px); opacity: .7; shape-rendering: crispEdges; }
 .edge { stroke: var(--tape); stroke-width: .16; stroke-dasharray: .7 .35; }
 .ruler line { stroke: var(--house-ink); stroke-width: var(--hair, .045px); shape-rendering: crispEdges; }
 .ruler text { fill: var(--house-ink); font-size: min(.52px, calc(var(--lab, .5px) * .95)); font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
@@ -636,6 +636,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .cm-row[aria-pressed="false"] { color: var(--muted); }
 .cm-row[aria-pressed="false"] .sw { opacity: .3; }
 .cm-tog { grid-template-columns: minmax(0, 1fr) auto; padding: 8px 10px; }
+.cm-tog:has(> .ic:first-child) { grid-template-columns: 18px minmax(0, 1fr) auto; }   /* Views rows carry an icon: icon, words, switch on one line */
 .cm-lbl { display: grid; gap: 1px; min-width: 0; }
 .cm-lbl small { color: var(--muted); font-size: 11.5px; line-height: 1.35; }
 .cm-tog[aria-checked="false"] { color: var(--ink); }
@@ -1124,8 +1125,17 @@ td.spare { color: var(--muted); font-style: italic; }
 .heropic .snap { display: block; width: 100%; height: auto; max-height: 230px; }
 .heroteam { position: absolute; left: 10px; bottom: 10px; display: flex; } .heroteam .avatar { width: 30px; height: 30px; font-size: 11px; margin-right: -6px; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
 @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+/* look switch: calm (pictures sit back until picked or pointed at), full colour, mono */
+#plot.style-calm .item:not(.is-person):not(.is-floor):not(.picked):not(:hover) { filter: saturate(.55) brightness(.97); }
+#plot.style-mono { filter: grayscale(1) contrast(1.04); }
+.pstyle { margin: 2px 8px 6px; }
+.itag.gname rect { fill: rgba(16,18,23,.5); stroke: none; } .itag.gname .ilabel { font-weight: 500; fill: rgba(255,255,255,.88); font-size: inherit; }
+.light-deck .itag.gname:not(.sel) rect { fill: rgba(255,255,255,.7); } .light-deck .itag.gname:not(.sel) .ilabel { fill: #3a3f4a; }
+.itag.gname.out rect { fill: var(--surface); stroke: var(--line); stroke-width: var(--hair, .03px); } .itag.gname.out .ilabel { fill: var(--ink-2); }
+.heropic { max-height: 210px; display: grid; place-items: center; } .heropic .snap { max-height: 210px; width: auto; max-width: 100%; }
 /* one style for everything that floats over the canvas */
 :root { --fl-r: 14px; --fl-blur: blur(14px) saturate(1.25); }
+.cabmenu, .ctxmenu, .moremenu, #weekPop { background: var(--surface) !important; }   /* menus are read closely: solid, not see-through */
 .float .panel, .emptycard, .cabmenu, .f-foh, .pres-title, .ctxmenu, .moremenu, #weekPop, .hovercard {
   border-radius: var(--fl-r) !important; background: var(--glass); -webkit-backdrop-filter: var(--fl-blur); backdrop-filter: var(--fl-blur);
   border: 1px solid color-mix(in srgb, var(--line-2, var(--line)) 80%, transparent); box-shadow: var(--shadow-2); }
@@ -3423,7 +3433,7 @@ function aimLinks(selSet) {
 }
 let foldHinted = false, hoverCid = null;
 // while nothing is picked, runs keep their colour but lean towards grey, so the stage isn't a rainbow; picking or pointing brings the colour back
-document.head.insertAdjacentHTML('beforeend', `<style id="calmcables">${Object.entries(KVAR).map(([k, v]) => `.cab.quiet.k-${k}, .snap .cab.k-${k}.calm { stroke: color-mix(in srgb, var(${v}) 58%, #8b909a); } .plug.quiet[style*="${v}"] { fill: color-mix(in srgb, var(${v}) 58%, #8b909a) !important; }`).join('')}</style>`);
+document.head.insertAdjacentHTML('beforeend', `<style id="calmcables">${Object.entries(KVAR).map(([k, v]) => `#plot.style-calm .cab.quiet.k-${k} { stroke: color-mix(in srgb, var(${v}) 58%, #8b909a); } #plot.style-calm .plug.quiet[style*="${v}"] { fill: color-mix(in srgb, var(${v}) 58%, #8b909a) !important; }`).join('')}</style>`);
 svg.addEventListener('pointerover', e => { const h = e.target.closest?.('[data-cid]'); const id = h && !drag && !pending && e.pointerType !== 'touch' ? h.dataset.cid : null; if (id !== hoverCid) { hoverCid = id; renderPlot(); } });
 svg.addEventListener('pointerleave', () => { if (hoverCid) { hoverCid = null; renderPlot(); } });
 const TUCK_TYPES = new Set(['di_mono', 'di_stereo', 'iem']);   // passive boxes only: anything someone plays or plugs into stays drawn
@@ -3560,8 +3570,9 @@ function renderPlot() {
   const half = fromM(.5);
   if (!layerOff('grid')) {
   s += '<g clip-path="url(#deckclip)">';
-  for (let i = 1; i * half < w - .01; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="${i * half}" x2="${i * half}" y1="0" y2="${d}"/>`;
-  for (let i = 1; i * half < d - .01; i++) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="0" x2="${w}" y1="${i * half}" y2="${i * half}"/>`;
+  const fine = scale >= 26;   // zoomed out, only the metre lines
+  for (let i = 1; i * half < w - .01; i++) if (fine || i % 2 === 0) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="${i * half}" x2="${i * half}" y1="0" y2="${d}"/>`;
+  for (let i = 1; i * half < d - .01; i++) if (fine || i % 2 === 0) s += `<line class="${i % 2 ? 'g-minor' : 'g-major'}" x1="0" x2="${w}" y1="${i * half}" y2="${i * half}"/>`;
   s += '</g>';
   }
   for (const [a, c] of frontEdges(poly)) s += `<line class="edge" x1="${a[0]}" y1="${a[1]}" x2="${c[0]}" y2="${c[1]}"/>`;
@@ -3588,6 +3599,7 @@ function renderPlot() {
   const selItem = sel?.kind === 'item' ? sel.id : null, selSet = new Set(selIds()), solo = selSet.size === 1;
   const tr = tracing && selItem === tracing && !layersBypass ? traceSets(tracing) : null;   // signal trace runs while its source stays picked
   svg.classList.toggle('tracing', !!tr);
+  for (const k of ['calm', 'full', 'mono']) svg.classList.toggle('style-' + k, !layersBypass && (cableView.style || 'calm') === k);
   syncChanItems();
   const zOf = it => layerOf(it) + (selSet.has(it.id) && cat(it).shape !== 'platform' ? 10 : 0);   // picked gear comes to the front, so it never hides under a person
   const tucked = new Map();   // zoomed out, a person's small boxes (DIs, packs, interfaces) fold into one badge; picking the person or zooming in opens them
@@ -3603,7 +3615,7 @@ function renderPlot() {
   const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}">${shapeSvg(it, iw, id)}</g>`;
+    const g = `<g class="item${C.shape === 'person' ? ' is-person' : C.shape === 'platform' ? ' is-floor' : ''}${selSet.has(it.id) ? ' picked' : ''}${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}">${shapeSvg(it, iw, id)}</g>`;
     if (L < 1) s += g; else top += g;
     if ((C.wireless || C.iem) && !layersBypass) { const [rw, rh] = halfExt(it), k = 1 / scale; top += `<g class="rfmark" transform="translate(${f3(it.x + rw * .7)} ${f3(it.y - rh * .7)}) scale(${f3(k)})" aria-hidden="true"><circle r="5.5"/><path d="M-2.6 -.6a3.7 3.7 0 0 1 5.2 0M-1.3 .9a1.85 1.85 0 0 1 2.6 0"/><circle class="rfdot" cy="2.2" r=".9"/></g>`; }   // wireless: a little signal mark instead of a plug
     if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
@@ -3617,11 +3629,11 @@ function renderPlot() {
       const text = person ? firstName(owner?.name || it.label) : (fn && itemName(it).startsWith(fn + ' ') ? itemName(it).slice(fn.length + 1) : itemName(it));
       const onDeck = inPoly(it.x, it.y, stagePoly());
       const ly = big ? it.y + (it.rot % 180 ? iw : id) / 2 - 6 / scale : it.y + Math.max(iw, id) / 2 + 13 / scale;
-      const fs = (person ? 11.5 : 10.5) * LK / scale;
+      const fs = (person ? 11.5 : 9.5) * LK / scale;   // people's names lead; gear names sit a size down
       const above = big ? [] : [it.y - Math.max(iw, id) / 2 - (isSel ? .3 + 24 / scale : 4 / scale)];   // a selected name clears the ring and the rotate knob
       const tw = String(text).length * fs * .57 + fs * 1.1;   // a rounded name tag instead of outlined text: reads on any deck colour
       labCands.push({ x: it.x, y: ly + (big ? 0 : 2 / scale), alt: above, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: tw, h: fs * 1.1, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
-        mk: y => `<g class="itag${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ''}${isSel ? ' sel' : ''}"><rect x="${f3(it.x - tw / 2)}" y="${f3(y - fs * .9)}" width="${f3(tw)}" height="${f3(fs * 1.25)}" rx="${f3(fs * .62)}"/><text class="ilabel${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text></g>` });
+        mk: y => `<g class="itag${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ' gname'}${isSel ? ' sel' : ''}"${person ? '' : ` style="font-size:${f3(fs)}px"`}><rect x="${f3(it.x - tw / 2)}" y="${f3(y - fs * .9)}" width="${f3(tw)}" height="${f3(fs * 1.25)}" rx="${f3(fs * .62)}"/><text class="ilabel${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text></g>` });
     } else if (C.shape === 'platform' && showBig && !layerOff('labels')) {
       const own = it.personId && personById(it.personId), fnr = own && firstName(own.name), nm = fnr && itemName(it).startsWith(fnr + ' ') ? itemName(it).slice(fnr.length + 1) : itemName(it);
       const cap = C.walk ? 'KEEP CLEAR' : `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = C.walk ? it.y + .25 : it.y + id / 2 - .35;
@@ -4282,10 +4294,10 @@ function tsv(rows, cols) { return [cols.map(c => c[0]).join('\t'), ...rows.map(r
 let paperData = {};
 let paperTab = 'overview';      // one sheet at a time; 'all' shows the lot for printing or scrolling
 // a clean, selection-free drawing of the plot for the overview sheet
-function plotSnapshot() {
+function plotSnapshot(atZoom) {
   const keep = { sel, group, mode, pending, view, measure, compare, zoom, needFit };
   sel = null; group = null; mode = 'select'; pending = null; measure = null; compare = null; view = 'plot';
-  zoom = Math.max(8, Math.min(60, (($('paperInner')?.clientWidth || 1000) - 42) / bounds().vw));   // labels sized for the width it's shown at
+  zoom = atZoom || Math.max(8, Math.min(60, (($('paperInner')?.clientWidth || 1000) - 42) / bounds().vw));   // labels sized for the width it's shown at
   let html = '';
   layersBypass = true; const quietWas = cableView.quiet, flowWas = cableView.noFlow, animWas = cableView.anim; cableView.quiet = false; cableView.noFlow = true; cableView.anim = false;   // paper: every run at full strength, no arrows or pulses
   try { renderPlot(); html = `<svg class="snap${svg.classList.contains('light-deck') ? ' light-deck' : ''}" viewBox="${svg.getAttribute('viewBox')}" style="${svg.getAttribute('style') || ''};width:100%;height:auto" role="img" aria-label="Stage plot">${svg.innerHTML.replace(/ id="[^"]*"/g, '').replace(/<polyline class="cabhit[^>]*>(<title>[^<]*<\/title>)?<\/polyline>/g, '')}</svg>`; }
@@ -4895,6 +4907,7 @@ $('ftools').addEventListener('click', e => {
   if (e.target.closest('#cabCeil')) { setCableView(() => { cableView.hideCeil = !cableView.hideCeil; }); return; }
   if (e.target.closest('#cabAllBtn')) { setCableView(() => { cableView.all = !cableView.all; }); return; }
   if (e.target.closest('#cabShowAll')) { setCableView(() => { cableView.all = true; cableView.hidden.clear(); cableView.hideCeil = false; }); return; }
+  const ps = e.target.closest('[data-pstyle]'); if (ps) { setCableView(() => { cableView.style = ps.dataset.pstyle; }); return; }
   if (e.target.closest('#foldBtn')) { setCableView(() => { cableView.fold = cableView.fold === false; }); return; }
   if (e.target.closest('#cabQuiet')) { setCableView(() => { cableView.quiet = cableView.quiet === false; }); return; }
   if (e.target.closest('#cabAudio')) { setCableView(() => { cableView.all = true; cableView.hidden = new Set(['power', 'video']); }); return; }
@@ -5695,11 +5708,11 @@ $('welcomeExample').onclick = () => { $('welcomeDlg').hidden = true; db.setup = 
    Cable visibility (per browser)
    =================================================================== */
 const cableView = { all: true, hidden: new Set(), menu: false, layers: new Set(), over: new Set() };   // layers: 'people' | 'gear' | 'labels' | 'dims' | 'grid' switched off (view only, never the data)
-try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; cableView.hideInCh = !!v.hideInCh; cableView.quiet = v.quiet !== false; cableView.fold = v.fold !== false; cableView.layers = new Set(v.layers || []); cableView.over = new Set(v.over || []); } } catch { /* ignore */ }
+try { const v = JSON.parse(localStorage.getItem('stageplot.cables') || 'null'); if (v) { cableView.all = v.all !== false; cableView.hidden = new Set(v.hidden || []); cableView.hideCeil = !!v.hideCeil; cableView.noFlow = !!v.noFlow; cableView.anim = !!v.anim; cableView.hideInCh = !!v.hideInCh; cableView.quiet = v.quiet !== false; cableView.fold = v.fold !== false; cableView.style = ['calm', 'full', 'mono'].includes(v.style) ? v.style : 'calm'; cableView.layers = new Set(v.layers || []); cableView.over = new Set(v.over || []); } } catch { /* ignore */ }
 const cableShown = c => layersBypass || cableView.all && !cableView.hidden.has(c.type) && !(c.level === 'ceiling' && cableView.hideCeil);
 function setCableView(fn) {
   fn();
-  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim, hideInCh: !!cableView.hideInCh, quiet: cableView.quiet !== false, fold: cableView.fold !== false, layers: [...cableView.layers], over: [...cableView.over], side: sideOpen })); } catch { /* ignore */ }
+  try { localStorage.setItem('stageplot.cables', JSON.stringify({ all: cableView.all, hidden: [...cableView.hidden], hideCeil: !!cableView.hideCeil, noFlow: !!cableView.noFlow, anim: !!cableView.anim, hideInCh: !!cableView.hideInCh, quiet: cableView.quiet !== false, fold: cableView.fold !== false, style: cableView.style || 'calm', layers: [...cableView.layers], over: [...cableView.over], side: sideOpen })); } catch { /* ignore */ }
   if (sel?.kind === 'cable') { const c = plan.cables.find(x => x.id === sel.id); if (c && !cableShown(c)) sel = null; }
   renderPlot(); renderInspector();
 }
@@ -5969,6 +5982,7 @@ function cableMenuHtml() {
       ${ceilN || cableView.hideCeil ? `<button class="cm-row cm-type" id="cabCeil" aria-pressed="${!cableView.hideCeil}" ${cableView.all ? '' : 'disabled'}><span class="sw ceilsw"></span><span>Ceiling runs</span><span class="cm-n">${ceilN}</span>${eye(!cableView.hideCeil)}</button>` : ''}
       ${chans().length ? `<button class="cm-row cm-type" id="cabInCh" aria-pressed="${!cableView.hideInCh}" ${cableView.all ? '' : 'disabled'}><span class="sw" style="background:var(--house-ink)"></span><span>Inside channels<small style="display:block;color:var(--muted);font-size:11.5px">gear in channels too</small></span><span class="cm-n">${inCh}</span>${eye(!cableView.hideInCh)}</button>` : ''}
       <div class="cm-h">Display</div>
+      <div class="cm-seg pstyle" role="group" aria-label="Look">${[['calm', 'Calm'], ['full', 'Full colour'], ['mono', 'Mono']].map(([k, n]) => `<button data-pstyle="${k}" aria-pressed="${(cableView.style || 'calm') === k}">${n}</button>`).join('')}</div>
       ${tog('cabQuiet', cableView.quiet !== false, 'Quiet until selected', 'Fade cables until you pick something')}
       ${tog('foldBtn', cableView.fold !== false, 'Fold small boxes', 'Zoomed out, DIs and in-ear packs become a number badge')}
       ${ui.adv ? `${tog('cabFlow', !cableView.noFlow, 'Signal flow arrows', '')}
@@ -6675,7 +6689,8 @@ function heroPicture(p) {   // the week's stage, drawn the way the paperwork dra
   const key = [p.id, JSON.stringify(p.items).length, JSON.stringify(p.cables).length, JSON.stringify(p.stage), document.documentElement.dataset.theme || ''].join('|');
   if (heroCache.key === key) return heroCache.html;
   const keep = plan; let html = '';
-  try { plan = p; html = cropToStage(plotSnapshot()); } catch { html = ''; } finally { plan = keep; if (view !== 'plot') svg.innerHTML = ''; }   // it borrows the plot canvas to draw; leave that empty while it's hidden
+  try { plan = p; const m = fromM(.5), vb = [-m, -m * 1.6, p.stage.w + 2 * m, p.stage.d + m * 2.6];   // just the stage, labels sized for a 210 px tall card
+    html = plotSnapshot(210 / vb[3]).replace(/viewBox="[^"]*"/, `viewBox="${vb.map(f3).join(' ')}"`); } catch { html = ''; } finally { plan = keep; if (view !== 'plot') svg.innerHTML = ''; }   // it borrows the plot canvas to draw; leave that empty while it's hidden
   heroCache = { key, html }; return html;
 }
 function homeLibrary() {
