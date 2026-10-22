@@ -1085,6 +1085,24 @@ td.spare { color: var(--muted); font-style: italic; }
 .rfmark { pointer-events: none; } .rfmark circle:first-child { fill: rgba(16,18,23,.78); stroke: rgba(255,255,255,.25); stroke-width: .6; } .rfmark path { fill: none; stroke: #7dd3fc; stroke-width: .9; stroke-linecap: round; } .rfmark .rfdot { fill: #7dd3fc; }
 .gbadge { cursor: pointer; } .gbadge circle { fill: var(--surface); stroke: var(--accent); stroke-width: var(--cwh, .12px); } .gbadge text { fill: var(--ink); font-weight: 750; font-variant-numeric: tabular-nums; }
 .gbadge:hover circle { fill: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+/* hover card, details preview, notices, phone tabs */
+.hc-head { display: flex; gap: 10px; align-items: center; } .hc-head b { display: block; } .hc-head .avatar { width: 40px; height: 40px; flex: none; }
+.hc-owner { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); } .hc-owner i { width: 8px; height: 8px; border-radius: 50%; }
+.hc-note { margin: 2px 0 4px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); font-size: 12.5px; }
+.hovercard { min-width: 230px; max-width: 300px; } .hovercard dd { max-width: 190px; overflow-wrap: anywhere; }
+.ipv { width: 44px; height: 44px; flex: none; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 1px 3px rgba(0,0,0,.25); }
+.ipv-lg { width: 52px; height: 52px; border-radius: 12px; }
+.ipv .s-beam, .ipv .s-cov, .ipv .s-covup, .ipv .s-lbeam, .ipv .hit { display: none; }
+.ticon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.14); flex: none; margin-left: -4px; }
+.toast { position: fixed; overflow: hidden; } .toast .tbar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: tbar linear forwards; }
+.toast.held .tbar { animation-play-state: paused; } @keyframes tbar { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .toast .tbar { animation: none; opacity: .5; } }
+@media (max-width: 760px) {
+  .docnav { display: grid; gap: 8px; }
+  .docnav nav { display: flex !important; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; scroll-behavior: smooth;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent); }
+  .docnav nav::-webkit-scrollbar { display: none; } .docnav nav button { flex: none; white-space: nowrap; } .docnav .printbar { justify-content: flex-end; }
+}
 /* one style for everything that floats over the canvas */
 :root { --fl-r: 14px; --fl-blur: blur(14px) saturate(1.25); }
 .float .panel, .emptycard, .cabmenu, .f-foh, .pres-title, .ctxmenu, .moremenu, #weekPop, .hovercard {
@@ -1543,9 +1561,14 @@ function toast(msg, withUndo) {
   document.querySelector('.toast')?.remove();
   const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
   const act = withUndo && typeof withUndo === 'object' ? withUndo : null;   // { label, fn } for an action other than Undo
-  t.innerHTML = `<span>${esc(msg)}</span>${withUndo ? `<button type="button">${esc(act ? act.label : 'Undo')}</button>` : ''}`;
+  const m = String(msg), icon = /remov|delet|clear|deleted/i.test(m) ? 'trash' : /^added|added$| added/i.test(m) ? 'plus' : /moved|swapped|turn|rotat/i.test(m) ? 'rotate' : /restor|undo/i.test(m) ? 'undo' : /copied|duplicat/i.test(m) ? 'copy' : /not |can.t|couldn|block|isn.t/i.test(m) ? 'alert' : 'check';
+  const life = withUndo ? 5000 : 2400;
+  t.innerHTML = `<span class="ticon">${ic(icon, 'sm')}</span><span>${esc(msg)}</span>${withUndo ? `<button type="button">${esc(act ? act.label : 'Undo')}</button><i class="tbar" style="animation-duration:${life}ms"></i>` : ''}`;
   if (withUndo) t.querySelector('button').onclick = () => { t.remove(); act ? act.fn() : undo(); };
-  document.body.appendChild(t); setTimeout(() => t.remove(), withUndo ? 5000 : 2400);
+  document.body.appendChild(t);
+  let left = life, start = performance.now(), timer = setTimeout(() => t.remove(), left);
+  t.addEventListener('mouseenter', () => { clearTimeout(timer); left -= performance.now() - start; t.classList.add('held'); });   // pointing at it holds it, so there's time to press Undo
+  t.addEventListener('mouseleave', () => { start = performance.now(); t.classList.remove('held'); timer = setTimeout(() => t.remove(), Math.max(800, left)); });
 }
 async function copyText(text, fallbackEl) {
   try { await navigator.clipboard.writeText(text); toast('Copied'); }
@@ -2519,6 +2542,11 @@ let railOpen = true, inspOpen = true;
 let fitMode = 'stage', scale = 10, needFit = true, gearQuery = '', gearTab = (() => { try { const t = localStorage.getItem('stageplot.gearTab'); return GEAR_GROUPS.some(([g]) => g === t) ? t : 'Instruments'; } catch { return 'Instruments'; } })(), themePref = 'system';
 const SHORT = { xlr: 'XLR', cat6: 'Cat6', power: 'Power', inst: 'Jack', speakon: 'Speakon', video: 'Video', usb: 'USB' };
 const KVAR = { xlr: '--k-xlr', cat6: '--k-cat', power: '--k-pow', inst: '--k-inst', speakon: '--k-spk', video: '--k-vid', usb: '--k-usb' };
+// a small picture of the item as it's drawn on the plot, on this stage's colour (details panel, hover card)
+function itemPreview(it, cls) {
+  const w = Number(prop(it, 'w')), d = Number(prop(it, 'd')), m = Math.max(w, d) / 2 + .3;
+  return `<svg class="${cls}" viewBox="${f3(-m)} ${f3(-m)} ${f3(2 * m)} ${f3(2 * m)}" aria-hidden="true"><rect class="ipv-deck" x="${f3(-m)}" y="${f3(-m)}" width="${f3(2 * m)}" height="${f3(2 * m)}" style="fill:${plan.stage.color || 'var(--deck)'}"/>${shapeSvg({ ...it, rot: 0 }, w, d)}</svg>`;
+}
 const personColour = pid => (pid && typeof PERSON_HUES !== 'undefined' && personHue(pid)) || '';
 const hueStyle = pid => { const h = personColour(pid); return h ? ` hued" style="--hue:${h}` : ''; };   // drops into an avatar's class attribute
 const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? 'word' : /Engineer|Lighting|Producer|Camera/.test(r) ? 'tech' : r ? 'band' : '';
@@ -3545,7 +3573,7 @@ function renderPlot() {
   const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})"><title>${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}</title>${shapeSvg(it, iw, id)}</g>`;
+    const g = `<g class="item${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}">${shapeSvg(it, iw, id)}</g>`;
     if (L < 1) s += g; else top += g;
     if ((C.wireless || C.iem) && !layersBypass) { const [rw, rh] = halfExt(it), k = 1 / scale; top += `<g class="rfmark" transform="translate(${f3(it.x + rw * .7)} ${f3(it.y - rh * .7)}) scale(${f3(k)})" aria-hidden="true"><circle r="5.5"/><path d="M-2.6 -.6a3.7 3.7 0 0 1 5.2 0M-1.3 .9a1.85 1.85 0 0 1 2.6 0"/><circle class="rfdot" cy="2.2" r=".9"/></g>`; }   // wireless: a little signal mark instead of a plug
     if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
@@ -4106,7 +4134,7 @@ function renderInspector() {
     const moreWhat = [!ownerUp && plan.team.length ? 'owner' : '', 'position', isRiser ? '' : 'size', C.wireless || isPowerSource(it) || isRiser ? '' : 'power draw', ins.length || C.inputs ? 'input names' : '', isExt(it) || isPowerSource(it) ? 'ratings' : '', it.type === 'stagebox' ? 'ports' : ''].filter(Boolean).join(', ');
     const conns = plan.cables.filter(x => touches(x, it.id));
     el.innerHTML = `<div class="insp">
-      <div class="insp-head">${C.shape === 'person' ? `<span class="avatar tone-${roleTone(owner?.role)}${owner ? ` hued" style="--hue:${personColour(owner.id)};width:44px;height:44px` : '" style="width:44px;height:44px'}">${esc(initials(owner?.name || it.label))}</span>` : glyph(it.type, '', it)}
+      <div class="insp-head">${C.shape === 'person' ? `<span class="avatar tone-${roleTone(owner?.role)}${owner ? ` hued" style="--hue:${personColour(owner.id)};width:44px;height:44px` : '" style="width:44px;height:44px'}">${esc(initials(owner?.name || it.label))}</span>` : itemPreview(it, 'ipv ipv-lg')}
         <div style="min-width:0"><div class="eyebrow">${esc(C.name)}</div><input id="iLabel" class="titlein" type="text" value="${esc(it.label || '')}" placeholder="${esc(itemName({ ...it, label: '' }))}" aria-label="Name" title="Click to rename"></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       ${ownerUp || it.chan ? `<section class="isec">
@@ -4371,8 +4399,15 @@ function chEditHtml(ins) {
     <datalist id="micList">${['Dynamic', 'Condenser', 'Small condenser', 'Kick dynamic', 'Boundary (inside kick)', 'Ribbon', 'DI', 'Stereo DI', 'Line (DI)', 'Headset (RF)', 'Handheld (RF)'].map(v => `<option value="${v}">`).join('')}</datalist>
     <p class="hint">Typing a number another input already has swaps the two. Mic, stand and 48V changes follow the input to every week.</p>`;
 }
+function centreTab() {   // on a phone the tab row scrolls: keep the open sheet's tab in view
+  const nav = document.querySelector('.docnav nav'), b = nav?.querySelector('[aria-selected="true"]');
+  if (!nav || !b || nav.scrollWidth <= nav.clientWidth) return;
+  const r = b.getBoundingClientRect(), q = nav.getBoundingClientRect();
+  nav.scrollTo({ left: nav.scrollLeft + (r.left + r.width / 2) - (q.left + q.width / 2), behavior: 'instant' });
+}
 function renderPaper() {
   if (view !== 'paper') return;
+  requestAnimationFrame(centreTab);
   const ins = inputSheet(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
   const sources = plan.items.filter(isPowerSource);
   const codes = boxCodes();
@@ -6254,19 +6289,22 @@ svg.addEventListener('pointerover', e => {
   hoverTimer = setTimeout(() => {
     const it = itemById(g.dataset.id); if (!it || drag) return;
     const C = cat(it), owner = it.personId && personById(it.personId);
-    const ins = inputsOf(it).length, patch = patchOf(it), watts = Number(prop(it, 'watts')) || 0;
-    const conns = plan.cables.filter(c => touches(c, it.id)).length;
-    const rows = [];
+    const watts = Number(prop(it, 'watts')) || 0, codes = boxCodes(), rows = [];
+    const chs = inputSheet().filter(r => r.itemId === it.id || (C.shape === 'person' && itemById(r.itemId)?.personId === it.personId));
+    const span = l => l.length > 3 ? `${l.slice(0, 2).join(', ')} +${l.length - 2}` : l.join(', ');
     if (owner && C.shape !== 'person') rows.push(['Belongs to', owner.name]);
     if (C.shape === 'person') rows.push(['Position', owner?.role || '—']);
-    if (ins) rows.push(['Inputs', `${ins} · ${patch?.kind === 'rf' ? 'wireless' : patch?.box ? itemName(patch.box) : 'not patched'}`]);
-    if (watts && !C.wireless) rows.push(['Power', `${watts} W`]);
-    if (conns) rows.push(['Cables', String(conns)]);
+    if (chs.length) rows.push([chs.length > 1 ? 'Channels' : 'Channel', span(chs.map(r => `${r.ch}${r.port && r.port !== '—' ? ` · ${shortPort(r.port, codes)}` : ''}`))]);
+    else if (inputsOf(it).length && patchOf(it)?.kind === 'rf') rows.push(['Input', 'wireless']);
+    const pw = plan.cables.filter(c => c.type === 'power' && touches(c, it.id)).map(c => { const o = other(c, it.id); return o && !isPowerSource(it) ? `${itemName(o)}${isPowerSource(o) && !isExt(o) ? ` · circuit ${c.circuit || 1}` : ''}` : null; }).filter(Boolean);
+    if (pw.length) rows.push(['Plugs into', pw.join(', ')]); else if (watts && !C.wireless && !isPowerSource(it)) rows.push(['Power', `${watts} W, not plugged in`]);
+    const mix = (it.type === 'wedge' || C.iem) && owner && monitorMixes().find(m => m.person === owner.name && m.kind === (C.iem ? 'IEM' : 'Wedge'));
+    if (mix) rows.push(['Monitor', `Mix ${mix.mix}`]);
     if (it.chan) rows.push(['Placed', `Inside ${chans().find(c => c.id === it.chan.id)?.name || 'a channel'}`]);
     rows.push(['Size', `${mVal(prop(it, 'w'))} × ${mVal(prop(it, 'd'))} m`]);
-    const h = $('hoverCard');
-    h.innerHTML = `<div class="eyebrow">${esc(C.shape === 'person' ? 'Performer' : C.name)}</div><b>${esc(C.shape === 'person' ? (owner?.name || it.label) : itemName(it))}</b>
-      <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><span class="hint">Double-click to edit · right-click for more</span>`;
+    const h = $('hoverCard'), hue = personColour(it.personId);
+    h.innerHTML = `<div class="hc-head">${C.shape === 'person' ? `<span class="avatar${hueStyle(it.personId)}">${esc(initials(owner?.name || it.label))}</span>` : itemPreview(it, 'ipv')}<div><div class="eyebrow">${esc(C.shape === 'person' ? 'Performer' : C.name)}</div><b>${esc(C.shape === 'person' ? (owner?.name || it.label) : itemName(it))}</b>${owner && C.shape !== 'person' ? `<span class="hc-owner"><i style="background:${hue}"></i>${esc(firstName(owner.name))}</span>` : ''}</div></div>
+      <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${it.note ? `<p class="hc-note">${esc(it.note)}</p>` : ''}<span class="hint">Double-click to edit · right-click for more</span>`;
     h.hidden = false;
     const r = h.getBoundingClientRect();
     h.style.left = `${Math.min(innerWidth - r.width - 12, e.clientX + 16)}px`;
