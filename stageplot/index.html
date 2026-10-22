@@ -252,6 +252,14 @@ th .thshort { display: none; text-decoration: none; } @media (max-width: 560px) 
 .hellologo { display: block; max-height: 44px; max-width: 160px; object-fit: contain; margin-bottom: 10px; }
 .addlogo { display: inline-flex; gap: 6px; align-items: center; border: 1px dashed var(--line-2); background: transparent; color: var(--muted); border-radius: var(--r-sm); padding: 4px 8px; font: 500 12px var(--f-ui); cursor: pointer; margin-bottom: 10px; }
 .addlogo:hover { color: var(--ink); border-color: var(--accent); }
+.vsvc { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.vsvc select { max-width: 260px; padding-block: 4px; font-size: 12.5px; }
+.svcchip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 4px 3px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-text); font: 600 12px/1 var(--f-ui); }
+.svcchip .ic { width: 13px; height: 13px; }
+.svcx { border: 0; background: transparent; color: inherit; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.svcx:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); } .svcx .ic { width: 11px; height: 11px; }
+.svcload { padding: 4px 8px; font-size: 12px; }
+.pcovenue { display: flex; gap: 8px; align-items: flex-start; margin: -2px 0 2px; font-size: 12.5px; color: var(--ink-2); } .pcovenue .ic { color: var(--accent-text); flex: none; margin-top: 1px; }
 .sheet-empty { padding: 26px 16px; } .sheet-empty > .ic { width: 22px; height: 22px; color: var(--muted); } .sheet-empty .btn { margin-top: 4px; }
 @media print { .sheet-empty .btn { display: none; } }
 
@@ -2564,7 +2572,8 @@ const pcoLoadTypes = () => pcoRun('Loading services…', async () => {
   pco.types = (r?.data || []).map(t => ({ id: t.id, name: t.attributes?.name || `Service ${t.id}` }));
   if (!pco.types.length) { pco.err = 'No service types found in Planning Center.'; return; }
   const P = pcoPrefs(); pco.replace = P.replace !== false;
-  pco.typeId = (pco.types.find(t => t.id === P.typeId) || pco.types.find(t => /weekend|sunday|service/i.test(t.name)) || pco.types[0]).id;
+  const mine = (venueOf(plan)?.svc || []).map(x => pco.types.find(t => t.id === x.id)).filter(Boolean);   // the open week's venue picks its own service type first
+  pco.typeId = (mine[0] || pco.types.find(t => t.id === P.typeId) || pco.types.find(t => /weekend|sunday|service/i.test(t.name)) || pco.types[0]).id;
   await pcoLoadPlansInner();
 });
 async function pcoLoadPlansInner() {
@@ -2617,7 +2626,14 @@ function pcoApply() {
   const chosen = pco.roster.filter(e => pco.picked.has(e.key));
   if (!chosen.length) { toast('Tick at least one person'); return; }
   const pl = pco.plans.find(p => p.id === pco.planId);
-  const su = Object.values(setups()).find(x => x.svcType && x.svcType === pco.typeId), fresh = !plan.items.some(i => !i.gen);
+  const V = venueForSvc(pco.typeId); let where = '';
+  if (V && V.id !== plan.venueId) {   // this service type happens in another venue: an empty week moves there, a planned one stays and a new week starts there
+    if (!plan.items.some(i => !i.gen) && !plan.team.length) { mutate(() => { moveToVenue(plan, V.id); needFit = true; }); where = 'moved'; }
+    else { const d = (pcoPrefs().usePlan !== false && pl?.date) || plan.date, same = Object.values(db.plans).find(x => x.venueId === V.id && x.date === d && !x.team.length && !x.items.some(i => !i.gen));
+      const np = same || blankPlan(d, V.id); db.plans[np.id] = np; switchWeek(np.id); where = 'new'; }
+  }
+  const vsu = V && V.setupId ? setups()[V.setupId] : null;
+  const su = Object.values(setups()).find(x => x.svcType && x.svcType === pco.typeId) || (where === 'moved' ? vsu : null), fresh = !plan.items.some(i => !i.gen);
   mutate(() => {
     if (su && fresh) {   // an empty week takes the stage linked to this service type
       const copy = o => JSON.parse(JSON.stringify(o));
@@ -2633,7 +2649,8 @@ function pcoApply() {
     if (pcoPrefs().usePlan !== false) { if (pl?.date) plan.date = pl.date; if (pl) plan.name = pl.title || pl.dates || plan.name; if (pl?.times && Object.keys(pl.times).length) plan.times = { ...(plan.times || {}), ...pl.times }; }
     buildFromTeam(); autoCable();
   });
-  toast(su && fresh ? `Added ${chosen.length} from Planning Center on the “${su.name}” stage` : `Added ${chosen.length} from Planning Center`);
+  const at = V && where ? ` at ${V.name}${where === 'new' ? ' (a new week, so your other plan stays as it was)' : ''}` : '';
+  toast(su && fresh ? `Added ${chosen.length} from Planning Center on the “${su.name}” stage${at}` : `Added ${chosen.length} from Planning Center${at}`);
 }
 
 /* ===================================================================
@@ -2758,6 +2775,9 @@ function ensureVenues() {
   const first = venueList()[0].id;
   for (const p of Object.values(db.plans)) if (!venues()[p.venueId]) p.venueId = first;
 }
+// Planning Center: a venue can host several service types (each type belongs to one venue at most)
+const venueForSvc = typeId => typeId ? venueList().find(v => (v.svc || []).some(t => t.id === typeId)) || null : null;
+function linkSvc(vid, t) { for (const v of venueList()) v.svc = (v.svc || []).filter(x => x.id !== t.id); if (venues()[vid]) (venues()[vid].svc ||= []).push({ id: t.id, name: t.name }); }
 function moveToVenue(p, vid) {   // the week takes the venue's stage and room settings; its gear, team and cables stay
   const v = venues()[vid]; if (!v) return;
   p.venueId = vid; const keepSet = p.stage.set;
@@ -4787,7 +4807,8 @@ function pcoHtml() {
       <label class="row" for="pcoReplace" style="gap:8px"><input type="checkbox" id="pcoReplace" ${pco.replace ? 'checked' : ''} style="accent-color:var(--accent)"> Replace this week’s team</label>
       <button id="pcoApply" class="btn primary block">${ic('wand', 'sm')}Put ${plural(pco.picked.size, 'person', 'people')} on stage</button>`;
   }
-  return `<div class="card soft">${head('Pick a plan, tick who’s on stage.')}${typeSel}${planSel}${busy}${err}${roster}</div>`;
+  const V = venueForSvc(pco.typeId), lands = V ? `<p class="pcovenue">${ic('plot', 'sm')}<span>${esc(pco.types.find(t => t.id === pco.typeId)?.name || 'This service type')} happens at <b>${esc(V.name)}</b>${V.id !== plan.venueId ? ` · importing ${!plan.items.some(i => !i.gen) && !plan.team.length ? 'moves this empty week there' : 'starts a week there'}` : ''}</span></p>` : '';
+  return `<div class="card soft">${head('Pick a plan, tick who’s on stage.')}${typeSel}${lands}${planSel}${busy}${err}${roster}</div>`;
 }
 
 /* ===================================================================
@@ -6899,6 +6920,8 @@ $('homeView').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.hasAttribute('data-addlogo')) { goHome('stage'); $('hd-logo')?.click(); return; }   // straight to the file picker
   if (t.dataset.libopen) { view = 'plot'; switchWeek(t.dataset.libopen); return; }
+  if (t.dataset.svcunlink) { const [vid, tid] = t.dataset.svcunlink.split('|'), V = venues()[vid]; if (V) { V.svc = (V.svc || []).filter(x => x.id !== tid); save(); renderHome(); } return; }
+  if (t.hasAttribute('data-svcload')) { pcoLoadTypes(); return; }
   if (t.dataset.vnew) { const vid = t.dataset.vnew, np = blankPlan(nextFreeDate(undefined, vid), vid); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)} at ${venues()[vid].name}`); return; }
   if (t.dataset.vfromweek) { const V = venues()[t.dataset.vfromweek]; V.stage = roomOf(plan.stage); V.settings = JSON.parse(JSON.stringify(plan.settings)); save(); renderHome(); toast(`${V.name} now starts with this week’s stage`); return; }
   if (t.dataset.vdel) { const id = t.dataset.vdel, V = venues()[id]; if (!V || venueWeekIds(id).length || venueList().length < 2) return;
@@ -7020,6 +7043,14 @@ function venuePic(v) {   // the venue's stage outline in its own colour, front e
   return `<svg class="vpic" viewBox="${f3(-m)} ${f3(-m)} ${f3(st.w + 2 * m)} ${f3(st.d + 2 * m)}" aria-hidden="true"><polygon points="${pts.map(q => q.map(f3).join(',')).join(' ')}" style="fill:${col}"/><line x1="0" x2="${f3(st.w)}" y1="${f3(st.d)}" y2="${f3(st.d)}" style="stroke-width:${f3(Math.max(st.w, st.d) * .03)}"/></svg>`;
 }
 let venueDelArmed = '';
+function venueSvcHtml(v) {   // which Planning Center service types happen in this venue
+  const linked = v.svc || [], avail = window.claude?.use && pco.mcp;
+  const chips = linked.map(t => `<span class="svcchip">${ic('calendar', 'sm')}${esc(t.name)}<button class="svcx" data-svcunlink="${esc(v.id)}|${esc(t.id)}" aria-label="Unlink ${esc(t.name)} from ${esc(v.name)}" title="Unlink">${ic('x', 'sm')}</button></span>`).join('');
+  const pick = pco.types.length ? `<select data-svclink="${v.id}" aria-label="Link a Planning Center service type to ${esc(v.name)}"><option value="">${linked.length ? 'Link another service type…' : 'Link a Planning Center service type…'}</option>${pco.types.filter(t => !linked.some(x => x.id === t.id)).map(t => { const o = venueForSvc(t.id); return `<option value="${esc(t.id)}">${esc(t.name)}${o ? ` (now ${esc(o.name)})` : ''}</option>`; }).join('')}</select>`
+    : avail ? `<button class="btn quiet svcload" data-svcload ${pco.busy ? 'disabled' : ''}>${ic('calendar', 'sm')}Load Planning Center service types</button>` : '';
+  if (!chips && !pick) return '';
+  return `<div class="vsvc">${chips}${pick}</div>`;
+}
 function homeVenues() {
   const today = new Date().toISOString().slice(0, 10), cur = venueOf(plan)?.id, su = Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)), one = venueList().length < 2;
   const card = v => {
@@ -7027,13 +7058,14 @@ function homeVenues() {
     return `<div class="vcard${v.id === cur ? ' cur' : ''}">${venuePic(v)}
       <div class="vmain"><input class="vname" type="text" data-vname="${v.id}" value="${esc(v.name)}" aria-label="Venue name" maxlength="60">
         <small>${uDim(v.stage.w, v.stage.d)}${v.stage.poly ? ' · custom shape' : ''} · ${plural(ids.length, 'week')}${next ? ` · ${next.date >= today ? 'next' : 'last'} ${esc(longDate(next.date))}` : ''}${v.id === cur ? ' · <b>open now</b>' : ''}</small>
+        ${venueSvcHtml(v)}
         <label class="vsetup" for="vs-${v.id}">Start new weeks from <select id="vs-${v.id}" data-vsetup="${v.id}"><option value="">${defaultsOf().setupId && setups()[defaultsOf().setupId] ? `The default (${esc(setups()[defaultsOf().setupId].name)})` : 'Its stage, empty'}</option>${su.map(([id, x]) => `<option value="${id}" ${id === v.setupId ? 'selected' : ''}>Setup: ${esc(x.name)}</option>`).join('')}</select></label></div>
       <div class="vacts"><button class="btn primary" data-vnew="${v.id}">${ic('plus', 'sm')}New week</button>
         ${ids.length && !ids.includes(plan.id) ? `<button class="btn" data-libopen="${ids[ids.length - 1]}">Open latest</button>` : ''}
         ${v.id === cur && !sameRoom(plan.stage, v.stage) ? `<button class="btn" data-vfromweek="${v.id}" title="This week’s stage differs from the venue’s">Use this week’s stage</button>` : ''}
         <button class="iconbtn${venueDelArmed === v.id ? ' armed' : ''}" data-vdel="${v.id}" ${ids.length || one ? 'disabled' : ''} title="${ids.length ? 'Move or delete its weeks first' : one ? 'You need at least one venue' : venueDelArmed === v.id ? 'Click again to delete' : 'Delete this venue'}" aria-label="Delete ${esc(v.name)}">${ic('trash', 'sm')}</button></div></div>`;
   };
-  return hsec('Your venues', 'Each venue keeps its own stage (size, shape, colour, surface, house and ceiling) and its own starting layout. Every week belongs to one; change it from the week menu.',
+  return hsec('Your venues', 'Each venue keeps its own stage (size, shape, colour, surface, house and ceiling) and its own starting layout. Every week belongs to one; change it from the week menu. Link Planning Center service types and their plans import straight into the right venue.',
     `<div class="vlist">${venueList().map(card).join('')}</div>
     <form class="vadd" id="venueAdd"><input id="venueName" type="text" placeholder="e.g. Next Gen hall, Summer camp" maxlength="60" aria-label="New venue name" required>
       <label class="row" for="venueCopy" style="gap:6px"><input type="checkbox" id="venueCopy" style="accent-color:var(--accent)"> Start from this week’s stage</label>
@@ -7261,6 +7293,7 @@ $('homeView').addEventListener('keydown', e => { if (e.key === 'Enter' && e.targ
 $('homeView').addEventListener('click', e => { if (e.target.closest('#hd-logo-del')) { delete db.defaults.logo; save(); renderHome(); toast('Logo removed'); } });
 $('homeView').addEventListener('change', e => {
   if (e.target.dataset.vname) { const V = venues()[e.target.dataset.vname], n = e.target.value.trim().slice(0, 60); if (V && n) { V.name = n; save(); renderAll(); } else if (V) e.target.value = V.name; return; }
+  if (e.target.dataset.svclink) { const tp = pco.types.find(x => x.id === e.target.value), V = venues()[e.target.dataset.svclink]; if (tp && V) { linkSvc(V.id, tp); save(); renderHome(); toast(`${tp.name} plans now import into ${V.name}`); } return; }
   if (e.target.dataset.vsetup) { const V = venues()[e.target.dataset.vsetup]; if (V) { V.setupId = e.target.value; save(); } return; }
   if (e.target.id === 'hd-logo' && e.target.files?.[0]) {   // shrunk to a small image, transparency kept, so it travels with backups
     const file = e.target.files[0], url = URL.createObjectURL(file), im = new Image();
