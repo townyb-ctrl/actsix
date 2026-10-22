@@ -1144,6 +1144,16 @@ td.spare { color: var(--muted); font-style: italic; }
   .sheet thead th { position: sticky; top: var(--navb, 52px); z-index: 2; background: var(--surface); box-shadow: inset 0 -1px 0 var(--line-2); }
 }
 @media print { .sheet thead th { position: static !important; box-shadow: none; } .sheet tbody tr:nth-child(even) td { background: #f4f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+/* logo, library status edge */
+.logoprev { height: 40px; max-width: 120px; object-fit: contain; border-radius: 6px; background: var(--surface-2); padding: 3px; }
+.doclogo { position: absolute; right: 24px; top: 22px; height: 48px; max-width: 160px; object-fit: contain; }
+.rlogo { height: 44px; max-width: 120px; object-fit: contain; align-self: center; }
+.rhead { align-items: center; }
+.spotlogo { height: 34px; max-width: 100px; object-fit: contain; align-self: center; }
+.spotcard > header { align-items: center; }
+.librow { position: relative; } .librow::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--line-2); }
+.librow.st-ok::before { background: var(--ok); } .librow.st-warn::before { background: var(--warn); } .librow.st-bad::before { background: var(--bad); }
+.librow.past::before { opacity: .45; }
 /* one style for everything that floats over the canvas */
 :root { --fl-r: 14px; --fl-blur: blur(14px) saturate(1.25); }
 .cabmenu, .ctxmenu, .moremenu, #weekPop { background: var(--surface) !important; }   /* menus are read closely: solid, not see-through */
@@ -2714,7 +2724,7 @@ const SYM_CSS = `
 .s-red{fill:#ff6b5e}
 .s-port{fill:#14181c;stroke:rgba(255,255,255,.6);stroke-width:.03}
 .s-acrylic{fill:rgba(170,215,255,.16);stroke:rgba(190,225,255,.75);stroke-width:.05}
-.s-beam{fill:rgba(255,214,110,.09)}.s-cov{fill:url(#spCov)}.s-covup{fill:url(#spCovUp)}.s-lbeam{fill:url(#spLBeam)}.s-cab2{fill:url(#spCabG)}.s-cabtop2{fill:#3d4956}.s-wring{fill:#161b20;stroke:rgba(255,255,255,.22);stroke-width:.03}.s-wcone{fill:url(#spWoof)}.s-wcap{fill:#262c33;stroke:rgba(255,255,255,.3);stroke-width:.02}.s-horn{fill:#12161a;stroke:rgba(255,255,255,.3);stroke-width:.02}.s-can{fill:url(#spCabG);stroke:#0d0f11;stroke-width:.03}.s-lens{fill:#fff1bd;stroke:#d6b04a;stroke-width:.025}.s-yoke{fill:none;stroke:#aab2b9;stroke-width:.07;stroke-linecap:round}.s-fin{fill:none;stroke:rgba(255,255,255,.18);stroke-width:.03}
+.s-beam{fill:rgba(255,214,110,.09)}.s-desk{fill:url(#spCabG)}.s-desktop{fill:#2b323b;stroke:rgba(255,255,255,.08);stroke-width:.02}.s-armrest{fill:#121519;stroke:rgba(255,255,255,.08);stroke-width:.02}.s-armhi{stroke:rgba(255,255,255,.18);stroke-width:.03}.s-screen{fill:url(#spScreen);stroke:rgba(140,190,255,.45);stroke-width:.025}.s-scrbar{fill:#5eead4;opacity:.85}.s-scr1{fill:#f87171}.s-scr2{fill:#60a5fa}.s-scr3{fill:#fbbf24}.s-scr4{fill:#4ade80}.s-scr5{fill:#c084fc}.s-knob2{fill:#3a434d;stroke:rgba(255,255,255,.35);stroke-width:.015}.s-ledg{fill:#4ade80}.s-ledr{fill:#f87171}.s-ledb{fill:#60a5fa}.s-slot{stroke:#0c0e10;stroke-width:.05;stroke-linecap:round}.s-cap{fill:#e7e9ec;stroke:#5b6168;stroke-width:.012}.s-capr{fill:#ef4444;stroke:#7f1d1d;stroke-width:.012}.s-master{fill:#232930;stroke:rgba(255,255,255,.1);stroke-width:.015}.s-ear{fill:#8b939c;stroke:#4b5259;stroke-width:.015}.s-lbl{fill:rgba(255,255,255,.55)}.s-xlr{fill:#0f1215;stroke:#9aa3ad;stroke-width:.02}.s-xlrpin{fill:#5b6370}.s-xlrout{fill:#0f1215;stroke:#f5a524;stroke-width:.02}.s-rj{fill:#0f1215;stroke:#c084fc;stroke-width:.02}.s-pstripe{fill:#f97316}.s-breaker{fill:#16191d;stroke:rgba(255,255,255,.2);stroke-width:.012}.s-btip{fill:#fb923c}.s-cov{fill:url(#spCov)}.s-covup{fill:url(#spCovUp)}.s-lbeam{fill:url(#spLBeam)}.s-cab2{fill:url(#spCabG)}.s-cabtop2{fill:#3d4956}.s-wring{fill:#161b20;stroke:rgba(255,255,255,.22);stroke-width:.03}.s-wcone{fill:url(#spWoof)}.s-wcap{fill:#262c33;stroke:rgba(255,255,255,.3);stroke-width:.02}.s-horn{fill:#12161a;stroke:rgba(255,255,255,.3);stroke-width:.02}.s-can{fill:url(#spCabG);stroke:#0d0f11;stroke-width:.03}.s-lens{fill:#fff1bd;stroke:#d6b04a;stroke-width:.025}.s-yoke{fill:none;stroke:#aab2b9;stroke-width:.07;stroke-linecap:round}.s-fin{fill:none;stroke:rgba(255,255,255,.18);stroke-width:.03}
 .s-ped1{fill:#3fb6a8}.s-ped2{fill:#e2833a}.s-ped3{fill:#d8d24a}.s-ped4{fill:#8a73d6}
 .s-deck{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.45);stroke-width:.07;stroke-dasharray:.3 .2}
 .s-spruce{fill:#d8ad6c}.s-burst{fill:#3b1d10}.s-burstin{fill:#cf7a2b}.s-navy{fill:#33507c}.s-maple{fill:#e3c389}.s-rose{fill:#2b1c13}.s-varnish{fill:#a24f25}.s-pg{fill:#f2efe8}.s-cream{fill:#efe6d2}.s-chrome{fill:#cfd5da}
@@ -2861,6 +2871,7 @@ const SYM = (() => {
     '<linearGradient id="spCov" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd66e" stop-opacity=".1"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient><linearGradient id="spCovUp" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd66e" stop-opacity=".12"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
     '<linearGradient id="spLBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff1bd" stop-opacity=".3"/><stop offset=".6" stop-color="#ffd66e" stop-opacity=".08"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
     '<linearGradient id="spCabG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a6774"/><stop offset="1" stop-color="#232a31"/></linearGradient><radialGradient id="spWoof" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#7b8896"/><stop offset=".6" stop-color="#3a434d"/><stop offset="1" stop-color="#1e242a"/></radialGradient>' +
+    '<linearGradient id="spScreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e3a5f"/><stop offset="1" stop-color="#0b1626"/></linearGradient>' +
     '<radialGradient id="spWash"><stop offset="0" stop-color="#ffe7a8" stop-opacity=".55"/><stop offset=".55" stop-color="#ffd27a" stop-opacity=".22"/><stop offset="1" stop-color="#ffc861" stop-opacity="0"/></radialGradient>' + '<filter id="spPhoto" x="-25%" y="-15%" width="150%" height="130%"><feDropShadow dx=".05" dy=".08" stdDeviation=".05" flood-color="#000" flood-opacity=".5"/></filter>' + '<filter id="spShadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation=".045"/></filter>' +
     '<filter id="spMic" x="-35%" y="-35%" width="170%" height="170%"><feMorphology in="SourceAlpha" operator="dilate" radius=".007" result="d"/><feFlood flood-color="#fff" flood-opacity=".16"/><feComposite in2="d" operator="in" result="rim"/>' +
       '<feGaussianBlur in="SourceAlpha" stdDeviation=".025" result="b"/><feOffset in="b" dx=".025" dy=".04" result="o"/><feComponentTransfer in="o" result="sh"><feFuncA type="linear" slope=".65"/></feComponentTransfer>' +
@@ -2876,20 +2887,25 @@ const SYM = (() => {
     rad('spMesh', [[0, '#ffffff'], [.45, '#cdd3d8'], [1, '#7a838b']], .38, .32) + rad('spMeshDk', [[0, '#737a82'], [.5, '#2d3136'], [1, '#0c0e10']], .38, .32) + DEFS.join('');
 
   const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
-  function console_(w, d) {
-    const hw = w / 2, hd = d / 2;
-    let s = box(w, d, 'infra', .2) + rect(-hw + .15, -hd + .15, w - .3, d - .3, 's-head', .12);
-    s += rect(-w * .22, -hd + .25, w * .44, d * .26, 's-glass', .05) + line(-w * .18, -hd + .45, w * .1, -hd + .45, 's-thin') + line(-w * .18, -hd + .6, w * .05, -hd + .6, 's-thin');
-    const strips = Math.floor((w - .9) / .28);
+  function console_(w, d) {   // top-down mixing desk: control surface, a glowing screen, channel strips with scribble colours, meters and faders, a master section, the padded armrest
+    const hw = w / 2, hd = d / 2, SCR = ['s-scr1', 's-scr2', 's-scr3', 's-scr4', 's-scr5'];
+    let s = rect(-hw, -hd, w, d, 's-desk s-edge', .22) + rect(-hw + .1, -hd + .1, w - .2, d * .74, 's-desktop', .12) + rect(-hw + .05, hd - d * .2, w - .1, d * .18, 's-armrest', .1) + line(-hw + .2, hd - d * .19, hw - .2, hd - d * .19, 's-armhi');
+    const scrW = w * .34, scrX = -scrW / 2 - w * .08;
+    s += rect(scrX, -hd + .22, scrW, d * .24, 's-screen', .05);
+    for (let k = 0; k < 10; k++) s += rect(scrX + .1 + k * (scrW - .2) / 10, -hd + .22 + d * .2 - (.05 + ((k * 7) % 5) * .025), (scrW - .2) / 10 - .03, .05 + ((k * 7) % 5) * .025, 's-scrbar', .01);
+    const masterW = w * .16, strips = Math.floor((w - .5 - masterW) / .26), top = -hd + d * .28, slotTop = -hd + d * .44, slotBot = hd - d * .26;
     for (let i = 0; i < strips; i++) {
-      const x = -hw + .45 + i * .28;
-      if (Math.abs(x) < w * .23 && false) continue;
-      const knobY = -hd + d * .42, slotTop = hd - d * .42, slotBot = hd - .3;
-      s += circ(x, knobY, .055, 's-thin') + circ(x, knobY + .2, .055, 's-thin');
-      s += line(x, slotTop, x, slotBot, 's-thin');
+      const x = -hw + .32 + i * .26;
+      if (x > scrX - .1 && x < scrX + scrW + .1) s += '';
+      s += rect(x - .1, top + .02, .2, .07, SCR[Math.floor(i / 4) % SCR.length], .02);   // scribble strip, grouped in fours
+      s += circ(x, top + .2, .05, 's-knob2') + circ(x + .06, slotTop - .12, .022, i % 5 === 2 ? 's-ledr' : 's-ledg') + circ(x + .06, slotTop - .06, .022, 's-ledg');
+      s += line(x, slotTop, x, slotBot, 's-slot');
       const pos = slotTop + (slotBot - slotTop) * (.25 + .5 * ((i * 37) % 10) / 10);
-      s += rect(x - .07, pos - .05, .14, .1, 's-white', .02);
+      s += rect(x - .075, pos - .05, .15, .1, 's-cap', .02);
     }
+    const mx = hw - masterW / 2 - .15;   // master section
+    s += rect(mx - masterW / 2, top, masterW, slotBot - top + .06, 's-master', .06) + circ(mx - .15, top + .2, .07, 's-knob2') + circ(mx + .15, top + .2, .07, 's-knob2');
+    for (const dx of [-.12, .12]) s += line(mx + dx, slotTop, mx + dx, slotBot, 's-slot') + rect(mx + dx - .085, slotTop + (slotBot - slotTop) * .3, .17, .11, 's-capr', .02);
     return s;
   }
   return {
@@ -2928,8 +2944,13 @@ const SYM = (() => {
       '<path class="s-mesh" d="M-2.07 .62H2.07V1Q2.07 1.17 1.9 1.17H-1.9Q-2.07 1.17 -2.07 1Z"/>' + grid(-1.98, .7, 40, 4, .1, .11, .022, 's-dot') +
       rect(-1.8, .72, .7, .34, 's-blk', .05) + rect(1.1, .72, .7, .34, 's-blk', .05),
     iem: rect(-.18, -.26, .36, .52, 'body c-audio s-edge', .06) + line(.1, -.26, .1, -.4, 's-boom') + rect(-.11, -.16, .22, .13, 's-glass', .02) + circ(0, .12, .05, 's-white') + '<path class="s-line" d="M-.12 .26q-.05 .12 -.16 .08"/>',
-    iem_rack: box(2, 2, 'infra') + rect(-.85, -.85, 1.7, 1.7, 's-head', .05) + rect(-.75, -.55, 1.5, .45, 's-grille', .04) + rect(-.75, .1, 1.5, .45, 's-grille', .04) + rect(-.6, -.45, .5, .2, 's-glass', .02) + rect(-.6, .2, .5, .2, 's-glass', .02) + circ(.45, -.33, .07, 's-led') + circ(.45, .33, .07, 's-led') + line(-.85, .85, -1.1, 1.1, 's-boom') + line(.85, .85, 1.1, 1.1, 's-boom') + circ(-1.1, 1.1, .06, 's-white') + circ(1.1, 1.1, .06, 's-white'),
-    stagebox: box(2, 1.4, 'infra') + rect(-.92, -.62, 1.84, 1.24, 's-head', .05) + grid(-.75, -.45, 8, 3, .214, .2, .07, 's-port') + grid(-.75, .2, 8, 1, .214, 0, .055, 's-white') + rect(-.82, .38, .16, .14, 's-port', .02) + rect(-.6, .38, .16, .14, 's-port', .02) + circ(.78, .45, .045, 's-led'),
+    iem_rack: rect(-1.08, -1, .14, 2, 's-ear', .03) + rect(.94, -1, .14, 2, 's-ear', .03) + rect(-.96, -1, 1.92, 2, 's-cab2 s-edge', .1) +   // two transmitters in a rack: screens, a knob, link lights, antennas out the back
+      [-.5, .38].map(y => rect(-.86, y - .34, 1.72, .62, 's-cabtop2', .05) + rect(-.74, y - .22, .62, .3, 's-screen', .03) + rect(-.68, y - .16, .3, .05, 's-scrbar', .01) + circ(.2, y - .07, .11, 's-knob2') + circ(.5, y - .16, .035, 's-ledg') + circ(.5, y, .035, 's-ledb') + rect(.36, y + .12, .42, .06, 's-lbl', .02)).join('') +
+      line(-.7, -1, -.95, -1.4, 's-boom') + line(.7, -1, .95, -1.4, 's-boom') + circ(-.95, -1.4, .06, 's-white') + circ(.95, -1.4, .06, 's-white'),
+    stagebox: rect(-1.08, -.6, .14, 1.2, 's-ear', .03) + rect(.94, -.6, .14, 1.2, 's-ear', .03) + circ(-1.01, -.45, .03, 's-dark') + circ(-1.01, .45, .03, 's-dark') + circ(1.01, -.45, .03, 's-dark') + circ(1.01, .45, .03, 's-dark') +   // rack ears, a labelled face, inputs in two rows, outputs, a network port and a status light
+      rect(-.96, -.7, 1.92, 1.4, 's-cab2 s-edge', .1) + rect(-.88, -.62, 1.76, 1.24, 's-cabtop2', .06) + rect(-.82, -.58, .7, .1, 's-lbl', .02) +
+      grid(-.72, -.36, 8, 2, .205, .24, .075, 's-xlr') + grid(-.72, -.36, 8, 2, .205, .24, .028, 's-xlrpin') + grid(-.72, .2, 8, 1, .205, 0, .055, 's-xlrout') +
+      rect(.48, .34, .3, .16, 's-rj', .03) + circ(.7, -.53, .04, 's-ledg') + circ(.58, -.53, .04, 's-ledb'),
     foh: console_(6, 3),
     mon_desk: console_(4, 2.5),
     // acoustic kit from above, drummer facing the audience: wine lacquer shells, chrome hoops and lugs, coated heads, the kick on its side
@@ -2999,7 +3020,9 @@ const SYM = (() => {
     pulpit: rect(-1.25, -1, 2.5, 2, 'body c-infra s-edge', .12) + rect(-1.05, -.8, 2.1, 1.25, 's-head', .06) + line(-1.05, -.8, 1.05, -.8, 's-boom') + rect(-.7, .62, 1.4, .18, 's-dark', .05) + '<path class="s-boom" d="M.6 .55q.05 -.6 -.3 -.75"/>' + circ(.3, -.2, .05, 's-white'),
     riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
     drum_riser: rect(-4, -4, 8, 8, 's-deck', .1) + line(0, -4, 0, 4, 's-thin') + [[-3.8, -3.8], [3.8, -3.8], [-3.8, 3.8], [3.8, 3.8], [0, -3.8], [0, 3.8]].map(([x, y]) => circ(x, y, .12, 's-thin')).join(''),
-    distro: box(2, 1.5, 'power') + rect(-.9, -.65, 1.8, 1.3, 's-head', .05) + grid(-.7, -.45, 6, 1, .28, 0, .06, 's-white') + socket(-.55, -.05) + socket(0, -.05) + socket(.55, -.05) + socket(-.55, .4) + socket(0, .4) + socket(.55, .4) + circ(.85, -.5, .04, 's-led'),
+    distro: rect(-1, -.75, 2, 1.5, 's-cab2 s-edge', .1) + rect(-.92, -.67, 1.84, 1.34, 's-cabtop2', .06) + rect(-.92, -.67, 1.84, .14, 's-pstripe', .04) +   // an orange-topped power box: breakers, six outlets, a lit switch
+      [-.66, -.4, -.14, .12, .38, .64].map(x => rect(x - .09, -.44, .18, .22, 's-breaker', .03) + rect(x - .04, -.42, .08, .08, 's-btip', .01)).join('') +
+      socket(-.55, .02) + socket(0, .02) + socket(.55, .02) + socket(-.55, .43) + socket(0, .43) + socket(.55, .43) + circ(.82, -.6, .045, 's-ledr'),
     pboard2: rect(-.45, -.22, .9, .44, 's-white s-edge', .1) + [-.15, .2].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.36, 0, .035, 's-red'),
     pboard4: rect(-.7, -.22, 1.4, .44, 's-white s-edge', .1) + [-.45, -.15, .15, .45].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.62, 0, .035, 's-red'),
     pboard6: rect(-.95, -.22, 1.9, .44, 's-white s-edge', .1) + [-.7, -.42, -.14, .14, .42, .7].map(x => circ(x, 0, .11, 'body c-power') + circ(x - .04, 0, .02, 's-dark') + circ(x + .04, 0, .02, 's-dark')).join('') + circ(-.87, 0, .035, 's-red'),
@@ -4374,7 +4397,7 @@ function spotsHtml() {
       return `<g class="spot-you"><circle cx="${d.me.x}" cy="${d.me.y}" r="${f3(R)}"/><line x1="${d.me.x}" y1="${f3(up ? d.me.y - R : d.me.y + R)}" x2="${d.me.x}" y2="${f3(up ? ty + .55 : ty - .55)}"/><rect x="${f3(d.me.x - 1.35)}" y="${f3(ty - .55)}" width="2.7" height="1.1" rx=".55"/><text x="${d.me.x}" y="${f3(ty + .28)}" text-anchor="middle">YOU</text></g>`; })();
     const li = (h, items) => items.length ? `<div class="spotsec${items.length > 5 ? ' many' : ''}"><h4>${h}</h4><ul>${items.join('')}</ul></div>` : '';
     return `<article class="spotcard" id="spot-${p.id}"><style>${css}</style>
-      <header><div><div class="eyebrow">${esc(longDate(plan.date))} · ${esc(plan.name || '')}</div><h3>${esc(p.name)}</h3><p>${esc(p.role || '')}</p></div><button class="btn" data-spotcopy="${p.id}" title="Copy as text to send by message">${ic('copy', 'sm')}Copy text</button></header>
+      <header>${db.defaults?.logo ? `<img class="spotlogo" src="${db.defaults.logo}" alt="">` : ''}<div style="flex:1"><div class="eyebrow">${esc(longDate(plan.date))} · ${esc(plan.name || '')}</div><h3>${esc(p.name)}</h3><p>${esc(p.role || '')}</p></div><button class="btn" data-spotcopy="${p.id}" title="Copy as text to send by message">${ic('copy', 'sm')}Copy text</button></header>
       <div class="spotplot">${snap.replace(/<\/svg>$/, ring + '</svg>')}</div>
       ${timesLine() ? `<p class="spottimes">${timesHtml()}</p>` : ''}
       <p class="spotwhere"><b>${esc(d.where)}</b>${d.left || d.right ? `<span>${[d.left && `${esc(firstName(personById(d.left.personId)?.name || ''))} on your left`, d.right && `${esc(firstName(personById(d.right.personId)?.name || ''))} on your right`].filter(Boolean).join(' · ')}</span>` : ''}</p>
@@ -4416,7 +4439,7 @@ function riderHtml(ins) {
   const half = Math.ceil(ins.length / 2), col = rows => `<table class="rtab"><colgroup><col style="width:12%"><col style="width:41%"><col style="width:35%"><col style="width:12%"></colgroup><thead><tr><th>#</th><th>Input</th><th>Mic / DI</th><th>48V</th></tr></thead><tbody>${rows.map(r => `<tr><td class="mono">${r.ch}</td><td>${esc(r.name)}</td><td>${esc(r.mic)}</td><td>${r.p48 ? '●' : ''}</td></tr>`).join('')}</tbody></table>`;
   const t = totals(), mons = outputList().filter(r => /wedge|iem|in-ear/i.test(r.type + ' ' + r.dest)).length;
   return `<div class="rider">
-    <div class="rhead"><div><div class="eyebrow">${esc(D.org || 'Stage plot')}</div><h2>${esc(plan.name || 'Untitled service')}</h2><p>${esc(longDate(plan.date))}</p></div>
+    <div class="rhead">${db.defaults?.logo ? `<img class="rlogo" src="${db.defaults.logo}" alt="">` : ''}<div style="flex:1"><div class="eyebrow">${esc(D.org || 'Stage plot')}</div><h2>${esc(plan.name || 'Untitled service')}</h2><p>${esc(longDate(plan.date))}</p></div>
       <dl class="rblock"><div><dt>Revision</dt><dd>r${plan.rev || 0}</dd></div><div><dt>Stage</dt><dd>${mVal(plan.stage.w)} × ${mVal(plan.stage.d)} m</dd></div><div><dt>Inputs</dt><dd>${ins.length}</dd></div><div><dt>Monitors</dt><dd>${mons}</dd></div><div><dt>Power</dt><dd>${(t.watts / 1000).toFixed(1)} kW</dd></div>${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh ? `<div><dt>FOH</dt><dd>${mVal(Math.max(0, foh.y - plan.stage.d))} m out</dd></div>` : ''; })()}<div><dt>Printed</dt><dd>${esc(new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))}</dd></div></dl></div>
     <div class="riderplot">${riderPlot()}<div class="raud">AUDIENCE</div></div>
     <div class="rcols"><div><h3>Inputs</h3><div class="rins">${col(ins.slice(0, half))}${ins.length > half ? col(ins.slice(half)) : ''}</div></div>
@@ -4512,7 +4535,7 @@ function renderPaper() {
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
   const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
-    <header class="doc-head"><div class="eyebrow">${defaultsOf().org ? esc(defaultsOf().org) + ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
+    <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${defaultsOf().org ? esc(defaultsOf().org) + ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
     <div class="docnav"><nav role="tablist" aria-label="Sheets" style="display:contents">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav><span class="printbar"><button class="btn" id="sheetsBtn" data-needs-dl title="Every sheet in one page you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download sheets</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
@@ -6596,7 +6619,8 @@ function renderLibrary() {
     if (lib.edit === id) return `<form class="librow editing" data-libform="${id}"><input type="date" id="libEdDate" value="${esc(p.date)}" aria-label="Date" required><input type="text" id="libEdName" value="${esc(p.name || '')}" placeholder="Service name" aria-label="Service name" maxlength="80">
       <button class="btn primary" type="submit">Save</button><button class="btn quiet" type="button" data-libeditcancel>Cancel</button></form>`;
     const chip = !p.items.length ? '<span class="chip">Empty</span>' : !st.team ? '<span class="chip">No team yet</span>' : st.checks ? `<span class="chip ${st.bad ? 'bad' : 'warn'}">${plural(st.checks, 'check')}</span>` : '<span class="chip ok">Ready</span>';
-    return `<div class="librow${cur ? ' cur' : ''}${past ? ' past' : ''}">
+    const state = !p.items.length || !st.team ? 'empty' : st.bad ? 'bad' : st.checks ? 'warn' : 'ok';
+    return `<div class="librow st-${state}${cur ? ' cur' : ''}${past ? ' past' : ''}">
       <button class="libopen" data-libopen="${id}" title="Open this week"><span class="libdate"><b>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { day: 'numeric' }))}</b><small>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' }))}</small></span>
         <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${chip}</button>
       <button class="iconbtn" data-libedit="${id}" aria-label="Rename or move ${esc(longDate(p.date))}" title="Rename or move to another date">${ic('pen', 'sm')}</button>
@@ -6752,7 +6776,8 @@ const setDefault = (path, v) => { const d = (db.defaults ||= {}); const [a, b] =
 function homeStage() {
   const D = defaultsOf(), s = D.stage, se = D.settings, su = Object.entries(setups());
   return hsec('Your church', 'Shown at the top of the paperwork.',
-      `<div class="grid2"><div class="field"><label for="hd-org">Church or venue</label><input id="hd-org" type="text" data-deftext="org" value="${esc(D.org)}" placeholder="e.g. Grace Church, Main campus"></div>
+      `<div class="field logofield"><span>Church logo <small class="hint" style="font-weight:400">on the paperwork, the rider and My spot cards</small></span><div class="row" style="gap:8px">${db.defaults?.logo ? `<img class="logoprev" src="${db.defaults.logo}" alt="Your logo">` : ''}<label class="btn">${ic('plus', 'sm')}${db.defaults?.logo ? 'Change' : 'Upload a logo'}<input type="file" id="hd-logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>${db.defaults?.logo ? '<button class="btn quiet" type="button" id="hd-logo-del">Remove</button>' : ''}</div></div>
+      <div class="grid2"><div class="field"><label for="hd-org">Church or venue</label><input id="hd-org" type="text" data-deftext="org" value="${esc(D.org)}" placeholder="e.g. Grace Church, Main campus"></div>
        <div class="field"><label for="hd-name">Usual service name</label><input id="hd-name" type="text" data-deftext="name" value="${esc(D.name)}" placeholder="Sunday service"></div>
        <div class="field"><label for="hd-day">Usual day</label><select id="hd-day" data-defsel="day">${DAYS.map((n, i) => `<option value="${i}" ${i === D.day ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
        <div class="field"><label for="hd-setup">Start new weeks from</label><select id="hd-setup" data-defsel="setupId"><option value="">A blank stage</option>${su.map(([id, x]) => `<option value="${id}" ${id === D.setupId ? 'selected' : ''}>Setup: ${esc(x.name)}</option>`).join('')}</select></div></div>`) +
@@ -6944,7 +6969,16 @@ $('homeView').addEventListener('input', e => {
   if (k) { gearForm[k] = t.value; const b = $('gf-add'); if (b) b.disabled = !gearForm.name.trim(); }
 });
 $('homeView').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'gf-name' && gearForm.name.trim()) addCustomGear(); });
+$('homeView').addEventListener('click', e => { if (e.target.closest('#hd-logo-del')) { delete db.defaults.logo; save(); renderHome(); toast('Logo removed'); } });
 $('homeView').addEventListener('change', e => {
+  if (e.target.id === 'hd-logo' && e.target.files?.[0]) {   // shrunk to a small image, transparency kept, so it travels with backups
+    const file = e.target.files[0], url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { const k = Math.min(1, 360 / Math.max(im.naturalWidth || 360, im.naturalHeight || 360)), cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round((im.naturalWidth || 360) * k)); cv.height = Math.max(1, Math.round((im.naturalHeight || 360) * k));
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url); let data = cv.toDataURL('image/webp', .9); if (!data.startsWith('data:image/webp')) data = cv.toDataURL('image/png');
+      (db.defaults ||= {}).logo = data; save(); renderHome(); toast('Logo added to the paperwork'); };
+    im.onerror = () => { URL.revokeObjectURL(url); toast('Couldn’t read that image'); };
+    im.src = url; return;
+  }
   const t = e.target;
   if (t.id === 'gf-base') { gearForm.base = t.value; const c = CAT[t.value]; if (!gearForm.inputs) gearForm.inputs = (c.inputs || []).join(', '); if (!gearForm.watts && c.watts) gearForm.watts = String(c.watts); gearForm.group = ''; renderHome(); return; }
   if (t.id === 'gf-group') { gearForm.group = t.value; return; }
