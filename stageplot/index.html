@@ -224,6 +224,34 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .empty-state strong { color: var(--ink); }
 th .thshort { display: none; text-decoration: none; } @media (max-width: 560px) { th .thshort { display: inline; } th .thlong { display: none; } }
 @media (max-width: 899px) { #pagesBtn { display: none; } }
+.wkvenue { color: var(--accent-text); font-weight: 600; }
+.venueline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 8px 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2); font-size: 12.5px; }
+.venueline > .ic { color: var(--muted); } .venueline b { display: block; font-size: 13px; } .venueline small { color: var(--muted); }
+.venueline.differs { border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); } .venueline.differs small { color: var(--warn-ink); }
+.venueline .btn { padding: 4px 8px; font-size: 12px; }
+.vlist { display: grid; gap: 8px; }
+.vcard { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-2); }
+.vcard.cur { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: inset 3px 0 0 var(--accent); }
+.vpic { width: 88px; height: 60px; border-radius: 8px; background: var(--house); }
+.vpic polygon { stroke: rgba(0,0,0,.25); stroke-width: .08; } .vpic line { stroke: var(--tape); }
+.vmain { display: grid; gap: 3px; min-width: 0; }
+.vname { font-weight: 650; font-size: 15px; border-color: transparent; background: transparent; padding: 2px 6px; margin-left: -6px; }
+.vname:hover, .vname:focus { border-color: var(--line-2); background: var(--surface); }
+.vmain small { color: var(--muted); font-size: 12.5px; } .vmain small b { color: var(--accent-text); font-weight: 600; }
+.vsetup { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--ink-2); margin-top: 4px; flex-wrap: wrap; } .vsetup select { max-width: 240px; padding-block: 4px; }
+.vacts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.vacts .iconbtn.armed { color: var(--bad); background: var(--bad-soft); }
+.vadd { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; } .vadd input[type=text] { flex: 1; min-width: 200px; }
+@media (max-width: 700px) { .vcard { grid-template-columns: 64px minmax(0, 1fr); } .vpic { width: 64px; height: 44px; } .vacts { grid-column: 1 / -1; justify-content: flex-start; } }
+.vchips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.vchip { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 99px; padding: 5px 12px; font: 600 12.5px/1.2 var(--f-ui); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.vchip[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); } .vchip span { opacity: .6; font-weight: 500; }
+.vtag { font: 600 11px/1 var(--f-ui); color: var(--ink-2); background: var(--surface-3); border-radius: 99px; padding: 3px 7px; white-space: nowrap; }
+.brandlogo { height: 26px; max-width: 96px; object-fit: contain; margin-left: 4px; padding-left: 10px; border-left: 1px solid var(--line); }
+@media (max-width: 760px) { .brandlogo { display: none; } }
+.hellologo { display: block; max-height: 44px; max-width: 160px; object-fit: contain; margin-bottom: 10px; }
+.addlogo { display: inline-flex; gap: 6px; align-items: center; border: 1px dashed var(--line-2); background: transparent; color: var(--muted); border-radius: var(--r-sm); padding: 4px 8px; font: 500 12px var(--f-ui); cursor: pointer; margin-bottom: 10px; }
+.addlogo:hover { color: var(--ink); border-color: var(--accent); }
 .sheet-empty { padding: 26px 16px; } .sheet-empty > .ic { width: 22px; height: 22px; color: var(--muted); } .sheet-empty .btn { margin-top: 4px; }
 @media print { .sheet-empty .btn { display: none; } }
 
@@ -1355,7 +1383,7 @@ body.presenting #plot .rotstem, body.presenting #plot .roth { display: none; }
 <header class="top">
   <button class="brand" id="brandHome" title="Home: library and settings" aria-label="Stageplot home">
     <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--deck)"/><path d="M8 22h16" stroke="var(--tape)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="var(--accent)"/><circle cx="20" cy="13" r="3" fill="#f5b544"/></svg>
-    <span>Stageplot</span>
+    <span>Stageplot</span><img class="brandlogo" id="brandLogo" alt="" hidden>
   </button>
   <div class="weeknav">
     <button class="iconbtn" id="prevWeek" aria-label="Previous week"></button>
@@ -1811,7 +1839,7 @@ function moreFold(parts, what, key = 'insp') {
   return `<details class="more" data-fold="${key}"${moreOpen[key] ? ' open' : ''}><summary>${ic('sliders', 'sm')}<span><b>More settings</b>${what ? `<small>${esc(what[0].toUpperCase() + what.slice(1))}</small>` : ''}</span>${ic('chevD', 'sm')}</summary>${inner}</details>`;
 }
 let compare = null;             // week id being compared against
-const prevWeekId = () => { const ids = sortedWeekIds().filter(id => id !== plan.id && db.plans[id].date <= plan.date); return ids[ids.length - 1] || null; };
+const prevWeekId = () => { const ids = venueWeekIds(plan.venueId).filter(id => id !== plan.id && db.plans[id].date <= plan.date); return ids[ids.length - 1] || null; };
 function weekDiff() {
   const old = db.plans[compare]; if (!old) return null;
   const was = new Map(old.items.map(i => [i.id, i])), now = new Set(plan.items.map(i => i.id));
@@ -1871,10 +1899,10 @@ let settling = new Set(), settleT = 0;
 let pageView = (() => { try { return localStorage.getItem('stageplot.pages') !== '0'; } catch { return true; } })();   // paperwork as white pages on a desk (per browser)
 let history = [], future = [], drag = null, delArmed = false, clearArmed = '', hoverPt = null;
 
-function blankPlan(date) {   // a new week starts from the stage defaults on Home, and from the default setup if one is chosen
-  const D = defaultsOf(), su = D.setupId ? db.setups[D.setupId] : null, copy = o => JSON.parse(JSON.stringify(o));
-  const p = { id: uid(), date: date || nextServiceDay(), name: D.name, stage: copy(D.stage), settings: copy(D.settings), team: [], items: [], cables: [], channels: [], notes: '' };
-  if (!p.stage.color) delete p.stage.color;
+function blankPlan(date, vid) {   // a new week starts from its venue's stage (or the stage defaults), and from the venue's or the default setup
+  const D = defaultsOf(), v = typeof db !== 'undefined' && db?.venues ? (db.venues[vid] || venueOf(plan)) : null, sid = v?.setupId || D.setupId, su = sid ? db.setups?.[sid] : null, copy = o => JSON.parse(JSON.stringify(o));
+  const p = { id: uid(), date: date || nextServiceDay(), name: D.name, stage: copy(v ? { ...D.stage, ...v.stage } : D.stage), settings: copy(v ? { ...D.settings, ...v.settings } : D.settings), team: [], items: [], cables: [], channels: [], notes: '', ...(v ? { venueId: v.id } : {}) };
+  if (!p.stage.color) delete p.stage.color; if (!p.stage.poly) delete p.stage.poly; if (!p.stage.texture) delete p.stage.texture;
   if (su) { p.stage = copy(su.stage); p.settings = copy(su.settings); p.channels = copy(su.channels || []); p.items = copy((su.items || []).filter(i => !i.gen)); const ids = new Set(p.items.map(i => i.id)); p.cables = copy((su.cables || []).filter(c => ids.has(c.from) && ids.has(c.to))); }
   return p;
 }
@@ -2711,6 +2739,31 @@ const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? '
 const longDate = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); } catch { return iso; } };
 const plural = (n, a, b = a + 's') => `${n} ${n === 1 ? a : b}`;
 const sortedWeekIds = () => Object.keys(db.plans).sort((a, b) => db.plans[a].date.localeCompare(db.plans[b].date));
+/* Venues: the rooms a church plans for (Main auditorium, Next Gen hall, a summer camp…). Each keeps its own stage, room
+   settings and starting layout; every week belongs to one. A library from before venues becomes one venue holding every week. */
+const venues = () => (db.venues ||= {});
+const venueList = () => Object.values(venues()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name));
+const venueOf = p => venues()[p?.venueId] || venueList()[0] || null;
+const multiVenue = () => Object.keys(venues()).length > 1;
+const venueWeekIds = vid => sortedWeekIds().filter(id => db.plans[id].venueId === vid);
+const roomOf = s => JSON.parse(JSON.stringify({ w: s.w, d: s.d, house: s.house, houseW: s.houseW, poly: s.poly || null, color: s.color || '', texture: s.texture || '' }));
+const sameRoom = (a, b) => JSON.stringify(roomOf(a)) === JSON.stringify(roomOf(b));
+function newVenue(name, from) {   // from: a stage to start with (else the stage defaults)
+  const D = defaultsOf(), id = uid();
+  venues()[id] = { id, name: String(name || 'New venue').trim().slice(0, 60) || 'New venue', order: venueList().length, stage: roomOf(from?.stage || D.stage), settings: JSON.parse(JSON.stringify(from?.settings || D.settings)), setupId: '' };
+  return venues()[id];
+}
+function ensureVenues() {
+  if (!Object.keys(venues()).length) { const v = newVenue('Main stage'); v.setupId = defaultsOf().setupId || ''; }
+  const first = venueList()[0].id;
+  for (const p of Object.values(db.plans)) if (!venues()[p.venueId]) p.venueId = first;
+}
+function moveToVenue(p, vid) {   // the week takes the venue's stage and room settings; its gear, team and cables stay
+  const v = venues()[vid]; if (!v) return;
+  p.venueId = vid; const keepSet = p.stage.set;
+  p.stage = { ...p.stage, ...JSON.parse(JSON.stringify(v.stage)) }; if (!p.stage.poly) delete p.stage.poly; if (!p.stage.color) delete p.stage.color; if (!p.stage.texture) delete p.stage.texture; if (keepSet) p.stage.set = true;
+  p.settings = { ...p.settings, ...JSON.parse(JSON.stringify(v.settings || {})) };
+}
 // search matches the start of any word in the gear's name ("di" finds DI boxes, not "MIDI"); longer queries match anywhere
 function gearMatch(t, q) {
   const n = `${CAT[t].name} ${CAT[t].short || ''} ${CAT[t].alias || ''}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');   // “cajon” finds Cajón
@@ -4058,9 +4111,10 @@ function viewIn() {   // the view you switch to fades in instead of snapping
 let guideSeen = null;   // steps already ticked, so only a newly finished one pops
 function renderHeader() {
   $('wkDate').textContent = longDate(plan.date);
-  $('wkName').textContent = plan.name || 'Untitled service';
+  { const L = db.defaults?.logo, el = $('brandLogo'); el.hidden = !L; if (L && el.getAttribute('src') !== L) el.src = L; }   // your church's logo beside the app name
+  $('wkName').innerHTML = `${multiVenue() ? `<span class="wkvenue">${esc(venueOf(plan)?.name)}</span> · ` : ''}${esc(plan.name || 'Untitled service')}`;
   if (!$('weekBtn').querySelector('.ic')) $('weekBtn').insertAdjacentHTML('beforeend', ic('chevD', 'sm'));
-  const ids = sortedWeekIds(), i = ids.indexOf(plan.id);
+  const ids = venueWeekIds(plan.venueId), i = ids.indexOf(plan.id);   // the arrows step through this venue's weeks
   $('prevWeek').innerHTML = ic('chevL'); $('nextWeekBtn').innerHTML = ic('chevR');
   $('prevWeek').disabled = i <= 0;
   $('nextWeekBtn').title = i < ids.length - 1 ? 'Next saved week' : 'Start next week';
@@ -4086,8 +4140,9 @@ function renderHeader() {
   if (!$('weekPop').hidden) renderWeekPop();
 }
 function renderWeekPop() {
-  const ids = sortedWeekIds().reverse();
+  const ids = venueWeekIds(plan.venueId).reverse(), V = venueOf(plan);
   $('weekPop').innerHTML = `
+    <div class="field"><label for="planVenue">Venue</label><div class="row" style="gap:6px;flex-wrap:nowrap"><select id="planVenue" style="flex:1;min-width:0">${venueList().map(v => `<option value="${v.id}" ${v.id === V?.id ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select><button class="btn" id="openVenues" title="Add, rename or set up venues">${ic('room', 'sm')}Venues</button></div></div>
     <div class="grid2">
       <div class="field" style="grid-column:1/-1"><label for="planName">Service name</label><input id="planName" type="text" value="${esc(plan.name)}" placeholder="e.g. Sunday 9am"></div>
       <div class="field" style="grid-column:1/-1"><label for="planDate">Date</label><input id="planDate" type="date" value="${esc(plan.date)}"></div>
@@ -4105,7 +4160,7 @@ function renderWeekPop() {
     </div></div>
     <div class="field"><span>Clear this week <small class="hint" style="font-weight:400">Undo brings it back</small></span><div class="grid2">
       <button class="btn" id="clearKeepStage" title="Remove the team, gear, cables, channels and notes. The stage shape, size and colour stay">${ic('room', 'sm')}${clearArmed === 'keep' ? 'Click again to clear' : 'Keep the stage'}</button>
-      <button class="btn danger" id="clearAll" title="Remove everything, the stage included, back to a blank ${uDim(fromM(10), fromM(6))} stage">${ic('trash', 'sm')}${clearArmed === 'all' ? 'Click again to clear' : 'Clear everything'}</button>
+      <button class="btn danger" id="clearAll" title="Remove everything and put back ${esc(venueOf(plan)?.name || 'the venue')}’s own stage">${ic('trash', 'sm')}${clearArmed === 'all' ? 'Click again to clear' : 'Clear everything'}</button>
     </div></div>
     <div class="row" style="justify-content:flex-end"><button class="btn quiet danger" id="delWeek" style="padding:4px 8px;font-size:12.5px">${ic('trash', 'sm')}${delArmed ? 'Click again to delete this week' : 'Delete this week'}</button></div>`;
 }
@@ -4435,6 +4490,7 @@ function renderInspector() {
       ${guide}
       ${prevWeekId() ? `<section class="isec" style="padding-top:${ui.guide ? 0 : 14}px"><button class="btn block" data-go="compare" aria-pressed="${!!compare}" title="Compare with ${esc(longDate(db.plans[prevWeekId()].date))}">${ic('diff', 'sm')}${compare ? 'Hide changes' : 'Changes since last week'}</button></section>` : ''}
       <section class="isec"><h3>Stage <span style="display:flex;gap:6px;align-items:center">${st.poly ? 'custom shape' : 'rectangle'}${ui.guide ? '' : hide}</span></h3>
+        ${(() => { const V = venueOf(plan); if (!V) return ''; const same = sameRoom(st, V.stage); return `<div class="venueline${same ? '' : ' differs'}">${ic('room', 'sm')}<span><b>${esc(V.name)}</b><small>${same ? 'This week uses the venue’s stage' : 'Changed for this week'}</small></span>${same ? '' : `<button class="btn quiet" data-venue="save" title="Make this the stage every new ${esc(V.name)} week starts with">Save to venue</button><button class="btn quiet" data-venue="reset" title="Put back the venue’s own stage">Reset</button>`}</div>`; })()}
         <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
         <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap" title="Hold Alt while dragging to place freely">${(() => { const o = snapOpts(), near = ui.snap ? o.filter(([v]) => v).reduce((a, b) => Math.abs(b[0] - ui.snap) < Math.abs(a[0] - ui.snap) ? b : a)[0] : 0; return o.map(([v, l]) => `<option value="${v}" ${near === v ? 'selected' : ''}>${l}</option>`).join(''); })()}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
         <div class="field"><span>Stage colour</span><div class="swatches" role="group" aria-label="Stage colour">${STAGE_COLORS.map(([v, n]) => `<button class="swatch" data-deckcolor="${v}" aria-pressed="${(st.color || '') === v}" title="${n}" aria-label="${n}" style="background:${v || 'var(--deck)'}"></button>`).join('')}<label class="swatch custom${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? ' on' : ''}" title="Pick any colour" style="${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? `background:${st.color}` : ''}"><input type="color" id="iDeckColor" value="${esc(st.color || '#20272d')}" aria-label="Custom stage colour"></label></div></div>
@@ -4532,7 +4588,7 @@ function spotsHtml() {
 /* a drawing-style title block under the overview plot: who, what, when, which revision */
 function titleBlock() {
   const D = defaultsOf(), cell = (k, v, cls = '') => `<div class="tb-cell${cls}"><span>${k}</span><b${v ? ` title="${esc(v)}"` : ''}>${v ? esc(v) : '<i>—</i>'}</b></div>`;
-  return `<div class="titleblock" aria-label="Title block">${cell('Venue', D.org, ' tb-wide')}${cell('Service', plan.name || 'Untitled service', ' tb-wide')}${cell('Date', longDate(plan.date))}
+  return `<div class="titleblock" aria-label="Title block">${cell('Venue', multiVenue() ? [venueOf(plan)?.name, D.org].filter(Boolean).join(' · ') : D.org, ' tb-wide')}${cell('Service', plan.name || 'Untitled service', ' tb-wide')}${cell('Date', longDate(plan.date))}
     ${cell('Stage', `${uDim(plan.stage.w, plan.stage.d)}`)}${cell('Revision', `r${plan.rev || 0}`)}${cell('Drawn by', D.contact)}${cell('Printed', new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))}</div>`;
 }
 /* ---------- the rider: one clean black-and-white page every venue understands ---------- */
@@ -4563,7 +4619,7 @@ function riderHtml(ins) {
   const half = Math.ceil(ins.length / 2), col = rows => `<table class="rtab"><colgroup><col style="width:12%"><col style="width:41%"><col style="width:35%"><col style="width:12%"></colgroup><thead><tr><th>#</th><th>Input</th><th>Mic / DI</th><th>48V</th></tr></thead><tbody>${rows.map(r => `<tr><td class="mono">${r.ch}</td><td>${esc(r.name)}</td><td>${esc(r.mic)}</td><td>${r.p48 ? '●' : ''}</td></tr>`).join('')}</tbody></table>`;
   const t = totals(), mons = outputList().filter(r => /wedge|iem|in-ear/i.test(r.type + ' ' + r.dest)).length;
   return `<div class="rider">
-    <div class="rhead">${db.defaults?.logo ? `<img class="rlogo" src="${db.defaults.logo}" alt="">` : ''}<div style="flex:1"><div class="eyebrow">${esc(D.org || 'Stage plot')}</div><h2>${esc(plan.name || 'Untitled service')}</h2><p>${esc(longDate(plan.date))}</p></div>
+    <div class="rhead">${db.defaults?.logo ? `<img class="rlogo" src="${db.defaults.logo}" alt="">` : ''}<div style="flex:1"><div class="eyebrow">${esc(D.org || 'Stage plot')}</div><h2>${esc(plan.name || 'Untitled service')}</h2><p>${esc(longDate(plan.date))}${multiVenue() ? ` · ${esc(venueOf(plan)?.name)}` : ''}</p></div>
       <dl class="rblock"><div><dt>Revision</dt><dd>r${plan.rev || 0}</dd></div><div><dt>Stage</dt><dd>${uDim(plan.stage.w, plan.stage.d)}</dd></div><div><dt>Inputs</dt><dd>${ins.length}</dd></div><div><dt>Monitors</dt><dd>${mons}</dd></div><div><dt>Power</dt><dd>${(t.watts / 1000).toFixed(1)} kW</dd></div>${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh ? `<div><dt>FOH</dt><dd>${uLen(Math.max(0, foh.y - plan.stage.d))} out</dd></div>` : ''; })()}<div><dt>Printed</dt><dd>${esc(new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))}</dd></div></dl></div>
     <div class="riderplot">${riderPlot()}<div class="raud">AUDIENCE</div></div>
     <div class="rcols"><div><h3>Inputs</h3><div class="rins">${col(ins.slice(0, half))}${ins.length > half ? col(ins.slice(half)) : ''}</div></div>
@@ -4662,7 +4718,7 @@ function renderPaper() {
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
   const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
-    <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${defaultsOf().org ? esc(defaultsOf().org) + ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
+    <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
     <div class="docnav"><nav role="tablist" aria-label="Sheets" style="display:contents">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav><span class="printbar"><button class="btn" id="pagesBtn" aria-pressed="${pageView}" title="Show the sheets as printed pages">${ic('sheet', 'sm')}Pages</button><button class="btn" id="sheetsBtn" data-needs-dl title="Every sheet in one page you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download sheets</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
@@ -5254,7 +5310,7 @@ function clearWeek(all) {
     plan.team = []; plan.items = []; plan.cables = []; plan.channels = []; plan.notes = '';
     if (all) { plan.stage = fresh.stage; plan.settings = fresh.settings; }
     sel = null; group = null; pending = null; measure = null; compare = null; needFit = true;
-  }, all ? `Week cleared, stage reset to ${uDim(fromM(10), fromM(6))}` : 'Week cleared, stage kept');
+  }, all ? `Week cleared, stage reset to ${venueOf(plan)?.name || 'the default'}’s` : 'Week cleared, stage kept');
 }
 function newWeek(stageOnly) {
   const np = JSON.parse(JSON.stringify(plan));
@@ -5409,13 +5465,14 @@ $('weekBtn').onclick = e => {
   if (open) { renderWeekPop(); $('planName').focus(); }
 };
 document.addEventListener('pointerdown', e => { if (!$('weekPop').hidden && !e.target.closest('.weeknav')) closePops(); });
-$('prevWeek').onclick = () => { const ids = sortedWeekIds(), i = ids.indexOf(plan.id); if (i > 0) switchWeek(ids[i - 1]); };
-$('nextWeekBtn').onclick = () => { const ids = sortedWeekIds(), i = ids.indexOf(plan.id); if (i < ids.length - 1) switchWeek(ids[i + 1]); else newWeek(false); };
-$('weekPop').addEventListener('input', e => { if (e.target.id === 'planName') { plan.name = e.target.value; save(); $('wkName').textContent = plan.name || 'Untitled service'; } });
+$('prevWeek').onclick = () => { const ids = venueWeekIds(plan.venueId), i = ids.indexOf(plan.id); if (i > 0) switchWeek(ids[i - 1]); };
+$('nextWeekBtn').onclick = () => { const ids = venueWeekIds(plan.venueId), i = ids.indexOf(plan.id); if (i < ids.length - 1) switchWeek(ids[i + 1]); else newWeek(false); };
+$('weekPop').addEventListener('input', e => { if (e.target.id === 'planName') { plan.name = e.target.value; save(); renderHeader(); } });
 $('weekPop').addEventListener('change', e => {
   if (e.target.id === 'planName') { renderAll(); }
   if (e.target.id === 'setupName') return;
   if (e.target.id === 'planDate' && e.target.value) { plan.date = e.target.value; save(); renderAll(); }
+  if (e.target.id === 'planVenue' && venues()[e.target.value] && e.target.value !== plan.venueId) { const v = venues()[e.target.value]; mutate(() => { moveToVenue(plan, v.id); needFit = true; }, `Moved to ${v.name}`); renderWeekPop(); }
   if (e.target.dataset.time) { const k = e.target.dataset.time, v = e.target.value; mutate(() => { plan.times ||= {}; if (v) plan.times[k] = v; else delete plan.times[k]; if (!Object.keys(plan.times).length) delete plan.times; }, `${TIME_KINDS.find(([x]) => x === k)[1]}: ${v ? fmtTime(v) : 'cleared'}`); }
 });
 $('weekPop').addEventListener('keydown', e => { if (e.target.id === 'setupName' && e.key === 'Enter') { e.preventDefault(); saveSetup(e.target.value); } });
@@ -5434,11 +5491,12 @@ $('weekPop').addEventListener('click', e => {
     if (clearArmed !== k) { clearArmed = k; renderWeekPop(); return; }
     closePops(); clearWeek(k === 'all');
   }
+  else if (b.id === 'openVenues') { closePops(); goHome('venues'); }
   else if (b.id === 'delWeek') {
     if (!delArmed) { delArmed = true; renderWeekPop(); return; }
-    delete db.plans[plan.id];
-    let ids = sortedWeekIds();
-    if (!ids.length) { const p = blankPlan(); db.plans[p.id] = p; ids = [p.id]; }
+    const vid = plan.venueId; delete db.plans[plan.id];
+    let ids = venueWeekIds(vid); if (!ids.length) ids = sortedWeekIds();   // stay in the venue when it has other weeks
+    if (!ids.length) { const p = blankPlan(undefined, vid); db.plans[p.id] = p; ids = [p.id]; }
     closePops(); switchWeek(ids[ids.length - 1]); toast('Week deleted');
   }
 });
@@ -5585,6 +5643,8 @@ $('inspector').addEventListener('click', e => {
   if (t.dataset.chextbtn) { startExtend(sel.id, t.dataset.chextbtn === '1'); return; }
   if (t.dataset.settype) { const c = plan.cables.find(x => x.id === sel.id); mutate(() => { c.type = t.dataset.settype; c.auto = false; }); return; }
   if (t.dataset.legend) { const k = t.dataset.legend; setCableView(() => { if (!cableView.all) { cableView.all = true; cableView.hidden = new Set(Object.keys(CABLES).filter(x => x !== k)); } else cableView.hidden.has(k) ? cableView.hidden.delete(k) : cableView.hidden.add(k); }); return; }
+  if (t.dataset.venue === 'save') { const V = venueOf(plan); if (V) { V.stage = roomOf(plan.stage); V.settings = JSON.parse(JSON.stringify(plan.settings)); save(); renderInspector(); toast(`${V.name} now starts with this stage`); } return; }
+  if (t.dataset.venue === 'reset') { const V = venueOf(plan); if (V) mutate(() => { moveToVenue(plan, V.id); needFit = true; }, `Back to ${V.name}’s stage`); return; }
   if (t.dataset.go === 'team') { railTab = 'team'; renderRail(); $('pcoStart')?.focus(); return; }
   if (t.dataset.go === 'build') { buildNow(); return; }
   if (t.dataset.go === 'shape') { openDesigner(false); return; }
@@ -5647,7 +5707,7 @@ $('paperInner').addEventListener('click', e => {
 $('dataBtn').onclick = () => { $('dataText').value = ''; $('dataDlg').hidden = false; };
 $('dataClose').onclick = () => { $('dataDlg').hidden = true; };
 $('dataDlg').addEventListener('click', e => { if (e.target.id === 'dataDlg') $('dataDlg').hidden = true; });
-const backup = all => JSON.stringify({ app: 'stageplot', version: 1, plans: all ? db.plans : { [plan.id]: plan }, ...(all && db.setups ? { setups: db.setups } : {}), ...(all ? { defaults: db.defaults, gear: db.gear, pcoPrefs: db.pcoPrefs, channels: db.channels } : {}) }, null, 1);
+const backup = all => JSON.stringify({ app: 'stageplot', version: 1, plans: all ? db.plans : { [plan.id]: plan }, ...(all && db.setups ? { setups: db.setups } : {}), ...(all ? { defaults: db.defaults, gear: db.gear, pcoPrefs: db.pcoPrefs, channels: db.channels, venues: db.venues } : {}) }, null, 1);
 $('copyAll').onclick = () => { const s = backup(true); $('dataText').value = s; copyText(s, $('dataText')); };
 $('copyOne').onclick = () => { const s = backup(false); $('dataText').value = s; copyText(s, $('dataText')); };
 /* files out: inside Claude the viewer confirms each save; on a plain web page it's an ordinary download */
@@ -5685,6 +5745,8 @@ function importJson(text) {
     db.plans[id] = p; n++; last = p;
   }
   if (d?.setups && typeof d.setups === 'object') Object.assign(setups(), d.setups);
+  if (d?.venues && typeof d.venues === 'object') for (const [id, v] of Object.entries(d.venues)) if (v?.stage && v.name) venues()[id] = { ...v, id };
+  ensureVenues();
   for (const k of ['defaults', 'pcoPrefs', 'channels']) if (d?.[k] && typeof d[k] === 'object') db[k] = d[k];
   if (d?.gear && typeof d.gear === 'object') db.gear = { ...d.gear, custom: db.gear?.custom || d.gear.custom || [] };
   if (!n) { toast('No weeks found in that backup'); return; }
@@ -5795,7 +5857,7 @@ function renderDesigner() {
     </dl>
     ${bad ? `<p class="err">Two edges cross. Move a corner so the outline doesn't overlap itself.</p>` : ''}
     ${dsg.firstRun ? `<label class="row" for="dsgStarter" style="gap:8px;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="dsgStarter" ${dsg.starter ? 'checked' : ''} style="accent-color:var(--accent);margin-top:3px"><span>Add starter gear<br><span class="hint">Stage box, two distros, IEM rack, mains and FOH. Move or delete any of it later.</span></span></label>`
-      : Object.keys(db.plans).length > 1 ? `<label class="row" for="dsgApplyAll" style="gap:8px"><input type="checkbox" id="dsgApplyAll" ${dsg.applyAll ? 'checked' : ''} style="accent-color:var(--accent)"> Use for all saved weeks</label>` : ''}`;
+      : `<label class="row" for="dsgApplyAll" style="gap:8px"><input type="checkbox" id="dsgApplyAll" ${dsg.applyAll ? 'checked' : ''} style="accent-color:var(--accent)"> Make this ${esc(venueOf(plan)?.name || 'the venue')}’s stage${venueWeekIds(plan.venueId).length > 1 ? ' and use it for all its weeks' : ''}</label>`}`;
   // canvas
   // the view only re-frames when nothing is being drawn or dragged, so the canvas never jumps under the cursor
   if (!dsg.view || (dsg.tool === 'edit' && dsg.drag === null)) {
@@ -5852,12 +5914,12 @@ function dsgSave() {
   if (dsg.firstRun) {
     const p = blankPlan(); apply(p); plan = p;
     if (dsg.starter) { addStarterGear(); autoCable(); }
-    db = { plans: { [p.id]: p }, currentId: p.id, setup: true };
+    db = { plans: { [p.id]: p }, currentId: p.id, setup: true }; delete p.venueId; ensureVenues(); venueOf(p).stage = roomOf(p.stage);   // the drawn stage is the first venue's
     history = []; future = []; sel = null; railTab = 'team'; save();
     closeDesigner(); needFit = true; zoom = null; renderAll();
     toast('Stage saved. Next: add this week’s team.');
   } else {
-    mutate(() => { apply(plan); if (dsg.applyAll) for (const p of Object.values(db.plans)) if (p !== plan) { apply(p); db.plans[p.id] = p; } }, 'Stage shape saved');
+    mutate(() => { apply(plan); if (dsg.applyAll) { for (const p of Object.values(db.plans)) if (p !== plan && p.venueId === plan.venueId) { apply(p); db.plans[p.id] = p; } const v = venueOf(plan); if (v) v.stage = roomOf(plan.stage); } }, 'Stage shape saved');
     try { localStorage.setItem(STORE, JSON.stringify(db)); } catch { /* ignore */ }
     closeDesigner(); needFit = true; zoom = null; renderPlot();
   }
@@ -6761,7 +6823,7 @@ window.addEventListener('afterprint', () => { if (printFrom) { view = printFrom;
 /* ===================================================================
    Library: every saved week at a glance, setups, storage, and a safe reset to default
    =================================================================== */
-const lib = { q: '', resetArmed: false, typed: '', edit: '' };
+const lib = { q: '', resetArmed: false, typed: '', edit: '', venue: '' };
 function weekStats(p) {   // the same checks the app runs, for any saved week
   const keep = plan; plan = p;
   try {
@@ -6784,7 +6846,8 @@ function libTrend(order, stats, id) {
 }
 function renderLibrary() {
   const today = new Date().toISOString().slice(0, 10), q = lib.q.trim().toLowerCase();
-  const ids = sortedWeekIds().reverse().filter(id => !q || `${db.plans[id].name} ${db.plans[id].date} ${longDate(db.plans[id].date)}`.toLowerCase().includes(q));
+  if (lib.venue && !venues()[lib.venue]) lib.venue = '';
+  const ids = sortedWeekIds().reverse().filter(id => (!lib.venue || db.plans[id].venueId === lib.venue) && (!q || `${db.plans[id].name} ${db.plans[id].date} ${longDate(db.plans[id].date)} ${venueOf(db.plans[id])?.name || ''}`.toLowerCase().includes(q)));
   const months = new Map();
   for (const id of ids) { const d = db.plans[id].date; const k = d.slice(0, 7); if (!months.has(k)) months.set(k, []); months.get(k).push(id); }
   const monthName = k => new Date(k + '-01T12:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
@@ -6797,7 +6860,7 @@ function renderLibrary() {
     const state = !p.items.length || !st.team ? 'empty' : st.bad ? 'bad' : st.checks ? 'warn' : 'ok';
     return `<div class="librow st-${state}${cur ? ' cur' : ''}${past ? ' past' : ''}">
       <button class="libopen" data-libopen="${id}" title="Open this week"><span class="libdate"><b>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { day: 'numeric' }))}</b><small>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' }))}</small></span>
-        <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${libTrend(order, stats, id)}${chip}</button>
+        <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${multiVenue() && !lib.venue ? `<span class="vtag">${esc(venueOf(p)?.name)}</span>` : ''}${libTrend(venueWeekIds(p.venueId), stats, id)}${chip}</button>
       <button class="iconbtn" data-libedit="${id}" aria-label="Rename or move ${esc(longDate(p.date))}" title="Rename or move to another date">${ic('pen', 'sm')}</button>
       <button class="iconbtn" data-libdup="${id}" aria-label="Copy to the following week" title="Copy to the following week">${ic('copy', 'sm')}</button>
       <button class="iconbtn" data-libdel="${id}" aria-label="Delete ${esc(longDate(p.date))}" title="Delete this week">${ic('trash', 'sm')}</button></div>`;
@@ -6806,8 +6869,9 @@ function renderLibrary() {
   const before = (() => { try { return localStorage.getItem('stageplot.beforeReset'); } catch { return null; } })();
   const el = $('libBody'); if (!el) return;
   el.innerHTML = `
+    ${multiVenue() ? `<div class="vchips" role="group" aria-label="Venue">${[['', 'All venues', Object.keys(db.plans).length], ...venueList().map(v => [v.id, v.name, venueWeekIds(v.id).length])].map(([id, n, c]) => `<button class="vchip" data-libvenue="${id}" aria-pressed="${lib.venue === id}">${esc(n)}<span>${c}</span></button>`).join('')}</div>` : ''}
     <div class="search">${ic('search', 'sm')}<input id="libSearch" type="search" placeholder="Find a week by name or date" value="${esc(lib.q)}" aria-label="Find a week"></div>
-    <div class="liblist">${rows || `<p class="hint">No weeks match “${esc(lib.q)}”.</p>`}</div>
+    <div class="liblist">${rows || (lib.q ? `<p class="hint">No weeks match “${esc(lib.q)}”.</p>` : `<div class="empty-state">${ic('calendar')}<strong>No weeks at ${esc(venues()[lib.venue]?.name || 'this venue')} yet</strong><button class="btn primary" data-vnew="${esc(lib.venue)}">${ic('plus', 'sm')}Start the first one</button></div>`)}</div>
     ${su.length ? `<details class="more"><summary>${ic('room', 'sm')}<span><b>Setups</b><small>${plural(su.length, 'saved layout')}</small></span>${ic('chevD', 'sm')}</summary><div class="liblist" style="padding:0 10px 10px">${su.sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, x]) => `<div class="librow"><span class="libmain" style="padding:6px 8px"><b>${esc(x.name)}</b><small>${plural(x.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(x.saved || '')}</small></span><button class="iconbtn" data-libsetupdel="${id}" aria-label="Delete setup ${esc(x.name)}" title="Delete setup">${ic('trash', 'sm')}</button></div>`).join('')}</div></details>` : ''}
 `;
 }
@@ -6833,10 +6897,17 @@ function restoreBeforeReset() {
 }
 $('homeView').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
+  if (t.hasAttribute('data-addlogo')) { goHome('stage'); $('hd-logo')?.click(); return; }   // straight to the file picker
   if (t.dataset.libopen) { view = 'plot'; switchWeek(t.dataset.libopen); return; }
+  if (t.dataset.vnew) { const vid = t.dataset.vnew, np = blankPlan(nextFreeDate(undefined, vid), vid); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)} at ${venues()[vid].name}`); return; }
+  if (t.dataset.vfromweek) { const V = venues()[t.dataset.vfromweek]; V.stage = roomOf(plan.stage); V.settings = JSON.parse(JSON.stringify(plan.settings)); save(); renderHome(); toast(`${V.name} now starts with this week’s stage`); return; }
+  if (t.dataset.vdel) { const id = t.dataset.vdel, V = venues()[id]; if (!V || venueWeekIds(id).length || venueList().length < 2) return;
+    if (venueDelArmed !== id) { venueDelArmed = id; renderHome(); return; }
+    venueDelArmed = ''; delete venues()[id]; if (lib.venue === id) lib.venue = ''; save(); renderAll(); toast(`Deleted ${V.name}`, { label: 'Undo', fn: () => { venues()[id] = V; save(); renderAll(); } }); return; }
+  if (t.dataset.libvenue !== undefined) { lib.venue = t.dataset.libvenue; renderHome(); return; }
   if (t.dataset.libdup) {
     const src = db.plans[t.dataset.libdup], np = JSON.parse(JSON.stringify(src)); np.id = uid(); np.date = addDays(src.date, 7);
-    while (Object.values(db.plans).some(x => x.date === np.date)) np.date = addDays(np.date, 7);
+    while (Object.values(db.plans).some(x => x.date === np.date && x.venueId === np.venueId)) np.date = addDays(np.date, 7);
     db.plans[np.id] = np; save(); renderHome(); toast(`Copied to ${longDate(np.date)}`); return;
   }
   if (t.dataset.libdel) {
@@ -6878,7 +6949,7 @@ $('paperView').addEventListener('change', e => {
 /* ===================================================================
    Home: the library of weeks, and settings that apply to every week
    =================================================================== */
-const HOME_TABS = [['library', 'calendar', 'Library', 'Every week you’ve planned'], ['setups', 'layers', 'Setups', 'Stage layouts to reuse'], ['stage', 'room', 'Stage defaults', 'What every new week starts with'],
+const HOME_TABS = [['library', 'calendar', 'Library', 'Every week you’ve planned'], ['venues', 'plot', 'Venues', 'Each stage you plan for'], ['setups', 'layers', 'Setups', 'Stage layouts to reuse'], ['stage', 'room', 'Stage defaults', 'What every new week starts with'],
   ['gear', 'box', 'Gear', 'What you own and what shows in Add gear'], ['pco', 'users', 'Planning Center', 'Connection, service type, positions'], ['prefs', 'sliders', 'Preferences', 'Theme, detail and behaviour'], ['data', 'save', 'Data & backup', 'Back up, restore or start again']];
 let homeTab = (() => { try { const t = localStorage.getItem('stageplot.homeTab'); return HOME_TABS.some(([k]) => k === t) ? t : 'library'; } catch { return 'library'; } })();
 function goHome(tab) {
@@ -6892,9 +6963,9 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 function renderHome() {
   if (view !== 'home') { countedKey = ''; return; }   // coming back to Home counts the figures up again
-  $('homeNav').innerHTML = `<div class="homehello"><div class="eyebrow">${esc(defaultsOf().org || 'Stageplot')}</div><h1>Home</h1></div>` +
+  $('homeNav').innerHTML = `<div class="homehello">${db.defaults?.logo ? `<img class="hellologo" src="${db.defaults.logo}" alt="${esc(defaultsOf().org || 'Your logo')}">` : `<button class="addlogo" data-addlogo>${ic('plus', 'sm')}Add your church logo</button>`}<div class="eyebrow">${esc(defaultsOf().org || 'Stageplot')}</div><h1>Home</h1></div>` +
     HOME_TABS.map(([k, icon, label, sub]) => `<button class="hnav" data-home="${k}" aria-current="${k === homeTab ? 'page' : 'false'}">${ic(icon, 'sm')}<span><b>${label}</b><small>${sub}</small></span></button>`).join('');
-  const body = { library: homeLibrary, setups: homeSetups, stage: homeStage, gear: homeGear, pco: homePco, prefs: homePrefs, data: homeData }[homeTab]();
+  const body = { library: homeLibrary, venues: homeVenues, setups: homeSetups, stage: homeStage, gear: homeGear, pco: homePco, prefs: homePrefs, data: homeData }[homeTab]();
   const keep = document.activeElement?.id, pos = document.activeElement?.selectionStart;
   const [, , title, sub] = HOME_TABS.find(([k]) => k === homeTab);
   $('homeBody').innerHTML = (homeTab === 'library' ? '' : `<div class="hpage"><h2>${title}</h2><p>${sub}</p></div>`) + body;
@@ -6926,13 +6997,13 @@ function heroPicture(p) {   // the week's stage, drawn the way the paperwork dra
   heroCache = { key, html }; return html;
 }
 function homeLibrary() {
-  const today = new Date().toISOString().slice(0, 10), ids = sortedWeekIds();
+  const today = new Date().toISOString().slice(0, 10), ids = venues()[lib.venue] ? venueWeekIds(lib.venue) : sortedWeekIds();
   const next = ids.map(id => db.plans[id]).find(p => p.date >= today) || db.plans[ids[ids.length - 1]];
   const st = next ? weekStats(next) : null;
   const chip = !next ? '' : !next.items.length ? '<span class="chip">Empty</span>' : !st.team ? '<span class="chip">No team yet</span>' : st.checks ? `<span class="chip ${st.bad ? 'bad' : 'warn'}">${plural(st.checks, 'check')}</span>` : '<span class="chip ok">Ready</span>';
   const hero = next ? `<section class="hero">
       ${next.items.length ? `<div class="heropic" aria-hidden="true">${heroPicture(next)}${next.team.length ? `<div class="heroteam">${next.team.slice(0, 8).map((t, i) => `<span class="avatar hued" style="--hue:${PERSON_HUES[i % PERSON_HUES.length]}" title="${esc(t.name)}">${esc(initials(t.name))}</span>`).join('')}${next.team.length > 8 ? `<span class="avatar">+${next.team.length - 8}</span>` : ''}</div>` : ''}</div>` : ''}
-      <div><div class="eyebrow">${next.date >= today ? 'Next up' : 'Most recent'} · ${esc(longDate(next.date))}</div><h2>${esc(next.name || 'Untitled service')}</h2>
+      <div><div class="eyebrow">${next.date >= today ? 'Next up' : 'Most recent'} · ${esc(longDate(next.date))}${multiVenue() ? ` · ${esc(venueOf(next)?.name)}` : ''}</div><h2>${esc(next.name || 'Untitled service')}</h2>
         <p class="herostats">${[[st.team, 'person|people'], [st.gear, 'item|items'], [st.ins, 'input|inputs'], ...(st.cab ? [[Math.round(imperial() ? st.cab / FT : st.cab), imperial() ? 'ft cable' : 'm cable'], [st.kw, 'kW', 1]] : [])].map(([n, l, dp]) => `<span class="hstat"><b data-count="${n}"${dp ? ` data-dp="${dp}"` : ''}>${dp ? n.toFixed(dp) : n}</b> <span${l.includes('|') ? ` data-forms="${l}"` : ''}>${l.includes('|') ? l.split('|')[n === 1 ? 0 : 1] : l}</span></span>`).join('')} ${chip}${st.borrow ? ` <span class="chip warn">Borrow ${st.borrow}</span>` : ''}</p></div>
       <div class="row herobtns" style="gap:8px"><button class="btn primary" data-libopen="${next.id}">${ic('plot', 'sm')}Open the plot</button><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button>
         <button class="btn" data-libprint="${next.id}" title="Print every sheet, or save them as a PDF">${ic('save', 'sm')}Print or PDF</button><button class="btn" data-libloadin="${next.id}" title="Tick things off on the day">${ic('check', 'sm')}Load-in${st.load.total ? ` <span class="herocount">${st.load.done}/${st.load.total}</span>` : ''}</button></div>
@@ -6940,8 +7011,34 @@ function homeLibrary() {
   return hero + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved in this browser`, '<div id="libBody"></div>',
     `<div class="row" style="gap:6px"><button class="btn" id="homeNewCopy" title="Copy the latest week to the next free ${esc(DAYS[defaultsOf().day])}">${ic('copy', 'sm')}Copy latest</button><button class="btn primary" id="homeNewBlank" title="A fresh week from your stage defaults">${ic('plus', 'sm')}New week</button></div>`);
 }
-function nextFreeDate(from) { let d = from || nextServiceDay(); while (Object.values(db.plans).some(p => p.date === d)) d = addDays(d, 7); return d; }
+function nextFreeDate(from, vid) { let d = from || nextServiceDay(); while (Object.values(db.plans).some(p => p.date === d && (!vid || p.venueId === vid))) d = addDays(d, 7); return d; }
 
+/* ----- Venues ----- */
+function venuePic(v) {   // the venue's stage outline in its own colour, front edge taped
+  const st = v.stage, pts = st.poly?.length >= 3 ? st.poly : [[0, 0], [st.w, 0], [st.w, st.d], [0, st.d]], m = Math.max(st.w, st.d) * .08;
+  const col = st.color || 'var(--deck)';
+  return `<svg class="vpic" viewBox="${f3(-m)} ${f3(-m)} ${f3(st.w + 2 * m)} ${f3(st.d + 2 * m)}" aria-hidden="true"><polygon points="${pts.map(q => q.map(f3).join(',')).join(' ')}" style="fill:${col}"/><line x1="0" x2="${f3(st.w)}" y1="${f3(st.d)}" y2="${f3(st.d)}" style="stroke-width:${f3(Math.max(st.w, st.d) * .03)}"/></svg>`;
+}
+let venueDelArmed = '';
+function homeVenues() {
+  const today = new Date().toISOString().slice(0, 10), cur = venueOf(plan)?.id, su = Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)), one = venueList().length < 2;
+  const card = v => {
+    const ids = venueWeekIds(v.id), next = ids.map(id => db.plans[id]).find(p => p.date >= today) || db.plans[ids[ids.length - 1]];
+    return `<div class="vcard${v.id === cur ? ' cur' : ''}">${venuePic(v)}
+      <div class="vmain"><input class="vname" type="text" data-vname="${v.id}" value="${esc(v.name)}" aria-label="Venue name" maxlength="60">
+        <small>${uDim(v.stage.w, v.stage.d)}${v.stage.poly ? ' · custom shape' : ''} · ${plural(ids.length, 'week')}${next ? ` · ${next.date >= today ? 'next' : 'last'} ${esc(longDate(next.date))}` : ''}${v.id === cur ? ' · <b>open now</b>' : ''}</small>
+        <label class="vsetup" for="vs-${v.id}">Start new weeks from <select id="vs-${v.id}" data-vsetup="${v.id}"><option value="">${defaultsOf().setupId && setups()[defaultsOf().setupId] ? `The default (${esc(setups()[defaultsOf().setupId].name)})` : 'Its stage, empty'}</option>${su.map(([id, x]) => `<option value="${id}" ${id === v.setupId ? 'selected' : ''}>Setup: ${esc(x.name)}</option>`).join('')}</select></label></div>
+      <div class="vacts"><button class="btn primary" data-vnew="${v.id}">${ic('plus', 'sm')}New week</button>
+        ${ids.length && !ids.includes(plan.id) ? `<button class="btn" data-libopen="${ids[ids.length - 1]}">Open latest</button>` : ''}
+        ${v.id === cur && !sameRoom(plan.stage, v.stage) ? `<button class="btn" data-vfromweek="${v.id}" title="This week’s stage differs from the venue’s">Use this week’s stage</button>` : ''}
+        <button class="iconbtn${venueDelArmed === v.id ? ' armed' : ''}" data-vdel="${v.id}" ${ids.length || one ? 'disabled' : ''} title="${ids.length ? 'Move or delete its weeks first' : one ? 'You need at least one venue' : venueDelArmed === v.id ? 'Click again to delete' : 'Delete this venue'}" aria-label="Delete ${esc(v.name)}">${ic('trash', 'sm')}</button></div></div>`;
+  };
+  return hsec('Your venues', 'Each venue keeps its own stage (size, shape, colour, surface, house and ceiling) and its own starting layout. Every week belongs to one; change it from the week menu.',
+    `<div class="vlist">${venueList().map(card).join('')}</div>
+    <form class="vadd" id="venueAdd"><input id="venueName" type="text" placeholder="e.g. Next Gen hall, Summer camp" maxlength="60" aria-label="New venue name" required>
+      <label class="row" for="venueCopy" style="gap:6px"><input type="checkbox" id="venueCopy" style="accent-color:var(--accent)"> Start from this week’s stage</label>
+      <button class="btn primary" type="submit">${ic('plus', 'sm')}Add venue</button></form>`);
+}
 /* ----- Setups ----- */
 function homeSetups() {
   const su = Object.entries(setups()).sort((a, b) => a[1].name.localeCompare(b[1].name)), def = defaultsOf().setupId;
@@ -7122,8 +7219,8 @@ $('homeView').addEventListener('click', e => {
   if (t.hasAttribute('data-libeditcancel')) { lib.edit = ''; renderLibrary(); return; }
   if (t.dataset.libprint) { view = 'paper'; paperTab = 'overview'; switchWeek(t.dataset.libprint); setTimeout(() => window.print(), 120); return; }
   if (t.dataset.libloadin) { view = 'paper'; paperTab = 'loadin'; switchWeek(t.dataset.libloadin); return; }
-  if (t.id === 'homeNewBlank') { const np = blankPlan(nextFreeDate()); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)}`); return; }
-  if (t.id === 'homeNewCopy') { const ids = sortedWeekIds(), src = db.plans[ids[ids.length - 1]], np = JSON.parse(JSON.stringify(src)); np.id = uid(); np.date = nextFreeDate(addDays(src.date, 7)); db.plans[np.id] = np; save(); renderHome(); toast(`Copied to ${longDate(np.date)}`); return; }
+  if (t.id === 'homeNewBlank') { const vid = (venues()[lib.venue] ? lib.venue : venueOf(plan)?.id); const np = blankPlan(nextFreeDate(undefined, vid), vid); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)}`); return; }
+  if (t.id === 'homeNewCopy') { const vid = (venues()[lib.venue] ? lib.venue : venueOf(plan)?.id), vids = venueWeekIds(vid), ids = vids.length ? vids : sortedWeekIds(), src = db.plans[ids[ids.length - 1]], np = JSON.parse(JSON.stringify(src)); np.id = uid(); np.venueId = vid; np.date = nextFreeDate(addDays(src.date, 7), vid); db.plans[np.id] = np; save(); renderHome(); toast(`Copied to ${longDate(np.date)}`); return; }
   if (t.dataset.setupuse) { view = 'plot'; applySetup(t.dataset.setupuse); return; }
   if (t.dataset.setupdef) { setDefault('setupId', defaultsOf().setupId === t.dataset.setupdef ? '' : t.dataset.setupdef); renderHome(); return; }
   if (t.id === 'homeSetupSave') { saveSetup($('homeSetupName').value); renderHome(); return; }
@@ -7147,6 +7244,7 @@ $('homeView').addEventListener('click', e => {
   if (t.id === 'homeDataDlg') { $('dataBtn').click(); return; }
 });
 $('homeView').addEventListener('submit', e => {
+  if (e.target.id === 'venueAdd') { e.preventDefault(); const n = $('venueName').value.trim(); if (!n) return; const v = newVenue(n, $('venueCopy').checked ? plan : null); save(); renderAll(); toast(`Added ${v.name}`, { label: 'New week there', fn: () => $('homeView').querySelector(`[data-vnew="${v.id}"]`)?.click() }); return; }
   const f = e.target.closest('[data-libform]'); if (!f) return; e.preventDefault();
   const p = db.plans[f.dataset.libform], d = $('libEdDate').value, n = $('libEdName').value.trim();
   if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(d)) { toast('Pick a date'); return; }
@@ -7162,6 +7260,8 @@ $('homeView').addEventListener('input', e => {
 $('homeView').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'gf-name' && gearForm.name.trim()) addCustomGear(); });
 $('homeView').addEventListener('click', e => { if (e.target.closest('#hd-logo-del')) { delete db.defaults.logo; save(); renderHome(); toast('Logo removed'); } });
 $('homeView').addEventListener('change', e => {
+  if (e.target.dataset.vname) { const V = venues()[e.target.dataset.vname], n = e.target.value.trim().slice(0, 60); if (V && n) { V.name = n; save(); renderAll(); } else if (V) e.target.value = V.name; return; }
+  if (e.target.dataset.vsetup) { const V = venues()[e.target.dataset.vsetup]; if (V) { V.setupId = e.target.value; save(); } return; }
   if (e.target.id === 'hd-logo' && e.target.files?.[0]) {   // shrunk to a small image, transparency kept, so it travels with backups
     const file = e.target.files[0], url = URL.createObjectURL(file), im = new Image();
     im.onload = () => { const k = Math.min(1, 360 / Math.max(im.naturalWidth || 360, im.naturalHeight || 360)), cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round((im.naturalWidth || 360) * k)); cv.height = Math.max(1, Math.round((im.naturalHeight || 360) * k));
@@ -7207,8 +7307,8 @@ document.head.insertAdjacentHTML('beforeend', `<style id="symcss">${SYM_CSS}</st
 try { const t = localStorage.getItem('stageplot.theme'); if (t === 'light' || t === 'dark') { themePref = t; document.documentElement.dataset.theme = t; } } catch { /* ignore */ }
 view = 'home'; homeTab = 'library';   // the app always opens on the library
 db = load();
-if (db) plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]];
-else { db = seed(); plan = db.plans[db.currentId]; if (!unreadable) save(); $('welcomeDlg').hidden = !!unreadable; }
+if (db) { ensureVenues(); plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]]; }
+else { db = seed(); ensureVenues(); plan = db.plans[db.currentId]; if (!unreadable) save(); $('welcomeDlg').hidden = !!unreadable; }
 renderAll();
 try {
   if (sessionStorage.getItem('stageplot.justReset')) { sessionStorage.removeItem('stageplot.justReset'); setTimeout(() => toast('Reset to default. Your old library is kept', { label: 'Restore', fn: restoreBeforeReset }), 300); }
