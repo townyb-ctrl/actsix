@@ -23,18 +23,19 @@ Status of Stageplot for a public launch. Facts only: what has been checked, how,
 | Team role marks, concrete surface, names stepping aside | End-to-end test: every positioned team member gets a mark, the concrete slab and joints draw, six surface tiles show, and a name crowded above and below moves beside its item |
 | Title block, Planning Center placeholders, Next up count-up | End-to-end test: Drawn by saves and appears in the title block with all seven fields, four placeholder rows show while the roster loads and clear after, the figures count up and settle on the right values and don't restart on a redraw |
 | Drag lift, paperwork pages, library trends | End-to-end test: a dragged item lifts and scales, settles on drop and is plain after; the Pages switch turns white pages on and off and is remembered after a reload; trend lines draw with their numbers in the label |
+| Feet and inches | End-to-end test: rulers, fields, typed values (20 ft stage, 12.5 ft position), pull list stock lengths, header and title block all switch; switching back gives metres again and the plan data is unchanged |
+| Focus, role marks, empty sheets, pinch | End-to-end tests: picking a performer dims the rest and highlights only their cables; four role marks draw; five empty sheets show their message; the hover card is hidden off the plot; a simulated two-finger pinch zooms the plot 2× without zooming the page |
 | Accessibility | axe-core 4.10: no violations in light or dark theme across welcome, plot, item details, gear library and paperwork |
 | Phone (400 px), iPad portrait and landscape, desktop | No sideways scrolling; toolbar fits at each width |
-| Performance | Typical week (46 items, 30 cables): about 14 ms per redraw, so dragging stays at 60 fps; three times the gear: about 38 ms; first paint about 1 s (Chromium, desktop) |
+| Performance | Typical week (46 items, 30 cables): about 14 ms per redraw, so dragging stays at 60 fps; three times the gear: about 38 ms; first paint about 1 s (Chromium, desktop); the whole app is about 800 KB, 285 KB compressed (instrument pictures shrunk to 540 px, still sharp on 2× screens) |
 | Planning Center (Services): service types, plans, plan people | Argument names checked against the connector's schemas; response shapes confirmed with one read-only call each |
 
 ## Open before a public launch
 
-- **Safari and Firefox**: not tested yet (only Chromium was available). The app uses modern CSS (`color-mix`, container queries) that needs Safari 16.2+ and Firefox 113+.
+- **Safari and Firefox**: still not run on a real device (only Chromium can run here). A code audit found no JavaScript newer than Safari 15; the CSS needs Safari 16.2+ / Firefox 113+ for colour mixing (older browsers now get a one-time notice). Touch: pinch-to-zoom and dragging were tested with simulated touches in Chromium; check both on a real iPad.
 - **Hosting**: the app is one static HTML file; it needs a home (any static host) and a domain.
 - **Storage is per browser**: there are no accounts or sync. Teams share plans by exporting files. Accounts and team sharing would be the next major step.
 - **Planning Center outside Claude**: the import works when the app runs inside Claude with the Planning Center connector. A standalone site would need its own Planning Center OAuth app.
-- **Metric only**: sizes and lengths are shown in metres; there is no feet and inches option yet.
 - **No analytics or error reporting**: nothing leaves the browser today, by design. Add an opt-in only if needed.
 
 ## Run the checks
