@@ -1112,6 +1112,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .riderplot path[class^="cab"], .riderplot .lead-shadow, .riderplot .fl, .riderplot .chport, .riderplot .cab-inside { display: none; }
 .riderplot .scalebar text { font-size: .55px; fill: #111; font-family: var(--f-mono, monospace); }
 .riderplot .zone:not(.on-deck) { display: none; }
+.riderplot .ruler text { stroke: #fff; fill: #333; }   /* the rider is white paper in either theme */
 .raud { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font: 700 10px/1 var(--f-ui); letter-spacing: .3em; color: #444; }
 .rcols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; }
 .rins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
@@ -1249,7 +1250,7 @@ td.spare { color: var(--muted); font-style: italic; }
 .tb-cell b i { color: var(--muted); font-style: normal; font-weight: 400; }
 .tb-cell:nth-child(5) b, .tb-cell:nth-child(4) b { font-family: var(--f-mono); font-weight: 500; }
 @media (max-width: 760px) { .titleblock { grid-template-columns: 1fr 1fr; } .tb-cell { border-left: 0; border-top: 1px solid var(--line-2); } .tb-cell:nth-child(even) { border-left: 1px solid var(--line-2); } .tb-cell:nth-child(-n+2) { border-top: 0; } .tb-cell:last-child { grid-column: 1 / -1; } }
-@media print { .titleblock { border-color: #111; background: #fff; } .tb-cell { border-color: #999; } .tb-cell span { color: #555; } .tb-cell b { color: #111; } }
+@media print { .sheet button, .sheet .btn { display: none !important; } .tb-cell b { white-space: normal; overflow: visible; } .titleblock { border-color: #111; background: #fff; } .tb-cell { border-color: #999; } .tb-cell span { color: #555; } .tb-cell b { color: #111; } }
 .doclogo { position: absolute; right: 24px; top: 22px; height: 48px; max-width: 160px; object-fit: contain; }
 .rlogo { height: 44px; max-width: 120px; object-fit: contain; align-self: center; }
 .rhead { align-items: center; }
@@ -1918,7 +1919,7 @@ function blankPlan(date, vid) {   // a new week starts from its venue's stage (o
 /* Your own gear: a named type that looks like a built-in one, in the group you choose, with its own inputs and power draw.
    Stored with the weeks (db.gear.custom) and registered into the catalogue, symbols and Add gear before any week loads. */
 function registerCustomGear(list) {
-  for (const [g, types] of GEAR_GROUPS) for (let i = types.length - 1; i >= 0; i--) if (CAT[types[i]]?.custom) types.splice(i, 1);
+  for (const [, types] of GEAR_GROUPS) for (let i = types.length - 1; i >= 0; i--) if (CAT[types[i]]?.custom) types.splice(i, 1);
   for (const id of Object.keys(CAT)) if (CAT[id].custom) delete CAT[id];
   for (const c of list || []) {
     const base = CAT[c.base]; if (!base || !c.id || !c.name) continue;
@@ -2957,37 +2958,8 @@ const SYM = (() => {
   const eCym = (cx, cy, r) => circ(cx, cy, r, 's-ecym') + circ(cx, cy, r * .82, 's-ecymzone') + circ(cx, cy, r * .3, 's-ecymbell') + arc(cx, cy, r * .7, 200, 245, 's-cymglint2') + circ(cx, cy, r * .07, 's-chrome2');
   const jacks = h => rect(-h - .06, -.08, .08, .16, 's-chrome2', .02) + rect(h - .02, -.08, .08, .16, 's-chrome2', .02);   // IN on the right side, OUT on the left
   const grid = (x0, y0, cols, rows, dx, dy, r, cls) => { let s = ''; for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) s += circ(x0 + i * dx, y0 + j * dy, r, cls); return s; };
-  const drum = (cx, cy, r) => circ(cx, cy, r, 'body c-inst s-edge') + circ(cx, cy, r * .82, 's-head') + circ(cx, cy, r * .08, 's-thin');
-  const cymbal = (cx, cy, r) => circ(cx, cy, r, 's-metal') + circ(cx, cy, r * .55, 's-thin') + circ(cx, cy, r * .14, 's-metal');
-  const P = (d, cls) => `<path class="${cls}" d="${d}"/>`;
-  const R_ = (x, y, w, h, cls, rx = .01) => `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}"/>`;
-  const C_ = (x, y, r, cls) => `<circle class="${cls}" cx="${x}" cy="${y}" r="${r}"/>`;
-  const frets = (y0, y1, n, hw) => Array.from({ length: n }, (_, i) => { const y = y0 + (y1 - y0) * (1 - Math.pow(.94, i + 1)) / (1 - Math.pow(.94, n)); return `<path class="s-fret" d="M${-hw} ${f(y)}H${hw}"/>`; }).join('');
-  const strings = (n, y0, y1, hw) => Array.from({ length: n }, (_, i) => `<path class="s-str" d="M${f(-hw + (2 * hw) * i / (n - 1))} ${y0}V${y1}"/>`).join('');
-  const fretYs = (nut, scale, n) => Array.from({ length: n }, (_, i) => nut + scale * (1 - Math.pow(2, -(i + 1) / 12)));
-  // offset double cutaway: long pointed bass-side horn, shorter treble horn, narrow waist, round lower bout
-  const STRAT_BODY = 'M.095 .44C.12 .36 .17 .24 .23 .19C.29 .15 .36 .17 .38 .26C.4 .36 .45 .44 .46 .56C.47 .68 .44 .74 .45 .84C.46 .94 .54 1.0 .54 1.14C.54 1.42 .34 1.58 0 1.58C-.34 1.58 -.54 1.42 -.54 1.14C-.54 1.0 -.46 .94 -.45 .84C-.44 .74 -.49 .66 -.49 .52C-.49 .36 -.45 .2 -.39 .13C-.34 .07 -.26 .08 -.24 .15C-.2 .25 -.15 .34 -.12 .4C-.11 .42 -.1 .43 -.095 .44Z';
-  // a finish that fades smoothly from the edge in: many thin steps between colour stops (no gradients, so ids never clash in copies)
-  const mixHex = (a, b, t) => '#' + [0, 2, 4].map(k => Math.round(parseInt(a.substr(1 + k, 2), 16) * (1 - t) + parseInt(b.substr(1 + k, 2), 16) * t).toString(16).padStart(2, '0')).join('');
-  const finish = (d, stops, cy, inner, n = 14) => Array.from({ length: n }, (_, i) => {
-    const t = i / (n - 1), k = 1 - (1 - inner) * t, seg = Math.min(stops.length - 2, Math.floor(t * (stops.length - 1))), lt = t * (stops.length - 1) - seg;
-    return `<path d="${d}" style="fill:${mixHex(stops[seg], stops[seg + 1], lt)}"${i ? ` transform="translate(0 ${cy}) scale(${f(k)}) translate(0 ${-cy})"` : ''}/>`;
-  }).join('');
-  /* real lacquer: a smooth radial burst per finish, a soft shadow on the deck, a darker roundover at the edge, a satin highlight */
-  const DEFS = [];
-  const lac = (id, stops) => { const a = [...stops].reverse(), n = a.length - 1;
-    DEFS.push(`<radialGradient id="spFin_${id}" cx=".5" cy=".64" r=".66" fx=".46" fy=".58">${a.map((c, i) => `<stop offset="${i ? f(.3 + .7 * Math.pow(i / n, 1.25)) : 0}" stop-color="${c}"/>`).join('')}</radialGradient>`); return `spFin_${id}`; };
-  const bodyArt = (d, fin, cy, spec, bind) => `<path d="${d}" transform="translate(.06 .09)" style="fill:#000;opacity:.5" filter="url(#spShadow)"/>` +
-    `<path d="${d}" style="fill:url(#${fin})"/>` + (bind ? P(d, 's-gbind') : '') + `<path class="s-roundover" d="${d}"/>` + layer(d, 's-roundlight', .962, cy) +
-    `<ellipse cx="${spec[0]}" cy="${spec[1]}" rx="${spec[2]}" ry="${spec[3]}" transform="rotate(-12 ${spec[0]} ${spec[1]})" style="fill:url(#spSpec)"/>`;
-  const softShadow = (d, dx = .03, dy = .05, o = .45) => `<path d="${d}" transform="translate(${dx} ${dy})" style="fill:#000;opacity:${o}" filter="url(#spShadow)"/>`;
-  const layer = (d, cls, k, cy) => `<path class="${cls}" d="${d}" transform="translate(0 ${cy}) scale(${k}) translate(0 ${-cy})"/>`;
-  const neckOn = (nut, heel, wNut, wHeel, board, frets, dots, fretW) => `<path class="${board}" d="M${-wNut / 2} ${nut}L${wNut / 2} ${nut}L${wHeel / 2} ${heel}L${-wHeel / 2} ${heel}Z"/>` +
-    frets.map(y => `<path class="s-fret2" d="M${f(-(wNut + (wHeel - wNut) * (y - nut) / (heel - nut)) / 2 + .004)} ${f(y)}H${f((wNut + (wHeel - wNut) * (y - nut) / (heel - nut)) / 2 - .004)}"/>`).join('') +
-    dots.map(([a, b2, dbl]) => { const y = (frets[a - 1] + (a > 1 ? frets[a - 2] : nut)) / 2; return dbl ? C_(-.025, f(y), fretW, 's-pearl') + C_(.025, f(y), fretW, 's-pearl') : C_(0, f(y), fretW, 's-pearl'); }).join('') +
-    `<path class="s-nut" d="M${-wNut / 2} ${nut}H${wNut / 2}"/>`;
-  const strings2 = (n, yB, yN, wB, wN, cls = 's-str2') => Array.from({ length: n }, (_, i) => { const t = n > 1 ? i / (n - 1) - .5 : 0; return `<path class="${cls === 's-str2' && n === 6 && i < 3 ? 's-strw' : cls}" d="M${f(t * wB)} ${f(yB)}L${f(t * wN)} ${f(yN)}"/>`; }).join('');
 
+  const mixHex = (a, b, t) => '#' + [0, 2, 4].map(k => Math.round(parseInt(a.substr(1 + k, 2), 16) * (1 - t) + parseInt(b.substr(1 + k, 2), 16) * t).toString(16).padStart(2, '0')).join('');   // blend two hex colours
   // guitars are photos: fitted to the footprint, with a soft shadow on the deck
   const photo = (uri, w, d) => `<image href="${uri}" x="${f(-w / 2)}" y="${f(-d / 2)}" width="${f(w)}" height="${f(d)}" preserveAspectRatio="xMidYMid meet" filter="url(#spPhoto)"/>`;
   MODEL_ART.el_guitar = {};
@@ -3065,7 +3037,7 @@ const SYM = (() => {
     rad('spKnobC', [[0, '#fffbf2'], [1, '#cfc4a6']], .35, .3) + rad('spKnobB', [[0, '#62666c'], [1, '#0f1012']], .35, .3) + rad('spKnobA', [[0, '#f0b45a'], [1, '#8a4f14']], .35, .3) +
     lin('spMicBlk', [[0, '#121417'], [.3, '#4d535a'], [.55, '#23262b'], [1, '#0c0e10']]) + lin('spMicSil', [[0, '#7f8890'], [.3, '#f3f6f8'], [.55, '#c3c9ce'], [1, '#737c84']]) +
     lin('spMicRed', [[0, '#5e0b14'], [.3, '#e8505b'], [.55, '#b8232f'], [1, '#4f0810']]) + lin('spGold', [[0, '#b99a52'], [.35, '#f6e7b8'], [1, '#a88a44']]) +
-    rad('spMesh', [[0, '#ffffff'], [.45, '#cdd3d8'], [1, '#7a838b']], .38, .32) + rad('spMeshDk', [[0, '#737a82'], [.5, '#2d3136'], [1, '#0c0e10']], .38, .32) + DEFS.join('');
+    rad('spMesh', [[0, '#ffffff'], [.45, '#cdd3d8'], [1, '#7a838b']], .38, .32) + rad('spMeshDk', [[0, '#737a82'], [.5, '#2d3136'], [1, '#0c0e10']], .38, .32);
 
   const socket = (cx, cy) => circ(cx, cy, .17, 's-white') + circ(cx - .06, cy, .03, 's-dark') + circ(cx + .06, cy, .03, 's-dark');
   function console_(w, d) {   // top-down mixing desk: control surface, a glowing screen, channel strips with scribble colours, meters and faders, a master section, the padded armrest
@@ -3148,7 +3120,6 @@ const SYM = (() => {
     drum_shield: '<rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(-3.230 -0.064) rotate(18.10)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(-3.230 -0.064) rotate(18.10)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(-1.636 0.321) rotate(9.05)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(-1.636 0.321) rotate(9.05)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(0.000 0.450) rotate(-0.00)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(0.000 0.450) rotate(-0.00)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(1.636 0.321) rotate(-9.05)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(1.636 0.321) rotate(-9.05)"/><rect class="s-plexi" x="-0.790" y="-.14" width="1.581" height=".28" rx=".05" transform="translate(3.230 -0.064) rotate(-18.10)"/><path class="s-shine" d="M-0.570 -.06H-0.070" transform="translate(3.230 -0.064) rotate(-18.10)"/><circle class="s-white" cx="-2.441" cy="0.160" r=".08"/><circle class="s-white" cx="-0.820" cy="0.418" r=".08"/><circle class="s-white" cx="0.820" cy="0.418" r=".08"/><circle class="s-white" cx="2.441" cy="0.160" r=".08"/>',
     gtr_amp: box(2, 1, 'inst') + rect(-.92, .1, 1.84, .32, 's-grille', .04) + rect(-.35, -.22, .7, .14, 's-dark', .07) + grid(-.75, -.34, 6, 1, .12, 0, .035, 's-white') + circ(.82, -.34, .035, 's-red'),
     bass_amp: box(2, 1.5, 'inst') + rect(-.92, .25, 1.84, .42, 's-grille', .04) + rect(-.85, -.68, 1.7, .6, 'body c-infra s-edge', .05) + grid(-.65, -.38, 7, 1, .16, 0, .04, 's-white') + rect(-.25, -.62, .5, .1, 's-dark', .05) + circ(.72, -.38, .04, 's-led'),
-    get midi_keys() { return this.keys; },
     // controller, not a rig: dark body, pitch and mod wheels, pads and knobs, so it can't be mistaken for the keyboard rig
     midi_keys: line(-2.1, -.9, -1.6, .9, 's-thin') + line(-1.6, -.9, -2.1, .9, 's-thin') + line(2.1, -.9, 1.6, .9, 's-thin') + line(1.6, -.9, 2.1, .9, 's-thin') +
       rect(-2.5, -.75, 5, 1.5, 'body c-infra s-edge', .1) + rect(-1.8, -.68, 4.15, .58, 's-white', .03) +
@@ -3930,7 +3901,6 @@ function renderPlot() {
     const o = lanes.get(c.id) || raw;
     const isSel = sel?.kind === 'cable' && sel.id === c.id, isHov = hoverCid === c.id && !drag && !pending;
     const rel = isHov ? ' hl' : tr ? (tr.cables.has(c.id) ? ' hl' : ' dim') : selItem ? ((fset ? fset.has(c.from) || fset.has(c.to) : selSet.has(c.from) || selSet.has(c.to)) ? ' hl' : ' dim') : (sel?.kind === 'cable' && !isSel ? ' dim' : quiet ? ' quiet' : '');
-    const ps = o.map(p => p.join(',')).join(' ');
     // with "inside channels" hidden, only the stretches on the open stage are drawn (a selected cable still shows all of it)
     const parts = cableView.hideInCh ? cableParts(c) : null;
     const segs = parts?.inside && !isSel ? parts.exposed : [c.type === 'inst' ? naturalLead(o, c) : o];
@@ -4987,6 +4957,7 @@ svg.addEventListener('pointermove', e => {
   hoverPt = toFt(e);
   if (placing && !drag) { renderPlot(); return; }
   if (mode === 'measure' && measure?.live === 'click' && !drag) { measure.b = measurePt(e, measure.a); renderPlot(); return; }
+  if (drag?.kind === 'measure' && !measure) drag = null;   // measuring was cancelled mid-drag (Esc, or another tool)
   if (drag?.kind === 'measure') { measure.b = measurePt(e, measure.a); if (Math.hypot(measure.b[0] - measure.a[0], measure.b[1] - measure.a[1]) > .15) drag.moved = true; renderPlot(); return; }
   if (drag?.kind === 'rot') {
     const it = itemById(drag.id), p = toFt(e); if (!it) return;
@@ -5063,6 +5034,7 @@ function endDrag() {
   }
   if (d.kind === 'pan') { if (!d.moved && sel) { sel = null; renderPlot(); renderInspector(); } return; }
   if (d.kind === 'measure') {
+    if (!measure) return;
     if (!d.moved) { measure.live = 'click'; toast('Now click where to measure to'); } else measure.live = null;
     renderPlot(); return;
   }
@@ -5323,7 +5295,7 @@ function openPaper(anchor) {
   if (anchor) requestAnimationFrame(() => $(anchor)?.scrollIntoView({ block: 'start' }));
   else $('paperView').scrollTop = 0;
 }
-function switchWeek(id) { if (!db.plans[id]) return; compare = null; plan = db.plans[id]; history = []; future = []; sel = null; pending = null; delArmed = false; needFit = true; save(); renderAll(); }
+function switchWeek(id) { if (!db.plans[id]) return; if (!$('rackDlg').hidden) closeRack(); compare = null; plan = db.plans[id]; history = []; future = []; sel = null; pending = null; delArmed = false; needFit = true; save(); renderAll(); }
 /* empty the open week: everything, or everything but the stage (shape, size, colour, house) and the room settings */
 function clearWeek(all) {
   mutate(() => {
@@ -6386,9 +6358,9 @@ function renderRack() {
       <div class="row"><button class="btn" data-rkmove="-1" title="Move up">${ic('chevL', 'sm')}Up</button><button class="btn" data-rkmove="1" title="Move down">Down${ic('chevR', 'sm')}</button><button class="btn danger" id="rkDel">${ic('trash', 'sm')}Remove</button></div></div>`
       : `<p class="hint">Add devices from the library. Drag them in the rack to reorder, click one to edit it.</p>`}`;
 }
-function rkMutate(fn) { const it = itemById(rk.id); mutate(() => fn(it)); renderRack(); }
+function rkMutate(fn) { const it = itemById(rk.id); if (!it) { closeRack(); return; } mutate(() => fn(it)); renderRack(); }   // the rack can vanish under the dialog (undo)
 function rkAdd(key, name, u, watts) {
-  const it = itemById(rk.id), sp = RACK_DEV[key], uu = sp ? sp.u : u;
+  const it = itemById(rk.id), sp = RACK_DEV[key], uu = sp ? sp.u : u; if (!it) { closeRack(); return; }
   const at = freeSlot(it, uu);
   if (at < 0) { toast(`No room for ${uu}U. Make the rack taller or remove something.`); return; }
   const d = { id: uid(), key: sp ? key : 'custom', name: sp ? sp.name : name, u: uu, at };
@@ -6402,7 +6374,7 @@ $('rkLib').addEventListener('click', e => {
 });
 $('rkLib').addEventListener('input', e => { if (e.target.id === 'rkSearch') { rk.q = e.target.value; const pos = e.target.selectionStart; renderRack(); const s = $('rkSearch'); s.focus(); s.setSelectionRange(pos, pos); } });
 $('rkSide').addEventListener('change', e => {
-  const t = e.target, it = itemById(rk.id), d = it.devices.find(x => x.id === rk.sel); if (!d) return;
+  const t = e.target, it = itemById(rk.id), d = it?.devices.find(x => x.id === rk.sel); if (!d) return;
   if (t.id === 'rkDName') rkMutate(() => { d.name = t.value || d.name; });
   if (t.id === 'rkDNote') rkMutate(() => { d.note = t.value; });
   if (t.id === 'rkDW') rkMutate(() => { d.watts = Math.max(0, Number(t.value) || 0); });
@@ -6410,7 +6382,7 @@ $('rkSide').addEventListener('change', e => {
 });
 $('rkSide').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  const it = itemById(rk.id), d = it.devices.find(x => x.id === rk.sel); if (!d) return;
+  const it = itemById(rk.id), d = it?.devices.find(x => x.id === rk.sel); if (!d) return;
   if (b.id === 'rkDel') { rkMutate(i => { i.devices = i.devices.filter(x => x.id !== d.id); }); rk.sel = null; renderRack(); }
   if (b.dataset.rkmove) {
     const dir = Number(b.dataset.rkmove); let at = d.at + dir;
@@ -6420,21 +6392,21 @@ $('rkSide').addEventListener('click', e => {
 });
 $('rkRack').addEventListener('pointerdown', e => {
   const el = e.target.closest('[data-rkdev]'); if (!el) { rk.sel = null; renderRack(); return; }
-  const it = itemById(rk.id), d = it.devices.find(x => x.id === el.dataset.rkdev);
+  const it = itemById(rk.id), d = it?.devices.find(x => x.id === el.dataset.rkdev); if (!d) return;
   rk.sel = d.id; rk.drag = { id: d.id, y: e.clientY, at0: d.at, snap: JSON.stringify(plan), moved: false };
   try { $('rkRack').setPointerCapture(e.pointerId); } catch { /* ok */ }
   renderRack();
 });
 $('rkRack').addEventListener('pointermove', e => {
   if (!rk.drag) return;
-  const it = itemById(rk.id), d = it.devices.find(x => x.id === rk.drag.id);
+  const it = itemById(rk.id), d = it?.devices.find(x => x.id === rk.drag.id); if (!d) { rk.drag = null; return; }
   const uPx = parseFloat(getComputedStyle($('rkRack')).getPropertyValue('--u')) || 40;
   const at = rk.drag.at0 + Math.round((e.clientY - rk.drag.y) / uPx);
   if (at !== d.at && slotFree(it, at, d.u, d.id)) { d.at = at; rk.drag.moved = true; renderRack(); }
 });
 $('rkRack').addEventListener('pointerup', () => { if (rk.drag?.moved) { history.push(rk.drag.snap); future = []; save(); } rk.drag = null; renderRack(); });
-$('rkName').addEventListener('change', e => { const it = itemById(rk.id); mutate(() => { it.label = e.target.value; it.labelEdited = !!e.target.value; }); renderRack(); });
-$('rkSize').addEventListener('change', e => { const it = itemById(rk.id); mutate(() => { it.rackU = Number(e.target.value); }); renderRack(); });
+$('rkName').addEventListener('change', e => { const it = itemById(rk.id); if (!it) { closeRack(); return; } mutate(() => { it.label = e.target.value; it.labelEdited = !!e.target.value; }); renderRack(); });
+$('rkSize').addEventListener('change', e => { const it = itemById(rk.id); if (!it) { closeRack(); return; } mutate(() => { it.rackU = Number(e.target.value); }); renderRack(); });
 $('rkDone').onclick = closeRack;
 $('rackDlg').addEventListener('pointerdown', e => { if (e.target.id === 'rackDlg') closeRack(); });
 
@@ -6887,7 +6859,6 @@ function renderLibrary() {
       <button class="iconbtn" data-libdel="${id}" aria-label="Delete ${esc(longDate(p.date))}" title="Delete this week">${ic('trash', 'sm')}</button></div>`;
   }).join('')}</div>`).join('');
   const su = Object.entries(setups());
-  const before = (() => { try { return localStorage.getItem('stageplot.beforeReset'); } catch { return null; } })();
   const el = $('libBody'); if (!el) return;
   el.innerHTML = `
     ${multiVenue() ? `<div class="vchips" role="group" aria-label="Venue">${[['', 'All venues', Object.keys(db.plans).length], ...venueList().map(v => [v.id, v.name, venueWeekIds(v.id).length])].map(([id, n, c]) => `<button class="vchip" data-libvenue="${id}" aria-pressed="${lib.venue === id}">${esc(n)}<span>${c}</span></button>`).join('')}</div>` : ''}
@@ -7114,7 +7085,7 @@ function homeStage() {
 const gearPrefs = () => (db.gear ||= { hidden: [], owned: {} });
 const gearHidden = t => (db?.gear?.hidden || []).includes(t);
 function homeGear() {
-  const g = gearPrefs(), counts = {}, custom = g.custom || [];
+  const g = gearPrefs(), counts = {};
   for (const i of plan.items) counts[i.type] = (counts[i.type] || 0) + 1;
   const weeksUsing = t => Object.values(db.plans).filter(p => p.items.some(i => i.type === t)).length;
   const row = t => {
@@ -7225,7 +7196,7 @@ function homePrefs() {
   return hsec('Look', '', `<div class="hpref"><span><b>Theme</b><small>Match your device, or always light or dark</small></span>${seg('theme', themePref, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark']])}</div>
       <div class="hpref"><span><b>Detail</b><small>Simple shows everyday controls; Advanced shows every setting and tool</small></span>${seg('detail', ui.adv ? 'adv' : 'simple', [['simple', 'Simple'], ['adv', 'Advanced']])}</div>
       <div class="hpref"><span><b>Units</b><small>Sizes, distances and cable lengths on the plot and the paperwork</small></span>${seg('units', imperial() ? 'ft' : 'm', [['m', 'Metres'], ['ft', 'Feet & inches']])}</div>`) +
-    hsec('Working on the plot', '', `<div class="hpref"><span><b>Snap gear to</b><small>Rounds positions as you move gear (hold Alt to move freely)</small></span><select id="hp-snap" aria-label="Snap gear to">${[snapOpts()[3], ...snapOpts().slice(0, 3)].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    hsec('Working on the plot', '', `<div class="hpref"><span><b>Snap gear to</b><small>Rounds positions as you move gear (hold Alt to move freely)</small></span><select id="hp-snap" aria-label="Snap gear to">${(() => { const o = snapOpts(), near = ui.snap ? o.filter(([v]) => v).reduce((a, b) => Math.abs(b[0] - ui.snap) < Math.abs(a[0] - ui.snap) ? b : a)[0] : 0; return [o[3], ...o.slice(0, 3)].map(([v, l]) => `<option value="${v}" ${near === v ? 'selected' : ''}>${l}</option>`).join(''); })()}</select></div>
       ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}`) +
     hsec('Use it offline', '', `<div class="hpref"><span><b>${matchMedia('(display-mode: standalone)').matches ? 'Installed on this device' : 'Install Stageplot on this device'}</b><small>${swState.ok ? 'Works with no signal: the app is saved on this device, and your weeks always are.' : 'Your weeks are always saved on this device. Open Stageplot from its own web address to install it and use it with no signal.'}${/iPhone|iPad/.test(navigator.userAgent) && !installPrompt ? ' On iPhone or iPad: Share → Add to Home Screen.' : ''}</small></span>${installPrompt ? `<button class="btn primary" id="hp-install">${ic('save', 'sm')}Install</button>` : ''}</div>`);
 }
