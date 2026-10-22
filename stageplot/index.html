@@ -242,6 +242,13 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .roster small { display: block; color: var(--muted); font-size: 12px; }
 .roster .maps { color: var(--ink-2); }
 .err { color: var(--bad); font-size: 13px; margin: 0; background: var(--bad-soft); padding: 8px 10px; border-radius: var(--r-sm); }
+.skel { display: grid; gap: 10px; }
+.skel-row { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; } .skel-row > span { display: grid; gap: 6px; grid-column: span 1; } .skel-row > span:only-child { grid-column: 1 / -1; }
+.sk { display: block; height: 11px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-3) 0%, color-mix(in srgb, var(--surface-3) 45%, var(--surface)) 50%, var(--surface-3) 100%) 0 0 / 200% 100%; animation: skel 1.4s ease-in-out infinite; }
+.sk-sm { height: 8px; } .sk-box { width: 14px; height: 14px; border-radius: 4px; } .sk-field { height: 32px; border-radius: 8px; }
+.skel-row:nth-child(2) .sk { animation-delay: .12s; } .skel-row:nth-child(3) .sk { animation-delay: .24s; } .skel-row:nth-child(4) .sk { animation-delay: .36s; }
+@keyframes skel { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
 .loading { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
 .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--accent); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -827,6 +834,8 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .hero h2 { margin: 4px 0 6px; font-size: 22px; letter-spacing: -.01em; }
 .hero p { margin: 0; color: rgba(255,255,255,.78); font-size: 13.5px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .hero .eyebrow { color: rgba(255,255,255,.7); }
+.hero p.herostats { gap: 6px 14px; } .herostats .hstat { display: inline-flex; gap: 4px; align-items: baseline; white-space: nowrap; }
+.herostats .hstat b { font: 600 14px var(--f-mono); color: #fff; font-variant-numeric: tabular-nums; }
 .herocount { font: 600 11.5px var(--f-mono); opacity: .75; }
 .herobtns { flex-wrap: wrap; }
 .hero .chip { background: rgba(255,255,255,.16); color: #fff; border-color: transparent; }
@@ -1157,6 +1166,15 @@ td.spare { color: var(--muted); font-style: italic; }
 @media print { .sheet thead th { position: static !important; box-shadow: none; } .sheet tbody tr:nth-child(even) td { background: #f4f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 /* logo, library status edge */
 .logoprev { height: 40px; max-width: 120px; object-fit: contain; border-radius: 6px; background: var(--surface-2); padding: 3px; }
+.titleblock { display: grid; grid-template-columns: 1.6fr 1.6fr 1.2fr 1fr .7fr 1.3fr 1fr; margin-top: 10px; border: 1px solid var(--ink-2); border-radius: 4px; overflow: hidden; background: var(--surface); }
+.tb-cell { display: grid; gap: 2px; padding: 6px 9px 7px; border-left: 1px solid var(--line-2); min-width: 0; }
+.tb-cell:first-child { border-left: 0; }
+.tb-cell span { font: 600 9.5px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tb-cell b { font: 550 12.5px/1.25 var(--f-ui); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-cell b i { color: var(--muted); font-style: normal; font-weight: 400; }
+.tb-cell:nth-child(5) b, .tb-cell:nth-child(4) b { font-family: var(--f-mono); font-weight: 500; }
+@media (max-width: 760px) { .titleblock { grid-template-columns: 1fr 1fr; } .tb-cell { border-left: 0; border-top: 1px solid var(--line-2); } .tb-cell:nth-child(even) { border-left: 1px solid var(--line-2); } .tb-cell:nth-child(-n+2) { border-top: 0; } .tb-cell:last-child { grid-column: 1 / -1; } }
+@media print { .titleblock { border-color: #111; background: #fff; } .tb-cell { border-color: #999; } .tb-cell span { color: #555; } .tb-cell b { color: #111; } }
 .doclogo { position: absolute; right: 24px; top: 22px; height: 48px; max-width: 160px; object-fit: contain; }
 .rlogo { height: 44px; max-width: 120px; object-fit: contain; align-self: center; }
 .rhead { align-items: center; }
@@ -4443,6 +4461,12 @@ function spotsHtml() {
   return `<div class="spotpick" role="group" aria-label="Whose card">${plan.team.map(t => `<button class="chipbtn" data-spot="${t.id}" aria-pressed="${spotSel === t.id}">${esc(firstName(t.name))}</button>`).join('')}<button class="chipbtn" data-spot="all" aria-pressed="${spotSel === 'all'}">Everyone</button></div>
     <div class="spotlist">${show.map(card).join('')}</div>`;
 }
+/* a drawing-style title block under the overview plot: who, what, when, which revision */
+function titleBlock() {
+  const D = defaultsOf(), cell = (k, v, cls = '') => `<div class="tb-cell${cls}"><span>${k}</span><b${v ? ` title="${esc(v)}"` : ''}>${v ? esc(v) : '<i>—</i>'}</b></div>`;
+  return `<div class="titleblock" aria-label="Title block">${cell('Venue', D.org, ' tb-wide')}${cell('Service', plan.name || 'Untitled service', ' tb-wide')}${cell('Date', longDate(plan.date))}
+    ${cell('Stage', `${mVal(plan.stage.w)} × ${mVal(plan.stage.d)} m`)}${cell('Revision', `r${plan.rev || 0}`)}${cell('Drawn by', D.contact)}${cell('Printed', new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))}</div>`;
+}
 /* ---------- the rider: one clean black-and-white page every venue understands ---------- */
 function riderPlot() {
   const keep = { color: plan.stage.color, texture: plan.stage.texture };
@@ -4572,7 +4596,7 @@ function renderPaper() {
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
     <div class="docnav"><nav role="tablist" aria-label="Sheets" style="display:contents">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav><span class="printbar"><button class="btn" id="sheetsBtn" data-needs-dl title="Every sheet in one page you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download sheets</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
     <div class="sheetgrid" data-tab="${paperTab}">
-    <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(plotSnapshot())}</div>${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${mVal(foh.y - plan.stage.d)} m out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
+    <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${mVal(foh.y - plan.stage.d)} m out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
     ${(() => { const pid = prevWeekId(); if (!pid) return ''; const old = db.plans[pid], d = weekChanges(old);
       const li = [...d.joined.map(n => `<li class="add">+ ${esc(n)} joins</li>`), ...d.left.map(n => `<li class="rem">− ${esc(n)} is off</li>`),
@@ -4607,12 +4631,20 @@ function renderAll() { renderHeader(); renderRail(); renderPlot(); renderInspect
 /* ===================================================================
    Planning Center panel
    =================================================================== */
+// while Planning Center answers: the shape of what's coming (roster rows, or a picker) in soft grey instead of a bare spinner
+function pcoBusyHtml() {
+  if (!pco.busy) return '';
+  const rows = /roster/i.test(pco.busy) ? 4 : /plans/i.test(pco.busy) ? 1 : 2, people = /roster/i.test(pco.busy);
+  return `<div class="loading" role="status"><span class="spin"></span>${esc(pco.busy)}</div><div class="skel" aria-hidden="true">${Array.from({ length: rows }, (_, i) => people
+    ? `<div class="skel-row"><i class="sk sk-box"></i><span><i class="sk" style="width:${[62, 48, 70, 55][i]}%"></i><i class="sk sk-sm" style="width:${[38, 52, 30, 44][i]}%"></i></span></div>`
+    : `<div class="skel-row"><span><i class="sk sk-sm" style="width:26%"></i><i class="sk sk-field"></i></span></div>`).join('')}</div>`;
+}
 function pcoHtml() {
   const head = (sub) => `<div class="card-head"><span class="badge">${ic('calendar', 'sm')}</span><div><h3>Planning Center</h3><p>${sub}</p></div></div>`;
   if (!window.claude?.use) return '';   // no connector here: the paste and add-person options below say it all
   if (pco.mcp === undefined) return `<div class="card soft">${head('Checking your connection…')}</div>`;
   if (pco.mcp === null) return `<div class="card soft">${head('Connectors aren’t available in this view. Paste a list below.')}</div>`;
-  const busy = pco.busy ? `<div class="loading" role="status"><span class="spin"></span>${esc(pco.busy)}</div>` : '';
+  const busy = pcoBusyHtml();
   const err = pco.err ? `<p class="err" role="alert">${esc(pco.err)}</p>` : '';
   if (!pco.types.length) return `<div class="card soft">${head('Pull this week’s scheduled team straight from Services.')}
     <button id="pcoStart" class="btn primary block" ${pco.busy ? 'disabled' : ''}>${ic('calendar', 'sm')}Import from Planning Center</button>${busy}${err}</div>`;
@@ -6634,7 +6666,7 @@ function weekStats(p) {   // the same checks the app runs, for any saved week
   const keep = plan; plan = p;
   try {
     const w = warnings();
-    return { team: p.team.length, gear: p.items.filter(i => !['person', 'platform'].includes(cat(i).shape)).length, ins: inputList().length, cables: p.cables.length, checks: w.length, bad: w.filter(x => x.lvl === 'bad').length, load: loadinProgress(), borrow: shortages().reduce((n, x) => n + x.short, 0) };
+    return { team: p.team.length, gear: p.items.filter(i => !['person', 'platform'].includes(cat(i).shape)).length, ins: inputList().length, cables: p.cables.length, ...(() => { const t = totals(); return { cab: toM(t.cab), kw: t.watts / 1000 }; })(), checks: w.length, bad: w.filter(x => x.lvl === 'bad').length, load: loadinProgress(), borrow: shortages().reduce((n, x) => n + x.short, 0) };
   } catch { return { team: p.team.length, gear: p.items.length, ins: 0, cables: p.cables.length, checks: 0, bad: 0, load: { done: 0, total: 0 }, borrow: 0 }; }
   finally { plan = keep; }
 }
@@ -6748,17 +6780,30 @@ const hcheck = (id, label, on, hint = '') => `<label class="hrow" for="${id}"><i
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function renderHome() {
-  if (view !== 'home') return;
+  if (view !== 'home') { countedKey = ''; return; }   // coming back to Home counts the figures up again
   $('homeNav').innerHTML = `<div class="homehello"><div class="eyebrow">${esc(defaultsOf().org || 'Stageplot')}</div><h1>Home</h1></div>` +
     HOME_TABS.map(([k, icon, label, sub]) => `<button class="hnav" data-home="${k}" aria-current="${k === homeTab ? 'page' : 'false'}">${ic(icon, 'sm')}<span><b>${label}</b><small>${sub}</small></span></button>`).join('');
   const body = { library: homeLibrary, setups: homeSetups, stage: homeStage, gear: homeGear, pco: homePco, prefs: homePrefs, data: homeData }[homeTab]();
   const keep = document.activeElement?.id, pos = document.activeElement?.selectionStart;
   const [, , title, sub] = HOME_TABS.find(([k]) => k === homeTab);
   $('homeBody').innerHTML = (homeTab === 'library' ? '' : `<div class="hpage"><h2>${title}</h2><p>${sub}</p></div>`) + body;
-  if (homeTab === 'library') renderLibrary();
+  if (homeTab === 'library') { renderLibrary(); countUp($('homeBody').querySelector('.herostats')); }
   if (keep && $(keep) && $('homeBody').contains($(keep))) { $(keep).focus(); try { if (pos != null) $(keep).setSelectionRange(pos, pos); } catch { /* not a text input */ } }
 }
 
+/* the Next up figures count up once when Home opens (or the week behind them changes), not on every redraw */
+let countedKey = '';
+function countUp(box) {
+  if (!box) return;
+  const els = [...box.querySelectorAll('[data-count]')], key = els.map(e => e.dataset.count).join('|') + '|' + (box.closest('.hero')?.querySelector('[data-libopen]')?.dataset.libopen || '');
+  if (key === countedKey || matchMedia('(prefers-reduced-motion: reduce)').matches) { countedKey = key; return; }
+  countedKey = key; const t0 = performance.now(), dur = 750;
+  const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    for (const el of els) { if (!el.isConnected) return; const n = Number(el.dataset.count), dp = Number(el.dataset.dp || 0); el.textContent = (n * e).toFixed(dp); }
+    if (k < 1) requestAnimationFrame(step); };
+  for (const el of els) el.textContent = (0).toFixed(Number(el.dataset.dp || 0));
+  requestAnimationFrame(step);
+}
 /* ----- Library ----- */
 let heroCache = { key: '', html: '' };
 function heroPicture(p) {   // the week's stage, drawn the way the paperwork draws it, cropped to the stage
@@ -6777,7 +6822,7 @@ function homeLibrary() {
   const hero = next ? `<section class="hero">
       ${next.items.length ? `<div class="heropic" aria-hidden="true">${heroPicture(next)}${next.team.length ? `<div class="heroteam">${next.team.slice(0, 8).map((t, i) => `<span class="avatar hued" style="--hue:${PERSON_HUES[i % PERSON_HUES.length]}" title="${esc(t.name)}">${esc(initials(t.name))}</span>`).join('')}${next.team.length > 8 ? `<span class="avatar">+${next.team.length - 8}</span>` : ''}</div>` : ''}</div>` : ''}
       <div><div class="eyebrow">${next.date >= today ? 'Next up' : 'Most recent'} · ${esc(longDate(next.date))}</div><h2>${esc(next.name || 'Untitled service')}</h2>
-        <p>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} ${chip}${st.borrow ? ` <span class="chip warn">Borrow ${st.borrow}</span>` : ''}</p></div>
+        <p class="herostats">${[[st.team, st.team === 1 ? 'person' : 'people'], [st.gear, st.gear === 1 ? 'item' : 'items'], [st.ins, st.ins === 1 ? 'input' : 'inputs'], ...(st.cab ? [[Math.round(st.cab), 'm cable'], [st.kw, 'kW', 1]] : [])].map(([n, l, dp]) => `<span class="hstat"><b data-count="${n}"${dp ? ` data-dp="${dp}"` : ''}>${dp ? n.toFixed(dp) : n}</b> ${l}</span>`).join('')} ${chip}${st.borrow ? ` <span class="chip warn">Borrow ${st.borrow}</span>` : ''}</p></div>
       <div class="row herobtns" style="gap:8px"><button class="btn primary" data-libopen="${next.id}">${ic('plot', 'sm')}Open the plot</button><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button>
         <button class="btn" data-libprint="${next.id}" title="Print every sheet, or save them as a PDF">${ic('save', 'sm')}Print or PDF</button><button class="btn" data-libloadin="${next.id}" title="Tick things off on the day">${ic('check', 'sm')}Load-in${st.load.total ? ` <span class="herocount">${st.load.done}/${st.load.total}</span>` : ''}</button></div>
     </section>` : '';
@@ -6800,7 +6845,7 @@ function homeSetups() {
 /* ----- Stage defaults ----- */
 function defaultsOf() {
   const d = (typeof db !== 'undefined' && db?.defaults) || {};
-  return { org: d.org || '', name: d.name || 'Sunday service', day: d.day ?? 0, setupId: d.setupId && db?.setups?.[d.setupId] ? d.setupId : '',
+  return { org: d.org || '', contact: d.contact || '', name: d.name || 'Sunday service', day: d.day ?? 0, setupId: d.setupId && db?.setups?.[d.setupId] ? d.setupId : '',
     stage: { w: fromM(10), d: fromM(6), house: fromM(12), houseW: fromM(16), ...(d.stage || {}) },
     settings: { slack: 10, ends: fromM(1), ...(d.settings || {}) } };
 }
@@ -6811,6 +6856,7 @@ function homeStage() {
       `<div class="field logofield"><span>Church logo <small class="hint" style="font-weight:400">on the paperwork, the rider and My spot cards</small></span><div class="row" style="gap:8px">${db.defaults?.logo ? `<img class="logoprev" src="${db.defaults.logo}" alt="Your logo">` : ''}<label class="btn">${ic('plus', 'sm')}${db.defaults?.logo ? 'Change' : 'Upload a logo'}<input type="file" id="hd-logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>${db.defaults?.logo ? '<button class="btn quiet" type="button" id="hd-logo-del">Remove</button>' : ''}</div></div>
       <div class="grid2"><div class="field"><label for="hd-org">Church or venue</label><input id="hd-org" type="text" data-deftext="org" value="${esc(D.org)}" placeholder="e.g. Grace Church, Main campus"></div>
        <div class="field"><label for="hd-name">Usual service name</label><input id="hd-name" type="text" data-deftext="name" value="${esc(D.name)}" placeholder="Sunday service"></div>
+       <div class="field"><label for="hd-contact">Drawn by <small class="hint" style="font-weight:400">name and number, for the title block</small></label><input id="hd-contact" type="text" data-deftext="contact" value="${esc(D.contact)}" placeholder="e.g. Sam Lee · 0412 345 678"></div>
        <div class="field"><label for="hd-day">Usual day</label><select id="hd-day" data-defsel="day">${DAYS.map((n, i) => `<option value="${i}" ${i === D.day ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
        <div class="field"><label for="hd-setup">Start new weeks from</label><select id="hd-setup" data-defsel="setupId"><option value="">A blank stage</option>${su.map(([id, x]) => `<option value="${id}" ${id === D.setupId ? 'selected' : ''}>Setup: ${esc(x.name)}</option>`).join('')}</select></div></div>`) +
     hsec('Stage', 'Size and colour of the stage for new weeks.',
@@ -6914,7 +6960,7 @@ function homePco() {
     : conn === null ? ['off', 'Connectors are off in this view', 'Open Stageplot in Claude with Planning Center connected to import teams.']
     : pco.err ? ['bad', 'Couldn’t reach Planning Center', pco.err]
     : pco.types.length ? ['ok', 'Connected', `${plural(pco.types.length, 'service type')} found.`] : ['ready', 'Ready to connect', 'Load your service types to check the connection and pick a default.'];
-  const busy = pco.busy ? `<div class="loading" role="status"><span class="spin"></span>${esc(pco.busy)}</div>` : '';
+  const busy = pcoBusyHtml();
   const typeSel = pco.types.length ? `<select id="hp-type">${pco.types.map(t => `<option value="${esc(t.id)}" ${t.id === (P.typeId || pco.typeId) ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>`
     : `<input id="hp-type" type="text" disabled value="${esc(P.typeName || 'Load service types first')}">`;
   const roleOpts = cur => `<option value="" ${!cur ? 'selected' : ''}>Automatic</option><option value="-" ${cur === '-' ? 'selected' : ''}>Not on stage</option>${ROLE_ORDER.map(r => `<option ${cur === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}`;
@@ -7016,7 +7062,7 @@ $('homeView').addEventListener('change', e => {
   if (t.id === 'gf-group') { gearForm.group = t.value; return; }
   if (t.id === 'gf-img') { loadGearImage(t.files?.[0]); t.value = ''; return; }
   if (t.dataset.def) { const v = Number(t.value); if (!Number.isFinite(v)) return; setDefault(t.dataset.def, t.dataset.raw ? v : fromM(v)); return; }
-  if (t.dataset.deftext) { setDefault(t.dataset.deftext, t.value.trim()); if (t.dataset.deftext === 'org') { renderHome(); renderPaper(); } return; }
+  if (t.dataset.deftext) { setDefault(t.dataset.deftext, t.value.trim()); if (t.dataset.deftext === 'org' || t.dataset.deftext === 'contact') { renderHome(); renderPaper(); } return; }
   if (t.dataset.defsel) { setDefault(t.dataset.defsel, t.dataset.defsel === 'day' ? Number(t.value) : t.value); return; }
   if (t.id === 'hd-autopatch') { setDefault('settings.autoPatch', t.checked); return; }
   if (t.id === 'hd-overhead') { setDefault('settings.overheadSpk', t.checked); return; }
