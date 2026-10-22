@@ -1103,6 +1103,7 @@ td.spare { color: var(--muted); font-style: italic; }
     -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent); }
   .docnav nav::-webkit-scrollbar { display: none; } .docnav nav button { flex: none; white-space: nowrap; } .docnav .printbar { justify-content: flex-end; }
 }
+.tuckdot { fill: var(--house-ink); stroke: var(--deck); stroke-width: var(--csh, .04px); opacity: .85; pointer-events: none; }
 /* one style for everything that floats over the canvas */
 :root { --fl-r: 14px; --fl-blur: blur(14px) saturate(1.25); }
 .float .panel, .emptycard, .cabmenu, .f-foh, .pres-title, .ctxmenu, .moremenu, #weekPop, .hovercard {
@@ -3399,7 +3400,8 @@ function aimLinks(selSet) {
   }
   return s;
 }
-const TUCK_TYPES = new Set(['di_mono', 'di_stereo', 'iem', 'usb_if', 'midi_fs', 'ac_preamp']);
+const TUCK_TYPES = new Set(['di_mono', 'di_stereo', 'iem']);   // passive boxes only: anything someone plays or plugs into stays drawn
+const freshGear = new Set();   // gear added this session never folds away, so it can't vanish the moment it's placed
 const lastPos = new Map(); let lastPlanId = '';
 function glide() {
   const go = glideNext && lastPlanId === plan.id && !drag && !layersBypass && !matchMedia('(prefers-reduced-motion: reduce)').matches && svg.animate;
@@ -3562,7 +3564,7 @@ function renderPlot() {
   const zOf = it => layerOf(it) + (selSet.has(it.id) && cat(it).shape !== 'platform' ? 10 : 0);   // picked gear comes to the front, so it never hides under a person
   const tucked = new Map();   // zoomed out, a person's small boxes (DIs, packs, interfaces) fold into one badge; picking the person or zooming in opens them
   if (!layersBypass && !capturing && scale < 30) {
-    for (const it of plan.items) if (it.personId && TUCK_TYPES.has(it.type) && !selSet.has(it.id) && itemShown(it)) (tucked.get(it.personId) || tucked.set(it.personId, []).get(it.personId)).push(it);
+    for (const it of plan.items) if (it.personId && TUCK_TYPES.has(it.type) && !freshGear.has(it.id) && !selSet.has(it.id) && itemShown(it)) (tucked.get(it.personId) || tucked.set(it.personId, []).get(it.personId)).push(it);
     for (const [pid, l] of [...tucked]) if (l.length < 2 || [...selSet].some(id => itemById(id)?.personId === pid)) tucked.delete(pid);
   }
   const tuckedIds = new Set([...tucked.values()].flat().map(i => i.id));
@@ -3625,6 +3627,7 @@ function renderPlot() {
       }
     }
   }
+  for (const it of tuckedIds.size ? plan.items.filter(i => tuckedIds.has(i.id)) : []) s += `<circle class="tuckdot" cx="${f3(it.x)}" cy="${f3(it.y)}" r="${f3(Math.max(.12, 3 / scale))}"/>`;
   for (const [pid, l] of tucked) {
     let cx = l.reduce((a, i) => a + i.x, 0) / l.length, cy = l.reduce((a, i) => a + i.y, 0) / l.length; const r = 8.5 / scale, fn = firstName(personById(pid)?.name || '');
     const me = plan.items.find(i => i.personId === pid && cat(i).shape === 'person');
@@ -4830,6 +4833,7 @@ function addGear(type, x, y, hit) {
     const n = plan.items.filter(i => i.type === type).length;
     const it = addItem(type, x, y, ITEM_MODELS[type] ? { model: ITEM_MODELS[type][lastModel[type]] ? lastModel[type] : type === 'el_guitar' ? lastGuitar : Object.keys(ITEM_MODELS[type])[0] } : {});
     if (hit && canSitInChannel(it)) placeInChannel(it, hit);
+    freshGear.add(it.id);
     if (type === 'stagebox') it.label = `Stage box ${String.fromCharCode(65 + n)}`;
     if (type === 'light_stand' && !inPoly(it.x, it.y, stagePoly())) { const [cx, cy] = deckCentre(); it.rot = Math.round(Math.atan2(cx - it.x, -(cy - it.y)) * 180 / Math.PI / 15) * 15; }   // a light out front comes aimed at the stage
     if (type === 'distro') it.label = `Distro ${n + 1}`;
