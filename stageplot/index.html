@@ -1106,6 +1106,24 @@ td.spare { color: var(--muted); font-style: italic; }
 .tuckdot { fill: var(--house-ink); stroke: var(--deck); stroke-width: var(--csh, .04px); opacity: .85; pointer-events: none; }
 .cabtag { pointer-events: none; } .cabtag rect { fill: var(--surface); stroke-width: var(--cw, .1px); } .cabtag text { fill: var(--ink); font-size: calc(var(--lab, .5px) * .95); font-weight: 600; }
 .snapnote { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; }
+/* quieter people: tinted with their colour, a ring in it, no glare */
+.c-person.hued { fill: color-mix(in srgb, var(--hue) 24%, var(--deck, #1b1e26)) !important; stroke: var(--hue) !important; stroke-width: .07 !important; }
+.pt-nose.hued { fill: var(--hue); opacity: .75; }
+.initials.hued { fill: color-mix(in srgb, var(--hue) 45%, #fff) !important; }
+.light-deck .initials.hued { fill: color-mix(in srgb, var(--hue) 55%, #000) !important; }
+.item:has(.c-person.hued) .pt-light, .item:has(.c-person.hued) .pt-ring { display: none; }
+.item:has(.c-person.hued) .pt-shadow { opacity: .55; }
+.gbadge circle { stroke: var(--ink-2); }
+/* labels keep a halo of the floor colour, so a cable running under them doesn't cut through the words */
+.zone.zone-out, .ruler text { paint-order: stroke; stroke: var(--house); stroke-width: calc(var(--lab, .5px) * .55); stroke-linejoin: round; }
+.zone.on-deck { paint-order: stroke; stroke: var(--deck); stroke-width: calc(var(--lab, .5px) * .5); stroke-linejoin: round; }
+.cab-case.house { stroke: var(--house); }
+/* Home: the week's stage on the Next up card */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; } .hero > div:not(.heropic):not(.herobtns) { min-width: 0; }
+.heropic { grid-column: 1 / -1; position: relative; border-radius: 12px; overflow: hidden; background: var(--house); max-height: 230px; }
+.heropic .snap { display: block; width: 100%; height: auto; max-height: 230px; }
+.heroteam { position: absolute; left: 10px; bottom: 10px; display: flex; } .heroteam .avatar { width: 30px; height: 30px; font-size: 11px; margin-right: -6px; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
 /* one style for everything that floats over the canvas */
 :root { --fl-r: 14px; --fl-blur: blur(14px) saturate(1.25); }
 .float .panel, .emptycard, .cabmenu, .f-foh, .pres-title, .ctxmenu, .moremenu, #weekPop, .hovercard {
@@ -2819,8 +2837,8 @@ const SYM = (() => {
     '<pattern id="spTexVinyl" width="4.92" height="40" patternUnits="userSpaceOnUse"><rect width="4.92" height="40" fill="#fff" fill-opacity=".025"/><rect x="2.46" width="2.46" height="40" fill="#000" fill-opacity=".035"/><path d="M.02 0V40" stroke="#000" stroke-opacity=".38" stroke-width=".045"/><path d="M.08 0V40" stroke="#fff" stroke-opacity=".1" stroke-width=".03"/></pattern>' +
     '<linearGradient id="spVinylGloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
     '<filter id="spTexMatte" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".07" numOctaves="3" seed="9"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .2 0 0 0 -.05"/></filter>' +
-    '<linearGradient id="spCov" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd66e" stop-opacity=".18"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient><linearGradient id="spCovUp" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd66e" stop-opacity=".24"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
-    '<linearGradient id="spLBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff1bd" stop-opacity=".5"/><stop offset=".6" stop-color="#ffd66e" stop-opacity=".14"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="spCov" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd66e" stop-opacity=".1"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient><linearGradient id="spCovUp" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd66e" stop-opacity=".12"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="spLBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff1bd" stop-opacity=".3"/><stop offset=".6" stop-color="#ffd66e" stop-opacity=".08"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
     '<linearGradient id="spCabG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a6774"/><stop offset="1" stop-color="#232a31"/></linearGradient><radialGradient id="spWoof" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#7b8896"/><stop offset=".6" stop-color="#3a434d"/><stop offset="1" stop-color="#1e242a"/></radialGradient>' +
     '<radialGradient id="spWash"><stop offset="0" stop-color="#ffe7a8" stop-opacity=".55"/><stop offset=".55" stop-color="#ffd27a" stop-opacity=".22"/><stop offset="1" stop-color="#ffc861" stop-opacity="0"/></radialGradient>' + '<filter id="spPhoto" x="-25%" y="-15%" width="150%" height="130%"><feDropShadow dx=".05" dy=".08" stdDeviation=".05" flood-color="#000" flood-opacity=".5"/></filter>' + '<filter id="spShadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation=".045"/></filter>' +
     '<filter id="spMic" x="-35%" y="-35%" width="170%" height="170%"><feMorphology in="SourceAlpha" operator="dilate" radius=".007" result="d"/><feFlood flood-color="#fff" flood-opacity=".16"/><feComposite in2="d" operator="in" result="rim"/>' +
@@ -3138,14 +3156,15 @@ function shapeSvg(it, w, d) {
   }
   switch (c.shape) {
     case 'person': {   // a soft disc in the role's colour: shadow below, light from above, a small notch facing the audience
-      const tone = roleTone(personById(it.personId)?.role) || 'none', r = hw, hue = personColour(it.personId);   // the person's own colour: the same in the team list, details, cards and Whose gear
-      const fill = hue ? ` style="fill:${hue}"` : '', nose = hue ? ` style="fill:color-mix(in srgb, ${hue} 62%, #000)"` : '';
+      const tone = roleTone(personById(it.personId)?.role) || 'none', hue = personColour(it.personId); let r = hw;   // the person's own colour: the same in the team list, details, cards and Whose gear
+      const fill = hue ? ` style="--hue:${hue}"` : '', nose = hue ? ` style="--hue:${hue}"` : '', hc = hue ? ' hued' : '';
+      if (hue) r = hw * .84;   // a touch smaller, so people sit in the picture instead of on top of it
       return `<circle class="pt-shadow" cx=".05" cy=".09" r="${f3(r * 1.02)}"/>` +
-        `<path class="pt-nose pt-${tone}" d="M${f3(-r * .32)} ${f3(r * .86)}Q0 ${f3(r * 1.32)} ${f3(r * .32)} ${f3(r * .86)}Z"${nose}/>` +
-        `<circle class="${cls} pt-${tone}" r="${f3(r)}"${fill}/>` +
+        `<path class="pt-nose pt-${tone}${hc}" d="M${f3(-r * .32)} ${f3(r * .86)}Q0 ${f3(r * 1.32)} ${f3(r * .32)} ${f3(r * .86)}Z"${nose}/>` +
+        `<circle class="${cls} pt-${tone}${hc}" r="${f3(r)}"${fill}/>` +
         `<ellipse class="pt-light" cx="0" cy="${f3(-r * .38)}" rx="${f3(r * .7)}" ry="${f3(r * .44)}"/>` +
         `<circle class="pt-ring" r="${f3(r * .84)}"/>` +
-        `<text class="initials pi-${tone}" text-anchor="middle" dy=".21"${hue ? ' style="fill:#10131a"' : ''}>${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
+        `<text class="initials pi-${tone}${hc}" text-anchor="middle" dy=".21"${hue ? ` style="--hue:${hue}"` : ''}>${esc(initials(personById(it.personId)?.name || it.label))}</text>`;
     }
     case 'round': return `<ellipse class="${cls}" rx="${hw}" ry="${hd}"/>`;
     case 'wedge': return `<polygon class="${cls}" points="${-hw},${hd} ${hw},${hd} ${hw * .65},${-hd} ${-hw * .65},${-hd}"/>`;
@@ -3403,6 +3422,8 @@ function aimLinks(selSet) {
   return s;
 }
 let foldHinted = false, hoverCid = null;
+// while nothing is picked, runs keep their colour but lean towards grey, so the stage isn't a rainbow; picking or pointing brings the colour back
+document.head.insertAdjacentHTML('beforeend', `<style id="calmcables">${Object.entries(KVAR).map(([k, v]) => `.cab.quiet.k-${k}, .snap .cab.k-${k}.calm { stroke: color-mix(in srgb, var(${v}) 58%, #8b909a); } .plug.quiet[style*="${v}"] { fill: color-mix(in srgb, var(${v}) 58%, #8b909a) !important; }`).join('')}</style>`);
 svg.addEventListener('pointerover', e => { const h = e.target.closest?.('[data-cid]'); const id = h && !drag && !pending && e.pointerType !== 'touch' ? h.dataset.cid : null; if (id !== hoverCid) { hoverCid = id; renderPlot(); } });
 svg.addEventListener('pointerleave', () => { if (hoverCid) { hoverCid = null; renderPlot(); } });
 const TUCK_TYPES = new Set(['di_mono', 'di_stereo', 'iem']);   // passive boxes only: anything someone plays or plugs into stays drawn
@@ -3527,7 +3548,7 @@ function renderPlot() {
   s += `<rect class="house-fill" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>`}`;
   const poly = stagePoly(), deckD = polyPath(poly);
   if (!layerOff('seats')) s += seatsSvg();
-  s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath></defs>`);
+  s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath><clipPath id="houseclip"><path clip-rule="evenodd" d="M${f3(v.x0)} ${f3(v.y0)}h${f3(v.vw)}v${f3(v.vh)}h${f3(-v.vw)}Z${deckD}"/></clipPath></defs>`);
   s = s.replace('</defs>', '<filter id="deckblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".22"/></filter><linearGradient id="lipShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient><linearGradient id="deckSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".08"/></linearGradient></defs>');
   s += `<path class="deck-shadow" transform="translate(.06 .22)" d="${deckD}"/>`;
   for (const [a, c] of frontEdges(poly)) { const lip = fromM(.16), q = `${a[0]},${a[1]} ${c[0]},${c[1]} ${c[0]},${f3(c[1] + lip)} ${a[0]},${f3(a[1] + lip)}`; s += `<polygon class="deck-lip" points="${q}"/><polygon points="${q}" fill="url(#lipShade)"/>`; }   // the deck's front face, seen from above
@@ -3676,7 +3697,7 @@ function renderPlot() {
       if (isSel) out += `<path class="cab-glow" d="${d}" style="stroke:var(${KVAR[c.type]})"/>`;
       if (lead && c.level !== 'ceiling' && rel !== ' dim') out += `<path class="lead-shadow" d="${d}"/>`;   // a dark edge so the lead reads crisply on any deck
       // a deck-coloured sheath under each floor run: where cables cross, the one on top reads cleanly over the other
-      if (c.level !== 'ceiling' && rel !== ' dim') out += `<path class="cab-case${st}" d="${d}" clip-path="url(#deckclip)"/>`;
+      if (c.level !== 'ceiling' && rel !== ' dim') out += `<path class="cab-case${st}" d="${d}" clip-path="url(#deckclip)"/><path class="cab-case house${st}" d="${d}" clip-path="url(#houseclip)"/>`;
       const age = freshLeads.has(c.id) ? performance.now() - freshLeads.get(c.id) : Infinity;
       if (age > 1200) freshLeads.delete(c.id);
       out += `<path class="cab${c.level === 'ceiling' ? ' ceil' : ''} k-${c.type}${st}${age < 1200 ? ' drawin' : ''}" d="${d}" data-pts="${sp}"${age < 1200 ? ` pathLength="1" style="animation-delay:-${Math.round(age)}ms"` : ''}/>`;
@@ -3875,6 +3896,7 @@ function renderHeader() {
   $('vHome').setAttribute('aria-pressed', view === 'home'); $('homeView').hidden = view !== 'home';
   $('vPlot').setAttribute('aria-pressed', view === 'plot'); $('vPaper').setAttribute('aria-pressed', view === 'paper');
   $('plotView').hidden = view !== 'plot'; $('paperView').hidden = view !== 'paper'; viewIn();
+  if (view !== 'home') document.querySelector('#homeView .heropic')?.remove();   // the Home picture is a second drawing of the stage: keep only one in the page
   $('undoBtn').innerHTML = ic('undo'); $('redoBtn').innerHTML = ic('redo');
   $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length;
   $('moreBtn').innerHTML = ic('dots');
@@ -6648,12 +6670,21 @@ function renderHome() {
 }
 
 /* ----- Library ----- */
+let heroCache = { key: '', html: '' };
+function heroPicture(p) {   // the week's stage, drawn the way the paperwork draws it, cropped to the stage
+  const key = [p.id, JSON.stringify(p.items).length, JSON.stringify(p.cables).length, JSON.stringify(p.stage), document.documentElement.dataset.theme || ''].join('|');
+  if (heroCache.key === key) return heroCache.html;
+  const keep = plan; let html = '';
+  try { plan = p; html = cropToStage(plotSnapshot()); } catch { html = ''; } finally { plan = keep; if (view !== 'plot') svg.innerHTML = ''; }   // it borrows the plot canvas to draw; leave that empty while it's hidden
+  heroCache = { key, html }; return html;
+}
 function homeLibrary() {
   const today = new Date().toISOString().slice(0, 10), ids = sortedWeekIds();
   const next = ids.map(id => db.plans[id]).find(p => p.date >= today) || db.plans[ids[ids.length - 1]];
   const st = next ? weekStats(next) : null;
   const chip = !next ? '' : !next.items.length ? '<span class="chip">Empty</span>' : !st.team ? '<span class="chip">No team yet</span>' : st.checks ? `<span class="chip ${st.bad ? 'bad' : 'warn'}">${plural(st.checks, 'check')}</span>` : '<span class="chip ok">Ready</span>';
   const hero = next ? `<section class="hero">
+      ${next.items.length ? `<div class="heropic" aria-hidden="true">${heroPicture(next)}${next.team.length ? `<div class="heroteam">${next.team.slice(0, 8).map((t, i) => `<span class="avatar hued" style="--hue:${PERSON_HUES[i % PERSON_HUES.length]}" title="${esc(t.name)}">${esc(initials(t.name))}</span>`).join('')}${next.team.length > 8 ? `<span class="avatar">+${next.team.length - 8}</span>` : ''}</div>` : ''}</div>` : ''}
       <div><div class="eyebrow">${next.date >= today ? 'Next up' : 'Most recent'} · ${esc(longDate(next.date))}</div><h2>${esc(next.name || 'Untitled service')}</h2>
         <p>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} ${chip}${st.borrow ? ` <span class="chip warn">Borrow ${st.borrow}</span>` : ''}</p></div>
       <div class="row herobtns" style="gap:8px"><button class="btn primary" data-libopen="${next.id}">${ic('plot', 'sm')}Open the plot</button><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button>
