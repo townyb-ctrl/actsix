@@ -1133,6 +1133,17 @@ td.spare { color: var(--muted); font-style: italic; }
 .light-deck .itag.gname:not(.sel) rect { fill: rgba(255,255,255,.7); } .light-deck .itag.gname:not(.sel) .ilabel { fill: #3a3f4a; }
 .itag.gname.out rect { fill: var(--surface); stroke: var(--line); stroke-width: var(--hair, .03px); } .itag.gname.out .ilabel { fill: var(--ink-2); }
 .heropic { max-height: 210px; display: grid; place-items: center; } .heropic .snap { max-height: 210px; width: auto; max-width: 100%; }
+/* house vignette, paper tables */
+.vignette { pointer-events: none; opacity: .14; } :root[data-theme="dark"] .vignette { opacity: .45; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .vignette { opacity: .45; } }
+#plot.style-mono .vignette { opacity: .1; }
+.sheet tbody tr:nth-child(even):not(:hover) td { background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+@media (min-width: 761px) {
+  .sheet .tablewrap { overflow: visible; }
+  .docnav { background: var(--bg); box-shadow: 0 8px 10px -8px color-mix(in srgb, var(--bg) 80%, transparent); }
+  .sheet thead th { position: sticky; top: var(--navb, 52px); z-index: 2; background: var(--surface); box-shadow: inset 0 -1px 0 var(--line-2); }
+}
+@media print { .sheet thead th { position: static !important; box-shadow: none; } .sheet tbody tr:nth-child(even) td { background: #f4f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 /* one style for everything that floats over the canvas */
 :root { --fl-r: 14px; --fl-blur: blur(14px) saturate(1.25); }
 .cabmenu, .ctxmenu, .moremenu, #weekPop { background: var(--surface) !important; }   /* menus are read closely: solid, not see-through */
@@ -3110,16 +3121,21 @@ function pcoTimes(list) {
   return out;
 }
 /* faint rows of seats in the house give the drawing its scale; a centre aisle, and no seats under FOH or anything else out there */
-function seatsSvg() {
+function seatsSvg() {   // rows curve gently round the stage, a wider centre aisle; never under FOH or other gear out there
   const { w: W, d: D, house, houseW } = plan.stage, hw = Math.max(W, houseW), y0 = D + fromM(2.2), y1 = D + house - fromM(1.4);
   if (y1 - y0 < fromM(1.5)) return '';
-  const pitch = fromM(.55), row = fromM(.95), sw = fromM(.42), sd = fromM(.34), aisle = fromM(1.4), xL = (W - hw) / 2 + fromM(.9), xR = (W + hw) / 2 - fromM(.9);
+  const pitch = fromM(.55), row = fromM(.95), sw = fromM(.42), sd = fromM(.34), aisle = fromM(1.8), xL = (W - hw) / 2 + fromM(.9), xR = (W + hw) / 2 - fromM(.9);
+  const fx = W / 2, fy = D - fromM(7);   // the rows are arcs round a point behind the front edge
   const keepOut = plan.items.filter(i => i.y > D).map(i => { const [a, b] = halfExt(i), m = fromM(.5); return [i.x - a - m, i.y - b - m, i.x + a + m, i.y + b + m]; });
   let s = '<g class="seats" aria-hidden="true">';
-  for (let y = y0; y + sd <= y1; y += row) {
-    for (const [from, to, dir] of [[W / 2 - aisle / 2 - sw, xL, -1], [W / 2 + aisle / 2, xR - sw, 1]])
-      for (let x = from; dir < 0 ? x >= to : x <= to; x += dir * pitch)
-        if (!keepOut.some(q => x + sw > q[0] && x < q[2] && y + sd > q[1] && y < q[3])) s += `<rect x="${f3(x)}" y="${f3(y)}" width="${f3(sw)}" height="${f3(sd)}" rx=".22"/>`;
+  for (let r = y0 - fy; fy + r + sd <= y1; r += row) {
+    const step = pitch / r;   // the same seat spacing along each arc
+    for (const dir of [-1, 1]) for (let a = Math.asin(Math.min(1, (aisle / 2 + sw / 2) / r)); ; a += step) {
+      const x = fx + dir * r * Math.sin(a), y = fy + r * Math.cos(a);
+      if (x < xL || x > xR || y < y0 - fromM(.6) || a > 1.45) break;
+      if (keepOut.some(q => x + sw / 2 > q[0] && x - sw / 2 < q[2] && y + sd > q[1] && y - sd < q[3])) continue;
+      s += `<rect x="${f3(x - sw / 2)}" y="${f3(y - sd / 2)}" width="${f3(sw)}" height="${f3(sd)}" rx=".22" transform="rotate(${f3(-dir * a * 180 / Math.PI)} ${f3(x)} ${f3(y)})"/>`;
+    }
   }
   return s + '</g>';
 }
@@ -3557,6 +3573,9 @@ function renderPlot() {
   let s = `<defs><marker id="cmpHead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="cmp-head" d="M0 0L10 5L0 10z"/></marker><pattern id="dots" width="${fromM(.5)}" height="${fromM(.5)}" patternUnits="userSpaceOnUse"><circle class="dotp" cx=".1" cy=".1" r=".06"/></pattern></defs>`;
   s += `<rect class="house-fill" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>${layerOff('grid') ? '' : `<rect class="house-dots" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}"/>`}`;
   const poly = stagePoly(), deckD = polyPath(poly);
+  if (!layersBypass) { const [vcx, vcy] = deckCentre(), vr = Math.max(v.vw, v.vh) * .62;
+    s = s.replace('</defs>', `<radialGradient id="vign" gradientUnits="userSpaceOnUse" cx="${f3(vcx)}" cy="${f3(vcy)}" r="${f3(vr)}"><stop offset=".35" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="1"/></radialGradient></defs>`);
+    s += `<rect class="vignette" x="${f3(v.x0)}" y="${f3(v.y0)}" width="${f3(v.vw)}" height="${f3(v.vh)}" fill="url(#vign)"/>`; }
   if (!layerOff('seats')) s += seatsSvg();
   s = s.replace('</defs>', `<clipPath id="deckclip"><path d="${deckD}"/></clipPath><clipPath id="houseclip"><path clip-rule="evenodd" d="M${f3(v.x0)} ${f3(v.y0)}h${f3(v.vw)}v${f3(v.vh)}h${f3(-v.vw)}Z${deckD}"/></clipPath></defs>`);
   s = s.replace('</defs>', '<filter id="deckblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".22"/></filter><linearGradient id="lipShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient><linearGradient id="deckSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".08"/></linearGradient></defs>');
@@ -4449,6 +4468,7 @@ function chEditHtml(ins) {
     <p class="hint">Typing a number another input already has swaps the two. Mic, stand and 48V changes follow the input to every week.</p>`;
 }
 function centreTab() {   // on a phone the tab row scrolls: keep the open sheet's tab in view
+  const dn = document.querySelector('.docnav'); if (dn) $('paperView').style.setProperty('--navb', `${Math.max(0, dn.offsetHeight - 38)}px`);   // where a sticky table header tucks under the tab bar
   const nav = document.querySelector('.docnav nav'), b = nav?.querySelector('[aria-selected="true"]');
   if (!nav || !b || nav.scrollWidth <= nav.clientWidth) return;
   const r = b.getBoundingClientRect(), q = nav.getBoundingClientRect();
@@ -4477,10 +4497,10 @@ function renderPaper() {
     if (c[0] === 'Cable') return `<td><span class="row" style="gap:8px;flex-wrap:nowrap"><span class="dot bg-${r.type}"></span>${esc(v)}</span></td>`;
     if (c[0] === 'Qty') return `<td class="num">${esc(v)}</td>`;
     if (c[0] === 'Patch' && r.port && v !== r.port) return `<td class="mono" title="${esc(r.port)}">${esc(v)}</td>`;
-    return `<td class="${['Patch', 'Length'].includes(c[0]) ? 'mono' : ''}">${esc(v) || (i ? '<span class="hint">—</span>' : '')}</td>`;
+    return `<td class="${c[0] === 'Length' ? 'num' : c[0] === 'Patch' ? 'mono' : ''}">${esc(v) || (i ? '<span class="hint">—</span>' : '')}</td>`;
   };
   // rows that belong to the same person read as one group: the name shows once, a firmer rule marks each new person
-  const table = (rows, cols, flagKey) => { const pi = cols.findIndex(c => c[0] === 'Person'); return `<div class="tablewrap"><table><thead><tr>${cols.map(c => `<th${c[0] === 'Qty' ? ' style="text-align:right"' : ''}>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map((r, n) => { const same = pi >= 0 && n > 0 && r.person && r.person === rows[n - 1].person; return `<tr class="${flagKey && r[flagKey] ? 'flag' : ''}${pi >= 0 && n > 0 && !same ? ' grp' : ''}">${cols.map((c, i) => i === pi && same ? '<td class="rep"></td>' : cell(r, c, i)).join('')}</tr>`; }).join('') || `<tr><td colspan="${cols.length}" class="hint">Nothing here yet.</td></tr>`}</tbody></table></div>`; };
+  const table = (rows, cols, flagKey) => { const pi = cols.findIndex(c => c[0] === 'Person'); return `<div class="tablewrap"><table><thead><tr>${cols.map(c => `<th${['Qty', 'Length'].includes(c[0]) ? ' style="text-align:right"' : ''}>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map((r, n) => { const same = pi >= 0 && n > 0 && r.person && r.person === rows[n - 1].person; return `<tr class="${flagKey && r[flagKey] ? 'flag' : ''}${pi >= 0 && n > 0 && !same ? ' grp' : ''}">${cols.map((c, i) => i === pi && same ? '<td class="rep"></td>' : cell(r, c, i)).join('')}</tr>`; }).join('') || `<tr><td colspan="${cols.length}" class="hint">Nothing here yet.</td></tr>`}</tbody></table></div>`; };
   const head = (title, key, sub) => `<header><div><h2>${title}</h2>${sub ? `<p class="hint">${sub}</p>` : ''}</div>${key ? `<button class="btn" data-copy="${key}">${ic('copy', 'sm')}Copy</button>` : ''}</header>`;
   const powerHtml = sources.map(src => {
     const { loads, items, cap } = circuitLoads(src);
