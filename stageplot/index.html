@@ -202,6 +202,17 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .pmain input:hover, .pmain select:hover { border-color: var(--line-2); background: var(--surface); }
 .pmain select.empty { color: var(--warn); }
 .person .iconbtn { width: 30px; height: 30px; }
+.people { gap: 0; }
+.person { border-radius: var(--r-md); }
+.person { position: relative; }
+.person + .person::before { content: ''; position: absolute; left: 54px; right: 8px; top: 0; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.person:hover + .person::before, .person:focus-within + .person::before, .person:hover::before, .person:focus-within::before { display: none; }
+.person .avatar { position: relative; width: 34px; height: 34px; font-size: 12.5px; }
+.rolemark { position: absolute; right: -5px; bottom: -4px; width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--ink-2); box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0,0,0,.12); font-style: normal; }
+.rolemark .ic { width: 11px; height: 11px; stroke-width: 2; }
+.person:hover .rolemark, .person:focus-within .rolemark { background: var(--surface-2); }
+.person .iconbtn[data-sing][aria-pressed="false"] { opacity: .45; }
+.person:hover .iconbtn[data-sing], .person:focus-within .iconbtn[data-sing] { opacity: 1; }
 .person .del { opacity: 0; }
 .person:hover .del, .person:focus-within .del { opacity: 1; }
 .addrow { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px dashed var(--line-2); border-radius: var(--r-md); background: transparent; color: var(--ink-2); cursor: pointer; font-weight: 550; }
@@ -1242,10 +1253,10 @@ td.spare { color: var(--muted); font-style: italic; }
 .s-walk { fill: url(#spHatch); stroke: #f5b544; stroke-width: .07; stroke-dasharray: .45 .25; }
 .s-walk-edge { fill: none; stroke: #f5b544; stroke-opacity: .25; stroke-width: .04; }
 .deck-tex { pointer-events: none; }
-.light-deck .deck-tex { opacity: .75; } .light-deck .deck-tex.t-vinyl { opacity: 1; } .light-deck .deck-tex.t-carpet, .light-deck .deck-tex.t-matte { filter: invert(1); }
-.texpick { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.light-deck .deck-tex { opacity: .75; } .light-deck .deck-tex.t-vinyl { opacity: 1; } .light-deck .deck-tex.t-carpet, .light-deck .deck-tex.t-matte, .light-deck .deck-tex.t-concrete { filter: invert(1); }
+.texpick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .textile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 2px 5px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink-2); font: 500 11.5px/1.1 var(--f-ui); cursor: pointer; min-width: 0; }
-.textile svg { display: block; width: 100%; aspect-ratio: 1; border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
+.textile svg { display: block; width: 100%; aspect-ratio: 2; border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
 .textile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .textile:hover { border-color: var(--ink-2); } .textile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); color: var(--ink); font-weight: 650; }
 .tracing .item:not(.intrace) { opacity: .28; transition: opacity .2s; }
@@ -2584,6 +2595,18 @@ const ICONS = {
   zap: '<path d="M13 2.5L4.5 13.5H11L10 21.5l8.5-11H12z"/>',
   clip: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V2.5h6V4M9 10h6M9 14h6"/>',
   person: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
+  // role marks for the team list: one outline per kind of position
+  rDrums: '<ellipse cx="12" cy="9" rx="8" ry="3"/><path d="M4 9v7c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/><path d="M8 3l3 5M16 3l-3 5"/>',
+  rGuitar: '<path d="M14 10l6-6M18 2l4 4"/><path d="M10.5 9.5a3.5 3.5 0 00-5 .4c-.9 1-.7 2.3-1.8 3.1-1.6 1.2-1.6 3.6 0 5.2s4 1.6 5.2 0c.8-1.1 2.1-.9 3.1-1.8a3.5 3.5 0 00.4-5z"/><circle cx="9" cy="15" r="1.2"/>',
+  rKeys: '<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><path d="M7 6v7M12 6v7M17 6v7"/><path d="M7 13v5M12 13v5M17 13v5"/>',
+  rLaptop: '<rect x="4" y="5" width="16" height="10" rx="1.5"/><path d="M2 19h20"/><path d="M10 9l3 1.5L10 12z"/>',
+  rStrings: '<path d="M12 2v5"/><path d="M9.5 7h5l-.6 3a3 3 0 012.1 3.9l-.5 1.5A4 4 0 0111.7 22h.6a4 4 0 01-3.8-6.6l-.5-1.5A3 3 0 0110.1 10z"/><path d="M12 11v8"/>',
+  rWord: '<path d="M4 5h16v10H10l-4 4v-4H4z"/><path d="M8 9h8M8 12h5"/>',
+  rCam: '<rect x="2.5" y="7" width="13" height="10" rx="2"/><path d="M15.5 11l6-3v8l-6-3z"/>',
+  rDesk: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M12 9v6M17 9v6"/><path d="M5.8 12h2.4M10.8 10h2.4M15.8 13h2.4"/>',
+  rCans: '<path d="M4 15v-3a8 8 0 0116 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>',
+  rLight: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/>',
+  rClip: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.5h6V4M9 10h6M9 14h6M9 18h3"/>',
 };
 const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
@@ -2601,6 +2624,9 @@ function itemPreview(it, cls) {
 }
 const personColour = pid => (pid && typeof PERSON_HUES !== 'undefined' && personHue(pid)) || '';
 const hueStyle = pid => { const h = personColour(pid); return h ? ` hued" style="--hue:${h}` : ''; };   // drops into an avatar's class attribute
+const ROLE_ICON = { 'Worship Leader': 'mic', Vocalist: 'mic', Host: 'mic', 'Acoustic Guitar': 'rGuitar', 'Electric Guitar': 'rGuitar', Bass: 'rGuitar', Keys: 'rKeys', Drums: 'rDrums',
+  'Tracks / MD': 'rLaptop', Strings: 'rStrings', 'Pastor / Speaker': 'rWord', Camera: 'rCam', 'FOH Engineer': 'rDesk', 'Monitor Engineer': 'rCans', Lighting: 'rLight', Producer: 'rClip' };
+const roleMark = r => ROLE_ICON[r] ? `<i class="rolemark" title="${esc(r)}">${ic(ROLE_ICON[r])}</i>` : '';
 const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? 'word' : /Engineer|Lighting|Producer|Camera/.test(r) ? 'tech' : r ? 'band' : '';
 const longDate = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); } catch { return iso; } };
 const plural = (n, a, b = a + 's') => `${n} ${n === 1 ? a : b}`;
@@ -2867,6 +2893,8 @@ const SYM = (() => {
     '<filter id="spTexCarpet" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="5" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .34 0 0 0 -.1"/></filter>' +
     '<pattern id="spTexVinyl" width="4.92" height="40" patternUnits="userSpaceOnUse"><rect width="4.92" height="40" fill="#fff" fill-opacity=".025"/><rect x="2.46" width="2.46" height="40" fill="#000" fill-opacity=".035"/><path d="M.02 0V40" stroke="#000" stroke-opacity=".38" stroke-width=".045"/><path d="M.08 0V40" stroke="#fff" stroke-opacity=".1" stroke-width=".03"/></pattern>' +
     '<linearGradient id="spVinylGloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+    '<filter id="spTexConcrete" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".18" numOctaves="4" seed="17" result="m"/><feTurbulence type="fractalNoise" baseFrequency="3.2" numOctaves="1" seed="3" result="f"/><feComposite in="m" in2="f" operator="arithmetic" k2=".7" k3=".45"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .2 0 0 0 -.1"/></filter>' +
+    '<pattern id="spTexJoints" width="9.843" height="9.843" patternUnits="userSpaceOnUse"><path d="M0 .02H9.843M.02 0V9.843" fill="none" stroke="#000" stroke-opacity=".5" stroke-width=".06"/><path d="M0 .08H9.843M.08 0V9.843" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width=".03"/></pattern>' +
     '<filter id="spTexMatte" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".07" numOctaves="3" seed="9"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .2 0 0 0 -.05"/></filter>' +
     '<linearGradient id="spCov" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd66e" stop-opacity=".1"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient><linearGradient id="spCovUp" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd66e" stop-opacity=".12"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
     '<linearGradient id="spLBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff1bd" stop-opacity=".3"/><stop offset=".6" stop-color="#ffd66e" stop-opacity=".08"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></linearGradient>' +
@@ -3302,9 +3330,10 @@ function pointAt(o, d) {
 }
 // a run as a path with its right-angle bends rounded off (each bend takes at most half of either leg, so short jogs stay true)
 /* stage colour: one per week, saved with setups; light decks flip the grid and stage words to dark ink */
-const STAGE_TEX = [['', 'Plain'], ['boards', 'Boards'], ['vinyl', 'Vinyl'], ['carpet', 'Carpet'], ['matte', 'Matte']];
+const STAGE_TEX = [['', 'Plain'], ['boards', 'Boards'], ['vinyl', 'Vinyl'], ['carpet', 'Carpet'], ['matte', 'Matte'], ['concrete', 'Concrete']];
 const texPreview = v => v === 'boards' ? '<rect width="6" height="6" fill="url(#spTexBoards)" transform="scale(1.6)"/>' : v === 'vinyl' ? '<rect width="6" height="6" fill="url(#spTexVinyl)" transform="translate(-1.4 0)"/><rect width="6" height="6" fill="url(#spVinylGloss)"/>'
-  : v === 'carpet' ? '<rect width="6" height="6" filter="url(#spTexCarpet)"/>' : v === 'matte' ? '<rect width="6" height="6" filter="url(#spTexMatte)" transform="scale(3)"/>' : '';
+  : v === 'carpet' ? '<rect width="6" height="6" filter="url(#spTexCarpet)"/>' : v === 'matte' ? '<rect width="6" height="6" filter="url(#spTexMatte)" transform="scale(3)"/>'
+  : v === 'concrete' ? '<rect width="6" height="6" filter="url(#spTexConcrete)" transform="scale(2)"/><path d="M3.4 0V6" stroke="#000" stroke-opacity=".4" stroke-width=".12"/>' : '';
 const STAGE_COLORS = [['', 'Charcoal'], ['#121417', 'Black'], ['#3b424a', 'Slate'], ['#1d2943', 'Navy'], ['#4a3426', 'Walnut'], ['#8a6a48', 'Oak'], ['#d8d3c6', 'Light']];
 const lum = hex => { const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 0; const n = parseInt(m[1], 16); return (.2126 * (n >> 16 & 255) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255; };
 function applyDeckColor(el) {
@@ -3556,13 +3585,14 @@ function placeLabels(cands, obstacles = [], risers = []) {
   const out = [];
   for (const l of cands.sort((a, b) => a.pri - b.pri)) {
     if (l.mk) {   // item names: below the item, else above it; never printed over other gear
-      const at = y => [l.x - l.w / 2, y - l.h, l.x + l.w / 2, y + l.h * .25];
+      const at = (y, x = l.x) => [x - l.w / 2, y - l.h, x + l.w / 2, y + l.h * .25];
       const clear = (box, gear) => !placed.some(q => hit(box, q)) && (!gear || !core.some((q, i) => i !== l.own && hit(box, q)));
-      let y = [l.y, ...(l.alt || [])].find(v => clear(at(v), true));
-      if (y === undefined && l.pri === 0) y = l.y;   // the selection always keeps its name
-      if (y === undefined && l.pri <= 1 && clear(at(l.y), false)) y = l.y;   // people keep their name even when gear crowds them
-      if (y === undefined) continue;
-      placed.push(at(y)); out.push(l.mk(y)); continue;
+      // below, then above, then beside: a crowded name steps aside rather than vanishing or landing on other gear
+      let spot = [[l.x, l.y], ...(l.alt || []).map(v => [l.x, v]), ...(l.side || [])].find(([x, y]) => clear(at(y, x), true));
+      if (!spot && l.pri === 0) spot = [l.x, l.y];   // the selection always keeps its name
+      if (!spot && l.pri <= 1 && clear(at(l.y), false)) spot = [l.x, l.y];   // people keep their name even when gear crowds them
+      if (!spot) continue;
+      placed.push(at(spot[1], spot[0])); out.push(l.mk(spot[1], spot[0])); continue;
     }
     const box = l.box || [l.x - l.w / 2, l.y - l.h, l.x + l.w / 2, l.y + l.h * .25];
     if (l.pri > 0 && placed.some(q => hit(box, q))) continue;
@@ -3608,6 +3638,7 @@ function renderPlot() {
   const tex = plan.stage.texture;
   if (tex === 'boards') s += `<path class="deck-tex" d="${deckD}" fill="url(#spTexBoards)"/>`;
   else if (tex === 'vinyl') s += `<path class="deck-tex t-vinyl" d="${deckD}" fill="url(#spTexVinyl)"/><path class="deck-tex t-vinyl" d="${deckD}" fill="url(#spVinylGloss)"/>`;
+  else if (tex === 'concrete') s += `<rect class="deck-tex t-concrete" clip-path="url(#deckclip)" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}" filter="url(#spTexConcrete)"/><path class="deck-tex t-joints" d="${deckD}" fill="url(#spTexJoints)"/>`;   // power-floated slab, saw-cut every 3 m
   else if (tex === 'carpet' || tex === 'matte') s += `<rect class="deck-tex t-${tex}" clip-path="url(#deckclip)" x="${b.x0}" y="${b.y0}" width="${b.vw}" height="${b.vh}" filter="url(#spTex${tex === 'carpet' ? 'Carpet' : 'Matte'})"/>`;
   const half = fromM(.5);
   if (!layerOff('grid')) {
@@ -3674,8 +3705,9 @@ function renderPlot() {
       const fs = (person ? 11.5 : 9.5) * LK / scale;   // people's names lead; gear names sit a size down
       const above = big ? [] : [it.y - Math.max(iw, id) / 2 - (isSel ? .3 + 24 / scale : 4 / scale)];   // a selected name clears the ring and the rotate knob
       const tw = String(text).length * fs * .57 + fs * 1.1;   // a rounded name tag instead of outlined text: reads on any deck colour
-      labCands.push({ x: it.x, y: ly + (big ? 0 : 2 / scale), alt: above, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: tw, h: fs * 1.1, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
-        mk: y => `<g class="itag${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ' gname'}${isSel ? ' sel' : ''}"${person ? '' : ` style="font-size:${f3(fs)}px"`}><rect x="${f3(it.x - tw / 2)}" y="${f3(y - fs * .9)}" width="${f3(tw)}" height="${f3(fs * 1.25)}" rx="${f3(fs * .62)}"/><text class="ilabel${person ? ' pname' : ''}" x="${it.x}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text></g>` });
+      const sx = Math.max(iw, id) / 2 + tw / 2 + 4 / scale, side = big ? [] : [[it.x + sx, it.y + fs * .35], [it.x - sx, it.y + fs * .35]];   // last resort: beside the item, right then left
+      labCands.push({ x: it.x, y: ly + (big ? 0 : 2 / scale), alt: above, side, own: C.shape !== 'platform' ? obstacles.length - 1 : -1, w: tw, h: fs * 1.1, pri: isSel ? 0 : person ? 1 : big ? 2 : 3,
+        mk: (y, x = it.x) => `<g class="itag${!big && !onDeck ? ' out' : ''}${person ? ' pname' : ' gname'}${isSel ? ' sel' : ''}${x !== it.x ? ' aside' : ''}"${person ? '' : ` style="font-size:${f3(fs)}px"`}><rect x="${f3(x - tw / 2)}" y="${f3(y - fs * .9)}" width="${f3(tw)}" height="${f3(fs * 1.25)}" rx="${f3(fs * .62)}"/><text class="ilabel${person ? ' pname' : ''}" x="${f3(x)}" y="${f3(y)}" text-anchor="middle">${esc(text)}</text></g>` });
     } else if (C.shape === 'platform' && showBig && !layerOff('labels')) {
       const own = it.personId && personById(it.personId), fnr = own && firstName(own.name), nm = fnr && itemName(it).startsWith(fnr + ' ') ? itemName(it).slice(fnr.length + 1) : itemName(it);
       const cap = C.walk ? 'KEEP CLEAR' : `${nm.toUpperCase()} · ${Math.round(toM(it.h ?? fromM(.4)) * 100)} CM`, cy = C.walk ? it.y + .25 : it.y + id / 2 - .35;
@@ -4014,7 +4046,7 @@ function renderRail() {
       <div class="sechead"><h2>This week's team</h2></div>
       ${plan.team.length ? `<div class="people">${plan.team.map(p => `
         <div class="person" data-pid="${p.id}">
-          <span class="avatar tone-${roleTone(p.role)}${hueStyle(p.id)}">${esc(initials(p.name) || '?')}</span>
+          <span class="avatar tone-${roleTone(p.role)}${hueStyle(p.id)}">${esc(initials(p.name) || '?')}${roleMark(p.role)}</span>
           <div class="pmain">
             <input type="text" id="pn-${p.id}" value="${esc(p.name)}" aria-label="Name" data-f="name" placeholder="Name">
             <select id="pr-${p.id}" data-f="role" aria-label="Position" class="${p.role ? '' : 'empty'}">${roleOptions(p.role)}</select>
@@ -4320,7 +4352,7 @@ function renderInspector() {
         <div class="grid2">${field('isw', 'Width', mVal(st.w), 'number', 'min="3" max="60" step=".1"', 'm')}${field('isd', 'Depth', mVal(st.d), 'number', 'min="2" max="40" step=".1"', 'm')}</div>
         <div class="grid2"><div class="field"><label for="iSnap">Snap gear to</label><select id="iSnap" title="Hold Alt while dragging to place freely">${[[.05, '5 cm'], [.25, '25 cm'], [.5, '50 cm grid'], [0, 'Off']].map(([v, l]) => `<option value="${v}" ${ui.snap === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="field"><span>Shape</span><button class="btn" data-go="shape">${ic('pen', 'sm')}Edit shape</button></div></div>
         <div class="field"><span>Stage colour</span><div class="swatches" role="group" aria-label="Stage colour">${STAGE_COLORS.map(([v, n]) => `<button class="swatch" data-deckcolor="${v}" aria-pressed="${(st.color || '') === v}" title="${n}" aria-label="${n}" style="background:${v || 'var(--deck)'}"></button>`).join('')}<label class="swatch custom${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? ' on' : ''}" title="Pick any colour" style="${st.color && !STAGE_COLORS.some(([v]) => v === st.color) ? `background:${st.color}` : ''}"><input type="color" id="iDeckColor" value="${esc(st.color || '#20272d')}" aria-label="Custom stage colour"></label></div></div>
-        <div class="field"><span>Surface</span><div class="texpick" role="group" aria-label="Stage surface">${STAGE_TEX.map(([v, n]) => `<button class="textile" data-decktex="${v}" aria-pressed="${(st.texture || '') === v}" title="${n}"><svg viewBox="0 0 6 6" aria-hidden="true"><rect width="6" height="6" style="fill:${st.color || 'var(--deck)'}"/>${texPreview(v)}</svg><span>${n}</span></button>`).join('')}</div></div>
+        <div class="field"><span>Surface</span><div class="texpick" role="group" aria-label="Stage surface">${STAGE_TEX.map(([v, n]) => `<button class="textile" data-decktex="${v}" aria-pressed="${(st.texture || '') === v}" title="${n}"><svg viewBox="0 0 6 6" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="6" height="6" style="fill:${st.color || 'var(--deck)'}"/>${texPreview(v)}</svg><span>${n}</span></button>`).join('')}</div></div>
         <p class="glance">${plural(t.ins, 'input')}${t.rf ? ` (${t.rf} RF)` : ''} · ${fmtLen(t.cab, 0)} of cable · ${(t.watts / 1000).toFixed(1)} kW</p>
       </section>
       ${w.length && !ui.guide ? `<section class="isec"><h3>Checks <span>${w.length}</span></h3><ul class="warnlist">${w.slice(0, 3).map(warnItem).join('')}</ul>${w.length > 3 ? `<button class="btn quiet" data-go="checks">See all ${w.length}</button>` : ''}</section>` : ''}

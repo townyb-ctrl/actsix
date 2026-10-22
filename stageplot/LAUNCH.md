@@ -20,6 +20,7 @@ Status of Stageplot for a public launch. Facts only: what has been checked, how,
 | Paperwork: printing (one sheet per page, no app chrome), sheets export, backup file | PDF render checked page by page; downloaded files opened and checked |
 | Unreadable saved data is kept, not overwritten, and can be recovered | Test with deliberately corrupted storage |
 | Unexpected errors show one calm notice | Test throws an error inside the page |
+| Team role marks, concrete surface, names stepping aside | End-to-end test: every positioned team member gets a mark, the concrete slab and joints draw, six surface tiles show, and a name crowded above and below moves beside its item |
 | Accessibility | axe-core 4.10: no violations in light or dark theme across welcome, plot, item details, gear library and paperwork |
 | Phone (400 px), iPad portrait and landscape, desktop | No sideways scrolling; toolbar fits at each width |
 | Performance | Typical week (46 items, 30 cables): about 14 ms per redraw, so dragging stays at 60 fps; three times the gear: about 38 ms; first paint about 1 s (Chromium, desktop) |
