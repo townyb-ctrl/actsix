@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 63 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 64 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -127,6 +127,9 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 - **Mic types**: vocal, wireless and instrument mics are vector drawings in the same style (mesh grilles drawn as chords, chrome bands, glints) and each has a type picker in its details: vocal (dynamic, silver, vintage, studio, lectern gooseneck), wireless (handheld, red handheld, lapel), instrument (side-address on short stand, condenser on tripod, desk/boundary). Mics have no backing disc: a faint light rim and a soft shadow keep even a black mic readable on a dark stage, and they draw over their singer, as if held. All instrument and mic drawings share one set of gradients and blur filters, embedded once in the page, in downloaded paperwork and in each exported symbol. New mics use the type picked last.
 - **Bass effects pedal (2-channel)** in Gear → Band: a small pedal with a knob row and footswitch per channel; *Run cable* picks Jack to and from basses, amps, DIs and other pedals.
 - **DI boxes** are drawn like the real thing from above: steel bookend caps, a blue top with ground-lift and pad toggles, the 1/4" jack input at the left end and the XLR output (pins and latch) at the right; the stereo DI has two of each. Pedals show their side jacks.
+- **Lift while dragging**: gear in hand rises a touch off the deck with a deeper shadow, and settles with a small bounce when you let go (no motion with reduced motion).
+- **Paperwork as pages**: on a wide screen the sheets show as white A4 pages on a grey desk, numbered, so you see what will print, in dark mode too. *Pages* next to *Print or PDF* turns it off (remembered in this browser).
+- **Library trends**: each week in the Library has a tiny line for its inputs (solid) and team size (dashed) over up to six weeks ending with that week; hover it for the numbers.
 - **Title block**: under the overview plot on the paperwork, a drawing-style strip names the venue, service, date, stage size, revision, who drew it and when it was printed. Set *Drawn by* (a name and number) in Home → Stage defaults.
 - **Planning Center while loading**: soft grey placeholder rows in the shape of what's coming (roster rows, or a picker) pulse beside the status line instead of a bare spinner.
 - **Next up figures**: Home's Next up card shows people, items, inputs, metres of cable and kW, counting up briefly when Home opens (once, not on every redraw; off with reduced motion).

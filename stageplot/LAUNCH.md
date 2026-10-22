@@ -22,6 +22,7 @@ Status of Stageplot for a public launch. Facts only: what has been checked, how,
 | Unexpected errors show one calm notice | Test throws an error inside the page |
 | Team role marks, concrete surface, names stepping aside | End-to-end test: every positioned team member gets a mark, the concrete slab and joints draw, six surface tiles show, and a name crowded above and below moves beside its item |
 | Title block, Planning Center placeholders, Next up count-up | End-to-end test: Drawn by saves and appears in the title block with all seven fields, four placeholder rows show while the roster loads and clear after, the figures count up and settle on the right values and don't restart on a redraw |
+| Drag lift, paperwork pages, library trends | End-to-end test: a dragged item lifts and scales, settles on drop and is plain after; the Pages switch turns white pages on and off and is remembered after a reload; trend lines draw with their numbers in the label |
 | Accessibility | axe-core 4.10: no violations in light or dark theme across welcome, plot, item details, gear library and paperwork |
 | Phone (400 px), iPad portrait and landscape, desktop | No sideways scrolling; toolbar fits at each width |
 | Performance | Typical week (46 items, 30 cables): about 14 ms per redraw, so dragging stays at 60 fps; three times the gear: about 38 ms; first paint about 1 s (Chromium, desktop) |

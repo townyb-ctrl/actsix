@@ -717,7 +717,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .librow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
 .librow.cur { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .librow.past .libmain b { color: var(--ink-2); }
-.libopen { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; border: 0; background: transparent; padding: 7px 8px; text-align: left; cursor: pointer; color: inherit; font: inherit; border-radius: var(--r-md); min-width: 0; }
+.libopen { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; border: 0; background: transparent; padding: 7px 8px; text-align: left; cursor: pointer; color: inherit; font: inherit; border-radius: var(--r-md); min-width: 0; }
 .libopen:hover { background: var(--surface-2); }
 .libdate { display: grid; justify-items: center; background: var(--surface-3); border-radius: 8px; padding: 3px 0; }
 .libdate b { font: 600 15px var(--f-mono); line-height: 1.1; } .libdate small { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
@@ -836,6 +836,13 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .hero .eyebrow { color: rgba(255,255,255,.7); }
 .hero p.herostats { gap: 6px 14px; } .herostats .hstat { display: inline-flex; gap: 4px; align-items: baseline; white-space: nowrap; }
 .herostats .hstat b { font: 600 14px var(--f-mono); color: #fff; font-variant-numeric: tabular-nums; }
+.libtrend { display: inline-flex; width: 56px; flex: none; align-items: center; }
+.libtrend svg { display: block; overflow: visible; }
+.libtrend polyline { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.libtrend .lt-ins { stroke: var(--ink-2); stroke-width: 1.4; opacity: .75; } .libtrend .lt-team { stroke: var(--muted); stroke-width: 1; opacity: .4; stroke-dasharray: 2 2; }
+.libtrend circle { fill: var(--accent); }
+.librow:not(:hover) .libtrend { opacity: .8; }
+@media (max-width: 560px) { .libtrend { display: none; } }
 .herocount { font: 600 11.5px var(--f-mono); opacity: .75; }
 .herobtns { flex-wrap: wrap; }
 .hero .chip { background: rgba(255,255,255,.16); color: #fff; border-color: transparent; }
@@ -911,6 +918,25 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .docnav button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; cursor: pointer; font-weight: 550; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
 .docnav button:hover { border-color: var(--line-2); }
 .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: grid; gap: 14px; min-width: 0; scroll-margin-top: 60px; box-shadow: var(--shadow-1); }
+/* Pages: on screen, each sheet is a white A4 page on a grey desk, numbered, as it will print */
+@media screen and (min-width: 900px) {
+  .paper.pages { --bg: #dcdfe5; background: var(--bg); }
+  .paper.pages .paper-inner { max-width: 210mm; }
+  .paper.pages .sheetgrid { counter-reset: page; }
+  .paper.pages .sheets2 { grid-template-columns: minmax(0, 1fr); }
+  .paper.pages .sheet { --surface: #fff; --surface-2: #f7f8fa; --surface-3: #eef0f4; --ink: #0d0f14; --ink-2: #3b404c; --muted: #5c6270; --line: #e5e7ec; --line-2: #d3d7de; --accent-text: #4f3fe0; --accent: #6d5efc; --accent-soft: rgba(109,94,252,.12);
+    --ok: #16a34a; --ok-soft: rgba(22,163,74,.11); --ok-ink: #146c35; --warn-ink: #8a4a00; --bad-ink: #b31d1d; --warn: #d97706; --warn-soft: rgba(217,119,6,.13); --bad: #dc2626; --bad-soft: rgba(220,38,38,.10);
+    color: var(--ink); background: #fff; border: 0; border-radius: 2px; min-height: 297mm; padding: 14mm 12mm 18mm; align-content: start; position: relative; counter-increment: page;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.08), 0 10px 28px -6px rgba(0,0,0,.2); }
+  .paper.pages .sheet .p48 { color: #b4540a; background: #fff3e0; border-color: #f5c27a; }   /* white paper keeps light-theme chips and avatars in dark mode */
+  .paper.pages .sheet .avatar { background: linear-gradient(180deg, color-mix(in srgb, var(--av-bg, var(--surface-3)) 70%, #fff), var(--av-bg, var(--surface-3))); }
+  .paper.pages .sheet .tone-band { --av-bg: #e0f2fe; --av-fg: #075985; } .paper.pages .sheet .tone-vox { --av-bg: #ffe4e6; --av-fg: #9f1239; } .paper.pages .sheet .tone-word { --av-bg: #d1fae5; --av-fg: #065f46; } .paper.pages .sheet .tone-tech { --av-bg: #e2e8f0; --av-fg: #334155; }
+  #pagesBtn[aria-pressed="true"] { background: var(--surface); border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: var(--accent-text); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .paper.pages .sheet::after { content: 'Page ' counter(page); position: absolute; right: 12mm; bottom: 7mm; font: 500 10px var(--f-mono); letter-spacing: .06em; color: #8a909c; }
+  .paper.pages .sheet::before { content: ''; position: absolute; left: 12mm; right: 12mm; bottom: 12mm; border-top: 1px solid #eceef2; }
+}
+@media screen and (min-width: 900px) and (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .paper.pages { --bg: #23262d; } }
+@media screen and (min-width: 900px) { :root[data-theme="dark"] .paper.pages { --bg: #23262d; } }
 .sheet header { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; justify-content: space-between; }
 .sheet h2 { font-size: 18px; font-weight: 700; }
 .tablewrap { overflow-x: auto; margin: 0 -4px; }
@@ -1127,6 +1153,12 @@ td.spare { color: var(--muted); font-style: italic; }
 .tuckdot { fill: var(--house-ink); stroke: var(--deck); stroke-width: var(--csh, .04px); opacity: .85; pointer-events: none; }
 .cabtag { pointer-events: none; } .cabtag rect { fill: var(--surface); stroke-width: var(--cw, .1px); } .cabtag text { fill: var(--ink); font-size: calc(var(--lab, .5px) * .95); font-weight: 600; }
 .snapnote { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; }
+/* gear in hand: lifts off the deck with a deeper shadow, then settles when dropped */
+#plot .item .liftg { transform-box: fill-box; transform-origin: center; }
+#plot .item.lifting .liftg { transform: scale(1.045); filter: drop-shadow(0 .28px .3px rgba(0,0,0,.45)); }
+#plot .item.settle .liftg { animation: settle .3s cubic-bezier(.3,.7,.4,1); }
+@keyframes settle { 0% { transform: scale(1.045); } 55% { transform: scale(.985); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { #plot .item.lifting .liftg { transform: none; } #plot .item.settle .liftg { animation: none; } }
 /* quieter people: tinted with their colour, a ring in it, no glare */
 .c-person.hued { fill: color-mix(in srgb, var(--hue) 24%, var(--deck, #1b1e26)) !important; stroke: var(--hue) !important; stroke-width: .07 !important; }
 .pt-nose.hued { fill: var(--hue); opacity: .75; }
@@ -1813,6 +1845,8 @@ function measurePt(e, from) {
 let mode = 'select', cableType = 'auto', pending = null, cursorPt = null;   // 'auto' works the type out from the two ends
 let zoom = null;                // px per internal unit, null = fit
 let view = 'plot', railTab = 'team';
+let settling = new Set(), settleT = 0;
+let pageView = (() => { try { return localStorage.getItem('stageplot.pages') !== '0'; } catch { return true; } })();   // paperwork as white pages on a desk (per browser)
 let history = [], future = [], drag = null, delArmed = false, clearArmed = '', hoverPt = null;
 
 function blankPlan(date) {   // a new week starts from the stage defaults on Home, and from the default setup if one is chosen
@@ -3688,6 +3722,7 @@ function renderPlot() {
 
   if (!layersBypass) s += overlaySvg(deckD);
   const selItem = sel?.kind === 'item' ? sel.id : null, selSet = new Set(selIds()), solo = selSet.size === 1;
+  const lifted = drag?.kind === 'item' && drag.moved ? new Set([drag.id, ...(drag.others || []).map(o => o.id)]) : null;   // gear in hand rises off the deck
   const tr = tracing && selItem === tracing && !layersBypass ? traceSets(tracing) : null;   // signal trace runs while its source stays picked
   svg.classList.toggle('tracing', !!tr);
   for (const k of ['calm', 'full', 'mono']) svg.classList.toggle('style-' + k, !layersBypass && (cableView.style || 'calm') === k);
@@ -3706,7 +3741,7 @@ function renderPlot() {
   const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${C.shape === 'person' ? ' is-person' : C.shape === 'platform' ? ' is-floor' : ''}${selSet.has(it.id) ? ' picked' : ''}${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}">${shapeSvg(it, iw, id)}</g>`;
+    const g = `<g class="item${C.shape === 'person' ? ' is-person' : C.shape === 'platform' ? ' is-floor' : ''}${selSet.has(it.id) ? ' picked' : ''}${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}${lifted?.has(it.id) && C.shape !== 'platform' ? ' lifting' : settling.has(it.id) ? ' settle' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}"><g class="liftg">${shapeSvg(it, iw, id)}</g></g>`;
     if (L < 1) s += g; else top += g;
     if ((C.wireless || C.iem) && !layersBypass) { const [rw, rh] = halfExt(it), k = 1 / scale; top += `<g class="rfmark" transform="translate(${f3(it.x + rw * .7)} ${f3(it.y - rh * .7)}) scale(${f3(k)})" aria-hidden="true"><circle r="5.5"/><path d="M-2.6 -.6a3.7 3.7 0 0 1 5.2 0M-1.3 .9a1.85 1.85 0 0 1 2.6 0"/><circle class="rfdot" cy="2.2" r=".9"/></g>`; }   // wireless: a little signal mark instead of a plug
     if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
@@ -4555,6 +4590,7 @@ function centreTab() {   // on a phone the tab row scrolls: keep the open sheet'
 }
 function renderPaper() {
   if (view !== 'paper') return;
+  $('paperView').classList.toggle('pages', pageView);
   requestAnimationFrame(centreTab);
   const ins = inputSheet(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
   const sources = plan.items.filter(isPowerSource);
@@ -4594,7 +4630,7 @@ function renderPaper() {
     <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${defaultsOf().org ? esc(defaultsOf().org) + ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${fmtLen(plan.stage.w)} × ${fmtLen(plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <div class="docnav"><nav role="tablist" aria-label="Sheets" style="display:contents">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav><span class="printbar"><button class="btn" id="sheetsBtn" data-needs-dl title="Every sheet in one page you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download sheets</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
+    <div class="docnav"><nav role="tablist" aria-label="Sheets" style="display:contents">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav><span class="printbar"><button class="btn" id="pagesBtn" aria-pressed="${pageView}" title="Show the sheets as printed pages">${ic('sheet', 'sm')}Pages</button><button class="btn" id="sheetsBtn" data-needs-dl title="Every sheet in one page you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download sheets</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
     <div class="sheetgrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${mVal(foh.y - plan.stage.d)} m out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
@@ -4624,7 +4660,7 @@ function renderPaper() {
         ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span></h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
       </section>`; })()}
     </div>
-    <textarea id="copyFallback" rows="2" aria-label="Copied text" style="opacity:.01;height:1px;padding:0;border:0"></textarea>`;
+    <textarea id="copyFallback" rows="2" aria-label="Copied text" tabindex="-1" style="opacity:0;height:1px;padding:0;border:0"></textarea>`;
 }
 function renderAll() { renderHeader(); renderRail(); renderPlot(); renderInspector(); renderPaper(); renderHome(); }
 
@@ -4909,6 +4945,9 @@ function endDrag() {
   scroller.classList.remove('panning');
   const d = drag; drag = null;
   if (!d) return;
+  if (d.kind === 'item' && d.moved) {   // set down: a small settle, once
+    settling = new Set([d.id, ...(d.others || []).map(o => o.id)]); clearTimeout(settleT); settleT = setTimeout(() => { settling = new Set(); }, 320);
+  }
   if (d.kind === 'pan') { if (!d.moved && sel) { sel = null; renderPlot(); renderInspector(); } return; }
   if (d.kind === 'measure') {
     if (!d.moved) { measure.live = 'click'; toast('Now click where to measure to'); } else measure.live = null;
@@ -5540,6 +5579,7 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn')) { window.print(); return; }
+  if (e.target.closest('#pagesBtn')) { pageView = !pageView; try { localStorage.setItem('stageplot.pages', pageView ? '1' : '0'); } catch { /* ignore */ } renderPaper(); return; }
   if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); window.print(); setTimeout(done, 1500); return; }
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
@@ -6672,21 +6712,32 @@ function weekStats(p) {   // the same checks the app runs, for any saved week
 }
 function storageUse() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('stageplot')) n += (localStorage.getItem(k) || '').length + k.length; } } catch { /* blocked */ } return n * 2; }
 const fmtBytes = b => b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`;
+/* a tiny trend per week: inputs (solid) and team size (faint) over up to six weeks ending with this one */
+function libTrend(order, stats, id) {
+  const at = order.indexOf(id), ids = order.slice(Math.max(0, at - 5), at + 1);
+  if (ids.length < 3) return '<span class="libtrend" aria-hidden="true"></span>';
+  const W = 56, H = 18, pad = 2.5, line = key => { const v = ids.map(i => stats.get(i)[key]), lo = Math.min(...v), hi = Math.max(...v);
+    return v.map((n, i) => [pad + i * (W - 2 * pad) / (v.length - 1), hi === lo ? H / 2 : H - pad - (n - lo) / (hi - lo) * (H - 2 * pad)]); };
+  const ins = line('ins'), team = line('team'), pts = a => a.map(([x, y]) => `${f3(x)},${f3(y)}`).join(' '), [lx, ly] = ins[ins.length - 1];
+  const txt = `Last ${ids.length} weeks · inputs ${ids.map(i => stats.get(i).ins).join(', ')} · team ${ids.map(i => stats.get(i).team).join(', ')}`;
+  return `<span class="libtrend" title="${esc(txt)}"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(txt)}"><polyline class="lt-team" points="${pts(team)}"/><polyline class="lt-ins" points="${pts(ins)}"/><circle cx="${f3(lx)}" cy="${f3(ly)}" r="2"/></svg></span>`;
+}
 function renderLibrary() {
   const today = new Date().toISOString().slice(0, 10), q = lib.q.trim().toLowerCase();
   const ids = sortedWeekIds().reverse().filter(id => !q || `${db.plans[id].name} ${db.plans[id].date} ${longDate(db.plans[id].date)}`.toLowerCase().includes(q));
   const months = new Map();
   for (const id of ids) { const d = db.plans[id].date; const k = d.slice(0, 7); if (!months.has(k)) months.set(k, []); months.get(k).push(id); }
   const monthName = k => new Date(k + '-01T12:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const order = sortedWeekIds(), stats = new Map(order.map(id => [id, weekStats(db.plans[id])]));
   const rows = [...months].map(([k, list]) => `<div class="libmonth"><h3 class="eyebrow">${esc(monthName(k))}</h3>${list.map(id => {
-    const p = db.plans[id], st = weekStats(p), cur = id === plan.id, past = p.date < today;
+    const p = db.plans[id], st = stats.get(id), cur = id === plan.id, past = p.date < today;
     if (lib.edit === id) return `<form class="librow editing" data-libform="${id}"><input type="date" id="libEdDate" value="${esc(p.date)}" aria-label="Date" required><input type="text" id="libEdName" value="${esc(p.name || '')}" placeholder="Service name" aria-label="Service name" maxlength="80">
       <button class="btn primary" type="submit">Save</button><button class="btn quiet" type="button" data-libeditcancel>Cancel</button></form>`;
     const chip = !p.items.length ? '<span class="chip">Empty</span>' : !st.team ? '<span class="chip">No team yet</span>' : st.checks ? `<span class="chip ${st.bad ? 'bad' : 'warn'}">${plural(st.checks, 'check')}</span>` : '<span class="chip ok">Ready</span>';
     const state = !p.items.length || !st.team ? 'empty' : st.bad ? 'bad' : st.checks ? 'warn' : 'ok';
     return `<div class="librow st-${state}${cur ? ' cur' : ''}${past ? ' past' : ''}">
       <button class="libopen" data-libopen="${id}" title="Open this week"><span class="libdate"><b>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { day: 'numeric' }))}</b><small>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' }))}</small></span>
-        <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${chip}</button>
+        <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${libTrend(order, stats, id)}${chip}</button>
       <button class="iconbtn" data-libedit="${id}" aria-label="Rename or move ${esc(longDate(p.date))}" title="Rename or move to another date">${ic('pen', 'sm')}</button>
       <button class="iconbtn" data-libdup="${id}" aria-label="Copy to the following week" title="Copy to the following week">${ic('copy', 'sm')}</button>
       <button class="iconbtn" data-libdel="${id}" aria-label="Delete ${esc(longDate(p.date))}" title="Delete this week">${ic('trash', 'sm')}</button></div>`;
