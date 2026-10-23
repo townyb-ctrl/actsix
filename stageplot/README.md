@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 79 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 80 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -126,6 +126,8 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 - **Hover card**: the size only shows for risers and speakers, where it matters.
 - **Batteries** (first group on the Load-in checklist): every wireless mic, headset and in-ear pack to fit with fresh batteries, and the total to grab (e.g. *8 × AA needed*). Set what each pack takes once, in the group heading; it applies to every week.
 - **Past weeks are locked**: a week whose date has gone opens read-only, with a *Locked* chip in the header. Edits and drags are refused with an *Edit anyway* button; the chip unlocks it until you close Stageplot. A week you start or copy this session stays editable. Turn it off in Home → Preferences.
+- **Switch-on order** (Load-in checklist): the powered gear this week in the order to switch it on (desks and computers, stage box and racks, instruments and amps, wedges, main speakers and subs last) and the reverse for switching off, so nothing pops through a live system.
+- **Wireless** (Paperwork tab, shown when there are wireless mics, headsets or in-ear packs): type each pack's channel or frequency. Two on the same one are flagged on the sheet and in *to check*. A pack's channel carries to the next week for the same person, even when the stage is rebuilt. The hover card shows it too.
 - **Clock in show mode**: the time, large, top right. On the day of the service it counts down to what's next (*Soundcheck in 10 min*, *Service in 25 min*); on other days it shows the week's times.
 - **Colour**: cool modern neutrals with an indigo-violet accent for buttons, selection and focus; amber spike tape marks only the stage's front edge. Cables use a clean, distinct set (XLR blue, Cat6 purple, power orange, jack green, Speakon teal, video pink, USB slate), with brighter versions in dark mode. Text and chips keep at least 4.5:1 contrast in both themes.
 - **Workspace**: the stage fills the middle. Left: Team, Gear library and Room. Right: details for whatever is selected, or the week guide and stage settings when nothing is. Bottom dock: **Add** (`A`, opens the library with search ready), Move, Run cable, Measure, **Layers**, zoom and fit. The Select tool joins the dock on touch screens and in Advanced (with a mouse, Shift-drag does the same; `S` always works).

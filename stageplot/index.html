@@ -1063,6 +1063,16 @@ tr.flag td { color: var(--bad); }
 .presetrow { display: flex; flex-wrap: wrap; gap: 6px; }
 .presetrow .btn small { color: var(--muted); font-variant-numeric: tabular-nums; }
 .hsub { font-size: 14px; margin: 18px 0 2px; }
+.rftbl input { width: 100%; max-width: 220px; height: 32px; font-family: var(--mono, ui-monospace, monospace); }
+.rfdup { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 12.5px; font-weight: 600; color: var(--bad-ink, var(--bad)); }
+.rfbad { color: var(--bad-ink, var(--bad)); }
+.rfprint { display: none; }
+@media print { .rftbl input { display: none; } .rfprint { display: inline; font-family: var(--mono, ui-monospace, monospace); } }
+.pocols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; }
+.pocols ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.pocols li small { display: block; color: var(--muted); font-size: 12.5px; }
+.pocols h4 { margin: 0 0 8px; font-size: 13px; color: var(--muted); font-weight: 600; }
+@media (max-width: 640px) { .pocols { grid-template-columns: 1fr; } }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -1074,7 +1084,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .sheetgrid { display: grid; gap: 22px; }
 .sheetgrid:not([data-tab="all"]) .sheet { display: none; }
 .sheetgrid[data-tab="overview"] [data-sheet="overview"], .sheetgrid[data-tab="inputs"] [data-sheet="inputs"], .sheetgrid[data-tab="outputs"] [data-sheet="outputs"], .sheetgrid[data-tab="mixes"] [data-sheet="mixes"],
-.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="floor"] [data-sheet="floor"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"], .sheetgrid[data-tab="spots"] [data-sheet="spots"] { display: grid; }
+.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="floor"] [data-sheet="floor"], .sheetgrid[data-tab="rf"] [data-sheet="rf"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"], .sheetgrid[data-tab="spots"] [data-sheet="spots"] { display: grid; }
 .sheetgrid:not([data-tab="all"]) .sheets2 { display: contents; }
 
 .snapwrap { border-radius: var(--r-md); overflow: hidden; background: var(--house); }
@@ -2630,6 +2640,7 @@ function warnings() {
     if (i.x < hx0 || i.x > hx1 || i.y < -6 || i.y > D + plan.stage.house + 4) out.push({ lvl: 'warn', id: i.id, fix: 'home', msg: `${itemName(i)} is outside the drawing.` });
   }
   for (const p of plan.team) if (!ROLES[p.role]) out.push({ lvl: 'warn', pid: p.id, fix: 'role', msg: `${p.name || 'A team member'} has no position.` });
+  for (const l of rfClashes()) out.push({ lvl: 'bad', id: l[1].id, msg: `${l.map(itemName).join(' and ')} are all on ${rfOf(l[0]).trim()}. Give each wireless pack its own channel (Paperwork → Wireless).` });
   return out;
 }
 
@@ -4845,6 +4856,32 @@ function loadinTasks() {   // what the crew does on the day, in the order they d
   return [['Batteries', 'zap', packs], ['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
 }
 const loadinState = () => (plan.loadin ||= {});
+// switch on from the desk out to the speakers, so nothing pops through a live system; off is the same list backwards
+function powerOrder() {
+  const on = plan.items.filter(i => (needsPower(i) || cat(i).shape === 'rack') && !isPowerSource(i));   // distros and sockets are live already
+  const steps = [['Desks and computers', i => cat(i).desk || ['laptop', 'mt_ipad'].includes(i.type)], ['Stage box and racks', i => cat(i).shape === 'rack'],
+    ['Instruments, amps and the rest', i => !['wedge', 'speaker'].includes(cat(i).shape)], ['Wedges', i => cat(i).shape === 'wedge'], ['Main speakers and subs', i => cat(i).shape === 'speaker']];
+  const left = new Set(on.map(i => i.id));
+  return steps.map(([t, f]) => [t, on.filter(i => left.has(i.id) && f(i)).map(i => (left.delete(i.id), itemName(i)))]).filter(([, l]) => l.length);
+}
+// wireless: each transmitter needs its own channel or frequency, or two drop out together
+const rfKind = i => cat(i).iem ? 'In-ear pack' : i.type === 'headset' ? 'Headset' : 'Handheld mic';
+const rfNorm = v => String(v || '').toLowerCase().replace(/\s+|mhz$/g, '');
+// a pack's channel follows its person (or its label) to the next week, so rebuilding the stage doesn't lose it; read from the weeks themselves, so undo stays true
+function rfKeyIn(w, i) { const pn = w.team.find(t => t.id === i.personId)?.name?.trim().toLowerCase(); if (!pn) return `item|${(i.label || i.type).toLowerCase()}`;
+  return `${pn}|${i.type}|${w.items.filter(x => x.personId === i.personId && x.type === i.type).indexOf(i)}`; }
+function rfOf(i) {
+  if (i.rf != null) return i.rf;
+  const k = rfKeyIn(plan, i);
+  for (const w of Object.values(db.plans).filter(w => w.id !== plan.id && w.date <= plan.date).sort((a, b) => b.date.localeCompare(a.date))) { const m = w.items.find(x => x.rf && cat(x).wireless && rfKeyIn(w, x) === k); if (m) return m.rf; }
+  return '';
+}
+function setRf(i, v) { mutate(() => { i.rf = v; }, `${itemName(i)}: ${v || 'channel cleared'}`); }
+function rfClashes() {
+  const by = new Map();
+  for (const i of plan.items.filter(i => cat(i).wireless && rfNorm(rfOf(i)))) { const k = rfNorm(rfOf(i)); by.set(k, [...(by.get(k) || []), i]); }
+  return [...by.values()].filter(l => l.length > 1);
+}
 const battType = () => db.defaults?.batt || '2 × AA';   // what each wireless mic and in-ear pack takes; one setting for the church
 // "12 × AA" from "2 × AA" and six packs, so someone can grab the right number from the cupboard
 const battTotal = n => { const m = battType().match(/^\s*(\d+)\s*[×x*]\s*(.+)$/i); return m ? `${Number(m[1]) * n} × ${m[2].trim()}` : `${n} × ${battType()}`; };
@@ -4876,7 +4913,7 @@ function chEditHtml(ins) {
     <p class="hint">Typing a number another input already has swaps the two. Mic, stand and 48V changes follow the input to every week.</p>`;
 }
 // the sheet tabs: plain words in groups (the event, the audio, the day), the open one underlined; only Overview flags checks
-const DOC_GROUPS = [['overview', 'rider', 'spots'], ['inputs', 'outputs', 'mixes', 'cables', 'power', 'racks'], ['team', 'loadin', 'floor'], ['all']];
+const DOC_GROUPS = [['overview', 'rider', 'spots'], ['inputs', 'outputs', 'mixes', 'rf', 'cables', 'power', 'racks'], ['team', 'loadin', 'floor'], ['all']];
 function docTabs(list, checks) {
   const by = new Map(list.map(t => [t[0], t]));
   return DOC_GROUPS.map(g => g.filter(id => by.has(id)).map(id => { const [, l] = by.get(id), warn = id === 'overview' && checks;
@@ -4939,7 +4976,7 @@ function renderPaper() {
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
-  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()], ['floor', 'Floor marks', floorMarks().length || undefined]].filter(n => n[0] !== 'checks' || w.length);
+  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless', plan.items.filter(i => cat(i).wireless).length]] : []), ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()], ['floor', 'Floor marks', floorMarks().length || undefined]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
     <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
@@ -4969,12 +5006,16 @@ function renderPaper() {
     </div>
     ${plan.items.some(i => i.type === 'rack') ? `<section class="sheet" id="sec-racks" data-sheet="racks">${head('Racks', '', 'Top to bottom, as you face the front.')}${plan.items.filter(i => i.type === 'rack').map(r => `<div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(r))}</b><span class="hint">${rackStat(r).used}/${r.rackU || 8}U · ${rackStat(r).watts} W</span></div><div class="tablewrap"><table><thead><tr><th>U</th><th>Device</th><th>Details</th><th>Notes</th></tr></thead><tbody>${(r.devices || []).slice().sort((a, b) => a.at - b.at).map(d => `<tr><td><span class="ch">${(r.rackU || 8) - d.at}${d.u > 1 ? '–' + ((r.rackU || 8) - d.at - d.u + 1) : ''}</span></td><td>${esc(d.name)}</td><td class="mono">${esc(devMeta(d)) || '—'}</td><td>${esc(d.note || '')}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Empty rack.</td></tr>'}</tbody></table></div></div>`).join('')}</section>` : ''}
     <section class="sheet" id="sec-power" data-sheet="power">${head('Power distribution', '', 'Amber above 80% of the breaker, red over it.')}${powerHtml}</section>
+    ${(() => { const rf = plan.items.filter(i => cat(i).wireless).sort((a, b) => rfKind(a).localeCompare(rfKind(b)) || itemName(a).localeCompare(itemName(b))); if (!rf.length) return ''; const bad = new Set(rfClashes().flat().map(i => i.id));
+      return `<section class="sheet" id="sec-rf" data-sheet="rf">${head('Wireless', '', `Give each mic and in-ear pack its own channel or frequency, and match it on the receiver or transmitter. ${bad.size ? `<b class="rfbad">${plural(bad.size, 'pack')} share a channel.</b>` : 'No two share one.'}`)}
+      <div class="tablewrap"><table class="rftbl"><thead><tr><th>Pack</th><th>Type</th><th>Who</th><th>Channel or frequency</th></tr></thead><tbody>${rf.map(i => `<tr class="${bad.has(i.id) ? 'flag' : ''}"><td>${esc(itemName(i))}</td><td>${rfKind(i)}</td><td>${esc(personById(i.personId)?.name || '')}</td><td><input type="text" data-rf="${i.id}" value="${esc(rfOf(i))}" placeholder="e.g. Ch 3 or 606.500" aria-label="Channel or frequency for ${esc(itemName(i))}" autocomplete="off">${bad.has(i.id) ? `<span class="rfdup">${ic('alert', 'sm')}Same as another</span>` : ''}<span class="rfprint">${esc(rfOf(i))}</span></td></tr>`).join('')}</tbody></table></div></section>`; })()}
     ${(() => { const fm = floorMarks(); return `<section class="sheet" id="sec-floor" data-sheet="floor">${head('Floor marks', '', `Where to put tape before anything goes on stage. Measured from the stage-right edge (the left as you look from the house) and back from the front edge. Risers are marked by their front stage-right corner; everything else by its centre.`)}
       ${fm.length ? `<div class="tablewrap"><table class="floortbl"><thead><tr><th>#</th><th>Mark</th><th style="text-align:right">From stage right</th><th style="text-align:right">Back from front</th><th>Size</th></tr></thead><tbody>${fm.map((m, k) => `<tr><td><span class="ch">${k + 1}</span></td><td>${esc(itemName(m.i))}${m.riser ? '<small class="hint" style="display:block">front stage-right corner</small>' : ''}</td><td class="mono" style="text-align:right">${uLen(m.across)}</td><td class="mono" style="text-align:right">${uLen(m.back)}</td><td class="mono">${m.size}</td></tr>`).join('')}</tbody></table></div>` : emptyBox('fit', 'Nothing on stage yet', 'Build the stage from the team and the marks appear here.', 'team', 'Build from the team')}</section>`; })()}
-    ${(() => { const groups = loadinTasks(), g = loadinProgress(), st = loadinState(), store = inStorage(); if (!g.total && !store.length) return ''; const pct = g.total ? Math.round(g.done / g.total * 100) : 0;
+    ${(() => { const groups = loadinTasks(), g = loadinProgress(), st = loadinState(), store = inStorage(); if (!g.total && !store.length && powerOrder().length < 2) return ''; const pct = g.total ? Math.round(g.done / g.total * 100) : 0;
       return `<section class="sheet loadin" id="sec-loadin" data-sheet="loadin">${head('Load-in checklist', '', 'Tick things off as they’re set up. Saved with this week.')}${boxKey([...inputList(), ...outputList()])}
         ${g.total ? `<div class="lprog" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Load-in progress"><div class="lbar"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} done</b>${g.done ? '<button class="btn quiet" id="loadinReset">Clear ticks</button>' : ''}</div>` : ''}
         ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span>${title === 'Batteries' ? `<span class="battneed">${esc(battTotal(list.length))} needed</span><label class="battset"><span>Each takes</span><input type="text" id="battType" value="${esc(battType())}" aria-label="Batteries each pack takes" list="battList"></label><datalist id="battList">${['2 × AA', '1 × AA', '2 × AAA', '1 × 9V', 'Rechargeable'].map(v => `<option value="${v}">`).join('')}</datalist>` : ''}</h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
+        ${(() => { const po = powerOrder(); return po.length > 1 ? `<div class="lgroup poworder"><h3>${ic('zap', 'sm')}Switch-on order <span class="hint">desk first, speakers last; switch off the other way round</span></h3><div class="pocols"><ol>${po.map(([t, l]) => `<li><b>${esc(t)}</b><small>${esc(l.join(', '))}</small></li>`).join('')}</ol><div><h4>Switch off</h4><ol>${po.slice().reverse().map(([t]) => `<li>${esc(t)}</li>`).join('')}</ol></div></div></div>` : ''; })()}
         ${store.length ? `<div class="lgroup storage"><h3>${ic('layers', 'sm')}Stays in storage <span class="hint">owned, not used this week</span></h3><ul class="storelist">${store.map(x => `<li><b>${x.left}</b> × ${esc(CAT[x.t].name)}</li>`).join('')}</ul></div>` : ''}
       </section>`; })()}
     </div>
@@ -6900,6 +6941,7 @@ svg.addEventListener('pointerover', e => {
     if (C.shape === 'person') rows.push(['Position', owner?.role || '—']);
     if (chs.length) rows.push([chs.length > 1 ? 'Channels' : 'Channel', span(chs.map(r => `${r.ch}${r.port && r.port !== '—' ? ` · ${shortPort(r.port, codes)}` : ''}`))]);
     else if (inputsOf(it).length && patchOf(it)?.kind === 'rf') rows.push(['Input', 'wireless']);
+    if (C.wireless) rows.push(['Channel', rfOf(it) || 'not set (Paperwork → Wireless)']);
     const pw = plan.cables.filter(c => c.type === 'power' && touches(c, it.id)).map(c => { const o = other(c, it.id); return o && !isPowerSource(it) ? `${itemName(o)}${isPowerSource(o) && !isExt(o) ? ` · circuit ${c.circuit || 1}` : ''}` : null; }).filter(Boolean);
     if (pw.length) rows.push(['Plugs into', pw.join(', ')]); else if (watts && !C.wireless && !isPowerSource(it)) rows.push(['Power', `${watts} W, not plugged in`]);
     const mix = (it.type === 'wedge' || C.iem) && owner && monitorMixes().find(m => m.person === owner.name && m.kind === (C.iem ? 'IEM' : 'Wedge'));
@@ -7260,6 +7302,7 @@ $('paperView').addEventListener('change', e => {
   if (t0.dataset.chmic !== undefined) { setChanMeta(t0.dataset.chmic, 'mic', t0.value.trim().slice(0, 40)); return; }
   if (t0.dataset.chstand !== undefined) { setChanMeta(t0.dataset.chstand, 'stand', t0.value); return; }
   if (t0.dataset.ch48 !== undefined) { setChanMeta(t0.dataset.ch48, 'p48', t0.checked); return; }
+  if (t0.dataset.rf) { const it = itemById(t0.dataset.rf), v = t0.value.trim().slice(0, 24), y = $('paperView').scrollTop; if (it && rfOf(it) !== v) setRf(it, v); $('paperView').scrollTop = y; return; }
   if (t0.id === 'battType') { setDefault('batt', t0.value.trim().slice(0, 24)); const y = $('paperView').scrollTop; renderPaper(); $('paperView').scrollTop = y; return; }   // a church-wide setting, not this week's
   const k = e.target.dataset?.chk; if (!k) return;
   const st = loadinState(); if (e.target.checked) st[k] = 1; else delete st[k];
