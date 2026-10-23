@@ -1230,7 +1230,7 @@ td.spare { color: var(--muted); font-style: italic; }
 /* Home: the week's stage on the Next up card */
 @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
 /* look switch: calm (pictures sit back until picked or pointed at), full colour, mono */
-#plot.style-calm .item:not(.is-person):not(.is-floor):not(.picked):not(:hover) { filter: saturate(.55) brightness(.97); }
+#plot.style-calm .item:not(.is-person):not(.is-floor):not(.is-inst):not(.picked):not(:hover) { filter: saturate(.72) brightness(.98); }   /* instruments keep their colour: they're what people look for */
 #plot.style-mono { filter: grayscale(1) contrast(1.04); }
 .pstyle { margin: 2px 8px 6px; }
 .itag.gname rect { fill: rgba(16,18,23,.5); stroke: none; } .itag.gname .ilabel { font-weight: 500; fill: rgba(255,255,255,.88); font-size: inherit; }
@@ -3633,7 +3633,37 @@ function aimLinks(selSet) {
 let foldHinted = false, hoverCid = null;
 // while nothing is picked, runs keep their colour but lean towards grey, so the stage isn't a rainbow; picking or pointing brings the colour back
 document.head.insertAdjacentHTML('beforeend', `<style id="calmcables">${Object.entries(KVAR).map(([k, v]) => `#plot.style-calm .cab.quiet.k-${k} { stroke: color-mix(in srgb, var(${v}) 58%, #8b909a); } #plot.style-calm .plug.quiet[style*="${v}"] { fill: color-mix(in srgb, var(${v}) 58%, #8b909a) !important; }`).join('')}</style>`);
-svg.addEventListener('pointerover', e => { const h = e.target.closest?.('[data-cid]'); const id = h && !drag && !pending && e.pointerType !== 'touch' ? h.dataset.cid : null; if (id !== hoverCid) { hoverCid = id; renderPlot(); } });
+/* Cables side by side: the click zones overlap, so the cable nearest the pointer wins (not the one drawn last), and
+   clicking again on the same spot steps to the next cable there. */
+const cabTol = () => Math.max(.2, 9 / scale);
+function cablesAt(p) {
+  const tol = cabTol(), best = new Map();
+  for (const h of svg.querySelectorAll('.cabhit')) {
+    const q = h.getAttribute('points').split(' ').map(t => t.split(',').map(Number));
+    for (let i = 1; i < q.length; i++) {
+      const [ax, ay] = q[i - 1], [bx, by] = q[i], dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy, t = L ? Math.max(0, Math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / L)) : 0;
+      const d = Math.hypot(p.x - ax - t * dx, p.y - ay - t * dy);
+      if (d <= tol && d < (best.get(h.dataset.cid) ?? Infinity)) best.set(h.dataset.cid, d);
+    }
+  }
+  return [...best].sort((a, b) => a[1] - b[1]).map(([id]) => id);
+}
+let lastCabPick = null;
+function pickCable(p, fallback) {
+  const same = sel?.kind === 'cable' && lastCabPick && Math.hypot(p.x - lastCabPick.x, p.y - lastCabPick.y) < cabTol() && lastCabPick.list.includes(sel.id);
+  const near = same ? lastCabPick.list : cablesAt(p); if (!near.length) return fallback;   // the same spot keeps its first list: drawing a picked cable reshuffles what's under the pointer
+  const id = same ? near[(near.indexOf(sel.id) + 1) % near.length] : near[0];
+  lastCabPick = { x: same ? lastCabPick.x : p.x, y: same ? lastCabPick.y : p.y, list: near };
+  if (near.length > 1) { const c = plan.cables.find(x => x.id === id), a = c && itemById(c.from), z = c && itemById(c.to); toast(`Cable ${near.indexOf(id) + 1} of ${near.length} here${a && z ? `: ${itemName(a)} → ${itemName(z)}` : ''} · click again for the next`); }
+  return id;
+}
+let hoverRaf = 0;
+svg.addEventListener('pointermove', e => {
+  if (drag || pending || e.pointerType === 'touch') return;
+  const on = e.target.closest?.('[data-cid]'); if (!on && !hoverCid) return;
+  const pt = toFt(e); cancelAnimationFrame(hoverRaf);
+  hoverRaf = requestAnimationFrame(() => { const id = on ? (cablesAt(pt)[0] || on.dataset.cid) : null; if (id !== hoverCid) { hoverCid = id; renderPlot(); } });
+});
 svg.addEventListener('pointerleave', () => { if (hoverCid) { hoverCid = null; renderPlot(); } });
 const TUCK_TYPES = new Set(['di_mono', 'di_stereo', 'iem']);   // passive boxes only: anything someone plays or plugs into stays drawn
 const freshGear = new Set();   // gear added this session never folds away, so it can't vanish the moment it's placed
@@ -3825,7 +3855,7 @@ function renderPlot() {
   const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${C.shape === 'person' ? ' is-person' : C.shape === 'platform' ? ' is-floor' : ''}${selSet.has(it.id) ? ' picked' : ''}${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}${fset?.has(it.id) ? ' infocus' : ''}${lifted?.has(it.id) && C.shape !== 'platform' ? ' lifting' : settling.has(it.id) ? ' settle' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}"><g class="liftg">${shapeSvg(it, iw, id)}</g></g>`;
+    const g = `<g class="item${C.shape === 'person' ? ' is-person' : C.shape === 'platform' ? ' is-floor' : C.cat === 'inst' ? ' is-inst' : ''}${selSet.has(it.id) ? ' picked' : ''}${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}${fset?.has(it.id) ? ' infocus' : ''}${lifted?.has(it.id) && C.shape !== 'platform' ? ' lifting' : settling.has(it.id) ? ' settle' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}"><g class="liftg">${shapeSvg(it, iw, id)}</g></g>`;
     if (L < 1) s += g; else top += g;
     if ((C.wireless || C.iem) && !layersBypass) { const [rw, rh] = halfExt(it), k = 1 / scale; top += `<g class="rfmark" transform="translate(${f3(it.x + rw * .7)} ${f3(it.y - rh * .7)}) scale(${f3(k)})" aria-hidden="true"><circle r="5.5"/><path d="M-2.6 -.6a3.7 3.7 0 0 1 5.2 0M-1.3 .9a1.85 1.85 0 0 1 2.6 0"/><circle class="rfdot" cy="2.2" r=".9"/></g>`; }   // wireless: a little signal mark instead of a plug
     if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
@@ -4947,8 +4977,8 @@ svg.addEventListener('pointerdown', e => {
       const others = keep ? ids.filter(x => x !== it.id).map(itemById).filter(o => !o.locked).map(o => ({ id: o.id, dx: o.x - it.x, dy: o.y - it.y })) : [];
       drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false, others, keep, locked: !!it.locked };
     }
-  } else if (ch) {
-    sel = { kind: 'cable', id: ch.dataset.cid };
+  } else if (ch || (sel?.kind === 'cable' && !chh && cablesAt(p).length)) {   // the picked cable's label and handles sit over its neighbours: a click there still means a cable
+    sel = { kind: 'cable', id: pickCable(p, ch?.dataset.cid) };
   } else if (chh) {
     sel = { kind: 'channel', id: chh.dataset.chid };
   } else if (e.shiftKey && mode === 'select') {   // Shift-drag the floor: box-select
@@ -6666,7 +6696,7 @@ svg.addEventListener('contextmenu', e => {
   e.preventDefault(); hideHover();
   pending = null; mode = 'select';
   const grp = g && selIds().length > 1 && selIds().includes(g.dataset.id);
-  if (!grp) { sel = g ? { kind: 'item', id: g.dataset.id } : { kind: 'cable', id: ch.dataset.cid }; group = null; }
+  if (!grp) { sel = g ? { kind: 'item', id: g.dataset.id } : { kind: 'cable', id: (sel?.kind === 'cable' && cablesAt(toFt(e)).includes(sel.id)) ? sel.id : (cablesAt(toFt(e))[0] || ch.dataset.cid) }; group = null; }
   renderPlot(); renderInspector();
   const m = $('ctxMenu');
   if (grp) {
@@ -6691,7 +6721,7 @@ svg.addEventListener('contextmenu', e => {
       <div class="ctx-sep"></div>
       <button data-ctx="del" class="danger">${ic('trash', 'sm')}Delete<span class="kbd">Del</span></button>`;
   } else {
-    const c = plan.cables.find(x => x.id === ch.dataset.cid);
+    const c = plan.cables.find(x => x.id === sel.id);   // the cable picked above (nearest the pointer)
     m.innerHTML = `<div class="ctx-h">${esc(CABLES[c.type].name)} · ${fmtLen(cableLen(c))}</div>
       <button data-ctx="edit">${ic('panelR', 'sm')}Edit details</button>
       ${c.points.length ? `<button data-ctx="straighten">${ic('fit', 'sm')}Straighten</button>` : ''}
