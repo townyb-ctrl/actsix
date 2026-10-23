@@ -223,7 +223,7 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .empty-state { text-align: center; padding: 22px 12px; border: 1px dashed var(--line-2); border-radius: var(--r-md); color: var(--muted); display: grid; gap: 6px; justify-items: center; }
 .empty-state strong { color: var(--ink); }
 th .thshort { display: none; text-decoration: none; } @media (max-width: 560px) { th .thshort { display: inline; } th .thlong { display: none; } }
-@media (max-width: 899px) { #pagesBtn { display: none; } }
+@media (max-width: 899px) { .viewbar .vb-view { display: none; } }   /* pages only apply on wide screens */
 .wkvenue { color: var(--accent-text); font-weight: 600; }
 .venueline { display: grid; gap: 8px; padding: 9px 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2); }
 .vl-top { display: flex; align-items: center; gap: 8px; min-width: 0; } .vl-top > .ic { color: var(--muted); flex: none; }
@@ -977,7 +977,12 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .docnav nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .docnav .dsep { width: 1px; height: 16px; background: var(--line-2); margin: 0 6px 3px; flex: none; }
 .dwarn { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
-.docnav .printbar { padding-bottom: 6px; } .docnav .printbar .iconbtn { width: 34px; height: 34px; } .docnav #pagesBtn[aria-pressed="true"] { color: var(--accent-text); }
+.viewbar { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: -10px; flex-wrap: wrap; }
+.viewbar .vb-view { display: inline-flex; align-items: center; gap: 8px; } .vb-l { font-size: 12.5px; color: var(--muted); }
+.viewbar .seg button { padding: 4px 10px; font-size: 12.5px; } .viewbar .seg .ic { width: 14px; height: 14px; }
+.viewbar .btn.quiet { font-size: 12.5px; padding: 5px 8px; color: var(--ink-2); }
+@media print { .viewbar { display: none !important; } }
+.docnav .printbar { padding-bottom: 6px; } .docnav .printbar .iconbtn { width: 34px; height: 34px; }
 .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: grid; gap: 14px; min-width: 0; scroll-margin-top: 60px; box-shadow: var(--shadow-1); }
 /* Pages: on screen, each sheet is a white A4 page on a grey desk, numbered, as it will print */
 @media screen and (min-width: 900px) {
@@ -992,7 +997,6 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
   .paper.pages .sheet .p48 { color: #b4540a; background: #fff3e0; border-color: #f5c27a; }   /* white paper keeps light-theme chips and avatars in dark mode */
   .paper.pages .sheet .avatar { background: linear-gradient(180deg, color-mix(in srgb, var(--av-bg, var(--surface-3)) 70%, #fff), var(--av-bg, var(--surface-3))); }
   .paper.pages .sheet .tone-band { --av-bg: #e0f2fe; --av-fg: #075985; } .paper.pages .sheet .tone-vox { --av-bg: #ffe4e6; --av-fg: #9f1239; } .paper.pages .sheet .tone-word { --av-bg: #d1fae5; --av-fg: #065f46; } .paper.pages .sheet .tone-tech { --av-bg: #e2e8f0; --av-fg: #334155; }
-  #pagesBtn[aria-pressed="true"] { background: var(--surface); border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: var(--accent-text); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
   .paper.pages .sheet::after { content: 'Page ' counter(page); position: absolute; right: 12mm; bottom: 7mm; font: 500 10px var(--f-mono); letter-spacing: .06em; color: #8a909c; }
   .paper.pages .sheet::before { content: ''; position: absolute; left: 12mm; right: 12mm; bottom: 12mm; border-top: 1px solid #eceef2; }
 }
@@ -4717,7 +4721,7 @@ function docTabs(list, checks) {
 }
 const edgeFade = n => { n.classList.toggle('more-l', n.scrollLeft > 2); n.classList.toggle('more-r', n.scrollLeft + n.clientWidth < n.scrollWidth - 2); };
 function centreTab() {   // on a phone the tab row scrolls: keep the open sheet's tab in view
-  const dn = document.querySelector('.docnav'); if (dn) $('paperView').style.setProperty('--navb', `${Math.max(0, dn.offsetHeight - 38)}px`);   // where a sticky table header tucks under the tab bar
+  const dn = document.querySelector('.docnav'); if (dn) $('paperView').style.setProperty('--navb', `${Math.max(0, dn.offsetHeight - 28)}px`);   // where a sticky table header tucks under the tab bar
   const nav = document.querySelector('.docnav nav'), b = nav?.querySelector('[aria-selected="true"]');
   if (nav && !nav.onscroll) nav.onscroll = () => edgeFade(nav);
   if (nav) requestAnimationFrame(() => edgeFade(nav));
@@ -4769,7 +4773,8 @@ function renderPaper() {
     <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><button class="btn iconbtn" id="pagesBtn" aria-pressed="${pageView}" title="${pageView ? 'Showing sheets as printed pages (click for plain)' : 'Show the sheets as printed pages'}" aria-label="Show as pages">${ic('sheet', 'sm')}</button><button class="btn iconbtn" id="sheetsBtn" data-needs-dl title="Download every sheet as one page you can open, share and print anywhere" aria-label="Download sheets"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
+    <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
+    <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets</button></div>
     <div class="sheetgrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${uLen(foh.y - plan.stage.d)} out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
@@ -5746,7 +5751,7 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn')) { window.print(); return; }
-  if (e.target.closest('#pagesBtn')) { pageView = !pageView; try { localStorage.setItem('stageplot.pages', pageView ? '1' : '0'); } catch { /* ignore */ } renderPaper(); return; }
+  const pv = e.target.closest('[data-pageview]'); if (pv) { pageView = pv.dataset.pageview === '1'; try { localStorage.setItem('stageplot.pages', pageView ? '1' : '0'); } catch { /* ignore */ } renderPaper(); return; }
   if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); window.print(); setTimeout(done, 1500); return; }
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
