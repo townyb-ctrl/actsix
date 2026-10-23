@@ -262,6 +262,21 @@ th .thshort { display: none; text-decoration: none; } @media (max-width: 560px) 
 .svcx:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); } .svcx .ic { width: 11px; height: 11px; }
 .svcload { padding: 4px 8px; font-size: 12px; }
 .pcovenue { display: flex; gap: 8px; align-items: flex-start; margin: -2px 0 2px; font-size: 12.5px; color: var(--ink-2); } .pcovenue .ic { color: var(--accent-text); flex: none; margin-top: 1px; }
+.calstrip { display: grid; gap: 8px; margin-bottom: 14px; }
+.calhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; } .calhead .hint { font-size: 12px; }
+.caldays { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.calday { position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 4px 9px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink-2); cursor: pointer; font: inherit; }
+.calday:hover { border-color: var(--line-2); background: var(--surface-2); }
+.calday small { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.calday b { font: 650 16px/1.1 var(--f-ui); color: var(--ink); font-variant-numeric: tabular-nums; }
+.caldot { width: 8px; height: 8px; border-radius: 50%; margin-top: 3px; }
+.calday.s-planned .caldot { background: var(--accent); }
+.calday.s-started .caldot { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.calday.s-free .caldot { width: 10px; height: 2px; border-radius: 2px; margin-top: 6px; background: var(--line-2); }
+.calday.s-free b { color: var(--muted); font-weight: 550; }
+.calday.cur { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: inset 0 -2px 0 var(--accent); }
+.calday em { position: absolute; top: 4px; right: 5px; font: 600 9.5px/1 var(--f-mono); font-style: normal; color: var(--muted); }
+@media (max-width: 560px) { .caldays { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .sheet-empty { padding: 26px 16px; } .sheet-empty > .ic { width: 22px; height: 22px; color: var(--muted); } .sheet-empty .btn { margin-top: 4px; }
 @media print { .sheet-empty .btn { display: none; } }
 
@@ -6919,6 +6934,20 @@ function libTrend(order, stats, id) {
   const txt = `Last ${ids.length} weeks · inputs ${ids.map(i => stats.get(i).ins).join(', ')} · team ${ids.map(i => stats.get(i).team).join(', ')}`;
   return `<span class="libtrend" title="${esc(txt)}"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(txt)}"><polyline class="lt-team" points="${pts(team)}"/><polyline class="lt-ins" points="${pts(ins)}"/><circle cx="${f3(lx)}" cy="${f3(ly)}" r="2"/></svg></span>`;
 }
+/* Home → Library: the next eight service days at a glance — filled when planned, ringed when only started, faint when free.
+   Tap a planned day to open it, a free one to start a week there (in the venue the Library is showing). */
+function calStrip() {
+  const vid = venues()[lib.venue] ? lib.venue : null, start = nextServiceDay(), DAY = DAYS[defaultsOf().day] || 'service day';
+  const cells = Array.from({ length: 8 }, (_, i) => {
+    const d = addDays(start, 7 * i), wk = Object.values(db.plans).filter(p => p.date === d && (!vid || p.venueId === vid));
+    const planned = wk.filter(p => p.team.length || p.items.some(it => !it.gen)), pick = planned[0] || wk[0], st = planned.length ? 'planned' : wk.length ? 'started' : 'free';
+    const dt = new Date(d + 'T12:00'), mon = dt.toLocaleDateString(undefined, { month: 'short' }), num = dt.getDate(), cur = pick && pick.id === plan.id;
+    const what = st === 'planned' ? `${esc(pick.name || 'Untitled service')}${pick.team.length ? ` · ${plural(pick.team.length, 'person', 'people')}` : ''}` : st === 'started' ? 'Started, nothing on stage yet' : 'Nothing planned · click to start a week';
+    return `<button class="calday s-${st}${cur ? ' cur' : ''}" ${pick ? `data-calopen="${pick.id}"` : `data-calnew="${d}"`} title="${esc(longDate(d))}: ${what}${wk.length > 1 ? ` (+${wk.length - 1} more)` : ''}"><small>${esc(mon)}</small><b>${num}</b><i class="caldot" aria-hidden="true"></i>${wk.length > 1 ? `<em>${wk.length}</em>` : ''}<span class="sr-only">, ${st === 'planned' ? 'planned' : st === 'started' ? 'started' : 'free'}</span></button>`;
+  }).join('');
+  const n = cells.split('s-planned').length - 1;
+  return `<div class="calstrip"><div class="calhead"><span class="eyebrow">The next 8 ${esc(DAY)}s</span><span class="hint">${n} of 8 planned</span></div><div class="caldays">${cells}</div></div>`;
+}
 function renderLibrary() {
   const today = new Date().toISOString().slice(0, 10), q = lib.q.trim().toLowerCase();
   if (lib.venue && !venues()[lib.venue]) lib.venue = '';
@@ -6943,6 +6972,7 @@ function renderLibrary() {
   const su = Object.entries(setups());
   const el = $('libBody'); if (!el) return;
   el.innerHTML = `
+    ${calStrip()}
     ${multiVenue() ? `<div class="vchips" role="group" aria-label="Venue">${[['', 'All venues', Object.keys(db.plans).length], ...venueList().map(v => [v.id, v.name, venueWeekIds(v.id).length])].map(([id, n, c]) => `<button class="vchip" data-libvenue="${id}" aria-pressed="${lib.venue === id}">${esc(n)}<span>${c}</span></button>`).join('')}</div>` : ''}
     <div class="search">${ic('search', 'sm')}<input id="libSearch" type="search" placeholder="Find a week by name or date" value="${esc(lib.q)}" aria-label="Find a week"></div>
     <div class="liblist">${rows || (lib.q ? `<p class="hint">No weeks match “${esc(lib.q)}”.</p>` : `<div class="empty-state">${ic('calendar')}<strong>No weeks at ${esc(venues()[lib.venue]?.name || 'this venue')} yet</strong><button class="btn primary" data-vnew="${esc(lib.venue)}">${ic('plus', 'sm')}Start the first one</button></div>`)}</div>
@@ -6980,6 +7010,8 @@ $('homeView').addEventListener('click', e => {
   if (t.dataset.vdel) { const id = t.dataset.vdel, V = venues()[id]; if (!V || venueWeekIds(id).length || venueList().length < 2) return;
     if (venueDelArmed !== id) { venueDelArmed = id; renderHome(); return; }
     venueDelArmed = ''; delete venues()[id]; if (lib.venue === id) lib.venue = ''; save(); renderAll(); toast(`Deleted ${V.name}`, { label: 'Undo', fn: () => { venues()[id] = V; save(); renderAll(); } }); return; }
+  if (t.dataset.calopen) { view = 'plot'; switchWeek(t.dataset.calopen); return; }
+  if (t.dataset.calnew) { const vid = venues()[lib.venue] ? lib.venue : venueOf(plan)?.id, np = blankPlan(t.dataset.calnew, vid); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)}${multiVenue() ? ` at ${venues()[vid]?.name}` : ''}`); return; }
   if (t.dataset.libvenue !== undefined) { lib.venue = t.dataset.libvenue; renderHome(); return; }
   if (t.dataset.libdup) {
     const src = db.plans[t.dataset.libdup], np = JSON.parse(JSON.stringify(src)); np.id = uid(); np.date = addDays(src.date, 7);

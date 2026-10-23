@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 73 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 74 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -144,6 +144,7 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 - **Planning Center while loading**: soft grey placeholder rows in the shape of what's coming (roster rows, or a picker) pulse beside the status line instead of a bare spinner.
 - **Picking cables in a bunch**: a click picks the cable nearest the pointer (not just the one drawn on top), and pointing at a run lights the nearest one. Where several run side by side, click again on the same spot to step to the next; a note says which one you have (*Cable 2 of 4 here: Casey Kit → Stage box*). Right-click works the same way.
 - **Instruments in colour**: in the Calm look, guitars, drums, keys and other instruments keep their full colour; only the rest of the gear is toned down a little until you point at it.
+- **The next 8 service days** (Home → Library): a strip of your usual service day for the next eight weeks, each with a dot: filled when planned, a ring when started but empty, a dash when free. Click a planned day to open it, a free one to start a week there; with a venue picked in the Library it shows that venue only.
 - **Next up card**: a calm two-part card on Home: the week's stage drawn large on the left; on the right the date (and venue), name, status, team, figures and the buttons to open the plot, paperwork, print or load-in. On wide screens Home spreads out to use the room; settings pages keep a readable width.
 - **Next up figures**: Home's Next up card shows people, items, inputs, metres of cable and kW, counting up briefly when Home opens (once, not on every redraw; off with reduced motion).
 - **Team list**: each avatar carries a small outline mark for the person's position (mic for voices, guitar, keys, drums, laptop for tracks, speech bubble for the pastor, desk, headphones, bulb or clipboard for tech), rows are split by fine lines instead of boxes, and the *Also sings* mic stays faint until it's on or you point at the row.
