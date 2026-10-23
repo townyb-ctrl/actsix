@@ -114,6 +114,10 @@ Every gear item is drawn as a real top-down symbol (drum kit with shells and cym
 - An unexpected error shows one calm notice instead of failing silently; work already saved stays saved.
 - Checked with axe-core in light and dark themes: no violations (contrast at least 4.5:1, labelled panels and tabs, keyboard-reachable canvas, a page heading for screen readers).
 
+## Mac and Windows app
+
+`desktop/` packages Stageplot as an installable app for Mac (`.dmg`) and Windows (`.exe` installer). GitHub Actions builds both on every push to `stageplot/`; push a tag like `stageplot-v1.0.0` to publish a release. The app runs offline, saves weeks on the computer, and says so in Home and About. Planning Center import is the one thing that needs Claude, so it isn't in the desktop app. Install steps, first-open warnings for unsigned builds and data locations are in [desktop/README.md](desktop/README.md).
+
 ## Saving
 
 Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or download JSON as a backup or to move to another computer.

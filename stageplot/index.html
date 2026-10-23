@@ -1631,7 +1631,7 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
       <button class="iconbtn" id="aboutClose" aria-label="Close"></button></div>
     <p style="font-size:15px;margin:0">Plan this week’s stage in minutes. Add the team, build the stage, and every input is patched and powered for you. Then print the stage plot, input list, monitor mixes, cable pull and power sheet.</p>
     <dl class="aboutkv">
-      <dt>Your data</dt><dd>Weeks are saved in this browser only. Nothing is uploaded. Use Backup &amp; restore to move them to another computer.</dd>
+      <dt>Your data</dt><dd>Weeks are saved <span class="savedWhere">in this browser</span> only. Nothing is uploaded. Use Backup &amp; restore to move them to another computer.</dd>
       <dt>Planning Center</dt><dd>Optional and read-only: service types, plans and who’s scheduled. Stageplot never changes anything in Planning Center.</dd>
       <dt>Works on</dt><dd>Modern browsers on desktop, iPad and phone. Prints on A4 or Letter, or saves as PDF.</dd>
     </dl>
@@ -5751,7 +5751,9 @@ document.addEventListener('click', e => { const sm = e.target.closest('details.m
 $('themeBtn').onclick = () => setTheme(themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system');
 $('helpBtn').onclick = () => { $('helpDlg').hidden = false; };
 const APP_VERSION = '1.0';
-function openAbout() { $('aboutVer').textContent = `Version ${APP_VERSION} · ${Object.keys(db.plans).length} saved ${Object.keys(db.plans).length === 1 ? 'week' : 'weeks'}`; $('aboutClose').innerHTML = ic('x'); $('aboutDlg').hidden = false; }
+// the installed Mac or Windows app (Stageplot desktop) says so through its preload; everything else is the same page
+const DESKTOP = window.stageplotDesktop || null, SAVED_WHERE = DESKTOP ? 'on this computer' : 'in this browser';
+function openAbout() { document.querySelectorAll('.savedWhere').forEach(x => { x.textContent = SAVED_WHERE; }); $('aboutVer').textContent = `Version ${APP_VERSION}${DESKTOP ? ` · ${DESKTOP.platform === 'darwin' ? 'Mac' : DESKTOP.platform === 'win32' ? 'Windows' : 'desktop'} app ${DESKTOP.version}` : ''} · ${Object.keys(db.plans).length} saved ${Object.keys(db.plans).length === 1 ? 'week' : 'weeks'}`; $('aboutClose').innerHTML = ic('x'); $('aboutDlg').hidden = false; }
 $('aboutClose').onclick = () => { $('aboutDlg').hidden = true; };
 $('histClose').innerHTML = ic('x'); $('histClose').onclick = () => { $('histDlg').hidden = true; };
 $('histDlg').addEventListener('click', e => {
@@ -6946,7 +6948,7 @@ function markSaved(ok) {
   const el = $('savedInd'); if (!el) return;
   el.className = `saved ${ok ? 'ok' : 'bad'}`;
   el.innerHTML = ok ? `${ic('check', 'sm')}<span>Saved</span>` : `${ic('alert', 'sm')}<span>Not saved</span>`;
-  el.title = ok ? 'All changes are saved in this browser' : 'This browser is blocking storage. Use Backup & restore to keep your work.';
+  el.title = ok ? `All changes are saved ${SAVED_WHERE}` : 'This browser is blocking storage. Use Backup & restore to keep your work.';
   clearTimeout(savedTimer);
   el.classList.add('flash'); el.classList.remove('idle');
   savedTimer = setTimeout(() => { el.classList.remove('flash'); if (ok) el.classList.add('idle'); }, 1400);   // a quiet tick after each save, then out of the way
@@ -7431,7 +7433,7 @@ function homeLibrary() {
           <div class="herosub"><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button><button class="btn" data-libprint="${next.id}" title="Print every sheet, or save them as a PDF">${ic('save', 'sm')}Print</button><button class="btn" data-libloadin="${next.id}" title="Tick things off on the day">${st.load.total ? loadRing(st.load.done, st.load.total) : ic('check', 'sm')}Load-in${st.load.total ? ` <span class="herocount">${st.load.done}/${st.load.total}</span>` : ''}</button></div></div>
       </div>
     </section>` : '';
-  return firstRunCard() + hero + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved in this browser`, '<div id="libBody"></div>',
+  return firstRunCard() + hero + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved ${SAVED_WHERE}`, '<div id="libBody"></div>',
     `<div class="row" style="gap:6px"><button class="btn" id="homeNewCopy" title="Copy the latest week to the next free ${esc(DAYS[defaultsOf().day])}">${ic('copy', 'sm')}Copy latest</button><button class="btn primary" id="homeNewBlank" title="A fresh week from your stage defaults">${ic('plus', 'sm')}New week</button></div>`);
 }
 function nextFreeDate(from, vid) { let d = from || nextServiceDay(); while (Object.values(db.plans).some(p => p.date === d && (!vid || p.venueId === vid))) d = addDays(d, 7); return d; }
@@ -7629,13 +7631,13 @@ function homePrefs() {
     hsec('Working on the plot', '', `<div class="hpref"><span><b>Snap gear to</b><small>Rounds positions as you move gear (hold Alt to move freely)</small></span><select id="hp-snap" aria-label="Snap gear to">${(() => { const o = snapOpts(), near = ui.snap ? o.filter(([v]) => v).reduce((a, b) => Math.abs(b[0] - ui.snap) < Math.abs(a[0] - ui.snap) ? b : a)[0] : 0; return [o[3], ...o.slice(0, 3)].map(([v, l]) => `<option value="${v}" ${near === v ? 'selected' : ''}>${l}</option>`).join(''); })()}</select></div>
       ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}
       ${hcheck('hp-lock', 'Lock weeks that have happened', db.defaults?.lockPast !== false, 'Past weeks open read-only; Edit anyway unlocks one')}`) +
-    hsec('Use it offline', '', `<div class="hpref"><span><b>${matchMedia('(display-mode: standalone)').matches ? 'Installed on this device' : 'Install Stageplot on this device'}</b><small>${swState.ok ? 'Works with no signal: the app is saved on this device, and your weeks always are.' : 'Your weeks are always saved on this device. Open Stageplot from its own web address to install it and use it with no signal.'}${/iPhone|iPad/.test(navigator.userAgent) && !installPrompt ? ' On iPhone or iPad: Share → Add to Home Screen.' : ''}</small></span>${installPrompt ? `<button class="btn primary" id="hp-install">${ic('save', 'sm')}Install</button>` : ''}</div>`);
+    hsec('Use it offline', '', DESKTOP ? `<div class="hpref"><span><b>Installed as a desktop app</b><small>Works with no signal. Your weeks are saved in this computer’s app data, separate from any browser: use Data &amp; backup to move them between the browser and the app.</small></span></div>` : `<div class="hpref"><span><b>${matchMedia('(display-mode: standalone)').matches ? 'Installed on this device' : 'Install Stageplot on this device'}</b><small>${swState.ok ? 'Works with no signal: the app is saved on this device, and your weeks always are.' : 'Your weeks are always saved on this device. Open Stageplot from its own web address to install it and use it with no signal.'}${/iPhone|iPad/.test(navigator.userAgent) && !installPrompt ? ' On iPhone or iPad: Share → Add to Home Screen.' : ''}</small></span>${installPrompt ? `<button class="btn primary" id="hp-install">${ic('save', 'sm')}Install</button>` : ''}</div>`);
 }
 
 /* ----- Data ----- */
 function homeData() {
   const before = (() => { try { return localStorage.getItem('stageplot.beforeReset'); } catch { return null; } })();
-  return hsec('Backup', `Everything is saved in this browser only (${fmtBytes(storageUse())} used). Keep a backup somewhere safe, or move to another computer.`,
+  return hsec('Backup', `Everything is saved ${SAVED_WHERE} only (${fmtBytes(storageUse())} used). Keep a backup somewhere safe, or move to another computer.`,
       `<div class="row" style="gap:8px"><button class="btn primary" id="libBackup">${ic('save', 'sm')}Download a backup of everything</button><button class="btn" id="homeDataDlg">Copy, paste or restore…</button></div>`) +
     `<section class="hcard libdanger">
       <div><b>Reset to default</b><small>Clears every week, setup and preference in this browser and starts again from the example week. ${before ? 'A copy of your last reset is still kept.' : 'A safety copy is kept so you can restore it.'}</small></div>
