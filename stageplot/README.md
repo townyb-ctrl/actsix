@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 75 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 78 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -97,6 +97,9 @@ Every gear item is drawn as a real top-down symbol (drum kit with shells and cym
 
 ## Paperwork
 
+- **Floor marks** (Paperwork tab): where to put tape before load-in. People, risers and floor-standing gear, measured from the stage-right edge and back from the front edge, front of stage first. Risers are marked by their front stage-right corner, with their size.
+- **Stays in storage** (bottom of the Load-in checklist): owned gear (Home → Gear) this week doesn't use, so nobody carries it out for nothing.
+- **Save plot as picture** (paperwork view bar, ⋯ menu or Ctrl+K): a sharp PNG of the stage plot with the service name, date, venue and times across the top, ready for a group chat.
 - The stage plot on the paperwork always draws every layer and every cable at full strength, without flow arrows or pulses, so it prints clean.
 - The input list groups rows by person: the name shows once and a firmer rule marks each new person.
 - Power tables share fixed columns, so circuits, loads and meters line up from one distro to the next.
@@ -117,6 +120,10 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 
 ## Using it
 
+- **Ready-made teams**: on an empty Team tab (or Home → Setups) pick *Acoustic trio*, *Full band*, *Kids worship* or *Speaker only*. The positions are placed on stage straight away; type the names in afterwards.
+- **Name suggestions**: typing a name in the Team tab suggests people from earlier weeks. Picking someone whose position is still empty fills in the position they had last time (and whether they sing).
+- **Show mode** (`F`, or ⋯ → Present on a screen): the plot full screen with bigger, bolder labels and nothing popping up over it. Tap a person and a large card shows where they stand, their channels and their monitor; tapping never moves anything. Esc closes the card, then show mode.
+- **Hover card**: the size only shows for risers and speakers, where it matters.
 - **Colour**: cool modern neutrals with an indigo-violet accent for buttons, selection and focus; amber spike tape marks only the stage's front edge. Cables use a clean, distinct set (XLR blue, Cat6 purple, power orange, jack green, Speakon teal, video pink, USB slate), with brighter versions in dark mode. Text and chips keep at least 4.5:1 contrast in both themes.
 - **Workspace**: the stage fills the middle. Left: Team, Gear library and Room. Right: details for whatever is selected, or the week guide and stage settings when nothing is. Bottom dock: **Add** (`A`, opens the library with search ready), Move, Run cable, Measure, **Layers**, zoom and fit. The Select tool joins the dock on touch screens and in Advanced (with a mouse, Shift-drag does the same; `S` always works).
 - **Setup guide**: with nothing selected the right panel walks through six steps: Stage → Team → Gear → Audio → Power → Review & share. Each tick comes from the plan itself (stage sized or drawn, people added, gear placed, nothing unpatched, nothing unpowered, no checks left), never from which screens you opened. Work in any order; click a step to jump to where that work happens (Audio and Power show just those cables). The current step carries its action buttons. Hide the guide with its ×; bring it back from the **⋯** menu. While the guide is showing, checks live in its last step and the status pill; with it hidden, the panel lists the first three.
