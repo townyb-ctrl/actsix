@@ -772,7 +772,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .aboutkv { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13.5px; }
 .aboutkv dt { font-weight: 600; white-space: nowrap; }
 .aboutkv dd { margin: 0; color: var(--ink-2); }
-.printbar { margin-left: auto; display: flex; gap: 6px; }
+.printbar { margin-left: auto; display: flex; gap: 6px; align-items: center; flex: none; }
 .tablewrap table.fixed { table-layout: fixed; }
 .tablewrap tr.grp td { border-top: 1.5px solid var(--line-2); }
 .cm-legend { padding: 8px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; font-size: 11.5px; }
@@ -846,7 +846,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 
 /* ---------- paperwork ---------- */
 .paper { flex: 1 1 0; min-height: 0; overflow: auto; padding-block: 28px 64px; padding-inline: 16px; scroll-behavior: smooth; }
-.paper-inner { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+.paper-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }   /* one column that never grows to fit the tab row */
 /* ---------- Home: library and settings ---------- */
 /* Home → Next up: a calm card, the stage large on the left, what matters on the right */
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow-1); }
@@ -968,14 +968,21 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; color: rgba(255,255,255,.75); font-size: 13px; }
 .doc-meta b { color: #fff; font: 500 13px var(--f-mono); }
 .doc-notes { max-width: 70ch; white-space: pre-wrap; color: rgba(255,255,255,.85); margin: 4px 0 0; }
-.docnav { position: sticky; top: -28px; z-index: 3; display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 0; background: linear-gradient(var(--bg) 70%, transparent); }
-.docnav button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; cursor: pointer; font-weight: 550; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
-.docnav button:hover { border-color: var(--line-2); }
+.docnav { position: sticky; top: -28px; z-index: 3; display: flex; gap: 16px; min-width: 0; align-items: center; padding: 8px 0 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+.docnav nav { display: flex; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; flex: 1; }
+.docnav nav::-webkit-scrollbar { display: none; }
+.docnav nav.more-r { mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); } .docnav nav.more-l { mask-image: linear-gradient(90deg, transparent, #000 36px); } .docnav nav.more-l.more-r { mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }   /* a soft edge where more tabs scroll in */
+.docnav nav button { flex: none; border: 0; background: none; color: var(--ink-2); padding: 8px 9px 11px; margin-bottom: -1px; border-bottom: 2px solid transparent; cursor: pointer; font: 550 13px var(--f-ui); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px 6px 0 0; }
+.docnav nav button:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.docnav nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.docnav .dsep { width: 1px; height: 16px; background: var(--line-2); margin: 0 6px 3px; flex: none; }
+.dwarn { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.docnav .printbar { padding-bottom: 6px; } .docnav .printbar .iconbtn { width: 34px; height: 34px; } .docnav #pagesBtn[aria-pressed="true"] { color: var(--accent-text); }
 .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: grid; gap: 14px; min-width: 0; scroll-margin-top: 60px; box-shadow: var(--shadow-1); }
 /* Pages: on screen, each sheet is a white A4 page on a grey desk, numbered, as it will print */
 @media screen and (min-width: 900px) {
   .paper.pages { --bg: #dcdfe5; background: var(--bg); }
-  .paper.pages .paper-inner { max-width: 210mm; }
+  .paper.pages .doc-head, .paper.pages .sheetgrid { width: 100%; max-width: 210mm; justify-self: center; }   /* the pages are A4; the tab bar keeps the full width */
   .paper.pages .sheetgrid { counter-reset: page; }
   .paper.pages .sheets2 { grid-template-columns: minmax(0, 1fr); }
   .paper.pages .sheet { --surface: #fff; --surface-2: #f7f8fa; --surface-3: #eef0f4; --ink: #0d0f14; --ink-2: #3b404c; --muted: #5c6270; --line: #e5e7ec; --line-2: #d3d7de; --accent-text: #4f3fe0; --accent: #6d5efc; --accent-soft: rgba(109,94,252,.12);
@@ -1021,8 +1028,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .sheetgrid[data-tab="overview"] [data-sheet="overview"], .sheetgrid[data-tab="inputs"] [data-sheet="inputs"], .sheetgrid[data-tab="outputs"] [data-sheet="outputs"], .sheetgrid[data-tab="mixes"] [data-sheet="mixes"],
 .sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"], .sheetgrid[data-tab="spots"] [data-sheet="spots"] { display: grid; }
 .sheetgrid:not([data-tab="all"]) .sheets2 { display: contents; }
-.docnav button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-.docnav button[aria-selected="true"] .hint { color: inherit; opacity: .7; }
+
 .snapwrap { border-radius: var(--r-md); overflow: hidden; background: var(--house); }
 .snap { display: block; pointer-events: none; }
 /* print: every sheet, no app chrome, one sheet per page, tables break cleanly with their headings repeated */
@@ -4702,9 +4708,19 @@ function chEditHtml(ins) {
     <datalist id="micList">${['Dynamic', 'Condenser', 'Small condenser', 'Kick dynamic', 'Boundary (inside kick)', 'Ribbon', 'DI', 'Stereo DI', 'Line (DI)', 'Headset (RF)', 'Handheld (RF)'].map(v => `<option value="${v}">`).join('')}</datalist>
     <p class="hint">Typing a number another input already has swaps the two. Mic, stand and 48V changes follow the input to every week.</p>`;
 }
+// the sheet tabs: plain words in groups (the event, the audio, the day), the open one underlined; only Overview flags checks
+const DOC_GROUPS = [['overview', 'rider', 'spots'], ['inputs', 'outputs', 'mixes', 'cables', 'power', 'racks'], ['team', 'loadin'], ['all']];
+function docTabs(list, checks) {
+  const by = new Map(list.map(t => [t[0], t]));
+  return DOC_GROUPS.map(g => g.filter(id => by.has(id)).map(id => { const [, l] = by.get(id), warn = id === 'overview' && checks;
+    return `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}"${warn ? ` title="${plural(checks, 'thing')} to check"` : ''}>${l}${warn ? `<i class="dwarn" aria-hidden="true"></i><span class="sr-only">, ${plural(checks, 'thing')} to check</span>` : ''}</button>`; }).join('')).filter(Boolean).join('<span class="dsep" aria-hidden="true"></span>');
+}
+const edgeFade = n => { n.classList.toggle('more-l', n.scrollLeft > 2); n.classList.toggle('more-r', n.scrollLeft + n.clientWidth < n.scrollWidth - 2); };
 function centreTab() {   // on a phone the tab row scrolls: keep the open sheet's tab in view
   const dn = document.querySelector('.docnav'); if (dn) $('paperView').style.setProperty('--navb', `${Math.max(0, dn.offsetHeight - 38)}px`);   // where a sticky table header tucks under the tab bar
   const nav = document.querySelector('.docnav nav'), b = nav?.querySelector('[aria-selected="true"]');
+  if (nav && !nav.onscroll) nav.onscroll = () => edgeFade(nav);
+  if (nav) requestAnimationFrame(() => edgeFade(nav));
   if (!nav || !b || nav.scrollWidth <= nav.clientWidth) return;
   const r = b.getBoundingClientRect(), q = nav.getBoundingClientRect();
   nav.scrollTo({ left: nav.scrollLeft + (r.left + r.width / 2) - (q.left + q.width / 2), behavior: 'instant' });
@@ -4753,7 +4769,7 @@ function renderPaper() {
     <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <div class="docnav"><nav role="tablist" aria-label="Sheets" style="display:contents">${[...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']].map(([id, l, n]) => `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}">${l}${n !== undefined ? ` <span class="hint">${n}</span>` : ''}</button>`).join('')}</nav><span class="printbar"><button class="btn" id="pagesBtn" aria-pressed="${pageView}" title="Show the sheets as printed pages">${ic('sheet', 'sm')}Pages</button><button class="btn" id="sheetsBtn" data-needs-dl title="Every sheet in one page you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download sheets</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
+    <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><button class="btn iconbtn" id="pagesBtn" aria-pressed="${pageView}" title="${pageView ? 'Showing sheets as printed pages (click for plain)' : 'Show the sheets as printed pages'}" aria-label="Show as pages">${ic('sheet', 'sm')}</button><button class="btn iconbtn" id="sheetsBtn" data-needs-dl title="Download every sheet as one page you can open, share and print anywhere" aria-label="Download sheets"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}</button><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
     <div class="sheetgrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${uLen(foh.y - plan.stage.d)} out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
