@@ -371,6 +371,13 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .emptycard { pointer-events: auto; background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-2); padding: 22px 24px; display: grid; gap: 8px; text-align: center; max-width: 520px; margin: 16px; }
 .emptycard h3 { font-size: 18px; font-weight: 700; }
 .statuspill { display: inline-flex; align-items: center; gap: 4px; }
+.lockchip { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.lockchip:hover { color: var(--ink); border-color: var(--line-2, var(--muted)); }
+.lockchip.open { background: transparent; color: var(--muted); border-style: dashed; }
+@media (max-width: 760px) { .lockchip span { display: none; } .lockchip { padding: 0 8px; } }
+.battneed { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.battset { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 400; color: var(--muted); }
+.battset input { width: 110px; height: 28px; padding: 2px 8px; font-size: 13px; }
 .saved { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); padding: 0 8px; transition: color .3s; white-space: nowrap; }
 .saved.ok .ic { color: var(--ok); }
 .saved.bad { color: var(--bad); }
@@ -1447,6 +1454,10 @@ td.spare { color: var(--muted); font-style: italic; }
 .pc-ch small { display: block; font-size: 14px; color: var(--muted); }
 .pc-mon { font-size: 20px; margin: 0; }
 @media (max-width: 640px) { .pres-card { left: 16px; right: 16px; width: auto; bottom: 16px; } }
+.pres-right { display: flex; align-items: flex-start; gap: 12px; }
+.pres-clock { display: grid; justify-items: end; padding: 8px 14px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); }
+.pres-clock b { font-size: clamp(26px, 3.4vw, 44px); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.pres-clock small { margin-top: 4px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
 .pres-exit { pointer-events: auto; opacity: .55; } .pres-exit:hover, .pres-exit:focus-visible { opacity: 1; }
 body.presenting > header, body.presenting .float:not(#fpresent) { display: none !important; }
 body.presenting .rail, body.presenting #inspector { visibility: hidden; overflow: hidden; min-width: 0; border: 0; }
@@ -1487,6 +1498,7 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
     <button class="iconbtn" id="railToggle" aria-label="Show or hide the left panel" title="Left panel ( [ )"></button>
     <button class="iconbtn" id="inspToggle" aria-label="Show or hide the right panel" title="Right panel ( ] )"></button>
     <span class="vsep"></span>
+    <button class="lockchip" id="lockBtn" hidden></button>
     <span class="saved ok" id="savedInd"></span>
     <button class="iconbtn" id="undoBtn" aria-label="Undo" title="Undo (Ctrl+Z)"></button>
     <button class="iconbtn" id="redoBtn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)"></button>
@@ -2046,7 +2058,16 @@ function save() {
 const snapState = () => JSON.stringify(db?.channels ? { ...plan, __ch: db.channels } : plan);
 function loadState(json) { const p = JSON.parse(json); if ('__ch' in p) { if (p.__ch) db.channels = p.__ch; else delete db.channels; delete p.__ch; } return p; }
 let glideNext = false;
+// a week that has happened opens read-only, so nobody changes last Sunday by mistake; Edit anyway unlocks it until the page is closed
+const unlockedWeeks = new Set();
+const localISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+let lockSeen = null;   // weeks that existed when Stageplot opened; one started or copied since stays editable until next time
+const weekPast = () => { lockSeen ||= new Set(Object.keys(db?.plans || {})); return db?.defaults?.lockPast !== false && !!plan?.date && plan.date < localISO() && lockSeen.has(plan.id); };
+const weekLocked = () => weekPast() && !unlockedWeeks.has(plan.id);
+function unlockWeek() { unlockedWeeks.add(plan.id); renderAll(); toast('Unlocked until you close Stageplot'); }
+function lockedNote() { toast(`${longDate(plan.date)} has happened, so it’s locked`, { label: 'Edit anyway', fn: unlockWeek }); }
 function mutate(fn, msg) {
+  if (weekLocked()) { renderAll(); lockedNote(); return; }   // put back whatever the field showed
   glideNext = true;
   const before = snapState();
   history.push(before); if (history.length > 80) history.shift();
@@ -4118,7 +4139,8 @@ function renderPlot() {
   if (capturing) return;
   glide();
   const fs = $('fside'); fs.hidden = !sideOpen || presenting; if (sideOpen && !presenting) fs.innerHTML = `<div class="panel sidepanel"><div class="sv-head"><b>Side view</b><span class="hint">from the house · heights in metres</span><button class="iconbtn" id="sideClose" aria-label="Close side view" title="Close (E)">${ic('x', 'sm')}</button></div>${sideSvg()}</div>`;
-  $('fpresent').hidden = !presenting; if (presenting) $('fpresent').innerHTML = `<div class="pres-title"><div class="eyebrow">${esc(defaultsOf().org || 'Stage plot')} · ${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Sunday service')}</h1>${plan.team.length ? `<p class="pres-tip">Tap someone to see their channels and monitor</p>` : ''}</div><button class="btn pres-exit" id="presExit">${ic('x', 'sm')}Exit · Esc</button>${presCard()}`;
+  $('fpresent').hidden = !presenting; if (presenting) $('fpresent').innerHTML = `<div class="pres-title"><div class="eyebrow">${esc(defaultsOf().org || 'Stage plot')} · ${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Sunday service')}</h1>${plan.team.length ? `<p class="pres-tip">Tap someone to see their channels and monitor</p>` : ''}</div><div class="pres-right"><div class="pres-clock" aria-live="off"><b id="presTime"></b><small id="presNext"></small></div><button class="btn pres-exit" id="presExit">${ic('x', 'sm')}Exit · Esc</button></div>${presCard()}`;
+  if (presenting) tickClock();
   if (needFit && !zoom) {
     needFit = false;
     if (fitMode === 'stage') {
@@ -4228,6 +4250,8 @@ function renderHeader() {
   $('vPlot').setAttribute('aria-pressed', view === 'plot'); $('vPaper').setAttribute('aria-pressed', view === 'paper');
   $('plotView').hidden = view !== 'plot'; $('paperView').hidden = view !== 'paper'; viewIn();
   if (view !== 'home') document.querySelector('#homeView .heropic')?.remove();   // the Home picture is a second drawing of the stage: keep only one in the page
+  { const past = weekPast(), lk = weekLocked(), b = $('lockBtn'); b.hidden = !past;
+    if (past) { b.innerHTML = `${ic(lk ? 'lock' : 'unlock', 'sm')}<span>${lk ? 'Locked' : 'Unlocked'}</span>`; b.classList.toggle('open', !lk); b.title = lk ? 'This week has happened, so it’s read-only. Click to edit it anyway' : 'Editing a past week. Click to lock it again'; b.setAttribute('aria-label', lk ? 'Past week, locked. Edit anyway' : 'Past week, unlocked. Lock again'); } }
   $('undoBtn').innerHTML = ic('undo'); $('redoBtn').innerHTML = ic('redo');
   $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length;
   $('moreBtn').innerHTML = ic('dots');
@@ -4817,9 +4841,13 @@ function loadinTasks() {   // what the crew does on the day, in the order they d
   const codes = boxCodes(), ins = inputList().map(r => ({ key: `in:${r.name}:${r.source}`, text: `${r.ch}. ${r.name}`, sub: `${r.source} → ${shortPort(r.port, codes)}` }));
   const leads = plan.cables.filter(c => c.type === 'inst').map(c => ({ key: `ld:${c.id}`, text: `${itemName(by(c, 'from'))} → ${itemName(by(c, 'to'))}`, sub: `jack lead · ${fmtLen(cableLen(c))}` }));
   const outs = outputList().map(r => ({ key: `out:${r.dest}:${r.port}`, text: r.dest, sub: `${r.type ? r.type + ' · ' : ''}${shortPort(r.port, codes)}` }));
-  return [['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
+  const batt = battType(), packs = plan.items.filter(i => cat(i).wireless).map(i => ({ key: `bt:${i.id}`, text: itemName(i), sub: `${batt} · fresh in, spares by FOH` }));
+  return [['Batteries', 'zap', packs], ['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
 }
 const loadinState = () => (plan.loadin ||= {});
+const battType = () => db.defaults?.batt || '2 × AA';   // what each wireless mic and in-ear pack takes; one setting for the church
+// "12 × AA" from "2 × AA" and six packs, so someone can grab the right number from the cupboard
+const battTotal = n => { const m = battType().match(/^\s*(\d+)\s*[×x*]\s*(.+)$/i); return m ? `${Number(m[1]) * n} × ${m[2].trim()}` : `${n} × ${battType()}`; };
 // owned gear this week leaves behind, so nobody carries it out for nothing
 function inStorage() {
   return Object.entries(db?.gear?.owned || {}).map(([t, own]) => ({ t, left: own - plan.items.filter(i => i.type === t).length })).filter(x => CAT[x.t] && x.left > 0).sort((a, b) => CAT[a.t].name.localeCompare(CAT[b.t].name));
@@ -4946,7 +4974,7 @@ function renderPaper() {
     ${(() => { const groups = loadinTasks(), g = loadinProgress(), st = loadinState(), store = inStorage(); if (!g.total && !store.length) return ''; const pct = g.total ? Math.round(g.done / g.total * 100) : 0;
       return `<section class="sheet loadin" id="sec-loadin" data-sheet="loadin">${head('Load-in checklist', '', 'Tick things off as they’re set up. Saved with this week.')}${boxKey([...inputList(), ...outputList()])}
         ${g.total ? `<div class="lprog" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Load-in progress"><div class="lbar"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} done</b>${g.done ? '<button class="btn quiet" id="loadinReset">Clear ticks</button>' : ''}</div>` : ''}
-        ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span></h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
+        ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span>${title === 'Batteries' ? `<span class="battneed">${esc(battTotal(list.length))} needed</span><label class="battset"><span>Each takes</span><input type="text" id="battType" value="${esc(battType())}" aria-label="Batteries each pack takes" list="battList"></label><datalist id="battList">${['2 × AA', '1 × AA', '2 × AAA', '1 × 9V', 'Rechargeable'].map(v => `<option value="${v}">`).join('')}</datalist>` : ''}</h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
         ${store.length ? `<div class="lgroup storage"><h3>${ic('layers', 'sm')}Stays in storage <span class="hint">owned, not used this week</span></h3><ul class="storelist">${store.map(x => `<li><b>${x.left}</b> × ${esc(CAT[x.t].name)}</li>`).join('')}</ul></div>` : ''}
       </section>`; })()}
     </div>
@@ -5267,7 +5295,8 @@ function endDrag() {
     if (hit) { placeInChannel(it, hit); if (was !== hit.ch.id) toast(`${itemName(it)} sits inside ${hit.ch.name}`); }
     else if (it.chan) { delete it.chan; toast(`${itemName(it)} taken out of the channel`); }
   }
-  if (d.moved) { history.push(d.snap); future = []; recordRev(null, d.snap); save(); renderAll(); }
+  if (d.moved && weekLocked()) { plan = loadState(d.snap); renderAll(); lockedNote(); }   // a locked week slides back where it was
+  else if (d.moved) { history.push(d.snap); future = []; recordRev(null, d.snap); save(); renderAll(); }
   else if (d.kind === 'item') {   // a plain click on one of a group narrows to it
     if (d.keep) { sel = { kind: 'item', id: d.id }; group = null; renderInspector(); }
     if (d.toggleOff) { setGroup(selIds().filter(x => x !== d.id)); renderInspector(); }
@@ -5606,6 +5635,7 @@ $('vHome').onclick = () => goHome();
 $('brandHome').onclick = () => goHome();
 $('vPaper').onclick = () => openPaper();
 $('undoBtn').onclick = undo;
+$('lockBtn').onclick = () => { if (weekLocked()) unlockWeek(); else { unlockedWeeks.delete(plan.id); renderAll(); toast('Locked again'); } };
 $('redoBtn').onclick = redo;
 $('lvBtn').onclick = () => setDetail(!ui.adv);
 function renderMoreMenu() {
@@ -6390,7 +6420,19 @@ function sideSvg() {
   return `<svg class="sideview" viewBox="${x0} ${f3(-top)} ${vw} ${f3(top + 1.2)}" role="img" aria-label="Side view of the stage from the house">${s}</svg>`;
 }
 /* presentation mode: full screen, no chrome, big names and the service on top */
-let presenting = false, presPid = null;
+let presenting = false, presPid = null, clockTimer = null;
+// show mode clock: the time now, and on the day what's next ("Service in 25 min")
+function tickClock() {
+  const t = $('presTime'), n = $('presNext'); if (!t) return;
+  const now = new Date(); t.textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  let next = '';
+  if (plan.date === localISO(now)) {
+    const mins = now.getHours() * 60 + now.getMinutes();
+    const up = TIME_KINDS.filter(([k]) => plan.times?.[k]).map(([k, l]) => { const [h, m] = plan.times[k].split(':').map(Number); return { l, d: h * 60 + m - mins }; }).filter(x => x.d > -1).sort((a, b) => a.d - b.d)[0];
+    if (up) next = up.d <= 0 ? `${up.l} now` : `${up.l} in ${up.d < 60 ? `${up.d} min` : `${Math.floor(up.d / 60)} h ${up.d % 60 ? `${up.d % 60} min` : ''}`.trim()}`;
+  } else if (timesLine()) next = timesLine();
+  n.textContent = next; n.hidden = !next;
+}
 // show mode: one big card for the person tapped, readable from a music stand
 function presCard() {
   const p = presPid && personById(presPid); if (!p) return '';
@@ -6411,6 +6453,7 @@ svg.addEventListener('pointerdown', e => {   // in show mode a tap picks a perso
 }, true);
 function setPresent(on) {
   presenting = on; presPid = null; document.body.classList.toggle('presenting', on);
+  clearInterval(clockTimer); clockTimer = on ? setInterval(tickClock, 10000) : null;
   if (on) { sel = null; pending = null; placing = null; measure = null; tracing = null; if (view !== 'plot') view = 'plot'; document.documentElement.requestFullscreen?.().catch(() => {}); }
   else if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
   zoom = null; needFit = true; renderAll();
@@ -7217,6 +7260,7 @@ $('paperView').addEventListener('change', e => {
   if (t0.dataset.chmic !== undefined) { setChanMeta(t0.dataset.chmic, 'mic', t0.value.trim().slice(0, 40)); return; }
   if (t0.dataset.chstand !== undefined) { setChanMeta(t0.dataset.chstand, 'stand', t0.value); return; }
   if (t0.dataset.ch48 !== undefined) { setChanMeta(t0.dataset.ch48, 'p48', t0.checked); return; }
+  if (t0.id === 'battType') { setDefault('batt', t0.value.trim().slice(0, 24)); const y = $('paperView').scrollTop; renderPaper(); $('paperView').scrollTop = y; return; }   // a church-wide setting, not this week's
   const k = e.target.dataset?.chk; if (!k) return;
   const st = loadinState(); if (e.target.checked) st[k] = 1; else delete st[k];
   save(); const y = $('paperView').scrollTop; renderPaper(); $('paperView').scrollTop = y;
@@ -7487,7 +7531,8 @@ function homePrefs() {
       <div class="hpref"><span><b>Detail</b><small>Simple shows everyday controls; Advanced shows every setting and tool</small></span>${seg('detail', ui.adv ? 'adv' : 'simple', [['simple', 'Simple'], ['adv', 'Advanced']])}</div>
       <div class="hpref"><span><b>Units</b><small>Sizes, distances and cable lengths on the plot and the paperwork</small></span>${seg('units', imperial() ? 'ft' : 'm', [['m', 'Metres'], ['ft', 'Feet & inches']])}</div>`) +
     hsec('Working on the plot', '', `<div class="hpref"><span><b>Snap gear to</b><small>Rounds positions as you move gear (hold Alt to move freely)</small></span><select id="hp-snap" aria-label="Snap gear to">${(() => { const o = snapOpts(), near = ui.snap ? o.filter(([v]) => v).reduce((a, b) => Math.abs(b[0] - ui.snap) < Math.abs(a[0] - ui.snap) ? b : a)[0] : 0; return [o[3], ...o.slice(0, 3)].map(([v, l]) => `<option value="${v}" ${near === v ? 'selected' : ''}>${l}</option>`).join(''); })()}</select></div>
-      ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}`) +
+      ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}
+      ${hcheck('hp-lock', 'Lock weeks that have happened', db.defaults?.lockPast !== false, 'Past weeks open read-only; Edit anyway unlocks one')}`) +
     hsec('Use it offline', '', `<div class="hpref"><span><b>${matchMedia('(display-mode: standalone)').matches ? 'Installed on this device' : 'Install Stageplot on this device'}</b><small>${swState.ok ? 'Works with no signal: the app is saved on this device, and your weeks always are.' : 'Your weeks are always saved on this device. Open Stageplot from its own web address to install it and use it with no signal.'}${/iPhone|iPad/.test(navigator.userAgent) && !installPrompt ? ' On iPhone or iPad: Share → Add to Home Screen.' : ''}</small></span>${installPrompt ? `<button class="btn primary" id="hp-install">${ic('save', 'sm')}Install</button>` : ''}</div>`);
 }
 
@@ -7585,6 +7630,7 @@ $('homeView').addEventListener('change', e => {
   if (t.id === 'hp-useplan') { pcoPrefs().usePlan = t.checked; save(); return; }
   if (t.dataset.posmap) { const P = pcoPrefs(); if (t.value) P.map[t.dataset.posmap] = t.value; else delete P.map[t.dataset.posmap]; save(); return; }
   if (t.id === 'hp-snap') { ui.snap = Number(t.value); try { localStorage.setItem('stageplot.snap', String(ui.snap)); } catch { /* memory only */ } return; }
+  if (t.id === 'hp-lock') { setDefault('lockPast', t.checked); renderHeader(); return; }
   if (t.id === 'hp-guide') { ui.guide = t.checked; try { localStorage.setItem('stageplot.guide', t.checked ? 'on' : 'off'); } catch { /* memory only */ } return; }
 });
 
