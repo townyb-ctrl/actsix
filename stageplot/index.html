@@ -1024,7 +1024,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 /* Pages: on screen, each sheet is a white A4 page on a grey desk, numbered, as it will print */
 @media screen and (min-width: 900px) {
   .paper.pages { --bg: #dcdfe5; background: var(--bg); }
-  .paper.pages .doc-head, .paper.pages .sheetgrid { width: 100%; max-width: 210mm; justify-self: center; }   /* the pages are A4; the tab bar keeps the full width */
+  .paper.pages .doc-head, .paper.pages .sheetgrid, .paper.pages .printdiff { width: 100%; max-width: 210mm; justify-self: center; }   /* the pages are A4; the tab bar keeps the full width */
   .paper.pages .sheetgrid { counter-reset: page; }
   .paper.pages .sheets2 { grid-template-columns: minmax(0, 1fr); }
   .paper.pages .sheet { --surface: #fff; --surface-2: #f7f8fa; --surface-3: #eef0f4; --ink: #0d0f14; --ink-2: #3b404c; --muted: #5c6270; --line: #e5e7ec; --line-2: #d3d7de; --accent-text: #4f3fe0; --accent: #6d5efc; --accent-soft: rgba(109,94,252,.12);
@@ -1073,6 +1073,16 @@ tr.flag td { color: var(--bad); }
 .pocols li small { display: block; color: var(--muted); font-size: 12.5px; }
 .pocols h4 { margin: 0 0 8px; font-size: 13px; color: var(--muted); font-weight: 600; }
 @media (max-width: 640px) { .pocols { grid-template-columns: 1fr; } }
+.printdiff { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 14px; margin-bottom: 14px; border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); background: var(--warn-soft); border-radius: 12px; font-size: 14px; }
+.printdiff > span { flex: 1; min-width: 0; } .printdiff .ic { flex: none; color: var(--warn-ink, var(--ink)); }
+@media print { .printdiff { display: none !important; } }
+.doc-head.ink { background: #fff !important; color: #111; box-shadow: inset 0 0 0 1.5px #111 !important; }
+.doc-head.ink .eyebrow { color: #555; } .doc-head.ink::after { display: none; }
+.sheetgrid.ink .snap { filter: grayscale(1) contrast(1.12); }
+.sheetgrid.ink .snap .house-fill { fill: #fff; } .sheetgrid.ink .snap .house-dots { display: none; }
+@media print { .sheetgrid.ink tbody tr:nth-child(even) td { background: none !important; } .sheetgrid.ink .ch { background: none !important; border: 1px solid #999; color: #111; } .sheetgrid.ink .meter span { background: #555 !important; } }
+#inkBtn[aria-pressed="true"] { color: var(--ink); font-weight: 650; }
+#plot { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }   /* a long press opens our menu, not the system's */
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -2003,6 +2013,7 @@ let mode = 'select', cableType = 'auto', pending = null, cursorPt = null;   // '
 let zoom = null;                // px per internal unit, null = fit
 let view = 'plot', railTab = 'team';
 let settling = new Set(), settleT = 0;
+let inkSave = (() => { try { return localStorage.getItem('stageplot.ink') === '1'; } catch { return false; } })();   // black-and-white paperwork: white stage, grey lines (per browser)
 let pageView = (() => { try { return localStorage.getItem('stageplot.pages') !== '0'; } catch { return true; } })();   // paperwork as white pages on a desk (per browser)
 let history = [], future = [], drag = null, delArmed = false, clearArmed = '', hoverPt = null;
 
@@ -4790,6 +4801,11 @@ function titleBlock() {
     ${cell('Stage', `${uDim(plan.stage.w, plan.stage.d)}`)}${cell('Revision', `r${plan.rev || 0}`)}${cell('Drawn by', D.contact)}${cell('Printed', new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))}</div>`;
 }
 /* ---------- the rider: one clean black-and-white page every venue understands ---------- */
+function whiteDeckSnapshot() {   // the plot on a white deck with no texture, for black-and-white printing
+  const keep = { color: plan.stage.color, texture: plan.stage.texture };
+  plan.stage.color = '#ffffff'; delete plan.stage.texture;
+  try { return plotSnapshot(); } finally { if (keep.color) plan.stage.color = keep.color; else delete plan.stage.color; if (keep.texture) plan.stage.texture = keep.texture; }
+}
 function riderPlot() {
   const keep = { color: plan.stage.color, texture: plan.stage.texture };
   plan.stage.color = '#ffffff'; delete plan.stage.texture;
@@ -4826,10 +4842,10 @@ function riderHtml(ins) {
   </div>`;
 }
 /* ---------- what changed since last week, what to borrow, and the load-in checklist ---------- */
-function weekChanges(old) {
+function weekChanges(old, oldInsN) {
   const keep = plan;
   const tally = p => { const m = new Map(); for (const i of p.items) { if (cat(i).shape === 'person') continue; const k = i.type; m.set(k, (m.get(k) || 0) + 1); } return m; };
-  plan = old; const oldIns = inputList().length; plan = keep;
+  let oldIns = oldInsN; if (oldIns == null) { plan = old; oldIns = inputList().length; plan = keep; }
   const names = p => new Set(p.team.map(t => t.name.trim().toLowerCase()));
   const was = names(old), now = names(plan);
   const joined = plan.team.filter(t => !was.has(t.name.trim().toLowerCase())).map(t => `${t.name}${t.role ? ` (${t.role})` : ''}`);
@@ -4976,15 +4992,16 @@ function renderPaper() {
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
-  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Monitor mixes', mixes.length], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless', plan.items.filter(i => cat(i).wireless).length]] : []), ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()], ['floor', 'Floor marks', floorMarks().length || undefined]].filter(n => n[0] !== 'checks' || w.length);
+  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Mixes', mixes.length], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless', plan.items.filter(i => cat(i).wireless).length]] : []), ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()], ['floor', 'Floor marks', floorMarks().length || undefined]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
-    <header class="doc-head">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
+    ${printDiffHtml()}
+    <header class="doc-head${inkSave ? ' ink' : ''}">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
     <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
-    <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="picBtn" data-needs-dl title="The stage plot as an image, for a group chat or email">${ic('plot', 'sm')}Save plot as picture</button><button class="btn quiet" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets</button></div>
-    <div class="sheetgrid" data-tab="${paperTab}">
-    <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${uLen(foh.y - plan.stage.d)} out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
+    <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="picBtn" data-needs-dl title="The stage plot as an image, for a group chat or email">${ic('plot', 'sm')}Save plot as picture</button><button class="btn quiet" id="inkBtn" aria-pressed="${inkSave}" title="Print in black and white: a white stage, grey lines, no dark header">${ic('sheet', 'sm')}Ink saver${inkSave ? ' on' : ''}</button><button class="btn quiet" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets</button></div>
+    <div class="sheetgrid${inkSave ? ' ink' : ''}" data-tab="${paperTab}">
+    <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(inkSave ? whiteDeckSnapshot() : plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${uLen(foh.y - plan.stage.d)} out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
     ${(() => { const pid = prevWeekId(); if (!pid) return ''; const old = db.plans[pid], d = weekChanges(old);
       const li = [...d.joined.map(n => `<li class="add">+ ${esc(n)} joins</li>`), ...d.left.map(n => `<li class="rem">− ${esc(n)} is off</li>`),
@@ -5364,6 +5381,22 @@ scroller.addEventListener('pointermove', e => {
   if (pinch.last > 0 && dd > 0 && Math.abs(dd / pinch.last - 1) > .01) { zoomAt(dd / pinch.last, mx, my); pinch.last = dd; }
 }, true);
 for (const ev of ['pointerup', 'pointercancel']) scroller.addEventListener(ev, e => { pinch.pts.delete(e.pointerId); if (pinch.pts.size < 2) pinch.last = 0; }, true);
+// touch and pen: press and hold an item or cable for the same menu a right-click opens (iPad and phones have no right button)
+const lp = { t: 0, x: 0, y: 0, fired: 0 };
+svg.addEventListener('pointerdown', e => {
+  clearTimeout(lp.t); lp.t = 0;
+  if (e.pointerType === 'mouse' || presenting || !e.target.closest('[data-id], [data-cid]')) return;
+  const tg = e.target; lp.x = e.clientX; lp.y = e.clientY;
+  lp.t = setTimeout(() => {
+    lp.t = 0; if (pinch.pts.size > 1) return;
+    if (drag) { if (drag.moved) return; drag = null; scroller.classList.remove('panning'); }   // a hold, not a drag
+    lp.fired = Date.now(); navigator.vibrate?.(10);
+    const at = document.elementFromPoint(lp.x, lp.y); (at && svg.contains(at) ? at : tg).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: lp.x, clientY: lp.y }));
+  }, 520);
+});
+svg.addEventListener('pointermove', e => { if (lp.t && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 10) { clearTimeout(lp.t); lp.t = 0; } });
+for (const ev of ['pointerup', 'pointercancel']) svg.addEventListener(ev, () => { clearTimeout(lp.t); lp.t = 0; });
+svg.addEventListener('contextmenu', e => { if (e.isTrusted && Date.now() - lp.fired < 1200) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);   // the browser's own long-press menu, just after ours
 // Older browsers (before Safari 16.2 / Firefox 113) miss colour mixing: say so once rather than look broken
 setTimeout(() => { try { if (!CSS.supports('color', 'color-mix(in srgb, red, blue)') && !sessionStorage.getItem('stageplot.oldBrowser')) { sessionStorage.setItem('stageplot.oldBrowser', '1'); toast('This browser is out of date, so some colours may look off. Updating it fixes this.'); } } catch { /* ignore */ } }, 1200);
 document.addEventListener('gesturestart', e => { if (scroller.contains(e.target)) e.preventDefault(); });   // Safari's own page zoom
@@ -5974,6 +6007,9 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn')) { printNow(); return; }
+  if (e.target.closest('#inkBtn')) { inkSave = !inkSave; try { localStorage.setItem('stageplot.ink', inkSave ? '1' : '0'); } catch { /* ignore */ } renderPaper(); toast(inkSave ? 'Ink saver on: the paperwork prints in black and white' : 'Ink saver off: full colour'); return; }
+  if (e.target.closest('#printAgain')) { printNow(); return; }
+  if (e.target.closest('#printDiffX')) { markPrinted(); renderPaper(); return; }
   const pv = e.target.closest('[data-pageview]'); if (pv) { pageView = pv.dataset.pageview === '1'; try { localStorage.setItem('stageplot.pages', pageView ? '1' : '0'); } catch { /* ignore */ } renderPaper(); return; }
   if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); printNow('print-rider', 'rider'); setTimeout(done, 1500); return; }
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
@@ -6009,6 +6045,23 @@ if ($('dlAll')) $('dlAll').onclick = () => { const s = backup(true); $('dataText
 // every sheet as one self-contained page: opens and prints anywhere, no app needed
 /* Printing. Some places that embed Stageplot (the Claude preview among them) block the print dialog, and print() then
    does nothing. If the dialog doesn't open, offer the sheets as a file with its own Print button instead. */
+// what the paper copy says: kept with the week when it prints, so the paperwork can say what has changed since
+function markPrinted() { plan.printed = { at: Date.now(), team: plan.team.map(t => ({ name: t.name, role: t.role })), items: plan.items.map(i => ({ id: i.id, type: i.type, x: r2(i.x), y: r2(i.y) })), ins: inputList().length }; save(); }
+addEventListener('beforeprint', () => { if (plan && view === 'paper') markPrinted(); });
+function printChanges() {
+  const P = plan.printed; if (!P) return [];
+  const d = weekChanges({ team: P.team, items: P.items }, P.ins), out = [];
+  out.push(...d.joined.map(n => `${n} joined`), ...d.left.map(n => `${n} is off`));
+  out.push(...d.gear.map(g => `${g.d > 0 ? '+' : '−'}${Math.abs(g.d)} ${CAT[g.t].short || CAT[g.t].name}`));
+  if (d.ins[0] !== d.ins[1]) out.push(`inputs ${d.ins[0]} → ${d.ins[1]}`);
+  if (d.moved.length) out.push(`moved: ${d.moved.slice(0, 3).join(', ')}${d.moved.length > 3 ? ` +${d.moved.length - 3}` : ''}`);
+  return out;
+}
+function printDiffHtml() {
+  const c = printChanges(); if (!c.length) return '';
+  const when = new Date(plan.printed.at), same = localISO(when) === localISO();
+  return `<div class="printdiff" role="status">${ic('alert', 'sm')}<span><b>${plural(c.length, 'change')} since you printed</b> ${same ? 'at' : 'on'} ${esc(same ? when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : longDate(localISO(when)))}: ${esc(c.slice(0, 5).join(' · '))}${c.length > 5 ? ` and ${c.length - 5} more` : ''}</span><button class="btn" id="printAgain">${ic('sheet', 'sm')}Print again</button><button class="iconbtn" id="printDiffX" aria-label="Paper copy is fine, hide this" title="Paper copy is fine">${ic('x', 'sm')}</button></div>`;
+}
 function printNow(only = '', name = 'sheets') {
   let opened = false; const mark = () => { opened = true; };
   addEventListener('beforeprint', mark);
@@ -6016,7 +6069,7 @@ function printNow(only = '', name = 'sheets') {
   setTimeout(() => { removeEventListener('beforeprint', mark); if (opened) return;
     const file = `stageplot-${plan.date}-${name}.html`, canSave = !window.claude?.use || dlCap;
     toast(canSave ? 'Printing is blocked in this view. Download the sheets, open the file, and print or save a PDF from there' : 'Printing is blocked in this view. Open Stageplot in its own browser tab to print',
-      canSave ? { label: 'Download', fn: () => offerFile(file, paperworkHtml(only), 'text/html') } : undefined); }, 600);
+      canSave ? { label: 'Download', fn: () => { markPrinted(); offerFile(file, paperworkHtml(only), 'text/html'); } } : undefined); }, 600);
 }
 function paperworkHtml(only = '') {   // only: 'print-rider' or 'print-spots' makes a file of just that sheet
   const keep = paperTab; paperTab = only === 'print-rider' ? 'rider' : only === 'print-spots' ? 'spots' : 'all'; renderPaper();
