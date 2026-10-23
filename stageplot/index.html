@@ -5746,13 +5746,13 @@ $('paperInner').addEventListener('click', e => {
   const ex = e.target.closest('[data-exp]'); if (ex) { exportInputs(ex.dataset.exp); return; }
   const sp = e.target.closest('[data-spot]'); if (sp) { spotSel = sp.dataset.spot; renderPaper(); return; }
   const sc = e.target.closest('[data-spotcopy]'); if (sc) { const p = plan.team.find(t => t.id === sc.dataset.spotcopy); if (p) copyText(spotText(spotData(p)), $('copyFallback')); return; }
-  if (e.target.closest('#printSpots')) { const was = spotSel; spotSel = 'all'; renderPaper(); document.body.classList.add('print-spots'); const done = () => { document.body.classList.remove('print-spots'); removeEventListener('afterprint', done); spotSel = was; renderPaper(); }; addEventListener('afterprint', done); window.print(); setTimeout(done, 1500); return; }
+  if (e.target.closest('#printSpots')) { const was = spotSel; spotSel = 'all'; renderPaper(); document.body.classList.add('print-spots'); const done = () => { document.body.classList.remove('print-spots'); removeEventListener('afterprint', done); spotSel = was; renderPaper(); }; addEventListener('afterprint', done); printNow('print-spots', 'my-spot-cards'); setTimeout(done, 1500); return; }
   if (e.target.closest('#chEditBtn')) { chEdit = !chEdit; renderPaper(); return; }
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
-  if (e.target.closest('#printBtn')) { window.print(); return; }
+  if (e.target.closest('#printBtn')) { printNow(); return; }
   const pv = e.target.closest('[data-pageview]'); if (pv) { pageView = pv.dataset.pageview === '1'; try { localStorage.setItem('stageplot.pages', pageView ? '1' : '0'); } catch { /* ignore */ } renderPaper(); return; }
-  if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); window.print(); setTimeout(done, 1500); return; }
+  if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); printNow('print-rider', 'rider'); setTimeout(done, 1500); return; }
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
   const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
@@ -5783,11 +5783,22 @@ async function offerFile(filename, text, mime) {
 }
 if ($('dlAll')) $('dlAll').onclick = () => { const s = backup(true); $('dataText').value = s; offerFile(`stageplot-${plan.date}.json`, s, 'application/json'); };
 // every sheet as one self-contained page: opens and prints anywhere, no app needed
-function paperworkHtml() {
-  const keep = paperTab; paperTab = 'all'; renderPaper();
+/* Printing. Some places that embed Stageplot (the Claude preview among them) block the print dialog, and print() then
+   does nothing. If the dialog doesn't open, offer the sheets as a file with its own Print button instead. */
+function printNow(only = '', name = 'sheets') {
+  let opened = false; const mark = () => { opened = true; };
+  addEventListener('beforeprint', mark);
+  try { window.print(); } catch { /* blocked */ }
+  setTimeout(() => { removeEventListener('beforeprint', mark); if (opened) return;
+    const file = `stageplot-${plan.date}-${name}.html`, canSave = !window.claude?.use || dlCap;
+    toast(canSave ? 'Printing is blocked in this view. Download the sheets, open the file, and print or save a PDF from there' : 'Printing is blocked in this view. Open Stageplot in its own browser tab to print',
+      canSave ? { label: 'Download', fn: () => offerFile(file, paperworkHtml(only), 'text/html') } : undefined); }, 600);
+}
+function paperworkHtml(only = '') {   // only: 'print-rider' or 'print-spots' makes a file of just that sheet
+  const keep = paperTab; paperTab = only === 'print-rider' ? 'rider' : only === 'print-spots' ? 'spots' : 'all'; renderPaper();
   const body = `<svg aria-hidden="true" style="position:absolute;width:0;height:0"><defs>${ART_DEFS}</defs></svg>` + $('paperInner').innerHTML; paperTab = keep; renderPaper();   // the drawings' gradients travel with the file
   const css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n');
-  return `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(plan.name || 'Stage plot')} · ${esc(plan.date)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap"><style>${css}</style><style>.docnav,[data-copy],.printbar{display:none!important}html,body{height:auto;display:block}</style></head><body><main class="paper" style="overflow:visible"><div class="paper-inner">${body}</div></main></body></html>`;
+  return `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(plan.name || 'Stage plot')} · ${esc(plan.date)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap"><style>${css}</style><style>.docnav,.viewbar,[data-copy],.printbar{display:none!important}html,body{height:auto;display:block}.fileprint{position:fixed;top:14px;right:14px;z-index:9;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:10px;background:#6d5efc;color:#fff;font:600 14px Archivo,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.18)}@media print{.fileprint{display:none!important}}</style></head><body${only ? ` class="${only}"` : ''}><button class="fileprint" onclick="print()">Print or save as PDF</button><main class="paper" style="overflow:visible"><div class="paper-inner">${body}</div></main></body></html>`;
 }
 function importJson(text) {
   let d; try { d = JSON.parse(text); } catch { toast('That isn’t valid JSON. Check you copied all of it.'); return; }
@@ -7290,7 +7301,7 @@ $('homeView').addEventListener('click', e => {
   if (t.dataset.libpaper) { view = 'paper'; switchWeek(t.dataset.libpaper); return; }
   if (t.dataset.libedit) { lib.edit = t.dataset.libedit; renderLibrary(); setTimeout(() => { $('libEdName')?.focus(); $('libEdName')?.select(); }, 20); return; }
   if (t.hasAttribute('data-libeditcancel')) { lib.edit = ''; renderLibrary(); return; }
-  if (t.dataset.libprint) { view = 'paper'; paperTab = 'overview'; switchWeek(t.dataset.libprint); setTimeout(() => window.print(), 120); return; }
+  if (t.dataset.libprint) { view = 'paper'; paperTab = 'overview'; switchWeek(t.dataset.libprint); setTimeout(() => printNow(), 120); return; }
   if (t.dataset.libloadin) { view = 'paper'; paperTab = 'loadin'; switchWeek(t.dataset.libloadin); return; }
   if (t.id === 'homeNewBlank') { const vid = (venues()[lib.venue] ? lib.venue : venueOf(plan)?.id); const np = blankPlan(nextFreeDate(undefined, vid), vid); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)}`); return; }
   if (t.id === 'homeNewCopy') { const vid = (venues()[lib.venue] ? lib.venue : venueOf(plan)?.id), vids = venueWeekIds(vid), ids = vids.length ? vids : sortedWeekIds(), src = db.plans[ids[ids.length - 1]], np = JSON.parse(JSON.stringify(src)); np.id = uid(); np.venueId = vid; np.date = nextFreeDate(addDays(src.date, 7), vid); db.plans[np.id] = np; save(); renderHome(); toast(`Copied to ${longDate(np.date)}`); return; }

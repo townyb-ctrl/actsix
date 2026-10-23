@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 71 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 72 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -136,6 +136,7 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 - **Empty sheets explain themselves**: an empty input list, outputs, monitor mixes, cable pull list or team sheet says why and offers the one button that fills it (hidden when printed).
 - **Pinch to zoom on touch screens**: two fingers zoom the plot on iPads and phones instead of zooming the whole page; one finger still scrolls and drags gear.
 - **Lift while dragging**: gear in hand rises a touch off the deck with a deeper shadow, and settles with a small bounce when you let go (no motion with reduced motion).
+- **When printing is blocked**: some places that embed Stageplot (the Claude preview among them) don't allow the print dialog. If it doesn't open, a note offers the sheets as a file instead (just the rider, or just the My spot cards, when that's what you were printing); open it and use its *Print or save as PDF* button, which doesn't appear on paper.
 - **Sheet tabs**: one quiet row of words (Overview, Rider, My spot · Inputs, Outputs, Monitor mixes, Cables, Power, Racks · Team, Load-in · Everything), the open sheet underlined in the accent colour; Overview shows a small amber dot when there are things to check. *Print or PDF* sits at the end of the row; under it, a quiet line holds **View: Pages | Scroll** (wide screens) and **Download all sheets**. On narrow screens the row scrolls with a soft fade at the edge.
 - **Paperwork as pages**: on a wide screen the sheets show as white A4 pages on a grey desk, numbered, so you see what will print, in dark mode too. **View: Scroll** under the tabs turns it off (remembered in this browser).
 - **Library trends**: each week in the Library has a tiny line for its inputs (solid) and team size (dashed) over up to six weeks ending with that week; hover it for the numbers.
