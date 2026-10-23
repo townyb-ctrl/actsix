@@ -203,6 +203,8 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .pmain select.empty { color: var(--warn); }
 .person .iconbtn { width: 30px; height: 30px; }
 .people { gap: 0; }
+.pgroup { margin: 10px 0 2px 8px; font: 600 10.5px/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; gap: 6px; } .pgroup:first-child { margin-top: 0; } .pgroup span { font-family: var(--f-mono); opacity: .8; }
+.pgroup + .person::before { display: none; }
 .person { border-radius: var(--r-md); }
 .person { position: relative; }
 .person + .person::before { content: ''; position: absolute; left: 54px; right: 8px; top: 0; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
@@ -262,6 +264,14 @@ th .thshort { display: none; text-decoration: none; } @media (max-width: 560px) 
 .svcx:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); } .svcx .ic { width: 11px; height: 11px; }
 .svcload { padding: 4px 8px; font-size: 12px; }
 .pcovenue { display: flex; gap: 8px; align-items: flex-start; margin: -2px 0 2px; font-size: 12.5px; color: var(--ink-2); } .pcovenue .ic { color: var(--accent-text); flex: none; margin-top: 1px; }
+.startcard { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; align-items: center; padding: 20px 22px; margin-bottom: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-1); }
+.startart { background: var(--deck); border-radius: 14px; display: grid; place-items: center; padding: 22px 16px; } .startart svg { width: 100%; max-width: 180px; height: auto; }
+.startmain { display: grid; gap: 10px; min-width: 0; } .startmain h2 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+.startsteps { list-style: none; margin: 2px 0 4px; padding: 0; display: grid; gap: 8px; }
+.startsteps li { display: flex; gap: 10px; align-items: flex-start; } .startsteps li span:last-child { display: grid; gap: 1px; } .startsteps b { font-size: 14px; } .startsteps small { color: var(--muted); font-size: 12.5px; }
+.startsteps .sn { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--f-mono); color: var(--ink-2); box-shadow: inset 0 0 0 1.5px var(--line-2); }
+.startsteps li.done .sn { background: var(--ok); color: #fff; box-shadow: none; } .startsteps li.done .sn .ic { width: 13px; height: 13px; stroke-width: 2.6; } .startsteps li.done b { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-2); }
+@media (max-width: 760px) { .startcard { grid-template-columns: 1fr; } }
 .calstrip { display: grid; gap: 8px; margin-bottom: 14px; }
 .calhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; } .calhead .hint { font-size: 12px; }
 .caldays { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
@@ -336,6 +346,9 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .gear b { font-weight: 600; font-size: 12.5px; line-height: 1.25; text-wrap: balance; }
 .gear small { color: var(--muted); font-size: 11px; line-height: 1.3; }
 .gear small:empty { display: none; }
+.gear { position: relative; } .gear small.gsize { font: 500 10px var(--f-mono); color: var(--muted); }
+.ownb { position: absolute; top: 5px; right: 5px; font: 600 9.5px/1 var(--f-ui); font-style: normal; padding: 3px 5px; border-radius: 99px; background: var(--surface-3); color: var(--ink-2); }
+.ownb.over { background: var(--warn-soft); color: var(--warn-ink); }
 .glyph { width: 34px; height: 34px; border-radius: 8px; background: radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--deck) 82%, #fff), var(--deck)); padding: 3px; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 .glyph .s-beam, .glyph .s-cov, .glyph .s-covup, .glyph .s-lbeam { display: none; }
 .glyph .s-deck { fill: rgba(255,255,255,.12); stroke: rgba(255,255,255,.7); }
@@ -884,6 +897,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .herobtns > .btn.primary { justify-content: center; padding-block: 10px; }
 .herosub { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .herosub .btn { justify-content: center; padding-inline: 6px; font-size: 13px; }
 .herocount { font: 600 11px var(--f-mono); color: var(--muted); }
+.ldring { width: 16px; height: 16px; flex: none; } .ldring circle { fill: none; stroke: var(--line-2); stroke-width: 2.2; } .ldring .ldfill { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray .4s; } .ldring.full .ldfill { stroke: var(--ok); }
 @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } .heropic { border-right: 0; border-bottom: 1px solid var(--line); min-height: 0; } }
 /* wide screens: Home uses the room; settings pages keep a readable measure */
 @media (min-width: 1500px) { .home .home-in { max-width: 1440px; grid-template-columns: 252px minmax(0, 1fr); gap: 40px; } }
@@ -3660,7 +3674,7 @@ function aimLinks(selSet) {
   }
   return s;
 }
-let foldHinted = false, hoverCid = null;
+let foldHinted = false, hoverCid = null, lastCheckKey = '';
 // while nothing is picked, runs keep their colour but lean towards grey, so the stage isn't a rainbow; picking or pointing brings the colour back
 document.head.insertAdjacentHTML('beforeend', `<style id="calmcables">${Object.entries(KVAR).map(([k, v]) => `#plot.style-calm .cab.quiet.k-${k} { stroke: color-mix(in srgb, var(${v}) 58%, #8b909a); } #plot.style-calm .plug.quiet[style*="${v}"] { fill: color-mix(in srgb, var(${v}) 58%, #8b909a) !important; }`).join('')}</style>`);
 /* Cables side by side: the click zones overlap, so the cable nearest the pointer wins (not the one drawn last), and
@@ -4157,6 +4171,8 @@ function renderFloat() {
       ${ui.adv ? `<span class="stat optional"><b>${fmtLen(t.cab, 0)}</b> cable</span>
       <span class="stat optional"><b>${(t.watts / 1000).toFixed(1)}</b> kW</span>` : ''}
     </div>${checksPopHtml()}`;
+  { const key = `${plan.id}|${w.length}|${bad}`, was = lastCheckKey; lastCheckKey = key;   // the count changed (same week): one soft pulse so it's noticed
+    if (was && was.split('|')[0] === plan.id && was !== key && !matchMedia('(prefers-reduced-motion: reduce)').matches) $('checksBtn')?.querySelector('.chip')?.animate([{ transform: 'scale(1)', boxShadow: '0 0 0 0 color-mix(in srgb, currentColor 35%, transparent)' }, { transform: 'scale(1.06)', boxShadow: '0 0 0 6px transparent', offset: .45 }, { transform: 'scale(1)', boxShadow: '0 0 0 0 transparent' }], { duration: 700, easing: 'ease-out' }); }
 }
 
 /* ===================================================================
@@ -4225,6 +4241,13 @@ function renderWeekPop() {
     </div></div>
     <div class="row" style="justify-content:flex-end"><button class="btn quiet danger" id="delWeek" style="padding:4px 8px;font-size:12.5px">${ic('trash', 'sm')}${delArmed ? 'Click again to delete this week' : 'Delete this week'}</button></div>`;
 }
+// the team list in sections, in the order the position picker uses; people with no position yet last, by Add person
+const ROLE_SECTIONS = [['Band', ['Drums', 'Bass', 'Electric Guitar', 'Acoustic Guitar', 'Keys', 'Tracks / MD', 'Strings']], ['Voices', ['Worship Leader', 'Vocalist', 'Host', 'Pastor / Speaker']], ['Tech', ['FOH Engineer', 'Monitor Engineer', 'Lighting', 'Camera', 'Producer']]];
+function teamGroups() {
+  const out = ROLE_SECTIONS.map(([g, rs]) => [g, plan.team.filter(p => rs.includes(p.role))]);
+  out.push(['No position yet', plan.team.filter(p => !ROLE_SECTIONS.some(([, rs]) => rs.includes(p.role)))]);
+  return out.filter(([, l]) => l.length);
+}
 function roleOptions(cur) {
   const groups = [['Band', ['Drums', 'Bass', 'Electric Guitar', 'Acoustic Guitar', 'Keys', 'Tracks / MD', 'Strings']], ['Voices', ['Worship Leader', 'Vocalist', 'Host', 'Pastor / Speaker']], ['Tech', ['FOH Engineer', 'Monitor Engineer', 'Lighting', 'Camera', 'Producer']]];
   return `<option value="">Choose a position…</option>` + groups.map(([g, rs]) => `<optgroup label="${g}">${rs.map(r => `<option ${r === cur ? 'selected' : ''}>${esc(r)}</option>`).join('')}</optgroup>`).join('');
@@ -4246,7 +4269,7 @@ function renderRail() {
     pane.innerHTML = `
       ${plan.team.length && !pcoBusy ? (window.claude?.use && pco.mcp ? `<button class="pcoline" id="pcoStart">${ic('calendar', 'sm')}Update the team from Planning Center</button>` : '') : pcoHtml()}
       <div class="sechead"><h2>This week's team</h2></div>
-      ${plan.team.length ? `<div class="people">${plan.team.map(p => `
+      ${plan.team.length ? `<div class="people">${teamGroups().map(([g, list]) => `${plan.team.length > 1 ? `<h3 class="pgroup">${esc(g)} <span>${list.length}</span></h3>` : ''}${list.map(p => `
         <div class="person" data-pid="${p.id}">
           <span class="avatar tone-${roleTone(p.role)}${hueStyle(p.id)}">${esc(initials(p.name) || '?')}${roleMark(p.role)}</span>
           <div class="pmain">
@@ -4255,7 +4278,7 @@ function renderRail() {
           </div>
           <button class="iconbtn" data-sing="${p.id}" aria-pressed="${!!p.sings}" title="${p.sings ? 'Sings: has a vocal mic' : 'Also sings? Add a vocal mic'}" aria-label="Also sings">${ic('mic', 'sm')}</button>
           <button class="iconbtn del" data-del="${p.id}" aria-label="Remove ${esc(p.name)}" title="Remove">${ic('x', 'sm')}</button>
-        </div>`).join('')}</div>` : `<div class="empty-state">${ic('users')}<strong>No one scheduled yet</strong><span>${window.claude?.use ? 'Import from Planning Center, add people one by one, or paste a list.' : 'Add people one by one, or paste a list.'}</span></div>`}
+        </div>`).join('')}`).join('')}</div>` : `<div class="empty-state">${ic('users')}<strong>No one scheduled yet</strong><span>${window.claude?.use ? 'Import from Planning Center, add people one by one, or paste a list.' : 'Add people one by one, or paste a list.'}</span></div>`}
       <button class="addrow" id="addPerson"><span class="avatar">${ic('plus', 'sm')}</span>Add person</button>
       <details class="paste"><summary>${ic('clip', 'sm')}Paste a list instead ${ic('chevD', 'sm')}</summary><div>
         <textarea id="bulk" rows="5" placeholder="One per line, e.g.&#10;Alex Rivera - Worship Leader&#10;Casey Brooks, Drums&#10;Riley Chen	Keys / BGV"></textarea>
@@ -4275,7 +4298,8 @@ function renderRail() {
       ${q ? `<p class="hint gearhits">${hits ? `${plural(hits, 'match', 'matches')} across all gear` : ''}</p>` : `<div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types, icon]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${g === gearTab}">${glyph(icon, 'tabglyph')}<span class="gtname">${esc(g)}</span></button>`).join('')}</div>`}
       ${!q && recentGear.length ? `<div class="recent"><h2 class="eyebrow">Recent</h2><div class="recentrow">${recentGear.slice(0, 5).map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" aria-label="Add ${esc(CAT[t].name)}" title="${esc(CAT[t].name)}">${glyph(t)}</button>`).join('')}</div></div>` : ''}` +
       (groups.map(([g, types]) => `<div class="gearcat"><div class="gearcathead"><h2 class="eyebrow">${esc(g)}</h2>${q ? '' : '<span class="hint">Tap, then tap the stage · or drag</span>'}</div><div class="gearlist">
-        ${types.map(t => `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)} · ${esc(gearMeta(t))}">${glyph(t)}<span><b>${esc(tileName(t))}</b><small>${esc(/×/.test(gearMeta(t)) ? '' : gearMeta(t))}</small></span></button>`).join('')}
+        ${types.map(t => { const own = db.gear?.owned?.[t], used = plan.items.filter(i => i.type === t).length, size = uDim(CAT[t].w, CAT[t].d), meta = gearMeta(t);
+          return `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)} · ${esc(meta)} · ${esc(size)}${own != null ? ` · you own ${own}, ${used} on this week` : ''}">${own != null ? `<i class="ownb${used > own ? ' over' : ''}">own ${own}</i>` : ''}${glyph(t)}<span><b>${esc(tileName(t))}</b><small>${esc(/×/.test(meta) || meta === size ? '' : meta)}</small><small class="gsize">${esc(size)}</small></span></button>`; }).join('')}
       </div></div>`).join('') || `<p class="hint">Nothing matches “${esc(gearQuery)}”.</p>`);
   } else {
     const st = plan.stage, se = plan.settings;
@@ -4751,7 +4775,15 @@ function centreTab() {   // on a phone the tab row scrolls: keep the open sheet'
   const r = b.getBoundingClientRect(), q = nav.getBoundingClientRect();
   nav.scrollTo({ left: nav.scrollLeft + (r.left + r.width / 2) - (q.left + q.width / 2), behavior: 'instant' });
 }
+// every printed page says which week it belongs to, and which page of how many it is (page margin boxes; browsers without them just leave the footer off)
+function pageFooter() {
+  const q = t => `"${String(t).replace(/[\\"]/g, '\\$&').replace(/\n/g, ' ')}"`, who = [defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).join(' · ');
+  const css = `@page { @bottom-left { content: ${q(`${plan.name || 'Untitled service'} · ${longDate(plan.date)}${who ? ` · ${who}` : ''}`)}; font: 8.5pt Archivo, system-ui, sans-serif; color: #6b7180; vertical-align: top; padding-top: 3mm; } @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt Archivo, system-ui, sans-serif; color: #6b7180; vertical-align: top; padding-top: 3mm; } }`;
+  let el = $('pageFoot'); if (!el) { el = document.createElement('style'); el.id = 'pageFoot'; document.head.appendChild(el); }
+  if (el.textContent !== css) el.textContent = css;
+}
 function renderPaper() {
+  pageFooter();
   if (view !== 'paper') return;
   $('paperView').classList.toggle('pages', pageView);
   requestAnimationFrame(centreTab);
@@ -6936,6 +6968,22 @@ function libTrend(order, stats, id) {
 }
 /* Home → Library: the next eight service days at a glance — filled when planned, ringed when only started, faint when free.
    Tap a planned day to open it, a free one to start a week there (in the venue the Library is showing). */
+// how far the load-in checklist has got, as a small ring that fills (green when everything is ticked)
+const loadRing = (done, total) => { const r = 6.5, c = 2 * Math.PI * r, k = total ? done / total : 0;
+  return `<svg class="ldring${k >= 1 ? ' full' : ''}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="${r}"/><circle class="ldfill" cx="8" cy="8" r="${r}" stroke-dasharray="${(c * k).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 8 8)"/></svg>`; };
+/* Home for someone who hasn't planned a real week yet (only the example, or nothing with a team): a calm start card,
+   the welcome screen's stage drawing and three steps that tick as they're done. Hidden for good once a week has a team. */
+function firstRunCard() {
+  const real = Object.values(db.plans).filter(p => !/^Example week/.test(p.name || ''));
+  if (real.some(p => p.team.length)) return '';
+  try { if (localStorage.getItem('stageplot.startHidden')) return ''; } catch { /* show it */ }
+  const drawn = real.some(p => p.stage.set), steps = [[drawn, 'Draw your stage', 'Pick a shape and set the size'], [false, 'Add this week’s team', 'From Planning Center, by hand, or paste a list'], [false, 'Build it and print', 'Gear, cables and power are placed for you; then the paperwork']];
+  return `<section class="startcard"><div class="startart" aria-hidden="true"><svg viewBox="0 0 120 50"><path d="M10 8H110V34H76V44H44V34H10Z" fill="none" stroke="#f0b429" stroke-width="1.6" stroke-dasharray="4 2.4"/><circle cx="42" cy="22" r="4" fill="#f0b429"/><circle cx="60" cy="18" r="4" fill="#8f7cd4"/><circle cx="78" cy="22" r="4" fill="#f0b429"/></svg></div>
+    <div class="startmain"><div class="eyebrow">Getting started</div><h2>Plan your first service</h2>
+      <ol class="startsteps">${steps.map(([done, t, sub], i) => `<li class="${done ? 'done' : ''}"><span class="sn">${done ? ic('check', 'sm') : i + 1}</span><span><b>${t}</b><small>${sub}</small></span></li>`).join('')}</ol>
+      <div class="row" style="gap:8px">${drawn ? `<button class="btn primary" data-startgo="team">${ic('users', 'sm')}Add the team</button>` : `<button class="btn primary" data-startgo="draw">${ic('pen', 'sm')}Draw my stage</button>`}<button class="btn quiet" data-startgo="hide">Hide this</button></div>
+      ${drawn ? '' : '<p class="hint">Drawing your stage replaces the example week.</p>'}</div></section>`;
+}
 function calStrip() {
   const vid = venues()[lib.venue] ? lib.venue : null, start = nextServiceDay(), DAY = DAYS[defaultsOf().day] || 'service day';
   const cells = Array.from({ length: 8 }, (_, i) => {
@@ -7010,6 +7058,9 @@ $('homeView').addEventListener('click', e => {
   if (t.dataset.vdel) { const id = t.dataset.vdel, V = venues()[id]; if (!V || venueWeekIds(id).length || venueList().length < 2) return;
     if (venueDelArmed !== id) { venueDelArmed = id; renderHome(); return; }
     venueDelArmed = ''; delete venues()[id]; if (lib.venue === id) lib.venue = ''; save(); renderAll(); toast(`Deleted ${V.name}`, { label: 'Undo', fn: () => { venues()[id] = V; save(); renderAll(); } }); return; }
+  if (t.dataset.startgo === 'draw') { view = 'plot'; renderAll(); openDesigner(true); return; }
+  if (t.dataset.startgo === 'team') { const w = Object.values(db.plans).find(p => p.stage.set && !/^Example week/.test(p.name || '')); view = 'plot'; railTab = 'team'; if (w) switchWeek(w.id); else renderAll(); return; }
+  if (t.dataset.startgo === 'hide') { try { localStorage.setItem('stageplot.startHidden', '1'); } catch { /* ignore */ } renderHome(); return; }
   if (t.dataset.calopen) { view = 'plot'; switchWeek(t.dataset.calopen); return; }
   if (t.dataset.calnew) { const vid = venues()[lib.venue] ? lib.venue : venueOf(plan)?.id, np = blankPlan(t.dataset.calnew, vid); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)}${multiVenue() ? ` at ${venues()[vid]?.name}` : ''}`); return; }
   if (t.dataset.libvenue !== undefined) { lib.venue = t.dataset.libvenue; renderHome(); return; }
@@ -7120,10 +7171,10 @@ function homeLibrary() {
         ${next.team.length ? `<div class="heroteam">${next.team.slice(0, 8).map((t, i) => `<span class="avatar hued" style="--hue:${PERSON_HUES[i % PERSON_HUES.length]}" title="${esc(t.name)}">${esc(initials(t.name))}</span>`).join('')}${next.team.length > 8 ? `<span class="avatar">+${next.team.length - 8}</span>` : ''}</div>` : ''}
         <div class="herostats">${stats.map(([n, l, dp]) => `<span class="hstat"><b data-count="${n}"${dp ? ` data-dp="${dp}"` : ''}>${dp ? n.toFixed(dp) : n}</b> <span${l.includes('|') ? ` data-forms="${l}"` : ''}>${l.includes('|') ? l.split('|')[n === 1 ? 0 : 1] : l}</span></span>`).join('')}</div>
         <div class="herobtns"><button class="btn primary" data-libopen="${next.id}">${ic('plot', 'sm')}Open the plot</button>
-          <div class="herosub"><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button><button class="btn" data-libprint="${next.id}" title="Print every sheet, or save them as a PDF">${ic('save', 'sm')}Print</button><button class="btn" data-libloadin="${next.id}" title="Tick things off on the day">${ic('check', 'sm')}Load-in${st.load.total ? ` <span class="herocount">${st.load.done}/${st.load.total}</span>` : ''}</button></div></div>
+          <div class="herosub"><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button><button class="btn" data-libprint="${next.id}" title="Print every sheet, or save them as a PDF">${ic('save', 'sm')}Print</button><button class="btn" data-libloadin="${next.id}" title="Tick things off on the day">${st.load.total ? loadRing(st.load.done, st.load.total) : ic('check', 'sm')}Load-in${st.load.total ? ` <span class="herocount">${st.load.done}/${st.load.total}</span>` : ''}</button></div></div>
       </div>
     </section>` : '';
-  return hero + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved in this browser`, '<div id="libBody"></div>',
+  return firstRunCard() + hero + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved in this browser`, '<div id="libBody"></div>',
     `<div class="row" style="gap:6px"><button class="btn" id="homeNewCopy" title="Copy the latest week to the next free ${esc(DAYS[defaultsOf().day])}">${ic('copy', 'sm')}Copy latest</button><button class="btn primary" id="homeNewBlank" title="A fresh week from your stage defaults">${ic('plus', 'sm')}New week</button></div>`);
 }
 function nextFreeDate(from, vid) { let d = from || nextServiceDay(); while (Object.values(db.plans).some(p => p.date === d && (!vid || p.venueId === vid))) d = addDays(d, 7); return d; }

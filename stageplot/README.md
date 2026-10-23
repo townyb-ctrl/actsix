@@ -15,7 +15,7 @@ Then drag anything, run cables by hand, hide layers, and next week start from a 
 
 **How it ships.** A single HTML file: no install, no account, no server. Weeks are saved in the browser; backup and restore moves them between computers. Planning Center access is optional and read-only.
 
-**What's verified** (see [LAUNCH.md](LAUNCH.md)): 74 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
+**What's verified** (see [LAUNCH.md](LAUNCH.md)): 75 automated end-to-end browser test scripts covering stage, team, gear, cabling, layers, undo, save and reload, paperwork, printing and file export; axe-core accessibility audit clean in light and dark; phone, iPad and desktop layouts; Planning Center calls checked against the live Services API. Tested in Chromium; Safari and Firefox still need a pass.
 
 Open `index.html` in a modern browser to run it.
 
@@ -144,6 +144,12 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 - **Planning Center while loading**: soft grey placeholder rows in the shape of what's coming (roster rows, or a picker) pulse beside the status line instead of a bare spinner.
 - **Picking cables in a bunch**: a click picks the cable nearest the pointer (not just the one drawn on top), and pointing at a run lights the nearest one. Where several run side by side, click again on the same spot to step to the next; a note says which one you have (*Cable 2 of 4 here: Casey Kit → Stage box*). Right-click works the same way.
 - **Instruments in colour**: in the Calm look, guitars, drums, keys and other instruments keep their full colour; only the rest of the gear is toned down a little until you point at it.
+- **Getting started card**: until a week other than the example has a team, Home opens with a calm card (the welcome screen's stage drawing and three steps that tick off: draw your stage, add the team, build and print) and one button for the next step; *Hide this* puts it away.
+- **Team list in sections**: Band, Voices, Tech, then *No position yet* (where new rows land), each with a count.
+- **Gear cards** show each item's size, and an *own 2* badge when you've set how many you own (amber when this week uses more).
+- **Load-in ring**: the Load-in button on Home shows a small ring filling as the checklist is ticked (green when done).
+- **Status pulse**: when the number of checks changes, the status chip gives one soft pulse (none with reduced motion).
+- **Printed page footer**: every printed page carries the week name, date and church (and venue) bottom-left, and *Page 2 of 9* bottom-right.
 - **The next 8 service days** (Home → Library): a strip of your usual service day for the next eight weeks, each with a dot: filled when planned, a ring when started but empty, a dash when free. Click a planned day to open it, a free one to start a week there; with a venue picked in the Library it shows that venue only.
 - **Next up card**: a calm two-part card on Home: the week's stage drawn large on the left; on the right the date (and venue), name, status, team, figures and the buttons to open the plot, paperwork, print or load-in. On wide screens Home spreads out to use the room; settings pages keep a readable width.
 - **Next up figures**: Home's Next up card shows people, items, inputs, metres of cable and kW, counting up briefly when Home opens (once, not on every redraw; off with reduced motion).
