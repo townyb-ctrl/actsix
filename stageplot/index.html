@@ -588,6 +588,7 @@ svg text { font-family: var(--f-ui); }
 .insp-head .glyph { width: 44px; height: 44px; border-radius: 10px; }
 .insp-head h2 { font-size: 17px; font-weight: 700; line-height: 1.25; }
 .titlein { width: 100%; font: 700 17px/1.25 var(--f-ui); color: var(--ink); border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 2px 6px; margin: 0 -7px; }
+.titlein { resize: none; overflow: hidden; display: block; } .titlein.long { font-size: 15px; }   /* a long name wraps onto a second line beside the panel buttons */
 .titlein:hover { border-color: var(--line); }
 .titlein:focus { border-color: var(--accent); background: var(--surface); outline: none; }
 .titlein::placeholder { color: var(--ink); opacity: 1; }
@@ -3924,7 +3925,10 @@ function renderPlot() {
     }
   }
   for (const it of tuckedIds.size ? plan.items.filter(i => tuckedIds.has(i.id)) : []) s += `<circle class="tuckdot" cx="${f3(it.x)}" cy="${f3(it.y)}" r="${f3(Math.max(.12, 3 / scale))}"/>`;
-  if (tucked.size && !foldHinted) { foldHinted = true; try { if (!localStorage.getItem('stageplot.foldHint')) { localStorage.setItem('stageplot.foldHint', '1'); setTimeout(() => toast('Zoomed out, DIs and in-ear packs fold into number badges. Click one to open it', { label: 'Show all', fn: () => setCableView(() => { cableView.fold = false; }) }), 400); } } catch { /* ignore */ } }
+  if (tucked.size && !foldHinted) { foldHinted = true; try { if (!localStorage.getItem('stageplot.foldHint')) setTimeout(() => {   // only once the plot is what you're looking at, not behind the welcome or the stage designer
+    if (view !== 'plot' || [...document.querySelectorAll('.overlay')].some(o => !o.hidden)) { foldHinted = false; return; }
+    try { localStorage.setItem('stageplot.foldHint', '1'); } catch { /* ignore */ }
+    toast('Zoomed out, DIs and in-ear packs fold into number badges. Click one to open it', { label: 'Show all', fn: () => setCableView(() => { cableView.fold = false; }) }); }, 400); } catch { /* ignore */ } }
   for (const [pid, l] of tucked) {
     let cx = l.reduce((a, i) => a + i.x, 0) / l.length, cy = l.reduce((a, i) => a + i.y, 0) / l.length; const r = 8.5 / scale, fn = firstName(personById(pid)?.name || '');
     const me = plan.items.find(i => i.personId === pid && cat(i).shape === 'person');
@@ -4132,7 +4136,7 @@ function renderFloat() {
   }
   const t = totals(), w = warnings(), bad = w.filter(x => x.lvl === 'bad').length;
   $('fstats').innerHTML = `<div class="panel statuspill">
-      <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}" aria-expanded="${checksOpen}" ${w.length ? 'aria-describedby="chkPeek"' : ''}>${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${(() => { const nb = w.filter(x => x.lvl === 'bad').length, nw = w.length - nb; return nb ? `${plural(nb, 'problem')}${nw ? ` · ${nw} to check` : ''}` : `${plural(nw, 'thing')} to check`; })()}</span>` : plan.items.length ? `<span class="chip ok">${ic('check', 'sm')}Ready</span>` : `<span class="chip">Empty</span>`}</button>
+      <button class="statbtn" id="checksBtn" title="${w.length ? 'See what needs checking' : 'Everything is patched and powered'}" aria-expanded="${checksOpen}" ${w.length ? 'aria-describedby="chkPeek"' : ''}>${w.length ? `<span class="chip ${bad ? 'bad' : 'warn'}">${ic('alert', 'sm')}${(() => { const nb = w.filter(x => x.lvl === 'bad').length, nw = w.length - nb; return nb ? `${plural(nb, 'problem')}${nw ? ` · ${nw} to check` : ''}` : `${plural(nw, 'thing')} to check`; })()}</span>` : !plan.items.length ? `<span class="chip">Empty</span>` : !plan.team.length ? `<span class="chip">No team yet</span>` : `<span class="chip ok">${ic('check', 'sm')}Ready</span>`}</button>
       ${w.length && !checksOpen ? `<div class="chkpeek" id="chkPeek" role="tooltip"><ul>${w.slice().sort((a, b) => (a.lvl === 'bad' ? 0 : 1) - (b.lvl === 'bad' ? 0 : 1)).slice(0, 3).map(x => `<li class="${x.lvl}"><span class="pdot"></span><span>${esc(x.msg.length > 110 ? x.msg.slice(0, 107) + '…' : x.msg)}</span></li>`).join('')}</ul>${w.length > 3 ? `<small>and ${w.length - 3} more · click to see all</small>` : '<small>Click to see them and fix</small>'}</div>` : ''}
       <span class="stat"><b>${t.ins}</b> inputs</span>
       ${ui.adv ? `<span class="stat optional"><b>${fmtLen(t.cab, 0)}</b> cable</span>
@@ -4359,7 +4363,10 @@ function applySetup(id) {
   closePops();
 }
 
+const fitTitle = el => { if (!el) return; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; };   // the name field grows to show the whole name
+document.addEventListener('input', e => { if (e.target.id === 'iLabel') fitTitle(e.target); });
 function renderInspector() {
+  requestAnimationFrame(() => fitTitle($('iLabel')));
   $('plotView').classList.toggle('has-sel', !!sel);   // phones: a selection's details sit right under the plot
   const el = $('inspector');
   if (sel && !tipsSeen) { tipsSeen = true; try { localStorage.setItem('stageplot.tips', '1'); } catch { /* ignore */ } }
@@ -4441,7 +4448,7 @@ function renderInspector() {
     const conns = plan.cables.filter(x => touches(x, it.id));
     el.innerHTML = `<div class="insp">
       <div class="insp-head">${C.shape === 'person' ? `<span class="avatar tone-${roleTone(owner?.role)}${owner ? ` hued" style="--hue:${personColour(owner.id)};width:44px;height:44px` : '" style="width:44px;height:44px'}">${esc(initials(owner?.name || it.label))}</span>` : itemPreview(it, 'ipv ipv-lg')}
-        <div style="min-width:0"><div class="eyebrow">${esc(C.name)}</div><input id="iLabel" class="titlein" type="text" value="${esc(it.label || '')}" placeholder="${esc(itemName({ ...it, label: '' }))}" aria-label="Name" title="Click to rename"></div>
+        <div style="min-width:0"><div class="eyebrow">${esc(C.name)}</div><textarea id="iLabel" class="titlein${itemName(it).length > 16 ? ' long' : ''}" rows="1" placeholder="${esc(itemName({ ...it, label: '' }))}" aria-label="Name" title="Click to rename">${esc(it.label || '')}</textarea></div>
         <div class="row" style="gap:0"><button class="iconbtn" data-insp-hide aria-label="Hide panel" title="Hide panel ( ] )">${ic('chevsR', 'sm')}</button><button class="iconbtn" id="iClose" aria-label="Deselect">${ic('x', 'sm')}</button></div></div>
       ${ownerUp || it.chan ? `<section class="isec">
         ${ownerUp ? ownerField : ''}
@@ -5560,7 +5567,7 @@ $('weekPop').addEventListener('click', e => {
 /* rail */
 for (const [id, t] of [['tTeam', 'team'], ['tGear', 'gear'], ['tStage', 'stage']]) $(id).onclick = () => { railTab = t; renderRail(); };
 function matchRole(s) { for (const [re, r] of ROLE_MATCH) if (re.test(s)) return r; return ''; }
-function buildNow() { mutate(() => { buildFromTeam(); autoCable(); }); toast(ui.teamGear ? `Stage built · ${plural(plan.items.filter(i => i.gen && i.type !== 'person').length, 'item')} placed` : `${plural(plan.items.filter(i => i.gen && i.type === 'person').length, 'person', 'people')} placed · add their gear from the Gear tab`, true); }
+function buildNow() { mutate(() => { plan.team = plan.team.filter(p => p.name.trim() || p.role); buildFromTeam(); autoCable(); }); toast(ui.teamGear ? `Stage built · ${plural(plan.items.filter(i => i.gen && i.type !== 'person').length, 'item')} placed` : `${plural(plan.items.filter(i => i.gen && i.type === 'person').length, 'person', 'people')} placed · add their gear from the Gear tab`, true); }   // blank rows from Add person aren't people
 $('railFoot').addEventListener('click', e => { if (e.target.closest('#buildBtn')) buildNow(); });
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
@@ -5574,6 +5581,7 @@ $('railPane').addEventListener('click', e => {
     const lines = $('bulk').value.split(/\n/).map(l => l.trim()).filter(Boolean);
     if (!lines.length) { toast('Paste at least one line'); return; }
     mutate(() => {
+      plan.team = plan.team.filter(p => p.name.trim() || p.role);   // a blank row from Add person gives way to the pasted list
       for (const l of lines) {
         const parts = l.split(/\t|\s[-–—]\s|,|:/).map(s => s.trim()).filter(Boolean);
         const name = parts[0] || l, rest = parts.slice(1).join(' ');
@@ -5637,11 +5645,11 @@ function openLibrary() {   // the Add tool: gear tab, search focused
   renderFloat(); setTimeout(() => { const q = $('gearSearch'); if (q) { q.focus(); q.select(); } }, 60);
 }
 /* stage size, from the Room tab or the stage panel; a custom shape stretches to fit */
-function setStageW(m) { const nw = fromM(clamp(m || 10, 3, 60)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [r2(x * nw / plan.stage.w), y]); plan.stage.w = nw; plan.stage.set = true; needFit = true; }
-function setStageD(m) { const nd = fromM(clamp(m || 6, 2, 40)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [x, r2(y * nd / plan.stage.d)]); plan.stage.d = nd; plan.stage.set = true; needFit = true; }
+function setStageW(m) { if (!(m > 0)) { toast(Number.isFinite(m) ? 'Stage width needs to be more than 0' : 'Type a number for the stage width'); return; } if (m < 3 || m > 60) toast(`Stage width kept between ${uLen(fromM(3))} and ${uLen(fromM(60))}`); const nw = fromM(clamp(m, 3, 60)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [r2(x * nw / plan.stage.w), y]); plan.stage.w = nw; plan.stage.set = true; needFit = true; }
+function setStageD(m) { if (!(m > 0)) { toast(Number.isFinite(m) ? 'Stage depth needs to be more than 0' : 'Type a number for the stage depth'); return; } if (m < 2 || m > 40) toast(`Stage depth kept between ${uLen(fromM(2))} and ${uLen(fromM(40))}`); const nd = fromM(clamp(m, 2, 40)); if (plan.stage.poly) plan.stage.poly = plan.stage.poly.map(([x, y]) => [x, r2(y * nd / plan.stage.d)]); plan.stage.d = nd; plan.stage.set = true; needFit = true; }
 
 /* inspector */
-$('inspector').addEventListener('keydown', e => { if (e.target.matches?.('input[type=text], input[type=number]') && e.key === 'Enter') e.target.blur(); if (e.target.id === 'iLabel' && e.key === 'Escape') { e.target.value = itemById(sel.id)?.label || ''; e.target.blur(); } });
+$('inspector').addEventListener('keydown', e => { if (e.target.matches?.('input[type=text], input[type=number], #iLabel') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); } if (e.target.id === 'iLabel' && e.key === 'Escape') { e.target.value = itemById(sel.id)?.label || ''; e.target.blur(); } });
 $('inspector').addEventListener('change', e => {
   const t = e.target;
   const it = sel?.kind === 'item' ? itemById(sel.id) : null;
@@ -5654,7 +5662,7 @@ $('inspector').addEventListener('change', e => {
   if (it) mutate(() => {
     const n = Number(t.value);
     switch (t.id) {
-      case 'iLabel': it.label = t.value; it.labelEdited = !!t.value; break;
+      case 'iLabel': it.label = t.value.replace(/\s+/g, ' ').trim(); it.labelEdited = !!it.label; break;
       case 'iNote': if (t.value.trim()) it.note = t.value.trim().slice(0, 300); else delete it.note; break;
       case 'iPerson': it.personId = t.value || undefined; break;
       case 'iX': it.x = fromM(mIn(n)); delete it.chan; break; case 'iY': it.y = fromM(mIn(n)); delete it.chan; break;
