@@ -705,10 +705,11 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .checkswrap { flex-basis: 100%; display: flex; }
 .checkspop { flex: 0 0 auto; width: min(400px, calc(100vw - 40px)); background: var(--surface); backdrop-filter: none; display: grid; gap: 10px; padding: 12px; max-height: min(60vh, 520px); overflow: auto; }
 .recent { display: grid; gap: 6px; }
-.recentrow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }   /* the last five, one row */
-.recentchip { display: grid; place-items: center; height: 44px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 0; cursor: grab; transition: border-color .15s, transform .1s; }
+.recentrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }   /* the last six, two rows of three */
+.recentchip { display: grid; place-items: center; gap: 2px; min-height: 64px; color: var(--ink-2); font: inherit; font-size: 11.5px; font-weight: 600; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 0; cursor: grab; transition: border-color .15s, transform .1s; }
 .recentchip:hover { border-color: var(--accent); transform: translateY(-1px); }
 .recentchip svg.glyph, .recentchip .glyph { width: 34px; height: 34px; border-radius: var(--r-sm); padding: 2px; }
+.recentchip > span { max-width: 100%; padding: 0 4px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setuplist { display: grid; gap: 4px; margin-bottom: 6px; }
 .setuprow { display: grid; grid-template-columns: 1fr auto; gap: 4px; align-items: center; }
 .setupuse { display: grid; grid-template-columns: 1fr auto; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-sm); padding: 6px 10px; cursor: pointer; color: var(--ink); }
@@ -1097,6 +1098,18 @@ tr.flag td { color: var(--bad); }
 .tlink { border: 0; background: none; padding: 2px 4px; font: inherit; font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .tchip.off { border-style: dashed; color: var(--muted); display: inline-flex; align-items: center; gap: 3px; }
 .hiddenteams { margin-top: 2px; align-items: center; }
+.avatar { position: relative; } .avatar .pphoto { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.spotphoto { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex: none; }
+.pcochg { border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; display: grid; gap: 8px; }
+.pcochg-h { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.pcochg ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 13.5px; }
+.pcochg li.rem::before { content: '− '; color: var(--bad-ink, var(--bad)); font-weight: 700; } .pcochg li.add::before { content: '+ '; color: var(--ok-ink, var(--ok)); font-weight: 700; }
+.splitbtn { display: inline-flex; } .splitbtn #printBtn { border-top-right-radius: 0; border-bottom-right-radius: 0; } .splitbtn #printMore { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-width: 0; padding: 0 8px; }
+.printbar { position: relative; }
+.printpop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: 280px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-3); padding: 14px; display: grid; gap: 8px; text-align: left; }
+.printpop h2 { margin: 4px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.pp-sheets { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 13.5px; } .pp-scale { display: grid; gap: 4px; font-size: 13.5px; }
+.printpop label { display: flex; align-items: center; gap: 6px; cursor: pointer; } .printpop input { accent-color: var(--accent); }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -2101,24 +2114,28 @@ const weekPast = () => { lockSeen ||= new Set(Object.keys(db?.plans || {})); ret
 const weekLocked = () => weekPast() && !unlockedWeeks.has(plan.id);
 function unlockWeek() { unlockedWeeks.add(plan.id); renderAll(); toast('Unlocked until you close Stageplot'); }
 function lockedNote() { toast(`${longDate(plan.date)} has happened, so it’s locked`, { label: 'Edit anyway', fn: unlockWeek }); }
+// what each undo and redo step would do, kept beside the snapshots so the buttons can say it ("Undo: moved Casey Kit")
+let undoLab = [], redoLab = [];
+const labSync = () => { if (undoLab.length !== history.length) undoLab = history.map(() => ''); if (redoLab.length !== future.length) redoLab = future.map(() => ''); };
+const stepLabel = (msg, before) => { const l = (msg && String(msg).split(' · ')[0].replace(/\s*Undo$/, '')) || describeChange(before) || ''; return l.length > 60 ? l.slice(0, 57) + '…' : l; };
+function pushUndo(before, label) { labSync(); history.push(before); undoLab.push(label); if (history.length > 80) { history.shift(); undoLab.shift(); } future = []; redoLab = []; }
 function mutate(fn, msg) {
   if (weekLocked()) { renderAll(); lockedNote(); return; }   // put back whatever the field showed
   glideNext = true;
   const before = snapState();
-  history.push(before); if (history.length > 80) history.shift();
-  future = [];
   fn(); if (pending && !itemById(pending.from)) pending = null;   // a cable half-run from gear that this change removed is dropped
+  pushUndo(before, stepLabel(msg, before));
   recordRev(msg, before); save(); renderAll();
   if (msg) toast(msg, true);
 }
 function undo() {
-  const prev = history.pop(); if (!prev) { toast('Nothing to undo'); return; }
-  future.push(snapState());
+  labSync(); const prev = history.pop(), lab = undoLab.pop() || ''; if (!prev) { toast('Nothing to undo'); return; }
+  future.push(snapState()); redoLab.push(lab);
   glideNext = true; plan = loadState(prev); sel = null; pending = null; save(); renderAll();
 }
 function redo() {
-  const next = future.pop(); if (!next) { toast('Nothing to redo'); return; }
-  history.push(snapState());
+  labSync(); const next = future.pop(), lab = redoLab.pop() || ''; if (!next) { toast('Nothing to redo'); return; }
+  history.push(snapState()); undoLab.push(lab);
   glideNext = true; plan = loadState(next); sel = null; pending = null; save(); renderAll();
 }
 /* Version history: a timeline of every change to a week, kept beside the weeks (not in them), so any point can be restored.
@@ -2138,7 +2155,6 @@ function histSave() {
 }
 function describeChange(beforeJson) {
   let was; try { was = JSON.parse(beforeJson); } catch { return 'Edited'; }
-  if (JSON.stringify(was.__ch || null) !== JSON.stringify(db.channels || null)) return 'Changed channels';
   const old = new Map(was.items.map(i => [i.id, i])), now = new Map(plan.items.map(i => [i.id, i])), nm = i => itemName(i);
   const added = plan.items.filter(i => !old.has(i.id)), removed = was.items.filter(i => !now.has(i.id));
   const moved = plan.items.filter(i => { const o = old.get(i.id); return o && (o.x !== i.x || o.y !== i.y || (o.rot || 0) !== (i.rot || 0)); });
@@ -2154,6 +2170,7 @@ function describeChange(beforeJson) {
   if (JSON.stringify(was.team) !== JSON.stringify(plan.team)) return 'Changed the team';
   if (JSON.stringify(was.stage) !== JSON.stringify(plan.stage)) return 'Changed the stage';
   if (was.name !== plan.name || was.date !== plan.date) return 'Renamed the week';
+  if (JSON.stringify(was.__ch || null) !== JSON.stringify(db.channels || null)) return 'Changed channels';
   return 'Edited';
 }
 function recordRev(msg, beforeJson) {
@@ -2725,11 +2742,13 @@ async function pcoLoadPlansInner() {
   if (!pco.plans.length) pco.err = 'No upcoming plans in this service type.';
 }
 const pcoLoadPlans = () => pcoRun('Loading plans…', pcoLoadPlansInner);
-const pcoLoadRoster = () => pcoRun('Loading roster…', async () => {
+// everyone on a plan, one entry per person with each position they fill (and its team); declined rows kept only when asked for
+async function pcoFetch(typeId, planId, withDeclined = false) {
   const rows = [], teams = new Map();
   let after = null;
   for (let page = 0; page < 6; page++) {
-    const input = { service_type_id: pco.typeId, plan_id: pco.planId, per_page: 100, filter: ['not_declined'], include: ['team'], output_fields: ['id', 'name', 'status', 'team_position_name'] };
+    const input = { service_type_id: typeId, plan_id: planId, per_page: 100, include: ['team'], output_fields: ['id', 'name', 'status', 'team_position_name', 'photo_thumbnail'] };
+    if (!withDeclined) input.filter = ['not_declined'];
     if (after) input.page_after = after;
     const r = await pcoCall('services_plan_people', input);
     for (const t of r?.included || []) if (t.type === 'Team') teams.set(t.id, t.attributes?.name || '');
@@ -2738,43 +2757,51 @@ const pcoLoadRoster = () => pcoRun('Loading roster…', async () => {
     after = r.next_page_token;
   }
   // one entry per person; someone on two positions (e.g. Acoustic + Vocals) keeps the instrument and "also sings"
-  const people = new Map();
+  const people = new Map(), P = pcoPrefs();
   for (const row of rows) {
     const a = row.attributes || {}, key = row.relationships?.person?.data?.id || a.name;
     const team = teams.get(row.relationships?.team?.data?.id) || '';
     const pos = a.team_position_name || '';
     const mapped = posRole(pos, team), role = mapped !== null ? mapped : matchRole(pos) || (ROLES[matchRole(team)]?.gear?.length === 0 ? matchRole(team) : '');
-    const pk = [pos, team].filter(Boolean).join(' · '), P = pcoPrefs(); if (pk && !P.seen.includes(pk)) P.seen.push(pk);
-    const e = people.get(key) || { key, name: a.name || 'Unnamed', rows: [] };
-    e.rows.push({ team, pk, role, unc: !!a.status && a.status !== 'confirmed' });
+    const pk = [pos, team].filter(Boolean).join(' · '); if (pk && !P.seen.includes(pk)) P.seen.push(pk);
+    const e = people.get(key) || { key, name: a.name || 'Unnamed', rows: [], photo: '' };
+    const declined = /^d/i.test(a.status || '');
+    e.rows.push({ team, pk, role, unc: !!a.status && a.status !== 'confirmed' && !declined, declined });
+    if (!e.photo && /^https:\/\/[^/]*planningcenteronline\.com\/uploads\/person\//.test(a.photo_thumbnail || '')) e.photo = a.photo_thumbnail;   // a real photo; the initials placeholders are left out, Stageplot draws its own
     people.set(key, e);
   }
-  pco.raw = [...people.values()];
-  const tc = new Map(); for (const e of pco.raw) for (const t of new Set(e.rows.map(r => r.team))) tc.set(t, (tc.get(t) || 0) + 1);
-  pco.teams = [...tc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const raw = [...people.values()], tc = new Map();
+  for (const e of raw) for (const t of new Set(e.rows.filter(r => !r.declined).map(r => r.team))) tc.set(t, (tc.get(t) || 0) + 1);
+  return { raw, teams: [...tc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) };
+}
+const pcoLoadRoster = () => pcoRun('Loading roster…', async () => {
+  const f = await pcoFetch(pco.typeId, pco.planId); pco.raw = f.raw; pco.teams = f.teams;
   pcoDerive(true);
   pcoPrefs().seen = pcoPrefs().seen.slice(-200); save();
   if (!pco.raw.length) pco.err = 'No one is scheduled on this plan yet.';
 });
 // the teams to pull from, remembered per service type (none chosen = every team)
 const pcoHidden = () => new Set(pcoPrefs().hiddenTeams || []);   // teams you never pull from (Communion, Info Desk…), for every service type
-const pcoShownTeams = () => { const h = pcoHidden(); return (pco.teams || []).filter(([t]) => !h.has(t)); };
-function pcoTeamSel() {
-  const want = pcoPrefs().teams?.[pco.typeId] || [], have = new Set(pcoShownTeams().map(t => t[0])), sel = want.filter(t => have.has(t));
+const pcoShownTeams = (teams = pco.teams) => { const h = pcoHidden(); return (teams || []).filter(([t]) => !h.has(t)); };
+function pcoTeamSel(typeId = pco.typeId, teams = pco.teams) {
+  const want = pcoPrefs().teams?.[typeId] || [], have = new Set(pcoShownTeams(teams).map(t => t[0])), sel = want.filter(t => have.has(t));
   return sel.length ? new Set(sel) : null;
 }
 // each person as seen through the chosen teams: only those teams' positions decide where they stand
-function pcoDerive(resetPicks) {
-  const sel = pcoTeamSel(), hid = pcoHidden();
+function pcoBuild(raw, typeId, teams) {
+  const sel = pcoTeamSel(typeId, teams), hid = pcoHidden();
   const rank = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? 99 : (r === 'Vocalist' || r === 'Worship Leader' ? 50 + i : i); };
-  pco.roster = (pco.raw || []).map(p => {
-    const rows = p.rows.filter(r => !hid.has(r.team) && (!sel || sel.has(r.team))); if (!rows.length) return null;
-    const e = { key: p.key, name: p.name, positions: rows.map(r => r.pk), roles: rows.map(r => r.role).filter(Boolean), unconfirmed: rows.some(r => r.unc) };
+  return (raw || []).map(p => {
+    const rows = p.rows.filter(r => !r.declined && !hid.has(r.team) && (!sel || sel.has(r.team))); if (!rows.length) return null;
+    const e = { key: p.key, name: p.name, photo: p.photo, positions: rows.map(r => r.pk), roles: rows.map(r => r.role).filter(Boolean), unconfirmed: rows.some(r => r.unc) };
     const roles = [...new Set(e.roles)].sort((a, b) => rank(a) - rank(b));
     const role = roles.includes('Worship Leader') ? 'Worship Leader' : roles[0] || '';
     const sings = role !== 'Vocalist' && role !== 'Worship Leader' && roles.some(r => r === 'Vocalist' || r === 'Worship Leader');
     return { ...e, role, sings };
   }).filter(Boolean).sort((a, b) => (a.role ? 0 : 1) - (b.role ? 0 : 1) || rank(a.role) - rank(b.role) || a.name.localeCompare(b.name));
+}
+function pcoDerive(resetPicks) {
+  pco.roster = pcoBuild(pco.raw, pco.typeId, pco.teams);
   if (resetPicks) pco.picked = new Set(pco.roster.filter(e => e.role && (pcoPrefs().unconfirmed !== false || !e.unconfirmed)).map(e => e.key));
   else { const vis = new Set(pco.roster.map(e => e.key)); pco.picked = new Set([...pco.picked].filter(k => vis.has(k))); }
 }
@@ -2788,6 +2815,40 @@ function pcoHideTeam(team, hide) {
   const P = pcoPrefs(), h = pcoHidden(); if (hide) h.add(team); else h.delete(team);
   P.hiddenTeams = [...h]; save(); pcoDerive(true); renderRail();
   if (hide) toast(`${team || 'No team'} hidden from Planning Center imports`, { label: 'Undo', fn: () => pcoHideTeam(team, false) });
+}
+// once a week came from Planning Center, opening it asks again: who declined or dropped off, who was added on the chosen teams
+const pcoChecked = new Map();
+// a person's Planning Center photo over their initials; if it can't load (offline, blocked) the initials stay
+const photoImg = p => p?.photo ? `<img class="pphoto" src="${esc(p.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '';
+document.addEventListener('error', e => { if (e.target?.matches?.('img.pphoto, img.spotphoto')) e.target.remove(); }, true);
+async function pcoCheck(force = false) {
+  const w = plan, L = w?.pco; if (!pco.mcp || !L || w.date < localISO()) return;
+  if (!force && Date.now() - (pcoChecked.get(w.id) || 0) < 10 * 60e3) return;
+  pcoChecked.set(w.id, Date.now());
+  let f; try { f = await pcoFetch(L.typeId, L.planId, true); } catch { return; }   // quiet: this is a background check
+  if (plan !== w) return;
+  const byKey = new Map(f.raw.map(e => [e.key, e])), live = new Set(pcoBuild(f.raw, L.typeId, f.teams).map(e => e.key));
+  let photos = false; for (const t of w.team) { const e = byKey.get(t.pcoId); if (e?.photo && t.photo !== e.photo) { t.photo = e.photo; photos = true; } }
+  if (photos) save();
+  const gone = w.team.filter(t => t.pcoId && !f.raw.some(e => e.key === t.pcoId && e.rows.some(r => !r.declined))).map(t => ({ id: t.id, name: t.name, declined: !!byKey.get(t.pcoId) }));
+  const added = pcoBuild(f.raw, L.typeId, f.teams).filter(e => e.role && live.has(e.key) && !w.team.some(t => t.pcoId === e.key));
+  const sig = [...gone.map(g => '-' + g.id), ...added.map(a => '+' + a.key)].sort().join();
+  pco.changes = sig && sig !== L.dismissed ? { week: w.id, gone, added, sig } : null;
+  renderRail();
+}
+function pcoUpdateStage() {
+  const c = pco.changes; if (!c || c.week !== plan.id) return;
+  mutate(() => {
+    const out = new Set(c.gone.map(g => g.id)); plan.team = plan.team.filter(t => !out.has(t.id));
+    for (const e of c.added) plan.team.push({ id: uid(), name: e.name, role: e.role, sings: e.sings, pcoId: e.key, ...(e.photo ? { photo: e.photo } : {}) });
+    buildFromTeam(); autoCable();
+  }, `Updated from Planning Center: ${[c.gone.length ? `${c.gone.length} off` : '', c.added.length ? `${c.added.length} added` : ''].filter(Boolean).join(', ')}`);
+  pco.changes = null; renderRail();
+}
+function pcoChangesHtml() {
+  const c = pco.changes; if (!c || c.week !== plan.id) return '';
+  const bits = [...c.gone.map(g => `<li class="rem">${esc(g.name)} ${g.declined ? 'declined' : 'is no longer scheduled'}</li>`), ...c.added.map(e => `<li class="add">${esc(e.name)} added · ${esc(e.role)}${e.sings ? ' + sings' : ''}</li>`)];
+  return `<div class="pcochg" role="status"><div class="pcochg-h">${ic('calendar', 'sm')}<b>Planning Center changed</b></div><ul>${bits.join('')}</ul><div class="row" style="gap:6px"><button class="btn primary" id="pcoChgApply">Update the stage</button><button class="btn quiet" id="pcoChgSkip">Not now</button></div></div>`;
 }
 function pcoApply() {
   const chosen = pco.roster.filter(e => pco.picked.has(e.key));
@@ -2810,9 +2871,10 @@ function pcoApply() {
     }
     if (pco.replace) plan.team = [];
     for (const e of chosen) {
-      if (plan.team.some(p => p.pcoId === e.key)) continue;
-      plan.team.push({ id: uid(), name: e.name, role: e.role, sings: e.sings, pcoId: e.key });
+      const had = plan.team.find(p => p.pcoId === e.key); if (had) { if (e.photo) had.photo = e.photo; continue; }
+      plan.team.push({ id: uid(), name: e.name, role: e.role, sings: e.sings, pcoId: e.key, ...(e.photo ? { photo: e.photo } : {}) });
     }
+    plan.pco = { typeId: pco.typeId, planId: pco.planId, at: Date.now() };   // remembered so the week can check Planning Center for changes later
     if (pcoPrefs().usePlan !== false) { if (pl?.date) plan.date = pl.date; if (pl) plan.name = pl.title || pl.dates || plan.name; if (pl?.times && Object.keys(pl.times).length) plan.times = { ...(plan.times || {}), ...pl.times }; }
     buildFromTeam(); autoCable();
   });
@@ -4323,6 +4385,9 @@ function renderHeader() {
     if (past) { b.innerHTML = `${ic(lk ? 'lock' : 'unlock', 'sm')}<span>${lk ? 'Locked' : 'Unlocked'}</span>`; b.classList.toggle('open', !lk); b.title = lk ? 'This week has happened, so it’s read-only. Click to edit it anyway' : 'Editing a past week. Click to lock it again'; b.setAttribute('aria-label', lk ? 'Past week, locked. Edit anyway' : 'Past week, unlocked. Lock again'); } }
   $('undoBtn').innerHTML = ic('undo'); $('redoBtn').innerHTML = ic('redo');
   $('undoBtn').disabled = !history.length; $('redoBtn').disabled = !future.length;
+  { labSync(); const u = undoLab[undoLab.length - 1], r = redoLab[redoLab.length - 1];
+    $('undoBtn').title = history.length ? `Undo${u ? `: ${u}` : ''} (Ctrl+Z)` : 'Nothing to undo'; $('undoBtn').setAttribute('aria-label', history.length && u ? `Undo: ${u}` : 'Undo');
+    $('redoBtn').title = future.length ? `Redo${r ? `: ${r}` : ''} (Ctrl+Shift+Z)` : 'Nothing to redo'; $('redoBtn').setAttribute('aria-label', future.length && r ? `Redo: ${r}` : 'Redo'); }
   $('moreBtn').innerHTML = ic('dots');
   if (!$('moreMenu').hidden) renderMoreMenu();
   $('lvBtn').innerHTML = ic('sliders'); $('lvBtn').setAttribute('aria-pressed', ui.adv);
@@ -4396,11 +4461,12 @@ function renderRail() {
   if (railTab === 'team') {
     const pcoBusy = pco.types.length || pco.busy || pco.err;
     pane.innerHTML = `
+      ${pcoChangesHtml()}
       ${plan.team.length && !pcoBusy ? (window.claude?.use && pco.mcp ? `<button class="pcoline" id="pcoStart">${ic('calendar', 'sm')}Update the team from Planning Center</button>` : '') : pcoHtml()}
       <div class="sechead"><h2>This week's team</h2></div>
       ${plan.team.length ? `<div class="people">${teamGroups().map(([g, list]) => `${plan.team.length > 1 ? `<h3 class="pgroup">${esc(g)} <span>${list.length}</span></h3>` : ''}${list.map(p => `
         <div class="person" data-pid="${p.id}">
-          <span class="avatar tone-${roleTone(p.role)}${hueStyle(p.id)}">${esc(initials(p.name) || '?')}${roleMark(p.role)}</span>
+          <span class="avatar tone-${roleTone(p.role)}${hueStyle(p.id)}">${esc(initials(p.name) || '?')}${photoImg(p)}${roleMark(p.role)}</span>
           <div class="pmain">
             <input type="text" id="pn-${p.id}" value="${esc(p.name)}" aria-label="Name" data-f="name" placeholder="Name" list="pastPeople" autocomplete="off">
             <select id="pr-${p.id}" data-f="role" aria-label="Position" class="${p.role ? '' : 'empty'}">${roleOptions(p.role)}</select>
@@ -4426,7 +4492,7 @@ function renderRail() {
     const hits = groups.reduce((n, [, t]) => n + t.length, 0);
     pane.innerHTML = `<div class="search">${ic('search', 'sm')}<input id="gearSearch" type="search" placeholder="Search all gear" value="${esc(gearQuery)}" aria-label="Search gear"></div>
       ${q ? `<p class="hint gearhits">${hits ? `${plural(hits, 'match', 'matches')} across all gear` : ''}</p>` : `<div class="geartabs" role="tablist" aria-label="Gear categories">${GEAR_GROUPS.map(([g, types, icon]) => `<button role="tab" data-geartab="${esc(g)}" aria-selected="${g === gearTab}">${glyph(icon, 'tabglyph')}<span class="gtname">${esc(g)}</span></button>`).join('')}</div>`}
-      ${!q && recentGear.length ? `<div class="recent"><h2 class="eyebrow">Recent</h2><div class="recentrow">${recentGear.slice(0, 5).map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" aria-label="Add ${esc(CAT[t].name)}" title="${esc(CAT[t].name)}">${glyph(t)}</button>`).join('')}</div></div>` : ''}` +
+      ${!q && recentGear.length ? `<div class="recent"><h2 class="eyebrow">Recently added</h2><div class="recentrow">${recentGear.slice(0, 6).map(t => `<button class="recentchip" data-add="${t}" draggable="true" aria-pressed="${placing === t}" aria-label="Add ${esc(CAT[t].name)}" title="${esc(CAT[t].name)}">${glyph(t)}<span>${esc(tileName(t))}</span></button>`).join('')}</div></div>` : ''}` +
       (groups.map(([g, types]) => `<div class="gearcat"><div class="gearcathead"><h2 class="eyebrow">${esc(g)}</h2>${q ? '' : '<span class="hint">Tap, then tap the stage · or drag</span>'}</div><div class="gearlist">
         ${types.map(t => { const own = db.gear?.owned?.[t], used = plan.items.filter(i => i.type === t).length, size = uDim(CAT[t].w, CAT[t].d), meta = gearMeta(t);
           return `<button class="gear" data-add="${t}" draggable="true" aria-pressed="${placing === t}" title="${esc(CAT[t].name)} · ${esc(meta)} · ${esc(size)}${own != null ? ` · you own ${own}, ${used} on this week` : ''}">${own != null ? `<i class="ownb${used > own ? ' over' : ''}">own ${own}</i>` : ''}${glyph(t)}<span><b>${esc(tileName(t))}</b><small>${esc(/×/.test(meta) || meta === size ? '' : meta)}</small><small class="gsize">${esc(size)}</small></span></button>`; }).join('')}
@@ -4829,7 +4895,7 @@ function spotsHtml() {
       return `<g class="spot-you"><circle cx="${d.me.x}" cy="${d.me.y}" r="${f3(R)}"/><line x1="${d.me.x}" y1="${f3(up ? d.me.y - R : d.me.y + R)}" x2="${d.me.x}" y2="${f3(up ? ty + .55 : ty - .55)}"/><rect x="${f3(d.me.x - 1.35)}" y="${f3(ty - .55)}" width="2.7" height="1.1" rx=".55"/><text x="${d.me.x}" y="${f3(ty + .28)}" text-anchor="middle">YOU</text></g>`; })();
     const li = (h, items) => items.length ? `<div class="spotsec${items.length > 5 ? ' many' : ''}"><h4>${h}</h4><ul>${items.join('')}</ul></div>` : '';
     return `<article class="spotcard" id="spot-${p.id}"><style>${css}</style>
-      <header>${db.defaults?.logo ? `<img class="spotlogo" src="${db.defaults.logo}" alt="">` : ''}<div style="flex:1"><div class="eyebrow">${esc(longDate(plan.date))} · ${esc(plan.name || '')}</div><h3>${esc(p.name)}</h3><p>${esc(p.role || '')}</p></div><button class="btn" data-spotcopy="${p.id}" title="Copy as text to send by message">${ic('copy', 'sm')}Copy text</button></header>
+      <header>${db.defaults?.logo ? `<img class="spotlogo" src="${db.defaults.logo}" alt="">` : ''}${p.photo ? `<img class="spotphoto" src="${esc(p.photo)}" alt="" referrerpolicy="no-referrer">` : ''}<div style="flex:1"><div class="eyebrow">${esc(longDate(plan.date))} · ${esc(plan.name || '')}</div><h3>${esc(p.name)}</h3><p>${esc(p.role || '')}</p></div><button class="btn" data-spotcopy="${p.id}" title="Copy as text to send by message">${ic('copy', 'sm')}Copy text</button></header>
       <div class="spotplot">${snap.replace(/<\/svg>$/, ring + '</svg>')}</div>
       ${timesLine() ? `<p class="spottimes">${timesHtml()}</p>` : ''}
       <p class="spotwhere"><b>${esc(d.where)}</b>${d.left || d.right ? `<span>${[d.left && `${esc(firstName(personById(d.left.personId)?.name || ''))} on your left`, d.right && `${esc(firstName(personById(d.right.personId)?.name || ''))} on your right`].filter(Boolean).join(' · ')}</span>` : ''}</p>
@@ -4995,6 +5061,36 @@ function centreTab() {   // on a phone the tab row scrolls: keep the open sheet'
   nav.scrollTo({ left: nav.scrollLeft + (r.left + r.width / 2) - (q.left + q.width / 2), behavior: 'instant' });
 }
 // every printed page says which week it belongs to, and which page of how many it is (page margin boxes; browsers without them just leave the footer off)
+// print options: which sheets go to paper, and whether the stage plot prints to a true scale (per browser)
+let printPop = false;
+function printOpts() { let o; try { o = JSON.parse(localStorage.getItem('stageplot.printOpts') || '{}'); } catch { o = {}; } return { skip: Array.isArray(o.skip) ? o.skip : [], scale: Number(o.scale) || 0 }; }
+function setPrintOpts(o) { try { localStorage.setItem('stageplot.printOpts', JSON.stringify(o)); } catch { /* memory only */ } applyPrintPick(); }
+const PRINT_SHEETS = () => [['overview', 'Stage plot'], ['inputs', 'Inputs'], ['outputs', 'Outputs'], ['mixes', 'Monitor mixes'], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless']] : []), ['cables', 'Cable pull list'], ['power', 'Power'], ['team', 'Team'], ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['floor', 'Floor marks'], ['loadin', 'Load-in']];
+const printScales = () => imperial() ? [[0, 'Fit the page'], [48, '¼″ = 1′ (1:48)'], [96, '⅛″ = 1′ (1:96)']] : [[0, 'Fit the page'], [50, '1:50'], [100, '1:100']];
+function printPopHtml() {
+  const o = printOpts(), skip = new Set(o.skip);
+  return `<div class="printpop" role="dialog" aria-label="Print options"><h2>Sheets to print</h2><div class="pp-sheets">${PRINT_SHEETS().map(([k, l]) => `<label><input type="checkbox" data-psheet="${k}" ${skip.has(k) ? '' : 'checked'}> ${l}</label>`).join('')}</div>
+    <div class="row" style="gap:10px"><button class="tlink" data-pall="1">All</button><button class="tlink" data-pall="0">None</button></div>
+    <h2>Stage plot size</h2><div class="pp-scale">${printScales().map(([v, l]) => `<label><input type="radio" name="pscale" value="${v}" ${o.scale === v ? 'checked' : ''}> ${l}</label>`).join('')}</div>
+    ${o.scale ? `<p class="hint">${scaleFit(o.scale).note}</p>` : ''}
+    <button class="btn primary block" id="printGo">${ic('sheet', 'sm')}Print ${o.skip.length ? plural(PRINT_SHEETS().filter(([k]) => !skip.has(k)).length, 'sheet') : 'every sheet'}</button></div>`;
+}
+// the plot's drawn width at a scale, and the page it needs (portrait, landscape, or too big for A4/Letter)
+function scaleFit(scale) {
+  const svgEl = document.querySelector('#sec-overview .snap'), vb = svgEl?.viewBox?.baseVal, wFt = vb?.width || plan.stage.w + fromM(2), hFt = vb?.height || plan.stage.d + fromM(2);
+  const wmm = wFt * 304.8 / scale, hmm = hFt * 304.8 / scale, port = wmm <= 184 && hmm <= 240, land = wmm <= 265 && hmm <= 165;
+  const label = printScales().find(([v]) => v === scale)?.[1] || `1:${scale}`;
+  return { wmm, hmm, port, land, label, note: port ? `The plot prints ${Math.round(wmm)} × ${Math.round(hmm)} mm. In the print dialog choose 100% (Actual size).` : land ? `The plot prints ${Math.round(wmm)} × ${Math.round(hmm)} mm, on a landscape page. In the print dialog choose 100% (Actual size).` : `At ${label} the plot is ${Math.round(wmm)} mm wide, too big for the page, so it prints to fit. Try a smaller scale.` };
+}
+function applyPrintPick() {
+  const o = printOpts(); let css = o.skip.map(k => `.sheetgrid [data-sheet="${k}"]`).join(', ');
+  css = css ? `@media print { ${css} { display: none !important; } }` : '';
+  if (o.scale) { const f = scaleFit(o.scale);
+    if (f.port || f.land) css += `@media print { #sec-overview .snapwrap { overflow: visible !important; } #sec-overview .snap { width: ${f.wmm.toFixed(1)}mm !important; height: ${f.hmm.toFixed(1)}mm !important; max-width: none !important; max-height: none !important; } #sec-overview .snapwrap::after { content: ${JSON.stringify(`Scale ${f.label} · printed at 100% (Actual size)`)}; display: block; margin-top: 2mm; font: 8pt var(--f-mono, monospace); color: #444; }${!f.port ? ' #sec-overview { page: plotland; }' : ''} }${!f.port ? ' @page plotland { size: landscape; }' : ''}`; }
+  let el = $('printPick'); if (!el) { el = document.createElement('style'); el.id = 'printPick'; document.head.appendChild(el); }
+  el.textContent = css;
+}
+addEventListener('beforeprint', applyPrintPick);
 function pageFooter() {
   const q = t => `"${String(t).replace(/[\\"]/g, '\\$&').replace(/\n/g, ' ')}"`, who = [defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).join(' · ');
   const css = `@page { @bottom-left { content: ${q(`${plan.name || 'Untitled service'} · ${longDate(plan.date)}${who ? ` · ${who}` : ''}`)}; font: 8.5pt Archivo, system-ui, sans-serif; color: #6b7180; vertical-align: top; padding-top: 3mm; } @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt Archivo, system-ui, sans-serif; color: #6b7180; vertical-align: top; padding-top: 3mm; } }`;
@@ -5047,7 +5143,7 @@ function renderPaper() {
     <header class="doc-head${inkSave ? ' ink' : ''}">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><button class="btn" id="printBtn" title="Print every sheet, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button></span></div>
+    <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><span class="splitbtn"><button class="btn" id="printBtn" title="${printOpts().skip.length ? 'Print the sheets you picked' : 'Print every sheet'}, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button><button class="btn" id="printMore" aria-haspopup="dialog" aria-expanded="${!!printPop}" aria-label="Choose sheets and plot scale" title="Choose sheets and plot scale">${ic('chevD', 'sm')}</button></span>${printPop ? printPopHtml() : ''}</span></div>
     <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="picBtn" data-needs-dl title="The stage plot as an image, for a group chat or email">${ic('plot', 'sm')}Save plot as picture</button><button class="btn quiet" id="inkBtn" aria-pressed="${inkSave}" title="Print in black and white: a white stage, grey lines, no dark header">${ic('sheet', 'sm')}Ink saver${inkSave ? ' on' : ''}</button><button class="btn quiet" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets</button></div>
     <div class="sheetgrid${inkSave ? ' ink' : ''}" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(inkSave ? whiteDeckSnapshot() : plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${uLen(foh.y - plan.stage.d)} out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
@@ -5086,6 +5182,7 @@ function renderPaper() {
       </section>`; })()}
     </div>
     <textarea id="copyFallback" rows="2" aria-label="Copied text" tabindex="-1" style="opacity:0;height:1px;padding:0;border:0"></textarea>`;
+  applyPrintPick();
 }
 function renderAll() { if (view !== 'plot' && $('hoverCard')) $('hoverCard').hidden = true;   // a plot hover card never follows you to Home or the paperwork
   renderHeader(); renderRail(); renderPlot(); renderInspector(); renderPaper(); renderHome(); }
@@ -5408,7 +5505,7 @@ function endDrag() {
     else if (it.chan) { delete it.chan; toast(`${itemName(it)} taken out of the channel`); }
   }
   if (d.moved && weekLocked()) { plan = loadState(d.snap); renderAll(); lockedNote(); }   // a locked week slides back where it was
-  else if (d.moved) { history.push(d.snap); future = []; recordRev(null, d.snap); save(); renderAll(); }
+  else if (d.moved) { pushUndo(d.snap, stepLabel(null, d.snap)); recordRev(null, d.snap); save(); renderAll(); }
   else if (d.kind === 'item') {   // a plain click on one of a group narrows to it
     if (d.keep) { sel = { kind: 'item', id: d.id }; group = null; renderInspector(); }
     if (d.toggleOff) { setGroup(selIds().filter(x => x !== d.id)); renderInspector(); }
@@ -5661,7 +5758,7 @@ function openPaper(anchor) {
   if (anchor) requestAnimationFrame(() => $(anchor)?.scrollIntoView({ block: 'start' }));
   else $('paperView').scrollTop = 0;
 }
-function switchWeek(id) { if (!db.plans[id]) return; if (!$('rackDlg').hidden) closeRack(); compare = null; plan = db.plans[id]; history = []; future = []; sel = null; pending = null; delArmed = false; needFit = true; save(); renderAll(); }
+function switchWeek(id) { if (!db.plans[id]) return; pco.changes = null; setTimeout(() => pcoCheck(), 50); if (!$('rackDlg').hidden) closeRack(); compare = null; plan = db.plans[id]; history = []; future = []; sel = null; pending = null; delArmed = false; needFit = true; save(); renderAll(); }
 /* empty the open week: everything, or everything but the stage (shape, size, colour, house) and the room settings */
 function clearWeek(all) {
   mutate(() => {
@@ -5873,6 +5970,8 @@ $('railFoot').addEventListener('click', e => { if (e.target.closest('#buildBtn')
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.id === 'pcoStart') { pcoLoadTypes(); return; }
+  if (t.id === 'pcoChgApply') { pcoUpdateStage(); return; }
+  if (t.id === 'pcoChgSkip') { if (plan.pco && pco.changes) { plan.pco.dismissed = pco.changes.sig; save(); } pco.changes = null; renderRail(); return; }
   if (t.dataset.pcohide !== undefined) { pcoHideTeam(t.dataset.pcohide, true); return; }
   if (t.dataset.pcounhide !== undefined) { pcoHideTeam(t.dataset.pcounhide, false); return; }
   if (t.id === 'pcoShowHidden') { pco.showHidden = !pco.showHidden; renderRail(); return; }
@@ -6068,7 +6167,9 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#chEditBtn')) { chEdit = !chEdit; renderPaper(); return; }
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
-  if (e.target.closest('#printBtn')) { printNow(); return; }
+  if (e.target.closest('#printBtn') || e.target.closest('#printGo')) { printPop = false; renderPaper(); printNow(); return; }
+  if (e.target.closest('#printMore')) { printPop = !printPop; renderPaper(); if (printPop) document.querySelector('.printpop input')?.focus(); return; }
+  { const a = e.target.closest('[data-pall]'); if (a) { const o = printOpts(); o.skip = a.dataset.pall === '1' ? [] : PRINT_SHEETS().map(([k]) => k); setPrintOpts(o); renderPaper(); return; } }
   if (e.target.closest('#inkBtn')) { inkSave = !inkSave; try { localStorage.setItem('stageplot.ink', inkSave ? '1' : '0'); } catch { /* ignore */ } renderPaper(); toast(inkSave ? 'Ink saver on: the paperwork prints in black and white' : 'Ink saver off: full colour'); return; }
   if (e.target.closest('#printAgain')) { printNow(); return; }
   if (e.target.closest('#printDiffX')) { markPrinted(); renderPaper(); return; }
@@ -7161,7 +7262,8 @@ $('ctxMenu').addEventListener('click', e => {
     case 'del': deleteSelected(); break;
   }
 });
-document.addEventListener('pointerdown', e => { if (!$('ctxMenu').hidden && !e.target.closest('#ctxMenu')) closeCtx(); });
+document.addEventListener('pointerdown', e => { if (!$('ctxMenu').hidden && !e.target.closest('#ctxMenu')) closeCtx(); if (printPop && !e.target.closest('.printpop, #printMore')) { printPop = false; renderPaper(); } });
+document.addEventListener('keydown', e => { if (printPop && e.key === 'Escape') { printPop = false; renderPaper(); $('printMore')?.focus(); } });
 
 /* command palette */
 const cmdk = { q: '', i: 0, list: [] };
@@ -7412,6 +7514,8 @@ $('homeView').addEventListener('keydown', e => { if (e.target.id === 'libType' &
 // load-in ticks: saved with the week straight away (not an undo step), progress updates as you go
 $('paperView').addEventListener('change', e => {
   const t0 = e.target;
+  if (t0.dataset.psheet) { const o = printOpts(), sk = new Set(o.skip); if (t0.checked) sk.delete(t0.dataset.psheet); else sk.add(t0.dataset.psheet); o.skip = [...sk]; setPrintOpts(o); renderPaper(); document.querySelector(`[data-psheet="${t0.dataset.psheet}"]`)?.focus(); return; }
+  if (t0.name === 'pscale') { const o = printOpts(); o.scale = Number(t0.value) || 0; setPrintOpts(o); renderPaper(); document.querySelector(`input[name="pscale"][value="${o.scale}"]`)?.focus(); return; }
   if (t0.id === 'chFixed') { const on = t0.checked; mutate(() => { chans_().fixed = on; }, on ? 'Channel numbers fixed' : 'Channels numbered in band order each week'); return; }
   if (t0.dataset.chnum) { setChannel(t0.dataset.chnum, t0.value); return; }
   if (t0.dataset.chmic !== undefined) { setChanMeta(t0.dataset.chmic, 'mic', t0.value.trim().slice(0, 40)); return; }
@@ -7823,7 +7927,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
 }
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; renderHome(); });
 window.addEventListener('appinstalled', () => { installPrompt = null; toast('Stageplot is installed'); renderHome(); });
-if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); renderHome(); }, () => { pco.mcp = null; renderRail(); renderHome(); });
+if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); renderHome(); pcoCheck(); }, () => { pco.mcp = null; renderRail(); renderHome(); });
 </script>
 </body>
 </html>
