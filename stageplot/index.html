@@ -2093,7 +2093,8 @@ function mutate(fn, msg) {
   const before = snapState();
   history.push(before); if (history.length > 80) history.shift();
   future = [];
-  fn(); recordRev(msg, before); save(); renderAll();
+  fn(); if (pending && !itemById(pending.from)) pending = null;   // a cable half-run from gear that this change removed is dropped
+  recordRev(msg, before); save(); renderAll();
   if (msg) toast(msg, true);
 }
 function undo() {
@@ -4344,7 +4345,7 @@ function renderRail() {
   $('railCollapse').innerHTML = ic(railOpen ? 'chevsL' : 'chevsR', 'sm');
   $('railCollapse').title = railOpen ? 'Collapse panel ( [ )' : 'Expand panel ( [ )';
   const pane = $('railPane'), foot = $('railFoot');
-  const keepScroll = pane.scrollTop;
+  const keepScroll = pane.scrollTop, keepRoster = pane.querySelector('.roster')?.scrollTop || 0, keepFocus = pane.contains(document.activeElement) ? document.activeElement.id : '';   // the Planning Center list scrolls on its own: ticking someone mustn't send it back to the top
   foot.hidden = railTab !== 'team';
   if (railTab === 'team') {
     const pcoBusy = pco.types.length || pco.busy || pco.err;
@@ -4408,6 +4409,8 @@ function renderRail() {
       ${ui.adv ? '' : '</div></details>'}`;
   }
   pane.scrollTop = keepScroll;
+  const ro = pane.querySelector('.roster'); if (ro) ro.scrollTop = keepRoster;
+  if (keepFocus && document.activeElement === document.body) $(keepFocus)?.focus({ preventScroll: true });
 }
 
 function totals() {
