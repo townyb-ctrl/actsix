@@ -2672,7 +2672,12 @@ function pcoErrText(e) {
     case 'approval_required': return 'Planning Center needs your approval. Try again and choose Allow.';
     case 'tool_error': return `Planning Center said: ${e.message || 'the request failed'}.`;
     case 'server_unavailable': case 'rate_limited': return 'Planning Center isn’t answering right now. Wait a moment and try again.';
-    case 'not_granted': case 'capability_disabled': case 'capability_removed': return 'Connectors aren’t available in this view.';
+    case 'not_granted': case 'capability_disabled': case 'capability_removed': return 'Connectors aren’t available in this view. Open Stageplot on claude.ai (web or the Claude desktop app) and reload the page.';
+    case 'self_only': return 'Only the person who made this page can use their Planning Center here. Ask them for a copy of Stageplot of your own.';
+    case 'upstream_error': return 'Planning Center didn’t answer properly. Try again in a moment; if it keeps failing, reconnect it in claude.ai Settings → Connectors.';
+    case 'cancelled': return 'Stopped. Try again when you’re ready.';
+    case 'bad_request': case 'transform_error': return 'Stageplot sent Planning Center a request it didn’t accept. Try again; if it keeps happening, tell whoever looks after Stageplot.';
+    case 'user_changed': return 'You signed in as someone else. The page will reload.';
     default: return `Couldn’t reach Planning Center (${e?.message || 'unknown error'}).`;
   }
 }
@@ -5059,9 +5064,9 @@ function pcoHtml() {
   const head = (sub) => `<div class="card-head"><span class="badge">${ic('calendar', 'sm')}</span><div><h3>Planning Center</h3><p>${sub}</p></div></div>`;
   if (!window.claude?.use) return '';   // no connector here: the paste and add-person options below say it all
   if (pco.mcp === undefined) return `<div class="card soft">${head('Checking your connection…')}</div>`;
-  if (pco.mcp === null) return `<div class="card soft">${head('Connectors aren’t available in this view. Paste a list below.')}</div>`;
+  if (pco.mcp === null) return `<div class="card soft">${head('Planning Center can’t connect in this view. Open Stageplot on claude.ai (web or the Claude desktop app), check Planning Center is connected in Settings → Connectors, then reload. Or paste a list below.')}<button class="btn block" id="pcoReload">${ic('undo', 'sm')}Reload the page</button></div>`;
   const busy = pcoBusyHtml();
-  const err = pco.err ? `<p class="err" role="alert">${esc(pco.err)}</p>` : '';
+  const err = pco.err ? `<p class="err" role="alert">${esc(pco.err)}</p>${pco.types.length ? `<button class="btn quiet" id="pcoRetry">${ic('undo', 'sm')}Try again</button>` : ''}` : '';
   if (!pco.types.length) return `<div class="card soft">${head('Pull this week’s scheduled team straight from Services.')}
     <button id="pcoStart" class="btn primary block" ${pco.busy ? 'disabled' : ''}>${ic('calendar', 'sm')}Import from Planning Center</button>${busy}${err}</div>`;
   const typeSel = `<div class="field"><label for="pcoType">Service type</label><select id="pcoType">${pco.types.map(t => `<option value="${esc(t.id)}" ${t.id === pco.typeId ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>`;
@@ -5822,6 +5827,8 @@ $('railFoot').addEventListener('click', e => { if (e.target.closest('#buildBtn')
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.id === 'pcoStart') { pcoLoadTypes(); return; }
+  if (t.id === 'pcoRetry') { pco.types = []; pcoLoadTypes(); return; }
+  if (t.id === 'pcoReload') { location.reload(); return; }
   if (t.dataset.teampreset) { applyPreset(t.dataset.teampreset); return; }
   if (t.id === 'pcoRoster') { pcoLoadRoster(); return; }
   if (t.id === 'pcoApply') { pcoApply(); return; }
