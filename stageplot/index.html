@@ -294,7 +294,7 @@ th .thshort { display: none; text-decoration: none; } @media (max-width: 560px) 
 .card.soft { background: var(--surface-2); }
 .card-head { display: flex; align-items: center; gap: 10px; }
 .card-head .badge { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
-.card-head h3 { font-size: 14px; font-weight: 650; }
+.card-head h3, .card-head h2 { font-size: 14px; font-weight: 650; margin: 0; }
 .card-head p { margin: 0; color: var(--muted); font-size: 12.5px; }
 details.paste summary { cursor: pointer; color: var(--ink-2); font-weight: 550; list-style: none; display: flex; align-items: center; gap: 8px; padding: 4px 0; }
 details.paste summary::-webkit-details-marker { display: none; }
@@ -1088,6 +1088,15 @@ tr.flag td { color: var(--bad); }
 .tchip { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 13px; cursor: pointer; }
 .tchip small { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 2px; }
 .tchip[aria-pressed="true"] { background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent)); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.tchipw { position: relative; display: inline-flex; }
+.tchipx { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; opacity: 0; transform: scale(.8); transition: opacity .12s, transform .12s; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.tchipx .ic { width: 11px; height: 11px; }
+.tchipw:hover .tchipx, .tchipw:focus-within .tchipx { opacity: 1; transform: none; }
+.tchipx:hover { color: var(--bad-ink, var(--bad)); border-color: currentColor; }
+@media (hover: none) { .tchipx { opacity: 1; transform: none; } }   /* touch screens have no hover: the × is always there */
+.tlink { border: 0; background: none; padding: 2px 4px; font: inherit; font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.tchip.off { border-style: dashed; color: var(--muted); display: inline-flex; align-items: center; gap: 3px; }
+.hiddenteams { margin-top: 2px; align-items: center; }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -2748,16 +2757,18 @@ const pcoLoadRoster = () => pcoRun('Loading roster…', async () => {
   if (!pco.raw.length) pco.err = 'No one is scheduled on this plan yet.';
 });
 // the teams to pull from, remembered per service type (none chosen = every team)
+const pcoHidden = () => new Set(pcoPrefs().hiddenTeams || []);   // teams you never pull from (Communion, Info Desk…), for every service type
+const pcoShownTeams = () => { const h = pcoHidden(); return (pco.teams || []).filter(([t]) => !h.has(t)); };
 function pcoTeamSel() {
-  const want = pcoPrefs().teams?.[pco.typeId] || [], have = new Set((pco.teams || []).map(t => t[0])), sel = want.filter(t => have.has(t));
+  const want = pcoPrefs().teams?.[pco.typeId] || [], have = new Set(pcoShownTeams().map(t => t[0])), sel = want.filter(t => have.has(t));
   return sel.length ? new Set(sel) : null;
 }
 // each person as seen through the chosen teams: only those teams' positions decide where they stand
 function pcoDerive(resetPicks) {
-  const sel = pcoTeamSel();
+  const sel = pcoTeamSel(), hid = pcoHidden();
   const rank = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? 99 : (r === 'Vocalist' || r === 'Worship Leader' ? 50 + i : i); };
   pco.roster = (pco.raw || []).map(p => {
-    const rows = sel ? p.rows.filter(r => sel.has(r.team)) : p.rows; if (!rows.length) return null;
+    const rows = p.rows.filter(r => !hid.has(r.team) && (!sel || sel.has(r.team))); if (!rows.length) return null;
     const e = { key: p.key, name: p.name, positions: rows.map(r => r.pk), roles: rows.map(r => r.role).filter(Boolean), unconfirmed: rows.some(r => r.unc) };
     const roles = [...new Set(e.roles)].sort((a, b) => rank(a) - rank(b));
     const role = roles.includes('Worship Leader') ? 'Worship Leader' : roles[0] || '';
@@ -2770,8 +2781,13 @@ function pcoDerive(resetPicks) {
 function pcoSetTeams(team) {   // '' = every team; otherwise switch that team in or out
   const P = pcoPrefs(), cur = pcoTeamSel(); P.teams ||= {};
   let next = team === '' ? [] : cur ? (cur.has(team) ? [...cur].filter(t => t !== team) : [...cur, team]) : [team];
-  if (next.length === (pco.teams || []).length) next = [];   // every team ticked is the same as all
+  if (next.length === pcoShownTeams().length) next = [];   // every team ticked is the same as all
   P.teams[pco.typeId] = next; save(); pcoDerive(true); renderRail();
+}
+function pcoHideTeam(team, hide) {
+  const P = pcoPrefs(), h = pcoHidden(); if (hide) h.add(team); else h.delete(team);
+  P.hiddenTeams = [...h]; save(); pcoDerive(true); renderRail();
+  if (hide) toast(`${team || 'No team'} hidden from Planning Center imports`, { label: 'Undo', fn: () => pcoHideTeam(team, false) });
 }
 function pcoApply() {
   const chosen = pco.roster.filter(e => pco.picked.has(e.key));
@@ -5086,7 +5102,7 @@ function pcoBusyHtml() {
     : `<div class="skel-row"><span><i class="sk sk-sm" style="width:26%"></i><i class="sk sk-field"></i></span></div>`).join('')}</div>`;
 }
 function pcoHtml() {
-  const head = (sub) => `<div class="card-head"><span class="badge">${ic('calendar', 'sm')}</span><div><h3>Planning Center</h3><p>${sub}</p></div></div>`;
+  const head = (sub) => `<div class="card-head"><span class="badge">${ic('calendar', 'sm')}</span><div><h2>Planning Center</h2><p>${sub}</p></div></div>`;
   if (!window.claude?.use) return '';   // no connector here: the paste and add-person options below say it all
   if (pco.mcp === undefined) return `<div class="card soft">${head('Checking your connection…')}</div>`;
   if (pco.mcp === null) return `<div class="card soft">${head('Planning Center can’t connect in this view. Open Stageplot on claude.ai (web or the Claude desktop app), check Planning Center is connected in Settings → Connectors, then reload. Or paste a list below.')}<button class="btn block" id="pcoReload">${ic('undo', 'sm')}Reload the page</button></div>`;
@@ -5098,7 +5114,10 @@ function pcoHtml() {
   const planSel = pco.plans.length ? `<div class="field"><label for="pcoPlan">Plan</label><select id="pcoPlan">${pco.plans.map(p => `<option value="${esc(p.id)}" ${p.id === pco.planId ? 'selected' : ''}>${esc(p.dates)}${p.title ? ' · ' + esc(p.title) : ''}</option>`).join('')}</select></div>
     ${pco.roster ? '' : `<button id="pcoRoster" class="btn primary block" ${pco.busy || !pco.planId ? 'disabled' : ''}>${ic('users', 'sm')}Get roster</button>`}` : '';
   let roster = '';
-  const sel = pcoTeamSel(), teamChips = (pco.teams || []).length > 1 ? `<div class="pcoteams" role="group" aria-label="Teams to pull from"><span class="eyebrow">Teams</span><div class="chips"><button class="tchip" data-pcoteam="" aria-pressed="${!sel}">All teams</button>${pco.teams.map(([t, n]) => `<button class="tchip" data-pcoteam="${esc(t)}" aria-pressed="${!!sel?.has(t)}">${esc(t || 'No team')} <small>${n}</small></button>`).join('')}</div></div>` : '';
+  const sel = pcoTeamSel(), shown = pcoShownTeams(), hidden = (pco.teams || []).filter(([t]) => pcoHidden().has(t));
+  const teamChips = (pco.teams || []).length > 1 ? `<div class="pcoteams" role="group" aria-label="Teams to pull from"><div class="row" style="justify-content:space-between"><span class="eyebrow">Teams</span>${hidden.length ? `<button class="tlink" id="pcoShowHidden" aria-expanded="${!!pco.showHidden}">${hidden.length} hidden</button>` : ''}</div>
+    <div class="chips"><button class="tchip" data-pcoteam="" aria-pressed="${!sel}">All teams</button>${shown.map(([t, n]) => `<span class="tchipw"><button class="tchip" data-pcoteam="${esc(t)}" aria-pressed="${!!sel?.has(t)}">${esc(t || 'No team')} <small>${n}</small></button><button class="tchipx" data-pcohide="${esc(t)}" aria-label="Hide ${esc(t || 'No team')} from imports" title="Hide this team">${ic('x', 'sm')}</button></span>`).join('')}</div>
+    ${pco.showHidden && hidden.length ? `<div class="chips hiddenteams"><span class="hint">Hidden:</span>${hidden.map(([t, n]) => `<button class="tchip off" data-pcounhide="${esc(t)}" title="Show this team again">${ic('plus', 'sm')}${esc(t || 'No team')} <small>${n}</small></button>`).join('')}</div>` : ''}</div>` : '';
   if (pco.raw?.length && !pco.roster?.length) roster = `${teamChips}<p class="hint">No one on ${sel?.size > 1 ? 'those teams' : 'that team'} this week. Pick another team above.</p>`;
   if (pco.roster?.length) {
     roster = `${teamChips}<div class="row" style="justify-content:space-between"><span class="eyebrow">${pco.picked.size} of ${pco.roster.length} selected</span><button class="btn quiet" id="pcoRoster" style="padding:4px 8px">Refresh</button></div>
@@ -5854,6 +5873,9 @@ $('railFoot').addEventListener('click', e => { if (e.target.closest('#buildBtn')
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.id === 'pcoStart') { pcoLoadTypes(); return; }
+  if (t.dataset.pcohide !== undefined) { pcoHideTeam(t.dataset.pcohide, true); return; }
+  if (t.dataset.pcounhide !== undefined) { pcoHideTeam(t.dataset.pcounhide, false); return; }
+  if (t.id === 'pcoShowHidden') { pco.showHidden = !pco.showHidden; renderRail(); return; }
   if (t.dataset.pcoteam !== undefined) { pcoSetTeams(t.dataset.pcoteam); return; }
   if (t.id === 'pcoRetry') { pco.types = []; pcoLoadTypes(); return; }
   if (t.id === 'pcoReload') { location.reload(); return; }
