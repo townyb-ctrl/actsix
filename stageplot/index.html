@@ -1083,6 +1083,11 @@ tr.flag td { color: var(--bad); }
 @media print { .sheetgrid.ink tbody tr:nth-child(even) td { background: none !important; } .sheetgrid.ink .ch { background: none !important; border: 1px solid #999; color: #111; } .sheetgrid.ink .meter span { background: #555 !important; } }
 #inkBtn[aria-pressed="true"] { color: var(--ink); font-weight: 650; }
 #plot { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }   /* a long press opens our menu, not the system's */
+.pcoteams { display: grid; gap: 6px; margin-bottom: 10px; }
+.pcoteams .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tchip { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.tchip small { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 2px; }
+.tchip[aria-pressed="true"] { background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent)); border-color: var(--accent); color: var(--ink); font-weight: 600; }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -2703,7 +2708,7 @@ const pcoLoadTypes = () => pcoRun('Loading services…', async () => {
   await pcoLoadPlansInner();
 });
 async function pcoLoadPlansInner() {
-  pco.plans = []; pco.planId = ''; pco.roster = null;
+  pco.plans = []; pco.planId = ''; pco.roster = null; pco.raw = null;
   const r = await pcoCall('services_plans', { service_type_id: pco.typeId, filter: 'future', order_by: 'sort_date', per_page: 15, output_fields: ['id', 'title', 'dates', 'sort_date', 'series_title'], include: ['plan_times'] });
   const pt = new Map((r?.included || []).filter(x => x.type === 'PlanTime').map(x => [x.id, x.attributes || {}]));
   pco.plans = (r?.data || []).map(p => ({ id: p.id, title: p.attributes?.title || p.attributes?.series_title || '', dates: p.attributes?.dates || '', date: String(p.attributes?.sort_date || '').slice(0, 10), times: pcoTimes((p.relationships?.plan_times?.data || []).map(d => pt.get(d.id)).filter(Boolean)) }));
@@ -2731,23 +2736,43 @@ const pcoLoadRoster = () => pcoRun('Loading roster…', async () => {
     const pos = a.team_position_name || '';
     const mapped = posRole(pos, team), role = mapped !== null ? mapped : matchRole(pos) || (ROLES[matchRole(team)]?.gear?.length === 0 ? matchRole(team) : '');
     const pk = [pos, team].filter(Boolean).join(' · '), P = pcoPrefs(); if (pk && !P.seen.includes(pk)) P.seen.push(pk);
-    const e = people.get(key) || { key, name: a.name || 'Unnamed', positions: [], roles: [], unconfirmed: false };
-    e.positions.push([pos, team].filter(Boolean).join(' · '));
-    if (role) e.roles.push(role);
-    if (a.status && a.status !== 'confirmed') e.unconfirmed = true;
+    const e = people.get(key) || { key, name: a.name || 'Unnamed', rows: [] };
+    e.rows.push({ team, pk, role, unc: !!a.status && a.status !== 'confirmed' });
     people.set(key, e);
   }
+  pco.raw = [...people.values()];
+  const tc = new Map(); for (const e of pco.raw) for (const t of new Set(e.rows.map(r => r.team))) tc.set(t, (tc.get(t) || 0) + 1);
+  pco.teams = [...tc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  pcoDerive(true);
+  pcoPrefs().seen = pcoPrefs().seen.slice(-200); save();
+  if (!pco.raw.length) pco.err = 'No one is scheduled on this plan yet.';
+});
+// the teams to pull from, remembered per service type (none chosen = every team)
+function pcoTeamSel() {
+  const want = pcoPrefs().teams?.[pco.typeId] || [], have = new Set((pco.teams || []).map(t => t[0])), sel = want.filter(t => have.has(t));
+  return sel.length ? new Set(sel) : null;
+}
+// each person as seen through the chosen teams: only those teams' positions decide where they stand
+function pcoDerive(resetPicks) {
+  const sel = pcoTeamSel();
   const rank = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? 99 : (r === 'Vocalist' || r === 'Worship Leader' ? 50 + i : i); };
-  pco.roster = [...people.values()].map(e => {
+  pco.roster = (pco.raw || []).map(p => {
+    const rows = sel ? p.rows.filter(r => sel.has(r.team)) : p.rows; if (!rows.length) return null;
+    const e = { key: p.key, name: p.name, positions: rows.map(r => r.pk), roles: rows.map(r => r.role).filter(Boolean), unconfirmed: rows.some(r => r.unc) };
     const roles = [...new Set(e.roles)].sort((a, b) => rank(a) - rank(b));
     const role = roles.includes('Worship Leader') ? 'Worship Leader' : roles[0] || '';
     const sings = role !== 'Vocalist' && role !== 'Worship Leader' && roles.some(r => r === 'Vocalist' || r === 'Worship Leader');
     return { ...e, role, sings };
-  }).sort((a, b) => (a.role ? 0 : 1) - (b.role ? 0 : 1) || rank(a.role) - rank(b.role) || a.name.localeCompare(b.name));
-  pco.picked = new Set(pco.roster.filter(e => e.role && (pcoPrefs().unconfirmed !== false || !e.unconfirmed)).map(e => e.key));
-  pcoPrefs().seen = pcoPrefs().seen.slice(-200); save();
-  if (!pco.roster.length) pco.err = 'No one is scheduled on this plan yet.';
-});
+  }).filter(Boolean).sort((a, b) => (a.role ? 0 : 1) - (b.role ? 0 : 1) || rank(a.role) - rank(b.role) || a.name.localeCompare(b.name));
+  if (resetPicks) pco.picked = new Set(pco.roster.filter(e => e.role && (pcoPrefs().unconfirmed !== false || !e.unconfirmed)).map(e => e.key));
+  else { const vis = new Set(pco.roster.map(e => e.key)); pco.picked = new Set([...pco.picked].filter(k => vis.has(k))); }
+}
+function pcoSetTeams(team) {   // '' = every team; otherwise switch that team in or out
+  const P = pcoPrefs(), cur = pcoTeamSel(); P.teams ||= {};
+  let next = team === '' ? [] : cur ? (cur.has(team) ? [...cur].filter(t => t !== team) : [...cur, team]) : [team];
+  if (next.length === (pco.teams || []).length) next = [];   // every team ticked is the same as all
+  P.teams[pco.typeId] = next; save(); pcoDerive(true); renderRail();
+}
 function pcoApply() {
   const chosen = pco.roster.filter(e => pco.picked.has(e.key));
   if (!chosen.length) { toast('Tick at least one person'); return; }
@@ -5073,8 +5098,10 @@ function pcoHtml() {
   const planSel = pco.plans.length ? `<div class="field"><label for="pcoPlan">Plan</label><select id="pcoPlan">${pco.plans.map(p => `<option value="${esc(p.id)}" ${p.id === pco.planId ? 'selected' : ''}>${esc(p.dates)}${p.title ? ' · ' + esc(p.title) : ''}</option>`).join('')}</select></div>
     ${pco.roster ? '' : `<button id="pcoRoster" class="btn primary block" ${pco.busy || !pco.planId ? 'disabled' : ''}>${ic('users', 'sm')}Get roster</button>`}` : '';
   let roster = '';
+  const sel = pcoTeamSel(), teamChips = (pco.teams || []).length > 1 ? `<div class="pcoteams" role="group" aria-label="Teams to pull from"><span class="eyebrow">Teams</span><div class="chips"><button class="tchip" data-pcoteam="" aria-pressed="${!sel}">All teams</button>${pco.teams.map(([t, n]) => `<button class="tchip" data-pcoteam="${esc(t)}" aria-pressed="${!!sel?.has(t)}">${esc(t || 'No team')} <small>${n}</small></button>`).join('')}</div></div>` : '';
+  if (pco.raw?.length && !pco.roster?.length) roster = `${teamChips}<p class="hint">No one on ${sel?.size > 1 ? 'those teams' : 'that team'} this week. Pick another team above.</p>`;
   if (pco.roster?.length) {
-    roster = `<div class="row" style="justify-content:space-between"><span class="eyebrow">${pco.picked.size} of ${pco.roster.length} selected</span><button class="btn quiet" id="pcoRoster" style="padding:4px 8px">Refresh</button></div>
+    roster = `${teamChips}<div class="row" style="justify-content:space-between"><span class="eyebrow">${pco.picked.size} of ${pco.roster.length} selected</span><button class="btn quiet" id="pcoRoster" style="padding:4px 8px">Refresh</button></div>
       <div class="roster">${pco.roster.map(e => `<label for="pk-${esc(e.key)}"><input type="checkbox" id="pk-${esc(e.key)}" data-pick="${esc(e.key)}" ${pco.picked.has(e.key) ? 'checked' : ''}>
         <span><span class="nm">${esc(e.name)}${e.unconfirmed ? '<span class="chip warn">unconfirmed</span>' : ''}</span><small>${esc(e.positions.join(', '))}</small><small class="maps">${e.role ? `→ ${esc(e.role)}${e.sings ? ' + sings' : ''}` : '→ not on stage'}</small></span></label>`).join('')}</div>
       <label class="row" for="pcoReplace" style="gap:8px"><input type="checkbox" id="pcoReplace" ${pco.replace ? 'checked' : ''} style="accent-color:var(--accent)"> Replace this week’s team</label>
@@ -5827,6 +5854,7 @@ $('railFoot').addEventListener('click', e => { if (e.target.closest('#buildBtn')
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.id === 'pcoStart') { pcoLoadTypes(); return; }
+  if (t.dataset.pcoteam !== undefined) { pcoSetTeams(t.dataset.pcoteam); return; }
   if (t.id === 'pcoRetry') { pco.types = []; pcoLoadTypes(); return; }
   if (t.id === 'pcoReload') { location.reload(); return; }
   if (t.dataset.teampreset) { applyPreset(t.dataset.teampreset); return; }
@@ -5873,7 +5901,7 @@ $('railFoot').addEventListener('change', e => {
 $('railPane').addEventListener('change', e => {
   const t = e.target, card = t.closest('[data-pid]');
   if (t.id === 'pcoType') { pco.typeId = t.value; pcoLoadPlans(); return; }
-  if (t.id === 'pcoPlan') { pco.planId = t.value; pco.roster = null; renderRail(); return; }
+  if (t.id === 'pcoPlan') { pco.planId = t.value; pco.roster = null; pco.raw = null; renderRail(); return; }
   if (t.id === 'pcoReplace') { pco.replace = t.checked; return; }
   if (t.dataset.pick) { t.checked ? pco.picked.add(t.dataset.pick) : pco.picked.delete(t.dataset.pick); renderRail(); return; }
   if (card) {
