@@ -995,6 +995,8 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
   .hnav { flex: none; align-items: center; padding: 8px 12px; border: 1px solid var(--line); background: var(--surface); }
   .hnav small { display: none; }
   .hgear .own span { display: none; }
+  .hgear { flex-wrap: wrap; } .hgear .hmain { flex: 1 1 0; min-width: 0; }
+  .hgear .own.where { order: 9; flex: 1 0 100%; padding-left: 46px; } .hgear label.own.where input { width: auto; flex: 1; min-width: 0; }   /* phones: where it's kept gets its own line */
 }
 @media (max-width: 600px) { .seg .vlabel { display: none; } }
 @media print { .home { display: none !important; } }
@@ -1103,6 +1105,7 @@ tr.flag td { color: var(--bad); }
 .pcochg { border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; display: grid; gap: 8px; }
 .pcochg-h { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .pcochg ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 13.5px; }
+.pcochg li.time::before { content: '◷ '; color: var(--accent); }
 .pcochg li.rem::before { content: '− '; color: var(--bad-ink, var(--bad)); font-weight: 700; } .pcochg li.add::before { content: '+ '; color: var(--ok-ink, var(--ok)); font-weight: 700; }
 .splitbtn { display: inline-flex; } .splitbtn #printBtn { border-top-right-radius: 0; border-bottom-right-radius: 0; } .splitbtn #printMore { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-width: 0; padding: 0 8px; }
 .printbar { position: relative; }
@@ -1110,6 +1113,18 @@ tr.flag td { color: var(--bad); }
 .printpop h2 { margin: 4px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .pp-sheets { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 13.5px; } .pp-scale { display: grid; gap: 4px; font-size: 13.5px; }
 .printpop label { display: flex; align-items: center; gap: 6px; cursor: pointer; } .printpop input { accent-color: var(--accent); }
+.mapbtn { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; padding: 2px 0; font: inherit; font-size: 12.5px; color: var(--ink-2); cursor: pointer; text-align: left; }
+.mapbtn .ic { width: 12px; height: 12px; opacity: .45; } .mapbtn:hover { color: var(--accent); } .mapbtn:hover .ic { opacity: 1; }
+.mapedit { display: flex; align-items: center; gap: 6px; margin-top: 4px; } .mapedit select { flex: 1; min-width: 0; height: 30px; font-size: 13px; }
+.hgear .own.where input { width: 110px; text-align: left; }
+.cstock { display: grid; gap: 10px; } .cstock-row { display: grid; gap: 6px; } .cstock-row b { font-size: 13.5px; }
+.cstock-lens { display: flex; flex-wrap: wrap; gap: 6px; } .cstock-lens label { display: grid; gap: 2px; font-size: 11.5px; color: var(--muted); text-align: center; }
+.cstock-lens input { width: 56px; text-align: center; padding: 5px 4px; }
+.storelist small { color: var(--muted); }
+#plot.flipped { rotate: 180deg; }
+#plot.flipped text:not([transform]) { transform-box: fill-box; transform-origin: center; rotate: 180deg; }   /* side labels already turned sideways read fine either way */
+#plotView.flipview .canvas::after { content: 'Seen from the stage'; position: absolute; left: 50%; top: 12px; translate: -50% 0; padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 12px; font-weight: 650; pointer-events: none; z-index: 5; }
+#flipView[aria-pressed="true"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -2634,6 +2649,23 @@ function monitorMixes() {
   }
   return rows;
 }
+// cables you own, per type and stock length in the units you work in ("xlr|10|m"); a longer spare covers a shorter run
+const cableKey = (type, len) => `${type}|${len}|${imperial() ? 'ft' : 'm'}`;
+const cableStock = () => db?.gear?.cables || {};
+function cableShort(pull = pullList()) {
+  const own = cableStock(), out = [];
+  for (const type of Object.keys(CABLES)) {
+    const lens = (imperial() ? CABLES[type].stockFt : CABLES[type].stock);
+    if (!lens.some(l => own[cableKey(type, l)] != null)) continue;   // no stock entered for this kind: nothing to compare
+    let spare = 0;
+    for (const l of [...lens].sort((a, b) => b - a)) {
+      const need = pull.filter(r => r.type === type && r.len === l && !r.label).reduce((s, r) => s + r.n, 0), have = (own[cableKey(type, l)] || 0) + spare;
+      if (need > have) out.push({ type, len: l, need, own: own[cableKey(type, l)] || 0, short: need - have });
+      spare = Math.max(0, have - need);
+    }
+  }
+  return out;
+}
 function pullList() {
   const map = new Map();
   for (const c of plan.cables) {
@@ -2684,6 +2716,7 @@ function warnings() {
   }
   for (const p of plan.team) if (!ROLES[p.role]) out.push({ lvl: 'warn', pid: p.id, fix: 'role', msg: `${p.name || 'A team member'} has no position.` });
   for (const l of rfClashes()) out.push({ lvl: 'bad', id: l[1].id, msg: `${l.map(itemName).join(' and ')} are all on ${rfOf(l[0]).trim()}. Give each wireless pack its own channel (Paperwork → Wireless).` });
+  for (const x of cableShort()) out.push({ lvl: 'warn', id: null, msg: `${x.short} more ${CABLES[x.type].name} ${fmtStock(x.len)} needed than you own (need ${x.need}, own ${x.own}). Borrow some or change the runs.` });
   return out;
 }
 
@@ -2762,11 +2795,10 @@ async function pcoFetch(typeId, planId, withDeclined = false) {
     const a = row.attributes || {}, key = row.relationships?.person?.data?.id || a.name;
     const team = teams.get(row.relationships?.team?.data?.id) || '';
     const pos = a.team_position_name || '';
-    const mapped = posRole(pos, team), role = mapped !== null ? mapped : matchRole(pos) || (ROLES[matchRole(team)]?.gear?.length === 0 ? matchRole(team) : '');
     const pk = [pos, team].filter(Boolean).join(' · '); if (pk && !P.seen.includes(pk)) P.seen.push(pk);
     const e = people.get(key) || { key, name: a.name || 'Unnamed', rows: [], photo: '' };
     const declined = /^d/i.test(a.status || '');
-    e.rows.push({ team, pk, role, unc: !!a.status && a.status !== 'confirmed' && !declined, declined });
+    e.rows.push({ team, pos, pk, unc: !!a.status && a.status !== 'confirmed' && !declined, declined });
     if (!e.photo && /^https:\/\/[^/]*planningcenteronline\.com\/uploads\/person\//.test(a.photo_thumbnail || '')) e.photo = a.photo_thumbnail;   // a real photo; the initials placeholders are left out, Stageplot draws its own
     people.set(key, e);
   }
@@ -2780,6 +2812,8 @@ const pcoLoadRoster = () => pcoRun('Loading roster…', async () => {
   pcoPrefs().seen = pcoPrefs().seen.slice(-200); save();
   if (!pco.raw.length) pco.err = 'No one is scheduled on this plan yet.';
 });
+// where a Planning Center position stands on stage: your own choice first (Home → Planning Center, or the roster), then a best guess from its name
+function pcoRowRole(pos, team) { const mapped = posRole(pos, team); return mapped !== null ? mapped : matchRole(pos) || (ROLES[matchRole(team)]?.gear?.length === 0 ? matchRole(team) : ''); }
 // the teams to pull from, remembered per service type (none chosen = every team)
 const pcoHidden = () => new Set(pcoPrefs().hiddenTeams || []);   // teams you never pull from (Communion, Info Desk…), for every service type
 const pcoShownTeams = (teams = pco.teams) => { const h = pcoHidden(); return (teams || []).filter(([t]) => !h.has(t)); };
@@ -2793,9 +2827,11 @@ function pcoBuild(raw, typeId, teams) {
   const rank = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? 99 : (r === 'Vocalist' || r === 'Worship Leader' ? 50 + i : i); };
   return (raw || []).map(p => {
     const rows = p.rows.filter(r => !r.declined && !hid.has(r.team) && (!sel || sel.has(r.team))); if (!rows.length) return null;
-    const e = { key: p.key, name: p.name, photo: p.photo, positions: rows.map(r => r.pk), roles: rows.map(r => r.role).filter(Boolean), unconfirmed: rows.some(r => r.unc) };
+    const rr = rows.map(r => ({ ...r, role: pcoRowRole(r.pos, r.team) }));
+    const e = { key: p.key, name: p.name, photo: p.photo, positions: rr.map(r => r.pk), roles: rr.map(r => r.role).filter(Boolean), unconfirmed: rr.some(r => r.unc) };
     const roles = [...new Set(e.roles)].sort((a, b) => rank(a) - rank(b));
     const role = roles.includes('Worship Leader') ? 'Worship Leader' : roles[0] || '';
+    e.src = (rr.find(r => r.role === role && role) || rr[0]).pk;   // the position that decided it: the one a correction applies to
     const sings = role !== 'Vocalist' && role !== 'Worship Leader' && roles.some(r => r === 'Vocalist' || r === 'Worship Leader');
     return { ...e, role, sings };
   }).filter(Boolean).sort((a, b) => (a.role ? 0 : 1) - (b.role ? 0 : 1) || rank(a.role) - rank(b.role) || a.name.localeCompare(b.name));
@@ -2804,6 +2840,19 @@ function pcoDerive(resetPicks) {
   pco.roster = pcoBuild(pco.raw, pco.typeId, pco.teams);
   if (resetPicks) pco.picked = new Set(pco.roster.filter(e => e.role && (pcoPrefs().unconfirmed !== false || !e.unconfirmed)).map(e => e.key));
   else { const vis = new Set(pco.roster.map(e => e.key)); pco.picked = new Set([...pco.picked].filter(k => vis.has(k))); }
+}
+function mapOptions(pk) {
+  const cur = db?.pcoPrefs?.map?.[pk] || '', [pos, team] = pk.split(' · '), guess = (() => { const m = db.pcoPrefs.map[pk]; delete db.pcoPrefs.map[pk]; const g = pcoRowRole(pos, team); if (m) db.pcoPrefs.map[pk] = m; return g; })();
+  const roles = [...ROLE_ORDER, ...Object.keys(ROLES).filter(r => !ROLE_ORDER.includes(r))];
+  return `<option value="" ${!cur ? 'selected' : ''}>Automatic (${esc(guess || 'not on stage')})</option><option value="-" ${cur === '-' ? 'selected' : ''}>Not on stage</option>${roles.map(r => `<option ${cur === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}`;
+}
+function setPosMap(pk, v) {
+  const P = pcoPrefs(); if (v) P.map[pk] = v; else delete P.map[pk]; save();
+  const before = new Map((pco.roster || []).map(e => [e.key, e.role]));
+  pcoDerive(false);
+  for (const e of pco.roster) { if (!before.get(e.key) && e.role) pco.picked.add(e.key); if (before.get(e.key) && !e.role) pco.picked.delete(e.key); }   // someone who now stands on stage gets ticked, someone taken off gets unticked
+  renderRail();
+  toast(`“${pk}” ${v === '-' ? 'is not on stage' : v ? `stands as ${v}` : 'goes back to automatic'}, every week`);
 }
 function pcoSetTeams(team) {   // '' = every team; otherwise switch that team in or out
   const P = pcoPrefs(), cur = pcoTeamSel(); P.teams ||= {};
@@ -2825,15 +2874,21 @@ async function pcoCheck(force = false) {
   const w = plan, L = w?.pco; if (!pco.mcp || !L || w.date < localISO()) return;
   if (!force && Date.now() - (pcoChecked.get(w.id) || 0) < 10 * 60e3) return;
   pcoChecked.set(w.id, Date.now());
-  let f; try { f = await pcoFetch(L.typeId, L.planId, true); } catch { return; }   // quiet: this is a background check
+  let f, times = null; try { f = await pcoFetch(L.typeId, L.planId, true); } catch { return; }   // quiet: this is a background check
+  try {   // and the plan's own times: rehearsal or service moved since the import
+    const r = await pcoCall('services_plans', { service_type_id: L.typeId, filter: 'future', order_by: 'sort_date', per_page: 25, output_fields: ['id', 'sort_date'], include: ['plan_times'] });
+    const pl = (r?.data || []).find(x => String(x.id) === String(L.planId)), pt = new Map((r?.included || []).filter(x => x.type === 'PlanTime').map(x => [x.id, x.attributes || {}]));
+    if (pl) times = pcoTimes((pl.relationships?.plan_times?.data || []).map(d => pt.get(d.id)).filter(Boolean));
+  } catch { /* times stay as they are */ }
   if (plan !== w) return;
   const byKey = new Map(f.raw.map(e => [e.key, e])), live = new Set(pcoBuild(f.raw, L.typeId, f.teams).map(e => e.key));
   let photos = false; for (const t of w.team) { const e = byKey.get(t.pcoId); if (e?.photo && t.photo !== e.photo) { t.photo = e.photo; photos = true; } }
   if (photos) save();
   const gone = w.team.filter(t => t.pcoId && !f.raw.some(e => e.key === t.pcoId && e.rows.some(r => !r.declined))).map(t => ({ id: t.id, name: t.name, declined: !!byKey.get(t.pcoId) }));
   const added = pcoBuild(f.raw, L.typeId, f.teams).filter(e => e.role && live.has(e.key) && !w.team.some(t => t.pcoId === e.key));
-  const sig = [...gone.map(g => '-' + g.id), ...added.map(a => '+' + a.key)].sort().join();
-  pco.changes = sig && sig !== L.dismissed ? { week: w.id, gone, added, sig } : null;
+  const moved = times ? TIME_KINDS.filter(([k]) => times[k] && times[k] !== (w.times?.[k] || '')).map(([k, l]) => ({ k, l, from: w.times?.[k] || '', to: times[k] })) : [];
+  const sig = [...gone.map(g => '-' + g.id), ...added.map(a => '+' + a.key), ...moved.map(m => `@${m.k}${m.to}`)].sort().join();
+  pco.changes = sig && sig !== L.dismissed ? { week: w.id, gone, added, moved, sig } : null;
   renderRail();
 }
 function pcoUpdateStage() {
@@ -2841,14 +2896,15 @@ function pcoUpdateStage() {
   mutate(() => {
     const out = new Set(c.gone.map(g => g.id)); plan.team = plan.team.filter(t => !out.has(t.id));
     for (const e of c.added) plan.team.push({ id: uid(), name: e.name, role: e.role, sings: e.sings, pcoId: e.key, ...(e.photo ? { photo: e.photo } : {}) });
-    buildFromTeam(); autoCable();
-  }, `Updated from Planning Center: ${[c.gone.length ? `${c.gone.length} off` : '', c.added.length ? `${c.added.length} added` : ''].filter(Boolean).join(', ')}`);
+    for (const m of c.moved || []) (plan.times ||= {})[m.k] = m.to;
+    if (c.gone.length || c.added.length) { buildFromTeam(); autoCable(); }
+  }, `Updated from Planning Center: ${[c.gone.length ? `${c.gone.length} off` : '', c.added.length ? `${c.added.length} added` : '', c.moved?.length ? 'new times' : ''].filter(Boolean).join(', ')}`);
   pco.changes = null; renderRail();
 }
 function pcoChangesHtml() {
   const c = pco.changes; if (!c || c.week !== plan.id) return '';
-  const bits = [...c.gone.map(g => `<li class="rem">${esc(g.name)} ${g.declined ? 'declined' : 'is no longer scheduled'}</li>`), ...c.added.map(e => `<li class="add">${esc(e.name)} added · ${esc(e.role)}${e.sings ? ' + sings' : ''}</li>`)];
-  return `<div class="pcochg" role="status"><div class="pcochg-h">${ic('calendar', 'sm')}<b>Planning Center changed</b></div><ul>${bits.join('')}</ul><div class="row" style="gap:6px"><button class="btn primary" id="pcoChgApply">Update the stage</button><button class="btn quiet" id="pcoChgSkip">Not now</button></div></div>`;
+  const bits = [...c.gone.map(g => `<li class="rem">${esc(g.name)} ${g.declined ? 'declined' : 'is no longer scheduled'}</li>`), ...c.added.map(e => `<li class="add">${esc(e.name)} added · ${esc(e.role)}${e.sings ? ' + sings' : ''}</li>`), ...(c.moved || []).map(m => `<li class="time">${esc(m.l)} ${m.from ? `${esc(fmtTime(m.from))} → ` : 'now '}${esc(fmtTime(m.to))}</li>`)];
+  return `<div class="pcochg" role="status"><div class="pcochg-h">${ic('calendar', 'sm')}<b>Planning Center changed</b></div><ul>${bits.join('')}</ul><div class="row" style="gap:6px"><button class="btn primary" id="pcoChgApply">${c.gone.length || c.added.length ? 'Update the stage' : 'Update the times'}</button><button class="btn quiet" id="pcoChgSkip">Not now</button></div></div>`;
 }
 function pcoApply() {
   const chosen = pco.roster.filter(e => pco.picked.has(e.key));
@@ -2982,6 +3038,7 @@ function personRoleMark(it, r, hue) {
 }
 const roleMark = r => ROLE_ICON[r] ? `<i class="rolemark" title="${esc(r)}">${ic(ROLE_ICON[r])}</i>` : '';
 const roleTone = r => /Vocal|Leader|Host/.test(r) ? 'vox' : /Pastor/.test(r) ? 'word' : /Engineer|Lighting|Producer|Camera/.test(r) ? 'tech' : r ? 'band' : '';
+const shortDate = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return iso; } };
 const longDate = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); } catch { return iso; } };
 const plural = (n, a, b = a + 's') => `${n} ${n === 1 ? a : b}`;
 const sortedWeekIds = () => Object.keys(db.plans).sort((a, b) => db.plans[a].date.localeCompare(db.plans[b].date));
@@ -3426,6 +3483,9 @@ document.body.insertAdjacentHTML('afterbegin', `<svg aria-hidden="true" focusabl
    Rendering: plot
    =================================================================== */
 const svg = $('plot'), scroller = $('scroller');
+// the band's view: the whole plot turned round (audience at the top, stage left on the left), every word kept upright; only the screen changes, never the plan or the paperwork
+let flipped = false;
+function setFlip(on) { flipped = on; svg.classList.toggle('flipped', on); $('plotView').classList.toggle('flipview', on); renderAll(); toast(on ? 'Seen from the stage: the audience is at the top' : 'Seen from the house again'); }
 function bounds() {
   const { w, d, house, houseW } = plan.stage, hw = Math.max(w, houseW);
   const x0 = Math.min(0, (w - hw) / 2), x1 = Math.max(w, (w + hw) / 2);
@@ -4333,6 +4393,7 @@ function renderFloat() {
       ${ui.adv ? `<span class="zoomval" title="Zoom">${Math.round(scale / fitScale() * 100)}%</span>` : ''}
       <button class="iconbtn" id="zIn" aria-label="Zoom in" title="Zoom in (+)">${ic('plus')}</button>
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
+      <button class="iconbtn" id="flipView" aria-pressed="${flipped}" aria-label="${flipped ? 'See it from the house' : 'See it from the stage'}" title="${flipped ? 'Back to the view from the house' : 'Turn the plot round: the band’s view, looking out at the audience'}">${ic('rotate')}</button>
     </div>`;
   $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip accent">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${`<button class="ctype" data-ctype="auto" aria-pressed="${cableType === 'auto'}" title="Pick the type from the two ends">${ic('wand', 'sm')}Auto</button>` + Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
       <span class="dock-sep"></span><span class="toolhint">${pending ? `Click to pivot · click a channel to enter it · click gear to finish · <span class="kbd">⌫</span> undo pivot · <span class="kbd">Esc</span> cancel` : 'Click the gear where the cable starts'}</span></div>`
@@ -4420,6 +4481,7 @@ function renderWeekPop() {
     <div class="field"><span>Start next week</span><div class="grid2">
       <button class="btn" id="newCopy" title="Copy everything, team included">${ic('copy', 'sm')}Copy this week</button>
       <button class="btn" id="newStage" title="Same stage and infrastructure, no team">${ic('room', 'sm')}Stage only</button>
+    </div><div class="row aheadrow" style="gap:6px;flex-wrap:nowrap;margin-top:6px"><label for="aheadN" class="hint" style="white-space:nowrap">Plan ahead</label><select id="aheadN" aria-label="How many weeks ahead">${[2, 3, 4, 6, 8].map(n => `<option value="${n}" ${n === 4 ? 'selected' : ''}>next ${n} weeks</option>`).join('')}</select><button class="btn" id="aheadGo" title="Copy this week, team included, to each of the following weeks that has nothing planned yet">${ic('calendar', 'sm')}Copy</button>
     </div></div>
     <div class="field"><span>Clear this week <small class="hint" style="font-weight:400">Undo brings it back</small></span><div class="grid2">
       <button class="btn" id="clearKeepStage" title="Remove the team, gear, cables, channels and notes. The stage shape, size and colour stay">${ic('room', 'sm')}${clearArmed === 'keep' ? 'Click again to clear' : 'Keep the stage'}</button>
@@ -4984,7 +5046,7 @@ function loadinTasks() {   // what the crew does on the day, in the order they d
   const leads = plan.cables.filter(c => c.type === 'inst').map(c => ({ key: `ld:${c.id}`, text: `${itemName(by(c, 'from'))} → ${itemName(by(c, 'to'))}`, sub: `jack lead · ${fmtLen(cableLen(c))}` }));
   const outs = outputList().map(r => ({ key: `out:${r.dest}:${r.port}`, text: r.dest, sub: `${r.type ? r.type + ' · ' : ''}${shortPort(r.port, codes)}` }));
   const batt = battType(), packs = plan.items.filter(i => cat(i).wireless).map(i => ({ key: `bt:${i.id}`, text: itemName(i), sub: `${batt} · fresh in, spares by FOH` }));
-  return [['Batteries', 'zap', packs], ['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
+  return [['From storage', 'layers', fromStorage()], ['Batteries', 'zap', packs], ['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
 }
 const loadinState = () => (plan.loadin ||= {});
 // switch on from the desk out to the speakers, so nothing pops through a live system; off is the same list backwards
@@ -5017,6 +5079,13 @@ const battType = () => db.defaults?.batt || '2 × AA';   // what each wireless m
 // "12 × AA" from "2 × AA" and six packs, so someone can grab the right number from the cupboard
 const battTotal = n => { const m = battType().match(/^\s*(\d+)\s*[×x*]\s*(.+)$/i); return m ? `${Number(m[1]) * n} × ${m[2].trim()}` : `${n} × ${battType()}`; };
 // owned gear this week leaves behind, so nobody carries it out for nothing
+const gearWhere = t => db?.gear?.where?.[t] || '';
+// the cupboard run: this week's gear grouped by where it's kept (only gear you've given a place in Home → Gear)
+function fromStorage() {
+  const by = new Map();
+  for (const i of plan.items) { const w = gearWhere(i.type); if (!w || cat(i).shape === 'person') continue; const m = by.get(w) || new Map(); m.set(i.type, (m.get(i.type) || 0) + 1); by.set(w, m); }
+  return [...by].sort((a, b) => a[0].localeCompare(b[0])).map(([w, m]) => ({ key: `st:${w}`, text: w, sub: [...m].sort((a, b) => b[1] - a[1]).map(([t, n]) => `${n} × ${CAT[t].short || CAT[t].name}`).join(', ') }));
+}
 function inStorage() {
   return Object.entries(db?.gear?.owned || {}).map(([t, own]) => ({ t, left: own - plan.items.filter(i => i.type === t).length })).filter(x => CAT[x.t] && x.left > 0).sort((a, b) => CAT[a.t].name.localeCompare(CAT[b.t].name));
 }
@@ -5108,7 +5177,9 @@ function renderPaper() {
   const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Mic / DI', 'mic'], ['Stand', 'stand'], ['48V', r => r.p48 ? '48V' : ''], ['Group', 'group'], ['Person', 'person'], ['Patch', r => shortPort(r.port, codes)]];
   const outCols = [['Destination', 'dest'], ['Type', 'type'], ['Patch', r => shortPort(r.port, codes)]];
   const mixCols = [['Mix', 'mix'], ['Person', 'person'], ['Position', 'role'], ['Monitor', 'kind']];
-  const pullCols = [['Cable', r => r.label || CABLES[r.type].name], ['Length', r => fmtStock(r.len)], ['Qty', 'n']];
+  const shortBy = new Map(cableShort(pull).map(x => [`${x.type}|${x.len}`, x])), stocked = Object.keys(cableStock()).length > 0;
+  for (const r of pull) { const x = !r.label && shortBy.get(`${r.type}|${r.len}`); r.short = x ? x.short : 0; }
+  const pullCols = [['Cable', r => r.label || CABLES[r.type].name], ['Length', r => fmtStock(r.len)], ['Qty', 'n'], ...(stocked ? [['Own', r => r.label ? '' : String(cableStock()[cableKey(r.type, r.len)] ?? '–') + (r.short ? ` · short ${r.short}` : '')]] : [])];
   const teamCols = [['Name', 'name'], ['Position', 'role'], ['Sings', r => r.sings ? 'yes' : '']];
   const full = cols => cols.map(c => c[0] === 'Patch' ? ['Patch', 'port'] : c);   // copies keep the full box names
   paperData = { inputs: tsv(ins, full(inCols)), outputs: tsv(outs, full(outCols)), mixes: tsv(mixes, mixCols), pull: tsv(pull, pullCols), team: tsv(plan.team, teamCols) };
@@ -5163,7 +5234,7 @@ function renderPaper() {
       <section class="sheet" id="sec-mixes" data-sheet="mixes">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols, '', emptyBox('users', 'No monitor mixes yet', 'Each wedge or in-ear pack on stage gets its own mix here.', 'gear', 'Add monitors'))}</section>
     </div>
     <div class="sheets2">
-      <section class="sheet" id="sec-cables" data-sheet="cables">${head('Cable pull list', 'pull', `Stock lengths to pull. Includes ${plan.settings.slack}% slack and ${uLen(plan.settings.ends)} each end.`)}${table(pull, pullCols, '', emptyBox('cable', 'No cables to pull', 'Build the stage from the team, or run cables on the plot.', 'team', 'Build from the team'))}</section>
+      <section class="sheet" id="sec-cables" data-sheet="cables">${head('Cable pull list', 'pull', `Stock lengths to pull. Includes ${plan.settings.slack}% slack and ${uLen(plan.settings.ends)} each end.`)}${table(pull, pullCols, 'short', emptyBox('cable', 'No cables to pull', 'Build the stage from the team, or run cables on the plot.', 'team', 'Build from the team'))}</section>
       <section class="sheet" id="sec-team" data-sheet="team">${head('Team', 'team')}${table(plan.team, teamCols, '', emptyBox('users', 'No one on the team yet', 'Add people, paste a list or import from Planning Center.', 'team', 'Add the team'))}</section>
     </div>
     ${plan.items.some(i => i.type === 'rack') ? `<section class="sheet" id="sec-racks" data-sheet="racks">${head('Racks', '', 'Top to bottom, as you face the front.')}${plan.items.filter(i => i.type === 'rack').map(r => `<div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(itemName(r))}</b><span class="hint">${rackStat(r).used}/${r.rackU || 8}U · ${rackStat(r).watts} W</span></div><div class="tablewrap"><table><thead><tr><th>U</th><th>Device</th><th>Details</th><th>Notes</th></tr></thead><tbody>${(r.devices || []).slice().sort((a, b) => a.at - b.at).map(d => `<tr><td><span class="ch">${(r.rackU || 8) - d.at}${d.u > 1 ? '–' + ((r.rackU || 8) - d.at - d.u + 1) : ''}</span></td><td>${esc(d.name)}</td><td class="mono">${esc(devMeta(d)) || '—'}</td><td>${esc(d.note || '')}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Empty rack.</td></tr>'}</tbody></table></div></div>`).join('')}</section>` : ''}
@@ -5178,7 +5249,7 @@ function renderPaper() {
         ${g.total ? `<div class="lprog" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Load-in progress"><div class="lbar"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} done</b>${g.done ? '<button class="btn quiet" id="loadinReset">Clear ticks</button>' : ''}</div>` : ''}
         ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span>${title === 'Batteries' ? `<span class="battneed">${esc(battTotal(list.length))} needed</span><label class="battset"><span>Each takes</span><input type="text" id="battType" value="${esc(battType())}" aria-label="Batteries each pack takes" list="battList"></label><datalist id="battList">${['2 × AA', '1 × AA', '2 × AAA', '1 × 9V', 'Rechargeable'].map(v => `<option value="${v}">`).join('')}</datalist>` : ''}</h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
         ${(() => { const po = powerOrder(); return po.length > 1 ? `<div class="lgroup poworder"><h3>${ic('zap', 'sm')}Switch-on order <span class="hint">desk first, speakers last; switch off the other way round</span></h3><div class="pocols"><ol>${po.map(([t, l]) => `<li><b>${esc(t)}</b><small>${esc(l.join(', '))}</small></li>`).join('')}</ol><div><h4>Switch off</h4><ol>${po.slice().reverse().map(([t]) => `<li>${esc(t)}</li>`).join('')}</ol></div></div></div>` : ''; })()}
-        ${store.length ? `<div class="lgroup storage"><h3>${ic('layers', 'sm')}Stays in storage <span class="hint">owned, not used this week</span></h3><ul class="storelist">${store.map(x => `<li><b>${x.left}</b> × ${esc(CAT[x.t].name)}</li>`).join('')}</ul></div>` : ''}
+        ${store.length ? `<div class="lgroup storage"><h3>${ic('layers', 'sm')}Stays in storage <span class="hint">owned, not used this week</span></h3><ul class="storelist">${store.map(x => `<li><b>${x.left}</b> × ${esc(CAT[x.t].name)}${gearWhere(x.t) ? `<small> · ${esc(gearWhere(x.t))}</small>` : ''}</li>`).join('')}</ul></div>` : ''}
       </section>`; })()}
     </div>
     <textarea id="copyFallback" rows="2" aria-label="Copied text" tabindex="-1" style="opacity:0;height:1px;padding:0;border:0"></textarea>`;
@@ -5219,7 +5290,7 @@ function pcoHtml() {
   if (pco.roster?.length) {
     roster = `${teamChips}<div class="row" style="justify-content:space-between"><span class="eyebrow">${pco.picked.size} of ${pco.roster.length} selected</span><button class="btn quiet" id="pcoRoster" style="padding:4px 8px">Refresh</button></div>
       <div class="roster">${pco.roster.map(e => `<label for="pk-${esc(e.key)}"><input type="checkbox" id="pk-${esc(e.key)}" data-pick="${esc(e.key)}" ${pco.picked.has(e.key) ? 'checked' : ''}>
-        <span><span class="nm">${esc(e.name)}${e.unconfirmed ? '<span class="chip warn">unconfirmed</span>' : ''}</span><small>${esc(e.positions.join(', '))}</small><small class="maps">${e.role ? `→ ${esc(e.role)}${e.sings ? ' + sings' : ''}` : '→ not on stage'}</small></span></label>`).join('')}</div>
+        <span><span class="nm">${esc(e.name)}${e.unconfirmed ? '<span class="chip warn">unconfirmed</span>' : ''}</span><small>${esc(e.positions.join(', '))}</small>${pco.mapOpen === e.key ? `<span class="mapedit"><select data-pcomap="${esc(e.src)}" aria-label="Where ${esc(e.src)} stands, every week">${mapOptions(e.src)}</select><button class="tlink" data-pcomapclose="1">Done</button></span>` : `<button class="mapbtn" data-pcomapopen="${esc(e.key)}" title="Change where “${esc(e.src)}” stands, for every week">${e.role ? `→ ${esc(e.role)}${e.sings ? ' + sings' : ''}` : '→ not on stage'}${ic('pen', 'sm')}</button>`}</span></label>`).join('')}</div>
       <label class="row" for="pcoReplace" style="gap:8px"><input type="checkbox" id="pcoReplace" ${pco.replace ? 'checked' : ''} style="accent-color:var(--accent)"> Replace this week’s team</label>
       <button id="pcoApply" class="btn primary block">${ic('wand', 'sm')}Put ${plural(pco.picked.size, 'person', 'people')} on stage</button>`;
   }
@@ -5652,6 +5723,7 @@ $('ftools').addEventListener('click', e => {
   const f = e.target.closest('[data-fit]');
   if (f) fit(f.dataset.fit);
   if (e.target.closest('#zIn')) zoomCenter(1.25);
+  if (e.target.closest('#flipView')) setFlip(!flipped);
   if (e.target.closest('#zOut')) zoomCenter(1 / 1.25);
 });
 $('fstats').addEventListener('click', e => {
@@ -5767,6 +5839,17 @@ function clearWeek(all) {
     if (all) { plan.stage = fresh.stage; plan.settings = fresh.settings; }
     sel = null; group = null; pending = null; measure = null; compare = null; needFit = true;
   }, all ? `Week cleared, stage reset to ${venueOf(plan)?.name || 'the default'}’s` : 'Week cleared, stage kept');
+}
+// copy this week forward, one a week, into dates this venue has nothing on yet; each copy is its own week (no ticks, no print record, no Planning Center link)
+function planAhead(n) {
+  const taken = new Set(Object.values(db.plans).filter(w => w.venueId === plan.venueId).map(w => w.date)), made = [], skipped = [];
+  for (let k = 1; k <= n; k++) {
+    const d = addDays(plan.date, 7 * k); if (taken.has(d)) { skipped.push(d); continue; }
+    const np = JSON.parse(JSON.stringify(plan)); np.id = uid(); np.date = d; delete np.loadin; delete np.printed; delete np.pco; np.rev = 0;
+    db.plans[np.id] = np; made.push(np);
+  }
+  save(); renderAll(); renderWeekPop();
+  toast(made.length ? `Copied to ${plural(made.length, 'week')}: ${made.map(w => shortDate(w.date)).join(', ')}${skipped.length ? ` · ${plural(skipped.length, 'week')} already planned, left as they were` : ''}` : `The next ${n} weeks are already planned, nothing copied`);
 }
 function newWeek(stageOnly) {
   const np = JSON.parse(JSON.stringify(plan));
@@ -5947,6 +6030,7 @@ $('weekPop').addEventListener('click', e => {
   else if (b.id === 'openHist') { closePops(); openHist(); }
   else if (b.id === 'newCopy') newWeek(false);
   else if (b.id === 'newStage') newWeek(true);
+  else if (b.id === 'aheadGo') planAhead(Number($('aheadN').value) || 4);
   else if (b.id === 'clearKeepStage' || b.id === 'clearAll') {
     const k = b.id === 'clearAll' ? 'all' : 'keep';
     if (clearArmed !== k) { clearArmed = k; renderWeekPop(); return; }
@@ -5970,6 +6054,8 @@ $('railFoot').addEventListener('click', e => { if (e.target.closest('#buildBtn')
 $('railPane').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.id === 'pcoStart') { pcoLoadTypes(); return; }
+  if (t.dataset.pcomapopen) { e.preventDefault(); pco.mapOpen = t.dataset.pcomapopen; renderRail(); document.querySelector('[data-pcomap]')?.focus(); return; }
+  if (t.dataset.pcomapclose) { e.preventDefault(); pco.mapOpen = ''; renderRail(); return; }
   if (t.id === 'pcoChgApply') { pcoUpdateStage(); return; }
   if (t.id === 'pcoChgSkip') { if (plan.pco && pco.changes) { plan.pco.dismissed = pco.changes.sig; save(); } pco.changes = null; renderRail(); return; }
   if (t.dataset.pcohide !== undefined) { pcoHideTeam(t.dataset.pcohide, true); return; }
@@ -6024,6 +6110,7 @@ $('railPane').addEventListener('change', e => {
   if (t.id === 'pcoType') { pco.typeId = t.value; pcoLoadPlans(); return; }
   if (t.id === 'pcoPlan') { pco.planId = t.value; pco.roster = null; pco.raw = null; renderRail(); return; }
   if (t.id === 'pcoReplace') { pco.replace = t.checked; return; }
+  if (t.dataset.pcomap !== undefined) { setPosMap(t.dataset.pcomap, t.value); return; }
   if (t.dataset.pick) { t.checked ? pco.picked.add(t.dataset.pick) : pco.picked.delete(t.dataset.pick); renderRail(); return; }
   if (card) {
     const p = personById(card.dataset.pid), f = t.dataset.f; if (!p || !f) return;
@@ -6194,15 +6281,15 @@ let dlCap;   // undefined until known; null = this view can't save files (the bu
 if (window.claude?.use) window.claude.use('downloads').then(d => { dlCap = d; if (!d) document.querySelectorAll('[data-needs-dl]').forEach(b => b.hidden = true); }, () => { dlCap = null; });
 async function offerFile(filename, text, mime) {
   if (window.claude?.use) {
-    if (!dlCap) { toast('Saving files isn’t available here. Use Copy instead'); return; }
-    try { await dlCap.save({ filename, data: text }); toast(`Saved ${filename}`); }
-    catch (e) { if (e?.code !== 'declined') toast(e?.code === 'rate_limited' ? 'A save is already waiting for you to confirm' : 'Couldn’t save the file here. Use Copy instead'); }
-    return;
+    if (!dlCap) { toast('Saving files isn’t available here. Use Copy instead'); return false; }
+    try { await dlCap.save({ filename, data: text }); toast(`Saved ${filename}`); return true; }
+    catch (e) { if (e?.code !== 'declined') toast(e?.code === 'rate_limited' ? 'A save is already waiting for you to confirm' : 'Couldn’t save the file here. Use Copy instead'); return false; }
   }
   try {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: mime }));
     a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  } catch { toast('Download blocked here. Use Copy instead'); }
+    return true;
+  } catch { toast('Download blocked here. Use Copy instead'); return false; }
 }
 if ($('dlAll')) $('dlAll').onclick = () => { const s = backup(true); $('dataText').value = s; offerFile(`stageplot-${plan.date}.json`, s, 'application/json'); };
 // every sheet as one self-contained page: opens and prints anywhere, no app needed
@@ -7503,6 +7590,7 @@ $('homeView').addEventListener('click', e => {
   if (t.id === 'libResetCancel') { lib.resetArmed = false; renderHome(); return; }
   if (t.id === 'libResetGo') { resetAll(); return; }
   if (t.id === 'libRestore') { restoreBeforeReset(); return; }
+  if (t.id === 'tidyGo') { tidyOldWeeks(); return; }
   if (t.id === 'libBackup') { const s2 = backup(true); offerFile(`stageplot-backup-${new Date().toISOString().slice(0, 10)}.json`, s2, 'application/json'); return; }
 });
 $('homeView').addEventListener('input', e => {
@@ -7687,6 +7775,7 @@ function homeGear() {
   const row = t => {
     const own = g.owned[t], used = counts[t] || 0, over = own != null && used > own, mine = CAT[t].custom, n = mine ? weeksUsing(t) : 0;
     return `<div class="hgear">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}${mine ? ' <span class="chip">Yours</span>' : ''}</b><small>${used ? `${used} on this week’s plot` : 'Not on this week’s plot'}${mine ? ` · looks like ${esc(CAT[CAT[t].base].name)}${CAT[t].inputs ? ` · ${plural(CAT[t].inputs.length, 'input')}` : ''}${CAT[t].watts ? ` · ${CAT[t].watts} W` : ''}` : ''}${over ? ' · <span class="overown">more than you own</span>' : ''}</small></span>
+      <label class="own where" for="hw-${t}"><span>Kept in</span><input id="hw-${t}" type="text" maxlength="30" data-where="${t}" value="${esc(g.where?.[t] || '')}" placeholder="Kept in…" list="whereList" aria-label="Where ${esc(CAT[t].name)} is kept"></label>
       <label class="own" for="ho-${t}"><span>Own</span><input id="ho-${t}" type="number" min="0" max="999" step="1" inputmode="numeric" data-own="${t}" value="${own ?? ''}" placeholder="–" aria-label="How many ${esc(CAT[t].name)} you own"></label>
       <button class="iconbtn${gearDelArmed === t ? ' armed' : ''}" data-gearrm="${t}" aria-label="Remove ${esc(CAT[t].name)}" title="${mine ? 'Delete this gear' : 'Remove from your library'}">${gearDelArmed === t ? `<span class="armtxt">${n ? `Also remove from ${plural(n, 'week')}?` : 'Delete?'}</span>` : ic('trash', 'sm')}</button></div>`;
   };
@@ -7714,6 +7803,9 @@ function homeGear() {
   return hsec('Building from the team', '', hcheck('hd-teamgear', 'Add each person’s instruments and gear', ui.teamGear, 'Off: people are placed on stage and you add their gear yourself')) +
     hsec('Your gear', `${plural(GEAR_GROUPS.flatMap(([, ts]) => ts).length - removed.length, 'type')} in your library. Remove what you never use to keep Add gear short; enter how many you own and the checks warn when a week needs more.`,
       `${gearForm.open ? form : ''}<div class="hgear-tools row" style="gap:6px"><button class="btn quiet" id="homeGearUnused">Keep only what’s on this week</button><button class="btn quiet" id="homeOwnClear">Clear owned counts</button></div>${groups}`, gearForm.open ? '' : `<button class="btn primary" id="gf-open">${ic('plus', 'sm')}Add gear</button>`) +
+    hsec('Cables you own', `How many of each length you have. The cable pull list then shows what you own and warns when a week needs more; a longer spare covers a shorter run. Lengths in ${imperial() ? 'feet' : 'metres'}.`,
+      `<div class="cstock">${Object.entries(CABLES).map(([type, C]) => `<div class="cstock-row"><b>${esc(C.name)}</b><div class="cstock-lens">${(imperial() ? C.stockFt : C.stock).map(l => `<label><span>${fmtStock(l)}</span><input type="number" min="0" max="999" inputmode="numeric" data-cstock="${cableKey(type, l)}" value="${cableStock()[cableKey(type, l)] ?? ''}" placeholder="–" aria-label="How many ${esc(C.name)} ${fmtStock(l)} you own"></label>`).join('')}</div></div>`).join('')}</div>`) +
+    `<datalist id="whereList">${[...new Set(Object.values(db.gear?.where || {}))].sort().map(w => `<option value="${esc(w)}">`).join('')}</datalist>` +
     (removed.length ? hsec('Removed from your library', 'Not in Add gear. Search still finds them, and weeks that use them are unaffected.',
       `<div class="hlist">${removed.map(t => `<div class="hlist-row">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}</b></span><button class="btn" data-gearback="${t}">${ic('undo', 'sm')}Restore</button></div>`).join('')}</div>
        <div class="row"><button class="btn quiet" id="homeGearAll">Restore all</button></div>`) : '');
@@ -7799,10 +7891,26 @@ function homePrefs() {
 }
 
 /* ----- Data ----- */
+// old weeks, for tidying: everything before the cut-off except the week that's open
+const oldWeeks = months => { const d = new Date(); d.setMonth(d.getMonth() - months); const cut = localISO(d); return Object.values(db.plans).filter(w => w.date < cut && w.id !== plan.id); };
+let tidyMonths = 6;
+async function tidyOldWeeks() {
+  const gone = oldWeeks(tidyMonths); if (!gone.length) return;
+  const ok = await offerFile(`stageplot-backup-before-tidy-${localISO()}.json`, backup(true), 'application/json');
+  if (!ok) { toast('Nothing removed: the backup wasn’t saved'); return; }   // never delete without a copy in hand
+  for (const w of gone) { delete db.plans[w.id]; delete histLoad()[w.id]; }
+  histSave(); save(); renderAll();
+  toast(`Removed ${plural(gone.length, 'old week')}. The backup has them if you need one back`);
+}
 function homeData() {
   const before = (() => { try { return localStorage.getItem('stageplot.beforeReset'); } catch { return null; } })();
   return hsec('Backup', `Everything is saved ${SAVED_WHERE} only (${fmtBytes(storageUse())} used). Keep a backup somewhere safe, or move to another computer.`,
       `<div class="row" style="gap:8px"><button class="btn primary" id="libBackup">${ic('save', 'sm')}Download a backup of everything</button><button class="btn" id="homeDataDlg">Copy, paste or restore…</button></div>`) +
+    (() => { const old = oldWeeks(tidyMonths), all = Object.keys(db.plans).length;
+      return hsec('Tidy old weeks', `Weeks that have happened stay in the library until you remove them. ${plural(all, 'week')} saved.`,
+        `<div class="row" style="gap:8px;flex-wrap:wrap"><label for="tidyM" class="hint">Older than</label><select id="tidyM">${[3, 6, 12, 24].map(m => `<option value="${m}" ${m === tidyMonths ? 'selected' : ''}>${m < 12 ? `${m} months` : m === 12 ? '1 year' : '2 years'}</option>`).join('')}</select>
+          <button class="btn" id="tidyGo" ${old.length ? '' : 'disabled'}>${ic('trash', 'sm')}${old.length ? `Back up, then remove ${plural(old.length, 'week')}` : 'Nothing that old'}</button></div>
+         <p class="hint">A backup file of everything is saved first; nothing is removed unless it saves. The open week always stays.</p>`); })() +
     `<section class="hcard libdanger">
       <div><b>Reset to default</b><small>Clears every week, setup and preference in this browser and starts again from the example week. ${before ? 'A copy of your last reset is still kept.' : 'A safety copy is kept so you can restore it.'}</small></div>
       ${lib.resetArmed ? `<div class="libconfirm"><label for="libType">Type <b>RESET</b> to confirm</label><div class="row" style="gap:6px;flex-wrap:nowrap"><input id="libType" type="text" autocomplete="off" value="${esc(lib.typed)}" style="flex:1;min-width:0"><button class="btn danger" id="libResetGo" ${lib.typed.trim().toUpperCase() === 'RESET' ? '' : 'disabled'}>Reset everything</button><button class="btn quiet" id="libResetCancel">Cancel</button></div></div>`
@@ -7861,6 +7969,7 @@ $('homeView').addEventListener('input', e => {
 $('homeView').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'gf-name' && gearForm.name.trim()) addCustomGear(); });
 $('homeView').addEventListener('click', e => { if (e.target.closest('#hd-logo-del')) { delete db.defaults.logo; save(); renderHome(); toast('Logo removed'); } });
 $('homeView').addEventListener('change', e => {
+  if (e.target.id === 'tidyM') { tidyMonths = Number(e.target.value) || 6; renderHome(); return; }
   if (e.target.dataset.vname) { const V = venues()[e.target.dataset.vname], n = e.target.value.trim().slice(0, 60); if (V && n) { V.name = n; save(); renderAll(); } else if (V) e.target.value = V.name; return; }
   if (e.target.dataset.svclink) { const tp = pco.types.find(x => x.id === e.target.value), V = venues()[e.target.dataset.svclink]; if (tp && V) { linkSvc(V.id, tp); save(); renderHome(); toast(`${tp.name} plans now import into ${V.name}`); } return; }
   if (e.target.dataset.vsetup) { const V = venues()[e.target.dataset.vsetup]; if (V) { V.setupId = e.target.value; save(); } return; }
@@ -7884,6 +7993,8 @@ $('homeView').addEventListener('change', e => {
   if (t.dataset.defmodel) { lastModel[t.dataset.defmodel] = t.value; try { localStorage.setItem('stageplot.models', JSON.stringify(lastModel)); } catch { /* memory only */ } return; }
   if (t.id === 'hd-teamgear') { ui.teamGear = t.checked; try { localStorage.setItem('stageplot.teamGear', t.checked ? 'on' : 'off'); } catch { /* memory only */ } return; }
   if (t.dataset.show) { const g = gearPrefs(); g.hidden = g.hidden.filter(x => x !== t.dataset.show); if (!t.checked) g.hidden.push(t.dataset.show); save(); t.closest('.hgear').classList.toggle('off', !t.checked); return; }
+  if (t.dataset.where) { const g = gearPrefs(), v = t.value.trim().slice(0, 30); g.where ||= {}; if (v) g.where[t.dataset.where] = v; else delete g.where[t.dataset.where]; save(); renderHome(); return; }
+  if (t.dataset.cstock) { const g = gearPrefs(), n = parseInt(t.value, 10); g.cables ||= {}; if (t.value === '' || !(n >= 0)) delete g.cables[t.dataset.cstock]; else g.cables[t.dataset.cstock] = n; save(); return; }
   if (t.dataset.own) { const g = gearPrefs(), n = parseInt(t.value, 10); if (t.value === '' || !(n >= 0)) delete g.owned[t.dataset.own]; else g.owned[t.dataset.own] = n; save(); renderHome(); return; }
   if (t.dataset.setupsvc) { const x = setups()[t.dataset.setupsvc]; if (x) { if (t.value) { for (const o of Object.values(setups())) if (o !== x && o.svcType === t.value) { delete o.svcType; delete o.svcName; } x.svcType = t.value; x.svcName = pco.types.find(y => y.id === t.value)?.name || ''; } else { delete x.svcType; delete x.svcName; } save(); renderHome(); } return; }
   if (t.id === 'hp-type') { const P = pcoPrefs(); P.typeId = t.value; P.typeName = pco.types.find(x => x.id === t.value)?.name || ''; pco.typeId = t.value; save(); return; }
