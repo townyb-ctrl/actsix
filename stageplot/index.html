@@ -1158,6 +1158,25 @@ tr.flag td { color: var(--bad); }
   body.print-blank .bl-plot .snap { width: 100% !important; height: auto !important; max-height: 190mm !important; }
   .bl-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 10mm; } .bl-line { display: flex; align-items: flex-end; gap: 3mm; font-size: 9pt; color: #444; } .bl-line i { flex: 1; border-bottom: .3mm solid #888; height: 6mm; } .bl-line:nth-child(n+4) { grid-column: 1 / -1; }
 }
+.lclist { display: grid; gap: 6px; }
+.lcrow { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.lcrow.ok { border-color: color-mix(in srgb, var(--ok, #16a34a) 45%, var(--line)); background: color-mix(in srgb, var(--ok, #16a34a) 7%, var(--surface)); }
+.lcrow.issue { border-color: color-mix(in srgb, var(--bad) 55%, var(--line)); background: color-mix(in srgb, var(--bad) 7%, var(--surface)); }
+.lctick { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 2px solid var(--line-2, var(--muted)); border-radius: 10px; background: var(--surface); color: #fff; cursor: pointer; }
+.lctick[aria-pressed="true"] { background: var(--ok, #16a34a); border-color: var(--ok, #16a34a); }
+.lcmain { flex: 1; min-width: 0; display: grid; } .lcmain b { font-size: 15px; } .lcmain small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lcflag { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 1px solid transparent; border-radius: 10px; background: none; color: var(--muted); cursor: pointer; }
+.lcflag:hover { color: var(--bad-ink, var(--bad)); } .lcflag[aria-pressed="true"] { color: #fff; background: var(--bad); }
+.lcdone { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; font-weight: 650; color: var(--ok-ink, var(--ok)); }
+#tour { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+#tour[hidden] { display: none; }
+.tour-hole { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(8, 10, 14, .55), 0 0 0 2px var(--accent); transition: all .25s ease; pointer-events: none; }
+.tour-card { position: fixed; pointer-events: auto; background: var(--surface); color: var(--ink); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow-3); display: grid; gap: 6px; transition: top .25s ease, left .25s ease; }
+.tour-card h2 { margin: 0; font-size: 18px; } .tour-card p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.45; }
+.tour-step { font-size: 12px; font-weight: 650; color: var(--accent); letter-spacing: .04em; text-transform: uppercase; }
+.tour-acts { gap: 6px; margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .tour-hole, .tour-card { transition: none; } }
+@media print { #tour { display: none !important; } }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -1169,7 +1188,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 .sheetgrid { display: grid; gap: 22px; }
 .sheetgrid:not([data-tab="all"]) .sheet { display: none; }
 .sheetgrid[data-tab="overview"] [data-sheet="overview"], .sheetgrid[data-tab="inputs"] [data-sheet="inputs"], .sheetgrid[data-tab="outputs"] [data-sheet="outputs"], .sheetgrid[data-tab="mixes"] [data-sheet="mixes"],
-.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="floor"] [data-sheet="floor"], .sheetgrid[data-tab="rf"] [data-sheet="rf"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"], .sheetgrid[data-tab="spots"] [data-sheet="spots"] { display: grid; }
+.sheetgrid[data-tab="cables"] [data-sheet="cables"], .sheetgrid[data-tab="team"] [data-sheet="team"], .sheetgrid[data-tab="loadin"] [data-sheet="loadin"], .sheetgrid[data-tab="floor"] [data-sheet="floor"], .sheetgrid[data-tab="rf"] [data-sheet="rf"], .sheetgrid[data-tab="linecheck"] [data-sheet="linecheck"], .sheetgrid[data-tab="power"] [data-sheet="power"], .sheetgrid[data-tab="racks"] [data-sheet="racks"], .sheetgrid[data-tab="rider"] [data-sheet="rider"], .sheetgrid[data-tab="spots"] [data-sheet="spots"] { display: grid; }
 .sheetgrid:not([data-tab="all"]) .sheets2 { display: contents; }
 
 .snapwrap { border-radius: var(--r-md); overflow: hidden; background: var(--house); }
@@ -1717,6 +1736,7 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
     <div class="row" style="gap:8px"><button class="btn" id="aboutKeys">Keyboard shortcuts</button><button class="btn" id="aboutData">Backup &amp; restore</button></div>
   </div>
 </div>
+<div id="tour" hidden><div class="tour-hole" aria-hidden="true"></div><div class="tour-card" role="dialog" aria-labelledby="tourT" aria-describedby="tourB"><div class="tour-step" id="tourN"></div><h2 id="tourT"></h2><p id="tourB"></p><div class="row tour-acts"><button class="btn quiet" id="tourSkip">Close</button><span style="flex:1"></span><button class="btn" id="tourBack">Back</button><button class="btn primary" id="tourNext">Next</button></div></div></div>
 <div class="overlay" id="helpDlg" hidden>
   <div class="modal" role="dialog" aria-labelledby="helpTitle" style="width:min(460px,100%)">
     <div class="row" style="justify-content:space-between"><h2 id="helpTitle">Shortcuts</h2><button class="iconbtn" id="helpClose" aria-label="Close"></button></div>
@@ -1751,6 +1771,7 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
       <dt><span class="kbd">\</span></dt><dd>Focus: hide both panels</dd>
       <dt>Drag floor</dt><dd>Pan · pinch or Ctrl+scroll to zoom</dd>
     </dl>
+    <button class="btn block" id="helpTour" style="margin-top:12px">Take the 1-minute tour</button>
   </div>
 </div>
 
@@ -5178,6 +5199,21 @@ function loadinTasks() {   // what the crew does on the day, in the order they d
   return [['From storage', 'layers', fromStorage()], ['Batteries', 'zap', packs], ['Power', 'zap', power], ['Snake', 'cable', snake], ['Inputs', 'mic', ins], ['Instrument leads', 'cable', leads], ['Monitors & outputs', 'users', outs]].filter(([, , l]) => l.length);
 }
 const loadinState = () => (plan.loadin ||= {});
+// line check at soundcheck: every input heard at the desk, ticked off (or flagged) channel by channel; saved with the week, not an undo step
+const lineState = () => (plan.linecheck ||= {});
+function lineProgress(ins = inputSheet()) { const st = plan.linecheck || {}, live = ins.filter(r => !r.spare); return { done: live.filter(r => st[r.key] === 'ok').length, issue: live.filter(r => st[r.key] === 'issue').length, total: live.length }; }
+function lineCheckHtml(ins) {
+  const st = lineState(), live = ins.filter(r => !r.spare), g = lineProgress(ins), pct = g.total ? Math.round((g.done + g.issue) / g.total * 100) : 0;
+  if (!live.length) return `<section class="sheet" id="sec-linecheck" data-sheet="linecheck"><header><div><h2>Line check</h2></div></header><p class="hint">No inputs yet. Build the stage from the team first.</p></section>`;
+  return `<section class="sheet linecheck" id="sec-linecheck" data-sheet="linecheck"><header><div><h2>Line check</h2><p class="hint">At soundcheck, have each source played and tick it when it’s heard at the desk. Flag anything that isn’t right.</p></div></header>
+    <div class="lprog"><div class="lbar" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Line check progress"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} heard${g.issue ? ` · ${plural(g.issue, 'problem')}` : ''}</b>${g.done || g.issue ? '<button class="btn quiet" id="lineReset">Start again</button>' : ''}</div>
+    <div class="lclist">${live.map(r => { const v = st[r.key] || ''; return `<div class="lcrow${v ? ' ' + v : ''}">
+      <button class="lctick" data-line="${esc(r.key)}" aria-pressed="${v === 'ok'}" aria-label="Channel ${r.ch} ${esc(r.name)} heard">${v === 'ok' ? ic('check') : ''}</button>
+      <span class="ch">${esc(r.ch)}</span><span class="lcmain"><b>${esc(r.name)}</b><small>${esc([r.mic, r.p48 ? '48V' : '', r.person].filter(Boolean).join(' · '))}</small></span>
+      <button class="lcflag" data-lineflag="${esc(r.key)}" aria-pressed="${v === 'issue'}" title="${v === 'issue' ? 'Problem flagged. Click to clear' : 'Flag a problem: no signal, hum, crackle'}" aria-label="Problem with channel ${r.ch} ${esc(r.name)}">${ic('alert', 'sm')}</button></div>`; }).join('')}</div>
+    ${g.done === g.total && !g.issue ? `<p class="lcdone">${ic('check', 'sm')}Every channel heard. Line check done.</p>` : ''}
+  </section>`;
+}
 // switch on from the desk out to the speakers, so nothing pops through a live system; off is the same list backwards
 function powerOrder() {
   const on = plan.items.filter(i => (needsPower(i) || cat(i).shape === 'rack') && !isPowerSource(i));   // distros and sockets are live already
@@ -5242,7 +5278,7 @@ function chEditHtml(ins) {
     <p class="hint">Typing a number another input already has swaps the two. Mic, stand and 48V changes follow the input to every week.</p>`;
 }
 // the sheet tabs: plain words in groups (the event, the audio, the day), the open one underlined; only Overview flags checks
-const DOC_GROUPS = [['overview', 'rider', 'spots'], ['inputs', 'outputs', 'mixes', 'rf', 'cables', 'power', 'racks'], ['team', 'loadin', 'floor'], ['all']];
+const DOC_GROUPS = [['overview', 'rider', 'spots'], ['inputs', 'linecheck', 'outputs', 'mixes', 'rf', 'cables', 'power', 'racks'], ['team', 'loadin', 'floor'], ['all']];
 function docTabs(list, checks) {
   const by = new Map(list.map(t => [t[0], t]));
   return DOC_GROUPS.map(g => g.filter(id => by.has(id)).map(id => { const [, l] = by.get(id), warn = id === 'overview' && checks;
@@ -5355,7 +5391,7 @@ function renderPaper() {
       ${loads.map((wt, k) => { const pct = wt / cap; return `<tr class="${pct > 1 ? 'flag' : ''}"><td><span class="ch">${k + 1}</span></td><td class="mono">${Math.round(wt)} W · ${(wt / (Number(prop(src, 'volts')) || 230)).toFixed(1)} A</td><td><div class="meter"><span class="${pct > 1 ? 'bad' : pct > .8 ? 'warn' : ''}" style="width:${Math.min(100, pct * 100)}%"></span></div></td><td>${esc(items[k].map(itemName).join(', ')) || '<span class="hint">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`;
   }).join('') || '<p class="hint">Add a power distro or socket from the Gear tab.</p>';
-  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['mixes', 'Mixes', mixes.length], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless', plan.items.filter(i => cat(i).wireless).length]] : []), ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()], ['floor', 'Floor marks', floorMarks().length || undefined]].filter(n => n[0] !== 'checks' || w.length);
+  const nav = [['overview', 'Overview', w.length ? `${w.length} to check` : undefined], ['rider', 'Rider'], ['spots', 'My spot', plan.team.length || undefined], ['inputs', 'Inputs', ins.length], ['outputs', 'Outputs', outs.length], ['linecheck', 'Line check', (() => { const g = lineProgress(ins); return g.total ? `${g.done}/${g.total}` : undefined; })()], ['mixes', 'Mixes', mixes.length], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless', plan.items.filter(i => cat(i).wireless).length]] : []), ['cables', 'Cables', pull.reduce((s, r) => s + r.n, 0)], ['power', 'Power'], ['team', 'Team', plan.team.length], ['loadin', 'Load-in', (() => { const g = loadinProgress(); return g.total ? `${g.done}/${g.total}` : undefined; })()], ['floor', 'Floor marks', floorMarks().length || undefined]].filter(n => n[0] !== 'checks' || w.length);
   $('paperInner').innerHTML = `
     ${printDiffHtml()}
     <header class="doc-head${inkSave ? ' ink' : ''}">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
@@ -5374,6 +5410,7 @@ function renderPaper() {
     ${(() => { const sh = shortages(); return sh.length ? `<section class="sheet" id="sec-borrow" data-sheet="overview">${head('To borrow', '', 'More than you own (Home → Gear)')}<div class="tablewrap"><table><thead><tr><th>Gear</th><th style="text-align:right">Needed</th><th style="text-align:right">Own</th><th style="text-align:right">Borrow</th></tr></thead><tbody>${sh.map(x => `<tr><td>${esc(CAT[x.t].name)}</td><td class="num">${x.need}</td><td class="num">${x.own}</td><td class="num"><b>${x.short}</b></td></tr>`).join('')}</tbody></table></div></section>` : ''; })()}
     ${(() => { const nt = plan.items.filter(i => i.note); return nt.length ? `<section class="sheet" id="sec-notes" data-sheet="overview">${head('Notes', '', 'Pinned to people and gear on the plot')}<ul class="notelist">${nt.map(i => `<li><b>${esc(itemName(i))}</b><span>${esc(i.note)}</span></li>`).join('')}</ul></section>` : ''; })()}
     ${paperTab === 'spots' ? `<section class="sheet" id="sec-spots" data-sheet="spots"><header><div><h2>My spot</h2><p class="hint">A card for each person: where they stand, their channels, monitor, power and notes. Copy it into a message, or print one per page.</p></div><button class="btn primary" id="printSpots">${ic('sheet', 'sm')}Print every card</button><label class="spots4" for="spots4"><input type="checkbox" id="spots4" ${spots4 ? 'checked' : ''}> 4 to a page</label></header>${spotsHtml()}</section>` : ''}
+    ${paperTab === 'linecheck' ? lineCheckHtml(ins) : ''}
     ${paperTab === 'rider' ? `<section class="sheet" id="sec-rider" data-sheet="rider"><header><div><h2>Rider</h2><p class="hint">One black-and-white page for the venue: plot, scale, legend and inputs.</p></div><button class="btn primary" id="printRider">${ic('sheet', 'sm')}Print the rider</button></header>${riderHtml(ins)}</section>` : ''}
     <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')}. ${chans_().fixed !== false ? 'Channel numbers stay the same every week' + (spareChannels(ins).length ? `; ${plural(spareChannels(ins).length, 'spare channel')} this week` : '') : 'Numbered in band order'}. ${ins.filter(r => r.p48).length} need phantom power.${dIns.n || dIns.c ? ` Since ${shortDate(dIns.date)}: ${[dIns.n && `${dIns.n} new`, dIns.c && `${dIns.c} changed`].filter(Boolean).join(', ')}.` : ''}`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn${chEdit ? ' primary' : ''}" id="chEditBtn" aria-pressed="${chEdit}">${ic('pen', 'sm')}${chEdit ? 'Done' : 'Edit channels'}</button><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${chEdit ? chEditHtml(ins) : table([...ins, ...spareChannels(ins).map(x => ({ ch: x.ch, name: 'Spare', mic: x.usual ? `usually ${x.usual}` : '', stand: '', spare: true }))].sort((a, b) => a.ch - b.ch), inCols, 'flag', emptyBox('mic', 'No inputs yet', 'Mics, DIs and anything else that needs a channel shows up here.', 'team', 'Build from the team'))}${chEdit ? '' : boxKey(ins)}</section>
     <div class="sheets2">
@@ -5393,7 +5430,7 @@ function renderPaper() {
       ${fm.length ? `<div class="tablewrap"><table class="floortbl"><thead><tr><th>#</th><th>Mark</th><th style="text-align:right">From stage right</th><th style="text-align:right">Back from front</th><th>Size</th></tr></thead><tbody>${fm.map((m, k) => `<tr><td><span class="ch">${k + 1}</span></td><td>${esc(itemName(m.i))}${m.riser ? '<small class="hint" style="display:block">front stage-right corner</small>' : ''}</td><td class="mono" style="text-align:right">${uLen(m.across)}</td><td class="mono" style="text-align:right">${uLen(m.back)}</td><td class="mono">${m.size}</td></tr>`).join('')}</tbody></table></div>` : emptyBox('fit', 'Nothing on stage yet', 'Build the stage from the team and the marks appear here.', 'team', 'Build from the team')}</section>`; })()}
     ${(() => { const groups = loadinTasks(), g = loadinProgress(), st = loadinState(), store = inStorage(); if (!g.total && !store.length && powerOrder().length < 2) return ''; const pct = g.total ? Math.round(g.done / g.total * 100) : 0;
       return `<section class="sheet loadin" id="sec-loadin" data-sheet="loadin">${head('Load-in checklist', '', 'Tick things off as they’re set up. Saved with this week.')}${boxKey([...inputList(), ...outputList()])}
-        ${g.total ? `<div class="lprog" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Load-in progress"><div class="lbar"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} done</b>${g.done ? '<button class="btn quiet" id="loadinReset">Clear ticks</button>' : ''}</div>` : ''}
+        ${g.total ? `<div class="lprog"><div class="lbar" role="progressbar" aria-valuemin="0" aria-valuemax="${g.total}" aria-valuenow="${g.done}" aria-label="Load-in progress"><span style="width:${pct}%"></span></div><b>${g.done} of ${g.total} done</b>${g.done ? '<button class="btn quiet" id="loadinReset">Clear ticks</button>' : ''}</div>` : ''}
         ${groups.map(([title, icon, list]) => { const dn = list.filter(t => st[t.key]).length; return `<div class="lgroup"><h3>${ic(icon, 'sm')}${esc(title)} <span class="hint">${dn}/${list.length}</span>${title === 'Batteries' ? `<span class="battneed">${esc(battTotal(list.length))} needed</span><label class="battset"><span>Each takes</span><input type="text" id="battType" value="${esc(battType())}" aria-label="Batteries each pack takes" list="battList"></label><datalist id="battList">${['2 × AA', '1 × AA', '2 × AAA', '1 × 9V', 'Rechargeable'].map(v => `<option value="${v}">`).join('')}</datalist>` : ''}</h3>${list.map(t => `<label class="litem${st[t.key] ? ' done' : ''}"><input type="checkbox" data-chk="${esc(t.key)}" ${st[t.key] ? 'checked' : ''}><span><b>${esc(t.text)}</b><small>${esc(t.sub)}</small></span></label>`).join('')}</div>`; }).join('')}
         ${(() => { const po = powerOrder(); return po.length > 1 ? `<div class="lgroup poworder"><h3>${ic('zap', 'sm')}Switch-on order <span class="hint">desk first, speakers last; switch off the other way round</span></h3><div class="pocols"><ol>${po.map(([t, l]) => `<li><b>${esc(t)}</b><small>${esc(l.join(', '))}</small></li>`).join('')}</ol><div><h4>Switch off</h4><ol>${po.slice().reverse().map(([t]) => `<li>${esc(t)}</li>`).join('')}</ol></div></div></div>` : ''; })()}
         ${store.length ? `<div class="lgroup storage"><h3>${ic('layers', 'sm')}Stays in storage <span class="hint">owned, not used this week</span></h3><ul class="storelist">${store.map(x => `<li><b>${x.left}</b> × ${esc(CAT[x.t].name)}${gearWhere(x.t) ? `<small> · ${esc(gearWhere(x.t))}</small>` : ''}</li>`).join('')}</ul></div>` : ''}
@@ -6107,6 +6144,7 @@ function renderMoreMenu() {
       <button data-mm="picture"${dlCap === null ? ' hidden' : ''}>${ic('plot', 'sm')}Save plot as picture</button>
       <button data-mm="guide">${ic('check', 'sm')}${ui.guide ? 'Hide' : 'Show'} the setup guide</button>
       <button data-mm="help">${ic('keyboard', 'sm')}Keyboard shortcuts<span class="kbd">?</span></button>
+      <button data-mm="tour">${ic('fit', 'sm')}Take the tour</button>
       <button data-mm="about">${ic('sheet', 'sm')}About Stageplot</button>
       <button data-mm="data">${ic('save', 'sm')}Backup &amp; restore</button>
     </div>`;
@@ -6123,6 +6161,7 @@ $('moreMenu').addEventListener('click', e => {
   if (m.dataset.mm === 'guide') { setGuide(!ui.guide); if (ui.guide) { sel = null; group = null; togglePanel('insp', true); renderAll(); } }
   if (m.dataset.mm === 'help') $('helpBtn').click();
   if (m.dataset.mm === 'about') openAbout();
+  if (m.dataset.mm === 'tour') startTour();
   if (m.dataset.mm === 'present') setPresent(true);
   if (m.dataset.mm === 'picture') plotPicture();
   if (m.dataset.mm === 'library') openLibrary2();
@@ -6419,6 +6458,10 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#printDiffX')) { markPrinted(); renderPaper(); return; }
   const pv = e.target.closest('[data-pageview]'); if (pv) { pageView = pv.dataset.pageview === '1'; try { localStorage.setItem('stageplot.pages', pageView ? '1' : '0'); } catch { /* ignore */ } renderPaper(); return; }
   if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); printNow('print-rider', 'rider'); setTimeout(done, 1500); return; }
+  { const lt = e.target.closest('[data-line], [data-lineflag]'); if (lt) { const k = lt.dataset.line || lt.dataset.lineflag, want = lt.dataset.line ? 'ok' : 'issue', st = lineState(); if (st[k] === want) delete st[k]; else st[k] = want;
+    save(); const y = $('paperView').scrollTop; renderPaper(); $('paperView').scrollTop = y; document.querySelector(`[data-${lt.dataset.line ? 'line' : 'lineflag'}="${CSS.escape(k)}"]`)?.focus();
+    const g = lineProgress(); if (want === 'ok' && st[k] && g.done === g.total) toast('Line check done. Every channel heard'); return; } }
+  if (e.target.closest('#lineReset')) { plan.linecheck = {}; save(); renderPaper(); toast('Line check cleared'); return; }
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#picBtn')) { plotPicture(); return; }
   if (e.target.closest('#summaryBtn')) { copyText(weekSummary(), $('copyFallback')); return; }
@@ -7552,6 +7595,7 @@ function cmdItems() {
     ['Switch theme', 'auto', () => $('themeBtn').click()],
     ['Backup & restore', 'save', () => $('dataBtn').click()],
     ['Keyboard shortcuts', 'keyboard', () => { $('helpDlg').hidden = false; }],
+    ['Take the tour', 'fit', () => startTour()],
   ].map(([label, icon, run]) => ({ group: 'Actions', label, icon, run }));
   const gear = Object.entries(CAT).filter(([, c]) => !c.hidden).map(([t, c]) => ({ group: 'Add gear', label: `Add ${c.name}`, glyph: t, run: () => { if (view !== 'plot') { view = 'plot'; renderAll(); } addGear(t, snapTo(plan.stage.w / 2), snapTo(plan.stage.d / 2)); } }));
   const find = plan.items.filter(i => cat(i).shape !== 'platform').map(it => {
@@ -7643,6 +7687,45 @@ const loadRing = (done, total) => { const r = 6.5, c = 2 * Math.PI * r, k = tota
   return `<svg class="ldring${k >= 1 ? ' full' : ''}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="${r}"/><circle class="ldfill" cx="8" cy="8" r="${r}" stroke-dasharray="${(c * k).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 8 8)"/></svg>`; };
 /* Home for someone who hasn't planned a real week yet (only the example, or nothing with a team): a calm start card,
    the welcome screen's stage drawing and three steps that tick as they're done. Hidden for good once a week has a team. */
+// a one-minute walk round the app for a new volunteer: each stop lights up the real control and says what it's for
+const TOUR = [
+  ['tTeam', 'team', 'Your team', 'Add this week’s people here, paste a list, or import from Planning Center. Everyone gets a spot on stage and their usual gear.'],
+  ['tGear', 'gear', 'Gear', 'Tap something, then tap the stage to place it, or drag it on. What you added recently sits at the top.'],
+  ['@canvas', 'team', 'The stage', 'Drag anything to move it, click it to see its details on the right. Right-click, or press and hold on a tablet, for more.'],
+  ['@dock', '', 'Tools', 'Run cables, measure, show or hide layers, zoom, lock the setup, or turn the plot round to the band’s view.'],
+  ['checksBtn', '', 'What to check', 'Anything that needs a look before Sunday: unpatched inputs, power, gear on top of other gear. Click it for the list.'],
+  ['vPaper', '', 'Paperwork', 'Input list, rider, load-in, line check and My spot cards. Print, save a PDF, or copy a summary for the team chat.'],
+  ['vHome', '', 'Home', 'Every week you’ve planned, your venues, setups, the gear you own and settings. On a service day it opens with Today.'],
+  ['moreBtn', '', 'On the day', 'Show mode (F) puts the plot full screen for an iPad on stage. This tour is here too, whenever you want it again.'],
+];
+let tourAt = -1;
+const tourEl = k => k === '@canvas' ? document.querySelector('#plotView .canvas') : k === '@dock' ? $('ftools')?.firstElementChild : $(k);
+function startTour() { closePops?.(); $('helpDlg').hidden = true; view = 'plot'; tourAt = 0; renderAll(); showTour(); }
+function endTour() { tourAt = -1; $('tour').hidden = true; try { localStorage.setItem('stageplot.toured', '1'); } catch { /* ignore */ } }
+function showTour() {
+  const [k, rail, title, text] = TOUR[tourAt], body = innerWidth < 761 ? text.replace('on the right', 'below the plot') : text;
+  if (rail && railTab !== rail) { railTab = rail; renderRail(); }
+  const el = tourEl(k), box = $('tour'); box.hidden = false;
+  el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  const r = el?.getBoundingClientRect() || { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0, right: innerWidth / 2, bottom: innerHeight / 2 }, pad = 6;
+  const hole = box.querySelector('.tour-hole');
+  Object.assign(hole.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+  $('tourN').textContent = `${tourAt + 1} of ${TOUR.length}`; $('tourT').textContent = title; $('tourB').textContent = body;
+  $('tourBack').disabled = tourAt === 0; $('tourNext').textContent = tourAt === TOUR.length - 1 ? 'Done' : 'Next';
+  const card = box.querySelector('.tour-card'), cw = Math.min(340, innerWidth - 24), big = r.height > innerHeight * .5;
+  card.style.width = `${cw}px`;
+  const ch = card.offsetHeight, below = r.bottom + 14 + ch < innerHeight, above = r.top - 14 - ch > 0;
+  const top = big ? r.top + r.height / 2 - ch / 2 : below ? r.bottom + 14 : above ? r.top - 14 - ch : innerHeight - ch - 12;
+  card.style.top = `${Math.max(12, Math.min(innerHeight - ch - 12, top))}px`;
+  card.style.left = `${Math.max(12, Math.min(innerWidth - cw - 12, (big ? r.left + r.width / 2 : r.left + r.width / 2) - cw / 2))}px`;
+  $('tourNext').focus();
+}
+$('tourNext').onclick = () => { if (tourAt >= TOUR.length - 1) { endTour(); toast('That’s the tour. Have a go: everything can be undone'); return; } tourAt++; showTour(); };
+$('tourBack').onclick = () => { if (tourAt > 0) { tourAt--; showTour(); } };
+$('tourSkip').onclick = endTour;
+$('helpTour').onclick = startTour;
+document.addEventListener('keydown', e => { if (tourAt < 0) return; if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); endTour(); } else if (e.key === 'ArrowRight') { e.preventDefault(); $('tourNext').click(); } else if (e.key === 'ArrowLeft') { e.preventDefault(); $('tourBack').click(); } }, true);
+addEventListener('resize', () => { if (tourAt >= 0) showTour(); });
 function firstRunCard() {
   const real = Object.values(db.plans).filter(p => !/^Example week/.test(p.name || ''));
   if (real.some(p => p.team.length)) return '';
@@ -7651,7 +7734,7 @@ function firstRunCard() {
   return `<section class="startcard"><div class="startart" aria-hidden="true"><svg viewBox="0 0 120 50"><path d="M10 8H110V34H76V44H44V34H10Z" fill="none" stroke="#f0b429" stroke-width="1.6" stroke-dasharray="4 2.4"/><circle cx="42" cy="22" r="4" fill="#f0b429"/><circle cx="60" cy="18" r="4" fill="#8f7cd4"/><circle cx="78" cy="22" r="4" fill="#f0b429"/></svg></div>
     <div class="startmain"><div class="eyebrow">Getting started</div><h2>Plan your first service</h2>
       <ol class="startsteps">${steps.map(([done, t, sub], i) => `<li class="${done ? 'done' : ''}"><span class="sn">${done ? ic('check', 'sm') : i + 1}</span><span><b>${t}</b><small>${sub}</small></span></li>`).join('')}</ol>
-      <div class="row" style="gap:8px">${drawn ? `<button class="btn primary" data-startgo="team">${ic('users', 'sm')}Add the team</button>` : `<button class="btn primary" data-startgo="draw">${ic('pen', 'sm')}Draw my stage</button>`}<button class="btn quiet" data-startgo="hide">Hide this</button></div>
+      <div class="row" style="gap:8px">${drawn ? `<button class="btn primary" data-startgo="team">${ic('users', 'sm')}Add the team</button>` : `<button class="btn primary" data-startgo="draw">${ic('pen', 'sm')}Draw my stage</button>`}<button class="btn quiet" data-startgo="tour">Take the 1-minute tour</button><button class="btn quiet" data-startgo="hide">Hide this</button></div>
       ${drawn ? '' : '<p class="hint">Drawing your stage replaces the example week.</p>'}</div></section>`;
 }
 function calStrip() {
@@ -7734,6 +7817,7 @@ $('homeView').addEventListener('click', e => {
     venueDelArmed = ''; delete venues()[id]; if (lib.venue === id) lib.venue = ''; save(); renderAll(); toast(`Deleted ${V.name}`, { label: 'Undo', fn: () => { venues()[id] = V; save(); renderAll(); } }); return; }
   if (t.dataset.startgo === 'draw') { view = 'plot'; renderAll(); openDesigner(true); return; }
   if (t.dataset.startgo === 'team') { const w = Object.values(db.plans).find(p => p.stage.set && !/^Example week/.test(p.name || '')); view = 'plot'; railTab = 'team'; if (w) switchWeek(w.id); else renderAll(); return; }
+  if (t.dataset.startgo === 'tour') { startTour(); return; }
   if (t.dataset.startgo === 'hide') { try { localStorage.setItem('stageplot.startHidden', '1'); } catch { /* ignore */ } renderHome(); return; }
   if (t.dataset.calopen) { view = 'plot'; switchWeek(t.dataset.calopen); return; }
   if (t.dataset.calnew) { const vid = venues()[lib.venue] ? lib.venue : venueOf(plan)?.id, np = blankPlan(t.dataset.calnew, vid); db.plans[np.id] = np; view = 'plot'; railTab = 'team'; switchWeek(np.id); toast(`Started ${longDate(np.date)}${multiVenue() ? ` at ${venues()[vid]?.name}` : ''}`); return; }
@@ -7759,7 +7843,7 @@ $('homeView').addEventListener('click', e => {
   if (t.id === 'libResetGo') { resetAll(); return; }
   if (t.id === 'libRestore') { restoreBeforeReset(); return; }
   if (t.dataset.today) { const id = t.dataset.week; if (id !== plan.id) switchWeek(id); const k = t.dataset.today;
-    if (k === 'show') { view = 'plot'; renderAll(); setPresent(true); } else if (k === 'loadin') { view = 'paper'; paperTab = 'loadin'; renderAll(); } else { view = 'plot'; if (k === 'team') railTab = 'team'; renderAll(); }
+    if (k === 'show') { view = 'plot'; renderAll(); setPresent(true); } else if (k === 'loadin' || k === 'linecheck') { view = 'paper'; paperTab = k; renderAll(); } else { view = 'plot'; if (k === 'team') railTab = 'team'; renderAll(); }
     return; }
   if (t.dataset.merge) { mergeNames(t.dataset.merge); return; }
   if (t.dataset.mergeskip) { (db.nameSkip ||= []).push(t.dataset.mergeskip); save(); renderHome(); return; }
@@ -7853,7 +7937,7 @@ function todayCard() {
       ${g.total ? `<div class="td-load"><div class="lbar"><span style="width:${pct}%"></span></div><span>Load-in <b>${g.done} of ${g.total}</b></span></div>` : ''}
       ${chg ? `<p class="td-chg">${ic('calendar', 'sm')}${plural(chg, 'change')} from Planning Center to look at</p>` : ''}</div>
     <div class="td-clock" id="todayClock" aria-hidden="true">${esc(now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</div>
-    <div class="td-acts"><button class="btn primary" data-today="show" data-week="${w.id}">${ic('fit', 'sm')}Show mode</button><button class="btn" data-today="loadin" data-week="${w.id}">${ic('check', 'sm')}Load-in checklist</button><button class="btn" data-today="plot" data-week="${w.id}">${ic('plot', 'sm')}Open the plot</button>${chg ? `<button class="btn" data-today="team" data-week="${w.id}">${ic('users', 'sm')}See the changes</button>` : ''}</div>
+    <div class="td-acts"><button class="btn primary" data-today="show" data-week="${w.id}">${ic('fit', 'sm')}Show mode</button><button class="btn" data-today="loadin" data-week="${w.id}">${ic('check', 'sm')}Load-in checklist</button><button class="btn" data-today="linecheck" data-week="${w.id}">${ic('mic', 'sm')}Line check</button><button class="btn" data-today="plot" data-week="${w.id}">${ic('plot', 'sm')}Open the plot</button>${chg ? `<button class="btn" data-today="team" data-week="${w.id}">${ic('users', 'sm')}See the changes</button>` : ''}</div>
   </section>`;
 }
 setInterval(() => { const c = $('todayClock'); if (!c) return; const w = todayWeek(); c.textContent = new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); const n = $('todayNext'); if (n && w) n.textContent = nextUp(w) || n.textContent; }, 20000);
