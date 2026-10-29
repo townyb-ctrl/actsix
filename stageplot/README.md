@@ -238,7 +238,7 @@ Weeks auto-save in the browser (localStorage). Use **Save / load** to copy or do
 - A "Saved" tick in the header confirms every change is stored.
 - **Cables in Layers**: one switch shows or hides every cable (also `H`), *All / Audio / Power* quick views, then only the cable types this plot actually uses, each with its count and an eye to hide it, plus ceiling runs and cables inside channels. *Display* holds *Quiet until selected*; Advanced adds flow arrows and flow animation. Animated flow pulses move in step on every cable, and keep moving while cables are quiet. Your choices stay in your browser.
 - Hide the left or right panel with the header buttons, `[` and `]`, or press `\` for focus mode (both hidden). The left panel shrinks to an icon strip; with the right panel hidden, a small card over the plot keeps rotate / duplicate / delete for whatever you select.
-- Drag the floor to pan; pinch or Ctrl+scroll to zoom. **Stage** / **Room** buttons refit the view.
+- Drag the floor to pan; pinch, or scroll with Alt (Option on a Mac) or Ctrl held, to zoom round the pointer. **Stage** / **Room** buttons refit the view.
 - Drag gear from the Gear tab onto the stage, or click it to drop centre stage.
 - Every change can be undone; toasts offer one-click undo. Theme follows your system or can be set with the half-circle button.
 

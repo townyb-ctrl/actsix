@@ -1773,7 +1773,7 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
       <dt>Hold <span class="kbd">Alt</span></dt><dd>Move without snapping to guides (snap size: click the empty floor)</dd>
       <dt><span class="kbd">[</span><span class="kbd">]</span></dt><dd>Hide left / right panel</dd>
       <dt><span class="kbd">\</span></dt><dd>Focus: hide both panels</dd>
-      <dt>Drag floor</dt><dd>Pan · pinch or Ctrl+scroll to zoom</dd>
+      <dt>Drag floor</dt><dd>Pan · pinch, or scroll with Alt or Ctrl held, to zoom</dd>
     </dl>
     <button class="btn block" id="helpTour" style="margin-top:12px">Take the 1-minute tour</button>
   </div>
@@ -5820,9 +5820,10 @@ svg.addEventListener('contextmenu', e => { if (e.isTrusted && Date.now() - lp.fi
 setTimeout(() => { try { if (!CSS.supports('color', 'color-mix(in srgb, red, blue)') && !sessionStorage.getItem('stageplot.oldBrowser')) { sessionStorage.setItem('stageplot.oldBrowser', '1'); toast('This browser is out of date, so some colours may look off. Updating it fixes this.'); } } catch { /* ignore */ } }, 1200);
 document.addEventListener('gesturestart', e => { if (scroller.contains(e.target)) e.preventDefault(); });   // Safari's own page zoom
 scroller.addEventListener('wheel', e => {
-  if (!(e.ctrlKey || e.metaKey)) return;
+  if (!(e.ctrlKey || e.metaKey || e.altKey)) return;   // Ctrl, Cmd or Alt (Option) with the wheel zooms round the pointer; trackpad pinch arrives as Ctrl
   e.preventDefault();
-  zoomAt(Math.exp(-e.deltaY * .0025), e.clientX, e.clientY);
+  const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;   // some mice report lines, not pixels
+  zoomAt(Math.exp(-dy * .0025), e.clientX, e.clientY);
 }, { passive: false });
 // drag gear from the library onto the stage
 $('canvas').addEventListener('dragover', e => { if ([...e.dataTransfer.types].includes('text/plain')) { e.preventDefault(); $('canvas').classList.add('droptarget'); } });
