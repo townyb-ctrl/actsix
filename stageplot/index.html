@@ -371,6 +371,9 @@ details.paste > div { display: grid; gap: 8px; margin-top: 8px; }
 .emptycard { pointer-events: auto; background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-2); padding: 22px 24px; display: grid; gap: 8px; text-align: center; max-width: 520px; margin: 16px; }
 .emptycard h3 { font-size: 18px; font-weight: 700; }
 .statuspill { display: inline-flex; align-items: center; gap: 4px; }
+.offchip { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 999px; background: color-mix(in srgb, var(--warn, #d97706) 16%, transparent); color: var(--warn-ink, var(--ink)); font-size: 12.5px; font-weight: 650; white-space: nowrap; }
+.offchip[hidden] { display: none; }
+@media (max-width: 760px) { .offchip span { display: none; } }
 .lockchip { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .lockchip:hover { color: var(--ink); border-color: var(--line-2, var(--muted)); }
 .lockchip.open { background: transparent; color: var(--muted); border-style: dashed; }
@@ -724,7 +727,7 @@ details.more > .isec:first-of-type { border-top: 1px solid var(--line); }
 .legend button[aria-pressed="false"] { color: var(--muted); text-decoration: line-through; }
 .legend button[aria-pressed="false"] .sw { opacity: .3; }
 .cabwrap { position: static; }   /* the Layers menu centres over the whole dock, so it never runs off a phone screen */
-@media (max-width: 600px) { #zOut, #zIn, .zoomval { display: none; } }   /* phones pinch to zoom; keeps the dock on screen in Advanced */
+@media (max-width: 600px) { #zOut, #zIn, .zoomval, #flipView, #setupLock { display: none; } }   /* phones pinch to zoom; flip and the setup lock are in search (Ctrl+K) */   /* phones pinch to zoom; keeps the dock on screen in Advanced */
 .cabmenu { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); width: min(290px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-3); padding: 6px; display: grid; gap: 1px; z-index: 6; }
 .cm-row { display: grid; grid-template-columns: 18px 1fr auto 18px; gap: 10px; align-items: center; border: 0; background: transparent; padding: 7px 8px; border-radius: var(--r-sm); cursor: pointer; text-align: left; font-size: 13px; color: var(--ink); }
 .cm-row:hover:not(:disabled) { background: var(--surface-2); }
@@ -1124,7 +1127,7 @@ tr.flag td { color: var(--bad); }
 #plot.flipped { rotate: 180deg; }
 #plot.flipped text:not([transform]) { transform-box: fill-box; transform-origin: center; rotate: 180deg; }   /* side labels already turned sideways read fine either way */
 #plotView.flipview .canvas::after { content: 'Seen from the stage'; position: absolute; left: 50%; top: 12px; translate: -50% 0; padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 12px; font-weight: 650; pointer-events: none; z-index: 5; }
-#flipView[aria-pressed="true"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+#setupLock[aria-pressed="true"], #flipView[aria-pressed="true"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .selmore { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; }
 .libmain mark { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--ink); border-radius: 3px; padding: 0 2px; }
 .spots4 { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); margin-left: 10px; } .spots4 input { accent-color: var(--accent); }
@@ -1143,6 +1146,18 @@ tr.flag td { color: var(--bad); }
 .td-acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
 .todaycard .btn:not(.primary) { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.18); } .todaycard .btn:not(.primary):hover { background: rgba(255,255,255,.18); }
 @media (max-width: 600px) { .todaycard { grid-template-columns: 1fr; } .td-clock { order: -1; font-size: 40px; } }
+.chtag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; vertical-align: 1px; cursor: help; }
+.chtag.new { background: color-mix(in srgb, var(--ok, #16a34a) 16%, transparent); color: var(--ok-ink, var(--ok)); } .chtag.changed { background: color-mix(in srgb, var(--warn, #d97706) 18%, transparent); color: var(--warn-ink, var(--ink)); }
+@media print { .chtag { border: 1px solid #888; background: none !important; color: #111 !important; } }
+@media print { *, *::before, *::after { animation: none !important; transition: none !important; } }   /* paper never catches a drawing halfway through its fade-in */
+#sec-blank { display: none !important; }
+@media print {
+  body.print-blank .doc-head, body.print-blank .sheetgrid > :not(#sec-blank), body.print-blank .sheets2, body.print-blank .printdiff { display: none !important; }
+  body.print-blank #sec-blank { display: grid !important; gap: 6mm; break-before: auto !important; }
+  body.print-blank .bl-plot { background: #fff !important; border: .3mm solid #ccc; } body.print-blank .bl-plot .house-fill { fill: #fff; } body.print-blank .bl-plot .house-dots { display: none; }
+  body.print-blank .bl-plot .snap { width: 100% !important; height: auto !important; max-height: 190mm !important; }
+  .bl-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 10mm; } .bl-line { display: flex; align-items: flex-end; gap: 3mm; font-size: 9pt; color: #444; } .bl-line i { flex: 1; border-bottom: .3mm solid #888; height: 6mm; } .bl-line:nth-child(n+4) { grid-column: 1 / -1; }
+}
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -1581,6 +1596,7 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
     <button class="iconbtn" id="railToggle" aria-label="Show or hide the left panel" title="Left panel ( [ )"></button>
     <button class="iconbtn" id="inspToggle" aria-label="Show or hide the right panel" title="Right panel ( ] )"></button>
     <span class="vsep"></span>
+    <span class="offchip" id="offChip" role="status" hidden></span>
     <button class="lockchip" id="lockBtn" hidden></button>
     <span class="saved ok" id="savedInd"></span>
     <button class="iconbtn" id="undoBtn" aria-label="Undo" title="Undo (Ctrl+Z)"></button>
@@ -1989,6 +2005,9 @@ let sel = null;                 // {kind:'item'|'cable', id}
 // so anything that selects something else drops the group without having to know about it.
 let group = null;               // {anchor, ids:Set}
 const selIds = () => sel?.kind === 'item' ? (group && group.anchor === sel.id ? [...group.ids].filter(itemById) : [sel.id].filter(itemById)) : [];   // a person removed from the team takes their gear, and the selection with it
+// "lock the setup": the stage's fixed things (risers, stage box, racks, desks, speakers, power) stay put while band gear moves; per week
+const isFixed = i => { const C = cat(i); return (!i.personId || C.shape === 'platform') && (['platform', 'rack', 'speaker', 'desk'].includes(C.shape) || isPowerSource(i) || ['stagebox', 'iem_rack', 'drum_shield'].includes(i.type)); };
+const frozen = i => !!i && (!!i.locked || (!!plan.setupLock && isFixed(i)));
 const manyOf = n => { const w = /^[A-Z0-9 ]+$/.test(n) ? n : n.toLowerCase(); return /s$/i.test(w) ? w : w + 's'; };   // "wedges", "IEMs", "DIs"
 function setGroup(ids) {
   ids = [...new Set(ids)].filter(itemById);
@@ -2658,7 +2677,33 @@ function inputMeta(r) {
   if (o.mic) mic = o.mic; if (o.stand) stand = o.stand; if (o.p48 !== undefined) p48 = !!o.p48;
   return { mic, stand, p48, group, colour: IN_GROUPS[group], edited: !!(r.key && db?.channels?.meta?.[r.key]) };
 }
+// the week as a message for WhatsApp or a group text: plain lines, no tables
+function weekSummary() {
+  const L = [`*${plan.name || 'Service'}* · ${longDate(plan.date)}${multiVenue() ? ` · ${venueOf(plan)?.name || ''}` : ''}`];
+  const tm = timesLine(); if (tm) L.push(tm);
+  const on = plan.team.filter(t => t.name || t.role);
+  if (on.length) L.push('', `On (${on.length}):`, ...on.map(t => `• ${t.name || 'TBC'}${t.role ? ` · ${t.role}${t.sings ? ' + vocals' : ''}` : ''}`));
+  const pid = prevWeekId();
+  if (pid) { const old = db.plans[pid], d = weekChanges(old), bits = [...d.joined.map(n => `+ ${n}`), ...d.left.map(n => `− ${n} off`), ...d.gear.slice(0, 4).map(g => `${g.d > 0 ? '+' : '−'} ${Math.abs(g.d) > 1 ? Math.abs(g.d) + ' × ' : ''}${CAT[g.t].name}`), ...(d.moved.length ? [`Moved: ${d.moved.slice(0, 4).join(', ')}${d.moved.length > 4 ? ` +${d.moved.length - 4}` : ''}`] : [])];
+    if (bits.length) L.push('', `Different from ${shortDate(old.date)}:`, ...bits); }
+  const g = loadinProgress(); if (g.total) L.push('', `Load-in: ${g.total} jobs${g.done ? `, ${g.done} done` : ''}`);
+  if (plan.notes) L.push('', plan.notes);
+  return L.join('\n');
+}
 const inputSheet = () => inputList().map(r => ({ ...r, ...inputMeta(r) }));
+// what the desk needs to know since last week: inputs that are new, and ones whose channel, mic, stand, 48V or patch moved
+function inputDeltas(ins) {
+  const pid = prevWeekId(); if (!pid) return { n: 0, c: 0 };
+  const keep = plan; let old = []; try { plan = db.plans[pid]; old = inputSheet(); } finally { plan = keep; }
+  const by = new Map(old.map(r => [r.key, r])); let n = 0, c = 0;
+  for (const r of ins) {
+    if (r.spare) continue;
+    const o = by.get(r.key); if (!o) { r.delta = 'new'; r.deltaWhy = 'Not on last week’s list'; n++; continue; }
+    const why = [o.ch !== r.ch && `channel ${o.ch} → ${r.ch}`, o.mic !== r.mic && `mic ${o.mic} → ${r.mic}`, o.stand !== r.stand && `stand ${o.stand} → ${r.stand}`, !!o.p48 !== !!r.p48 && (r.p48 ? '48V on' : '48V off'), o.port !== r.port && `patch ${o.port} → ${r.port}`].filter(Boolean);
+    if (why.length) { r.delta = 'changed'; r.deltaWhy = why.join(', '); c++; }
+  }
+  return { n, c, date: db.plans[pid].date };
+}
 const csvCell = v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
 const csv = (rows, cols) => [cols.map(c => c[0]), ...rows.map(r => cols.map(c => typeof c[1] === 'function' ? c[1](r) : r[c[1]]))].map(l => l.map(csvCell).join(',')).join('\r\n') + '\r\n';
 function exportInputs(kind) {
@@ -2970,6 +3015,21 @@ function pcoChangesHtml() {
   const c = pco.changes; if (!c || c.week !== plan.id) return '';
   const bits = [...c.gone.map(g => `<li class="rem">${esc(g.name)} ${g.declined ? 'declined' : 'is no longer scheduled'}</li>`), ...c.added.map(e => `<li class="add">${esc(e.name)} added · ${esc(e.role)}${e.sings ? ' + sings' : ''}</li>`), ...(c.moved || []).map(m => `<li class="time">${esc(m.l)} ${m.from ? `${esc(fmtTime(m.from))} → ` : 'now '}${esc(fmtTime(m.to))}</li>`)];
   return `<div class="pcochg" role="status"><div class="pcochg-h">${ic('calendar', 'sm')}<b>Planning Center changed</b></div><ul>${bits.join('')}</ul><div class="row" style="gap:6px"><button class="btn primary" id="pcoChgApply">${c.gone.length || c.added.length ? 'Update the stage' : 'Update the times'}</button><button class="btn quiet" id="pcoChgSkip">Not now</button></div></div>`;
+}
+// one click from this week to the next Planning Center plan: start (or open) that week with this stage, then pull its team and times
+async function nextFromPco() {
+  if (!pco.mcp) { toast('Planning Center works when Stageplot is open in Claude, with Planning Center connected'); return; }
+  const from = plan.date, want = plan.pco?.typeId;
+  toast('Finding the next plan in Planning Center…');
+  await pcoLoadTypes(); if (pco.err) { toast(pco.err); return; }
+  if (want && want !== pco.typeId && pco.types.some(t => t.id === want)) { pco.typeId = want; await pcoRun('Loading plans…', pcoLoadPlansInner); if (pco.err) { toast(pco.err); return; } }
+  const pl = pco.plans.filter(x => x.date > from).sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!pl) { toast(`No plan after ${shortDate(from)} in ${pco.types.find(t => t.id === pco.typeId)?.name || 'Planning Center'} yet`); return; }
+  const there = Object.values(db.plans).find(w => w.venueId === plan.venueId && w.date === pl.date);
+  if (there) switchWeek(there.id); else newWeek(true);
+  pco.planId = pl.id; await pcoLoadRoster(); if (pco.err) { toast(pco.err); return; }
+  if (!pco.picked.size) { view = 'plot'; railTab = 'team'; renderAll(); toast(`${pl.dates}: no one on your chosen teams yet. Pick people in the Team tab`); return; }
+  pcoApply(); view = 'plot'; railTab = 'team'; renderAll();
 }
 function pcoApply() {
   const chosen = pco.roster.filter(e => pco.picked.has(e.key));
@@ -4205,7 +4265,7 @@ function renderPlot() {
   const labCands = [...zoneCands], obstacles = [], risers = [];
   for (const it of sorted) {
     const C = cat(it), iw = Number(prop(it, 'w')), id = Number(prop(it, 'd')), L = layerOf(it);
-    const g = `<g class="item${C.shape === 'person' ? ' is-person' : C.shape === 'platform' ? ' is-floor' : C.cat === 'inst' ? ' is-inst' : ''}${selSet.has(it.id) ? ' picked' : ''}${it.chan ? ' inchan' : ''}${it.locked ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}${fset?.has(it.id) ? ' infocus' : ''}${lifted?.has(it.id) && C.shape !== 'platform' ? ' lifting' : settling.has(it.id) ? ' settle' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}"><g class="liftg">${shapeSvg(it, iw, id)}</g></g>`;
+    const g = `<g class="item${C.shape === 'person' ? ' is-person' : C.shape === 'platform' ? ' is-floor' : C.cat === 'inst' ? ' is-inst' : ''}${selSet.has(it.id) ? ' picked' : ''}${it.chan ? ' inchan' : ''}${frozen(it) ? ' locked' : ''}${tr?.items.has(it.id) ? ' intrace' : ''}${fset?.has(it.id) ? ' infocus' : ''}${lifted?.has(it.id) && C.shape !== 'platform' ? ' lifting' : settling.has(it.id) ? ' settle' : ''}" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot || 0})" role="img" aria-label="${esc(itemName(it))}${it.note ? ' — ' + esc(it.note) : ''}"><g class="liftg">${shapeSvg(it, iw, id)}</g></g>`;
     if (L < 1) s += g; else top += g;
     if ((C.wireless || C.iem) && !layersBypass) { const [rw, rh] = halfExt(it), k = 1 / scale; top += `<g class="rfmark" transform="translate(${f3(it.x + rw * .7)} ${f3(it.y - rh * .7)}) scale(${f3(k)})" aria-hidden="true"><circle r="5.5"/><path d="M-2.6 -.6a3.7 3.7 0 0 1 5.2 0M-1.3 .9a1.85 1.85 0 0 1 2.6 0"/><circle class="rfdot" cy="2.2" r=".9"/></g>`; }   // wireless: a little signal mark instead of a plug
     if (it.note && !layerOff('labels')) { const m = Math.max(iw, id) / 2 * .72; top += `<g class="notebadge" data-id="${it.id}" transform="translate(${f3(it.x + m)} ${f3(it.y - m)})"><title>${esc(it.note)}</title><circle r=".45"/><path d="M-.2 -.14h.4M-.2 0h.4M-.2 .14h.26"/></g>`; }   // a note pinned to the gear   // cables run under the gear, so plugs disappear beneath it instead of crossing it
@@ -4234,7 +4294,7 @@ function renderPlot() {
       const m = C.shape === 'platform' ? 0 : Math.max(iw, id) / 2 + .3, k = 11 / scale / 12, bx = it.x + (C.shape === 'platform' ? iw / 2 : m), by = it.y - (C.shape === 'platform' ? id / 2 : m);
       selb += `<g class="lockbadge" transform="translate(${f3(bx)} ${f3(by)}) scale(${f3(k)})"><circle r="12"/><g transform="translate(-12 -12) scale(1)">${ICONS.lock}</g></g>`;
     }
-    if (isSel && C.shape === 'platform' && solo && !it.locked) {   // exact outline + corner handles to resize
+    if (isSel && C.shape === 'platform' && solo && !frozen(it)) {   // exact outline + corner handles to resize
       const th = (it.rot || 0) * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th), hs = 6 / scale;
       const corner = (sx, sy) => [it.x + sx * iw / 2 * cs - sy * id / 2 * sn, it.y + sx * iw / 2 * sn + sy * id / 2 * cs];
       const cs4 = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => [sx, sy, ...corner(sx, sy)]);
@@ -4252,7 +4312,7 @@ function renderPlot() {
       else { const pad = .26, ew = iw / 2 + pad, ed = id / 2 + pad, rx = f3(Math.min(ew, ed) * .4), tr = `translate(${it.x} ${it.y}) rotate(${it.rot || 0})`;   // the ring follows the gear's own shape and angle
         m = halfExt(it)[1] + pad;
         selb += `<rect class="selglow" transform="${tr}" x="${f3(-ew)}" y="${f3(-ed)}" width="${f3(2 * ew)}" height="${f3(2 * ed)}" rx="${rx}"/><rect class="selbox" transform="${tr}" x="${f3(-ew)}" y="${f3(-ed)}" width="${f3(2 * ew)}" height="${f3(2 * ed)}" rx="${rx}"/>`; }
-      if (solo && !it.locked && (mode === 'select' || mode === 'box')) {   // drag the knob to rotate (15° steps, Alt for free)
+      if (solo && !frozen(it) && (mode === 'select' || mode === 'box')) {   // drag the knob to rotate (15° steps, Alt for free)
         const ky = it.y - m - 16 / scale;
         selb += `<line class="rotstem" x1="${it.x}" y1="${f3(it.y - m)}" x2="${it.x}" y2="${f3(ky)}"/><circle class="roth" data-rot="${it.id}" cx="${it.x}" cy="${f3(ky)}" r="${f3(6 / scale)}"><title>Drag to rotate</title></circle>`;
       }
@@ -4458,6 +4518,7 @@ function renderFloat() {
       ${ui.adv ? `<span class="zoomval" title="Zoom">${Math.round(scale / fitScale() * 100)}%</span>` : ''}
       <button class="iconbtn" id="zIn" aria-label="Zoom in" title="Zoom in (+)">${ic('plus')}</button>
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
+      <button class="iconbtn" id="setupLock" aria-pressed="${!!plan.setupLock}" aria-label="${plan.setupLock ? 'Unlock the setup' : 'Lock the setup'}" title="${plan.setupLock ? 'Setup locked: risers, stage box, speakers and power stay put. Click to unlock' : 'Lock the setup: risers, stage box, speakers and power stay put while you move band gear'}">${ic(plan.setupLock ? 'lock' : 'unlock')}</button>
       <button class="iconbtn" id="flipView" aria-pressed="${flipped}" aria-label="${flipped ? 'See it from the house' : 'See it from the stage'}" title="${flipped ? 'Back to the view from the house' : 'Turn the plot round: the band’s view, looking out at the audience'}">${ic('rotate')}</button>
     </div>`;
   $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip accent">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${`<button class="ctype" data-ctype="auto" aria-pressed="${cableType === 'auto'}" title="Pick the type from the two ends">${ic('wand', 'sm')}Auto</button>` + Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
@@ -4546,6 +4607,7 @@ function renderWeekPop() {
     <div class="field"><span>Start next week</span><div class="grid2">
       <button class="btn" id="newCopy" title="Copy everything, team included">${ic('copy', 'sm')}Copy this week</button>
       <button class="btn" id="newStage" title="Same stage and infrastructure, no team">${ic('room', 'sm')}Stage only</button>
+      ${pco.mcp ? `<button class="btn primary" id="newPco" style="grid-column:1/-1" title="Start the next week with this stage and bring in its Planning Center plan: team and times">${ic('calendar', 'sm')}Next plan from Planning Center</button>` : ''}
     </div><div class="row aheadrow" style="gap:6px;flex-wrap:nowrap;margin-top:6px"><label for="aheadN" class="hint" style="white-space:nowrap">Plan ahead</label><select id="aheadN" aria-label="How many weeks ahead">${[2, 3, 4, 6, 8].map(n => `<option value="${n}" ${n === 4 ? 'selected' : ''}>next ${n} weeks</option>`).join('')}</select><button class="btn" id="aheadGo" title="Copy this week, team included, to each of the following weeks that has nothing planned yet">${ic('calendar', 'sm')}Copy</button>
     </div></div>
     <div class="field"><span>Clear this week <small class="hint" style="font-weight:400">Undo brings it back</small></span><div class="grid2">
@@ -5200,6 +5262,21 @@ function centreTab() {   // on a phone the tab row scrolls: keep the open sheet'
 // print options: which sheets go to paper, and whether the stage plot prints to a true scale (per browser)
 let printPop = false;
 let spots4 = (() => { try { return localStorage.getItem('stageplot.spots4') === '1'; } catch { return false; } })();   // My spot cards four to a page, to save paper
+// a blank stage to draw on: the outline, rulers and grid, nothing on it, white paper, with lines to write on
+function blankSheetHtml() {
+  const keep = plan; let snap = '';
+  try { plan = { ...keep, items: [], cables: [], stage: { ...keep.stage, color: '#ffffff' } }; delete plan.stage.texture; snap = cropToStage(plotSnapshot()); } finally { plan = keep; }
+  const line = l => `<div class="bl-line"><span>${l}</span><i></i></div>`;
+  return `<section class="sheet" id="sec-blank"><header><div><h2>${esc(venueOf(plan)?.name || 'Stage')} · ${uDim(plan.stage.w, plan.stage.d)}</h2><p class="hint">Upstage at the top, audience below. Grid every ${imperial() ? '2 ft' : '50 cm'}.</p></div></header>
+    <div class="snapwrap bl-plot">${snap}</div><div class="bl-lines">${line('Service')}${line('Date')}${line('Drawn by')}${line('Notes')}${line('')}</div></section>`;
+}
+function printBlank() {
+  printPop = false; renderPaper();
+  $('sheetGrid')?.insertAdjacentHTML('beforeend', blankSheetHtml());
+  document.body.classList.add('print-blank');
+  const done = () => { document.body.classList.remove('print-blank'); $('sec-blank')?.remove(); removeEventListener('afterprint', done); };
+  addEventListener('afterprint', done); printNow('print-blank', 'blank-stage'); setTimeout(done, 1500);
+}
 function printOpts() { let o; try { o = JSON.parse(localStorage.getItem('stageplot.printOpts') || '{}'); } catch { o = {}; } return { skip: Array.isArray(o.skip) ? o.skip : [], scale: Number(o.scale) || 0 }; }
 function setPrintOpts(o) { try { localStorage.setItem('stageplot.printOpts', JSON.stringify(o)); } catch { /* memory only */ } applyPrintPick(); }
 const PRINT_SHEETS = () => [['overview', 'Stage plot'], ['inputs', 'Inputs'], ['outputs', 'Outputs'], ['mixes', 'Monitor mixes'], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless']] : []), ['cables', 'Cable pull list'], ['power', 'Power'], ['team', 'Team'], ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['floor', 'Floor marks'], ['loadin', 'Load-in']];
@@ -5210,6 +5287,7 @@ function printPopHtml() {
     <div class="row" style="gap:10px"><button class="tlink" data-pall="1">All</button><button class="tlink" data-pall="0">None</button></div>
     <h2>Stage plot size</h2><div class="pp-scale">${printScales().map(([v, l]) => `<label><input type="radio" name="pscale" value="${v}" ${o.scale === v ? 'checked' : ''}> ${l}</label>`).join('')}</div>
     ${o.scale ? `<p class="hint">${scaleFit(o.scale).note}</p>` : ''}
+    <button class="btn block" id="printBlank" title="The empty stage, grid and measurements, for sketching by hand">${ic('room', 'sm')}Print a blank stage sheet</button>
     <button class="btn primary block" id="printGo">${ic('sheet', 'sm')}Print ${o.skip.length ? plural(PRINT_SHEETS().filter(([k]) => !skip.has(k)).length, 'sheet') : 'every sheet'}</button></div>`;
 }
 // the plot's drawn width at a scale, and the page it needs (portrait, landscape, or too big for A4/Letter)
@@ -5239,7 +5317,7 @@ function renderPaper() {
   if (view !== 'paper') return;
   $('paperView').classList.toggle('pages', pageView);
   requestAnimationFrame(centreTab);
-  const ins = inputSheet(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals();
+  const ins = inputSheet(), outs = outputList(), mixes = monitorMixes(), pull = pullList(), w = warnings(), t = totals(), dIns = inputDeltas(ins);
   const sources = plan.items.filter(isPowerSource);
   const codes = boxCodes();
   const inCols = [['Ch', 'ch'], ['Input', 'name'], ['Mic / DI', 'mic'], ['Stand', 'stand'], ['48V', r => r.p48 ? '48V' : ''], ['Group', 'group'], ['Person', 'person'], ['Patch', r => shortPort(r.port, codes)]];
@@ -5259,6 +5337,7 @@ function renderPaper() {
     if (c[0] === 'Group') return `<td><span class="grptag" style="--g:${r.colour}">${esc(v)}</span></td>`;
     if (c[0] === '48V') return `<td>${v ? '<span class="p48">48V</span>' : '<span class="hint">—</span>'}</td>`;
     if (c[0] === 'Cable') return `<td><span class="row" style="gap:8px;flex-wrap:nowrap"><span class="dot bg-${r.type}"></span>${esc(v)}</span></td>`;
+    if (c[0] === 'Input' && r.delta) return `<td>${esc(v)} <span class="chtag ${r.delta}" title="${esc(r.deltaWhy)}">${r.delta}</span></td>`;
     if (c[0] === 'Qty') return `<td class="num">${esc(v)}</td>`;
     if (c[0] === 'Patch' && r.port && v !== r.port) return `<td class="mono" title="${esc(r.port)}">${esc(v)}</td>`;
     return `<td class="${c[0] === 'Length' ? 'num' : c[0] === 'Patch' ? 'mono' : ''}">${esc(v) || (i ? '<span class="hint">—</span>' : '')}</td>`;
@@ -5283,8 +5362,8 @@ function renderPaper() {
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
     <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><span class="splitbtn"><button class="btn" id="printBtn" title="${printOpts().skip.length ? 'Print the sheets you picked' : 'Print every sheet'}, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button><button class="btn" id="printMore" aria-haspopup="dialog" aria-expanded="${!!printPop}" aria-label="Choose sheets and plot scale" title="Choose sheets and plot scale">${ic('chevD', 'sm')}</button></span>${printPop ? printPopHtml() : ''}</span></div>
-    <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="picBtn" data-needs-dl title="The stage plot as an image, for a group chat or email">${ic('plot', 'sm')}Save plot as picture</button><button class="btn quiet" id="inkBtn" aria-pressed="${inkSave}" title="Print in black and white: a white stage, grey lines, no dark header">${ic('sheet', 'sm')}Ink saver${inkSave ? ' on' : ''}</button><button class="btn quiet" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets</button></div>
-    <div class="sheetgrid${inkSave ? ' ink' : ''}" data-tab="${paperTab}">
+    <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="picBtn" data-needs-dl title="The stage plot as an image, for a group chat or email">${ic('plot', 'sm')}Save plot as picture</button><button class="btn quiet" id="summaryBtn" title="A short message for the team chat: date, times, who's on and what's different">${ic('copy', 'sm')}Copy summary</button><button class="btn quiet" id="inkBtn" aria-pressed="${inkSave}" title="Print in black and white: a white stage, grey lines, no dark header">${ic('sheet', 'sm')}Ink saver${inkSave ? ' on' : ''}</button><button class="btn quiet" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets</button></div>
+    <div class="sheetgrid${inkSave ? ' ink' : ''}" id="sheetGrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(inkSave ? whiteDeckSnapshot() : plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${uLen(foh.y - plan.stage.d)} out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
     ${(() => { const pid = prevWeekId(); if (!pid) return ''; const old = db.plans[pid], d = weekChanges(old);
@@ -5296,7 +5375,7 @@ function renderPaper() {
     ${(() => { const nt = plan.items.filter(i => i.note); return nt.length ? `<section class="sheet" id="sec-notes" data-sheet="overview">${head('Notes', '', 'Pinned to people and gear on the plot')}<ul class="notelist">${nt.map(i => `<li><b>${esc(itemName(i))}</b><span>${esc(i.note)}</span></li>`).join('')}</ul></section>` : ''; })()}
     ${paperTab === 'spots' ? `<section class="sheet" id="sec-spots" data-sheet="spots"><header><div><h2>My spot</h2><p class="hint">A card for each person: where they stand, their channels, monitor, power and notes. Copy it into a message, or print one per page.</p></div><button class="btn primary" id="printSpots">${ic('sheet', 'sm')}Print every card</button><label class="spots4" for="spots4"><input type="checkbox" id="spots4" ${spots4 ? 'checked' : ''}> 4 to a page</label></header>${spotsHtml()}</section>` : ''}
     ${paperTab === 'rider' ? `<section class="sheet" id="sec-rider" data-sheet="rider"><header><div><h2>Rider</h2><p class="hint">One black-and-white page for the venue: plot, scale, legend and inputs.</p></div><button class="btn primary" id="printRider">${ic('sheet', 'sm')}Print the rider</button></header>${riderHtml(ins)}</section>` : ''}
-    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')}. ${chans_().fixed !== false ? 'Channel numbers stay the same every week' + (spareChannels(ins).length ? `; ${plural(spareChannels(ins).length, 'spare channel')} this week` : '') : 'Numbered in band order'}. ${ins.filter(r => r.p48).length} need phantom power.`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn${chEdit ? ' primary' : ''}" id="chEditBtn" aria-pressed="${chEdit}">${ic('pen', 'sm')}${chEdit ? 'Done' : 'Edit channels'}</button><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${chEdit ? chEditHtml(ins) : table([...ins, ...spareChannels(ins).map(x => ({ ch: x.ch, name: 'Spare', mic: x.usual ? `usually ${x.usual}` : '', stand: '', spare: true }))].sort((a, b) => a.ch - b.ch), inCols, 'flag', emptyBox('mic', 'No inputs yet', 'Mics, DIs and anything else that needs a channel shows up here.', 'team', 'Build from the team'))}${chEdit ? '' : boxKey(ins)}</section>
+    <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')}. ${chans_().fixed !== false ? 'Channel numbers stay the same every week' + (spareChannels(ins).length ? `; ${plural(spareChannels(ins).length, 'spare channel')} this week` : '') : 'Numbered in band order'}. ${ins.filter(r => r.p48).length} need phantom power.${dIns.n || dIns.c ? ` Since ${shortDate(dIns.date)}: ${[dIns.n && `${dIns.n} new`, dIns.c && `${dIns.c} changed`].filter(Boolean).join(', ')}.` : ''}`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn${chEdit ? ' primary' : ''}" id="chEditBtn" aria-pressed="${chEdit}">${ic('pen', 'sm')}${chEdit ? 'Done' : 'Edit channels'}</button><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${chEdit ? chEditHtml(ins) : table([...ins, ...spareChannels(ins).map(x => ({ ch: x.ch, name: 'Spare', mic: x.usual ? `usually ${x.usual}` : '', stand: '', spare: true }))].sort((a, b) => a.ch - b.ch), inCols, 'flag', emptyBox('mic', 'No inputs yet', 'Mics, DIs and anything else that needs a channel shows up here.', 'team', 'Build from the team'))}${chEdit ? '' : boxKey(ins)}</section>
     <div class="sheets2">
       <section class="sheet" id="sec-outputs" data-sheet="outputs">${head('Outputs', 'outputs', 'Wedges, mains, subs and IEM transmitters.')}${table(outs, outCols, 'flag', emptyBox('zap', 'No outputs yet', 'Add wedges, in-ears or main speakers and they’re patched here.', 'gear', 'Add monitors and speakers'))}${boxKey(outs)}</section>
       <section class="sheet" id="sec-mixes" data-sheet="mixes">${head('Monitor mixes', 'mixes')}${table(mixes, mixCols, '', emptyBox('users', 'No monitor mixes yet', 'Each wedge or in-ear pack on stage gets its own mix here.', 'gear', 'Add monitors'))}</section>
@@ -5341,6 +5420,7 @@ function pcoHtml() {
   const head = (sub) => `<div class="card-head"><span class="badge">${ic('calendar', 'sm')}</span><div><h2>Planning Center</h2><p>${sub}</p></div></div>`;
   if (!window.claude?.use) return '';   // no connector here: the paste and add-person options below say it all
   if (pco.mcp === undefined) return `<div class="card soft">${head('Checking your connection…')}</div>`;
+  if (!navigator.onLine) return `<div class="card soft">${head('You’re offline. Planning Center comes back when the internet does; adding people by hand or pasting a list works now.')}</div>`;
   if (pco.mcp === null) return `<div class="card soft">${head('Planning Center can’t connect in this view. Open Stageplot on claude.ai (web or the Claude desktop app), check Planning Center is connected in Settings → Connectors, then reload. Or paste a list below.')}<button class="btn block" id="pcoReload">${ic('undo', 'sm')}Reload the page</button></div>`;
   const busy = pcoBusyHtml();
   const err = pco.err ? `<p class="err" role="alert">${esc(pco.err)}</p>${pco.types.length ? `<button class="btn quiet" id="pcoRetry">${ic('undo', 'sm')}Try again</button>` : ''}` : '';
@@ -5506,8 +5586,8 @@ svg.addEventListener('pointerdown', e => {
     if (g) {
       const it = itemById(g.dataset.id), ids = selIds(), wasIn = ids.includes(it.id);
       if (!wasIn) setGroup([...ids, it.id]);
-      const others = selIds().filter(x => x !== it.id).map(itemById).filter(o => !o.locked).map(o => ({ id: o.id, dx: o.x - it.x, dy: o.y - it.y }));
-      drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false, others, locked: !!it.locked, toggleOff: wasIn };
+      const others = selIds().filter(x => x !== it.id).map(itemById).filter(o => !frozen(o)).map(o => ({ id: o.id, dx: o.x - it.x, dy: o.y - it.y }));
+      drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false, others, locked: frozen(it), toggleOff: wasIn };
     } else drag = { kind: 'box', x0: p.x, y0: p.y, x1: p.x, y1: p.y, base: selIds(), moved: false, clearOnClick: true };
     try { svg.setPointerCapture(e.pointerId); } catch { /* ok */ }
     e.preventDefault(); renderPlot(); renderInspector(); return;
@@ -5522,8 +5602,8 @@ svg.addEventListener('pointerdown', e => {
     } else {
       const keep = ids.length > 1 && ids.includes(it.id);   // grabbing one of a group moves the lot
       if (!keep) { sel = { kind: 'item', id: it.id }; group = null; }
-      const others = keep ? ids.filter(x => x !== it.id).map(itemById).filter(o => !o.locked).map(o => ({ id: o.id, dx: o.x - it.x, dy: o.y - it.y })) : [];
-      drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false, others, keep, locked: !!it.locked };
+      const others = keep ? ids.filter(x => x !== it.id).map(itemById).filter(o => !frozen(o)).map(o => ({ id: o.id, dx: o.x - it.x, dy: o.y - it.y })) : [];
+      drag = { kind: 'item', id: it.id, ox: p.x - it.x, oy: p.y - it.y, snap: JSON.stringify(plan), moved: false, others, keep, locked: frozen(it) };
     }
   } else if (ch || (sel?.kind === 'cable' && !chh && cablesAt(p).length)) {   // the picked cable's label and handles sit over its neighbours: a click there still means a cable
     sel = { kind: 'cable', id: pickCable(p, ch?.dataset.cid) };
@@ -5585,7 +5665,7 @@ svg.addEventListener('pointermove', e => {
   if (drag.kind === 'item') {
     const it = itemById(drag.id); if (!it) return;
     if (drag.locked) {
-      if (!drag.warned && Math.hypot(p.x - drag.ox - it.x, p.y - drag.oy - it.y) > .4) { drag.warned = true; toast(`${itemName(it)} is locked. Unlock it from the panel or right-click`); }
+      if (!drag.warned && Math.hypot(p.x - drag.ox - it.x, p.y - drag.oy - it.y) > .4) { drag.warned = true; toast(it.locked ? `${itemName(it)} is locked. Unlock it from the panel or right-click` : `The setup is locked, so ${itemName(it)} stays put. Unlock it with the padlock under the plot`); }
       return;
     }
     const grp = drag.others.length > 0;
@@ -5792,6 +5872,7 @@ $('ftools').addEventListener('click', e => {
   if (f) fit(f.dataset.fit);
   if (e.target.closest('#zIn')) zoomCenter(1.25);
   if (e.target.closest('#flipView')) setFlip(!flipped);
+  if (e.target.closest('#setupLock')) { const on = !plan.setupLock; mutate(() => { if (on) plan.setupLock = true; else delete plan.setupLock; }, on ? `Setup locked: ${plural(plan.items.filter(isFixed).length, 'item')} stay put` : 'Setup unlocked'); }
   if (e.target.closest('#zOut')) zoomCenter(1 / 1.25);
 });
 $('fstats').addEventListener('click', e => {
@@ -5837,7 +5918,7 @@ function duplicateSelected() {
   }, ids.length > 1 ? `${plural(ids.length, 'item')} duplicated` : null);
 }
 function rotateSelected(by) {
-  const its = selIds().map(itemById).filter(i => !i.locked);
+  const its = selIds().map(itemById).filter(i => !frozen(i));
   if (!its.length) { if (selIds().length) toast('Locked. Unlock it to rotate'); return; }
   mutate(() => { for (const it of its) it.rot = ((it.rot || 0) + by + 360) % 360; });
 }
@@ -5866,7 +5947,7 @@ function selectAll() {
   setGroup(ids); renderPlot(); renderInspector(); toast(`${plural(ids.length, 'item')} selected · risers left out`);
 }
 function alignSelected(k) {
-  const its = selIds().map(itemById), mov = its.filter(i => !i.locked);
+  const its = selIds().map(itemById), mov = its.filter(i => !frozen(i));
   if (!mov.length) return;
   const ext = i => { const r = (i.rot || 0) % 180 === 90, w = Number(prop(i, 'w')), d = Number(prop(i, 'd')); return { hw: (r ? d : w) / 2, hd: (r ? w : d) / 2 }; };
   const L = Math.min(...its.map(i => i.x - ext(i).hw)), R = Math.max(...its.map(i => i.x + ext(i).hw));
@@ -5874,7 +5955,7 @@ function alignSelected(k) {
   const spread = (axis) => {
     const s = its.slice().sort((a, b) => a[axis] - b[axis]); if (s.length < 3) { toast('Pick three or more to space evenly'); return; }
     const a = s[0][axis], b = s[s.length - 1][axis];
-    s.forEach((i, n) => { if (!i.locked) i[axis] = r2(a + (b - a) * n / (s.length - 1)); });
+    s.forEach((i, n) => { if (!frozen(i)) i[axis] = r2(a + (b - a) * n / (s.length - 1)); });
   };
   mutate(() => {
     for (const i of mov) {
@@ -5998,7 +6079,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === '-' || e.key === '_') zoomCenter(1 / 1.25);
   else if (e.key === '0') fit('stage');
   else if (e.key.startsWith('Arrow') && sel?.kind === 'item') {
-    e.preventDefault(); const its = selIds().map(itemById).filter(i => !i.locked), s = fromM(e.shiftKey ? .5 : .05);
+    e.preventDefault(); const its = selIds().map(itemById).filter(i => !frozen(i)), s = fromM(e.shiftKey ? .5 : .05);
     if (!its.length) { toast('Locked. Unlock it to move'); return; }
     mutate(() => { for (const it of its) { delete it.chan; if (e.key === 'ArrowLeft') it.x = r2(it.x - s); if (e.key === 'ArrowRight') it.x = r2(it.x + s); if (e.key === 'ArrowUp') it.y = r2(it.y - s); if (e.key === 'ArrowDown') it.y = r2(it.y + s); } });
   }
@@ -6054,6 +6135,11 @@ $('themeBtn').onclick = () => setTheme(themePref === 'system' ? 'light' : themeP
 $('helpBtn').onclick = () => { $('helpDlg').hidden = false; };
 const APP_VERSION = '1.0';
 // the installed Mac or Windows app (Stageplot desktop) says so through its preload; everything else is the same page
+// no internet: say so once, plainly, and that nothing is lost (everything saves on this device anyway)
+function showOnline() { const c = $('offChip'); if (!c) return; const off = !navigator.onLine; c.hidden = !off; if (off) c.innerHTML = `${ic('alert', 'sm')}<span>Offline · changes still save</span>`; }
+addEventListener('offline', () => { showOnline(); renderRail(); toast('You’re offline. Your changes still save on this device'); });
+addEventListener('online', () => { showOnline(); renderRail(); toast('Back online'); if (typeof pcoCheck === 'function') pcoCheck(true); });
+setTimeout(showOnline, 0);
 const DESKTOP = window.stageplotDesktop || null, SAVED_WHERE = DESKTOP ? 'on this computer' : 'in this browser';
 function openAbout() { document.querySelectorAll('.savedWhere').forEach(x => { x.textContent = SAVED_WHERE; }); $('aboutVer').textContent = `Version ${APP_VERSION}${DESKTOP ? ` · ${DESKTOP.platform === 'darwin' ? 'Mac' : DESKTOP.platform === 'win32' ? 'Windows' : 'desktop'} app ${DESKTOP.version}` : ''} · ${Object.keys(db.plans).length} saved ${Object.keys(db.plans).length === 1 ? 'week' : 'weeks'}`; $('aboutClose').innerHTML = ic('x'); $('aboutDlg').hidden = false; }
 $('aboutClose').onclick = () => { $('aboutDlg').hidden = true; };
@@ -6099,6 +6185,7 @@ $('weekPop').addEventListener('click', e => {
   else if (b.id === 'newCopy') newWeek(false);
   else if (b.id === 'newStage') newWeek(true);
   else if (b.id === 'aheadGo') planAhead(Number($('aheadN').value) || 4);
+  else if (b.id === 'newPco') { $('weekPop').hidden = true; $('weekBtn').setAttribute('aria-expanded', 'false'); nextFromPco(); }
   else if (b.id === 'clearKeepStage' || b.id === 'clearAll') {
     const k = b.id === 'clearAll' ? 'all' : 'keep';
     if (clearArmed !== k) { clearArmed = k; renderWeekPop(); return; }
@@ -6324,6 +6411,7 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn') || e.target.closest('#printGo')) { printPop = false; renderPaper(); printNow(); return; }
+  if (e.target.closest('#printBlank')) { printBlank(); return; }
   if (e.target.closest('#printMore')) { printPop = !printPop; renderPaper(); if (printPop) document.querySelector('.printpop input')?.focus(); return; }
   { const a = e.target.closest('[data-pall]'); if (a) { const o = printOpts(); o.skip = a.dataset.pall === '1' ? [] : PRINT_SHEETS().map(([k]) => k); setPrintOpts(o); renderPaper(); return; } }
   if (e.target.closest('#inkBtn')) { inkSave = !inkSave; try { localStorage.setItem('stageplot.ink', inkSave ? '1' : '0'); } catch { /* ignore */ } renderPaper(); toast(inkSave ? 'Ink saver on: the paperwork prints in black and white' : 'Ink saver off: full colour'); return; }
@@ -6333,6 +6421,7 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#printRider')) { document.body.classList.add('print-rider'); const done = () => { document.body.classList.remove('print-rider'); removeEventListener('afterprint', done); }; addEventListener('afterprint', done); printNow('print-rider', 'rider'); setTimeout(done, 1500); return; }
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#picBtn')) { plotPicture(); return; }
+  if (e.target.closest('#summaryBtn')) { copyText(weekSummary(), $('copyFallback')); return; }
   if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
   const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
   const go = e.target.closest('[data-goto]'); if (go) { view = 'plot'; railTab = go.dataset.goto; needFit = !zoom; togglePanel('rail', true); renderAll(); }
@@ -6392,6 +6481,7 @@ function printNow(only = '', name = 'sheets') {
 }
 function paperworkHtml(only = '') {   // only: 'print-rider' or 'print-spots' makes a file of just that sheet
   const keep = paperTab; paperTab = only === 'print-rider' ? 'rider' : only === 'print-spots' ? 'spots' : 'all'; renderPaper();
+  if (only === 'print-blank') $('sheetGrid')?.insertAdjacentHTML('beforeend', blankSheetHtml());
   const body = `<svg aria-hidden="true" style="position:absolute;width:0;height:0"><defs>${ART_DEFS}</defs></svg>` + $('paperInner').innerHTML; paperTab = keep; renderPaper();   // the drawings' gradients travel with the file
   const css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n');
   return `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(plan.name || 'Stage plot')} · ${esc(plan.date)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap"><style>${css}</style><style>.docnav,.viewbar,[data-copy],.printbar{display:none!important}html,body{height:auto;display:block}.fileprint{position:fixed;top:14px;right:14px;z-index:9;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:10px;background:#6d5efc;color:#fff;font:600 14px Archivo,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.18)}@media print{.fileprint{display:none!important}}</style></head><body${only ? ` class="${only}${only === 'print-spots' && spots4 ? ' spots4' : ''}"` : ''}><button class="fileprint" onclick="print()">Print or save as PDF</button><main class="paper" style="overflow:visible"><div class="paper-inner">${body}</div></main></body></html>`;
@@ -7455,6 +7545,10 @@ function cmdItems() {
     ['Fit stage to screen', 'fit', () => { if (view !== 'plot') { view = 'plot'; renderAll(); } fit('stage'); }],
     ['Re-run cabling', 'wand', () => mutate(autoCable, 'Cabling re-run')],
     ['Save the plot as a picture', 'plot', () => plotPicture()],
+    ['Copy a summary for the team chat', 'copy', () => copyText(weekSummary(), $('copyFallback'))],
+    [flipped ? 'See the plot from the house' : 'See the plot from the stage (flip)', 'rotate', () => { view = 'plot'; setFlip(!flipped); }],
+    [plan.setupLock ? 'Unlock the setup' : 'Lock the setup (risers, stage box, speakers, power)', plan.setupLock ? 'unlock' : 'lock', () => { $('setupLock') ? $('setupLock').click() : mutate(() => { if (plan.setupLock) delete plan.setupLock; else plan.setupLock = true; }, plan.setupLock ? 'Setup unlocked' : 'Setup locked'); }],
+    ...(pco.mcp ? [['Next plan from Planning Center', 'calendar', () => nextFromPco()]] : []),
     ['Switch theme', 'auto', () => $('themeBtn').click()],
     ['Backup & restore', 'save', () => $('dataBtn').click()],
     ['Keyboard shortcuts', 'keyboard', () => { $('helpDlg').hidden = false; }],
@@ -7667,6 +7761,8 @@ $('homeView').addEventListener('click', e => {
   if (t.dataset.today) { const id = t.dataset.week; if (id !== plan.id) switchWeek(id); const k = t.dataset.today;
     if (k === 'show') { view = 'plot'; renderAll(); setPresent(true); } else if (k === 'loadin') { view = 'paper'; paperTab = 'loadin'; renderAll(); } else { view = 'plot'; if (k === 'team') railTab = 'team'; renderAll(); }
     return; }
+  if (t.dataset.merge) { mergeNames(t.dataset.merge); return; }
+  if (t.dataset.mergeskip) { (db.nameSkip ||= []).push(t.dataset.mergeskip); save(); renderHome(); return; }
   if (t.id === 'tidyGo') { tidyOldWeeks(); return; }
   if (t.id === 'libBackup') { const s2 = backup(true); offerFile(`stageplot-backup-${new Date().toISOString().slice(0, 10)}.json`, s2, 'application/json'); return; }
 });
@@ -7761,6 +7857,36 @@ function todayCard() {
   </section>`;
 }
 setInterval(() => { const c = $('todayClock'); if (!c) return; const w = todayWeek(); c.textContent = new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); const n = $('todayNext'); if (n && w) n.textContent = nextUp(w) || n.textContent; }, 20000);
+// the same person under two names ("Andre" and "Andre de Jager", or different capitals): suggestions and searches work best with one
+const normName = n => String(n || '').toLowerCase().replace(/[^a-z0-9\u00c0-\u024f ]+/g, ' ').replace(/\s+/g, ' ').trim();
+function nameDupes() {
+  const count = new Map(), byPco = new Map();
+  for (const w of Object.values(db.plans)) for (const t of w.team) { const n = (t.name || '').trim(); if (!n) continue; count.set(n, (count.get(n) || 0) + 1); if (t.pcoId) { const s = byPco.get(t.pcoId) || new Set(); s.add(n); byPco.set(t.pcoId, s); } }
+  const names = [...count.keys()], skip = new Set(db.nameSkip || []), groups = [], used = new Set();
+  const add = list => { list = [...new Set(list)].filter(n => !used.has(n)); if (list.length < 2) return; const key = [...list].sort().join('|'); if (skip.has(key)) return;
+    const words = n => normName(n).split(' ').length, caps = n => n !== n.toLowerCase() && /^\S/.test(n) && !/\s{2}/.test(n) ? 1 : 0;
+    const target = [...list].sort((a, b) => words(b) - words(a) || caps(b) - caps(a) || count.get(b) - count.get(a) || a.length - b.length)[0];   // the fullest name, written properly, then the most used
+    list.forEach(n => used.add(n)); groups.push({ key, names: list.sort((a, b) => count.get(b) - count.get(a)), target, count }); };
+  for (const set of byPco.values()) if (set.size > 1) add([...set]);
+  const byNorm = new Map(); for (const n of names) { const k = normName(n); byNorm.set(k, [...(byNorm.get(k) || []), n]); }
+  for (const l of byNorm.values()) if (l.length > 1) add(l);
+  for (const n of names.filter(n => !/\s/.test(n.trim()))) { const full = names.filter(m => /\s/.test(m) && normName(m).split(' ')[0] === normName(n)); if (full.length === 1) add([n, full[0]]); }   // only when one full name fits
+  return groups;
+}
+let mergeUndo = null;
+function mergeNames(key) {
+  const g = nameDupes().find(x => x.key === key); if (!g) return;
+  const from = new Set(g.names.filter(n => n !== g.target)), changed = [];
+  for (const w of Object.values(db.plans)) for (const t of w.team) if (from.has((t.name || '').trim())) { changed.push([w.id, t.id, t.name]); t.name = g.target; }
+  mergeUndo = changed; save(); renderAll();
+  toast(`${plural(changed.length, 'entry', 'entries')} now say “${g.target}”`, { label: 'Undo', fn: () => { for (const [wid, tid, n] of mergeUndo || []) { const t = db.plans[wid]?.team.find(x => x.id === tid); if (t) t.name = n; } mergeUndo = null; save(); renderAll(); } });
+}
+function dupesCard() {
+  const g = nameDupes(); if (!g.length) return '';
+  return hsec('Same person?', 'These names look like one person. One name keeps name suggestions, searches and the Planning Center check accurate.',
+    `<div class="hlist">${g.slice(0, 6).map(x => `<div class="hlist-row dupe"><span class="hico">${ic('users', 'sm')}</span><span class="hmain"><b>${x.names.map(n => esc(n)).join(' · ')}</b><small>${x.names.map(n => plural(x.count.get(n), 'week')).join(' · ')}</small></span>
+      <button class="btn" data-merge="${esc(x.key)}">Use “${esc(x.target)}”</button><button class="btn quiet" data-mergeskip="${esc(x.key)}">Different people</button></div>`).join('')}</div>`);
+}
 function homeLibrary() {
   const today = new Date().toISOString().slice(0, 10), ids = venues()[lib.venue] ? venueWeekIds(lib.venue) : sortedWeekIds();
   const next = ids.map(id => db.plans[id]).find(p => p.date >= today) || db.plans[ids[ids.length - 1]];
@@ -7780,7 +7906,7 @@ function homeLibrary() {
       </div>
     </section>` : '';
   const tc = todayCard();
-  return firstRunCard() + (tc && todayWeek()?.id === next?.id ? tc : tc + hero) + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved ${SAVED_WHERE}`, '<div id="libBody"></div>',
+  return firstRunCard() + (tc && todayWeek()?.id === next?.id ? tc : tc + hero) + dupesCard() + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved ${SAVED_WHERE}`, '<div id="libBody"></div>',
     `<div class="row" style="gap:6px"><button class="btn" id="homeNewCopy" title="Copy the latest week to the next free ${esc(DAYS[defaultsOf().day])}">${ic('copy', 'sm')}Copy latest</button><button class="btn primary" id="homeNewBlank" title="A fresh week from your stage defaults">${ic('plus', 'sm')}New week</button></div>`);
 }
 function nextFreeDate(from, vid) { let d = from || nextServiceDay(); while (Object.values(db.plans).some(p => p.date === d && (!vid || p.venueId === vid))) d = addDays(d, 7); return d; }
