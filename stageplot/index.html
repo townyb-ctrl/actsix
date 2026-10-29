@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Stageplot: stage plots for church teams</title>
+<title>Stagehand: stage plots for church teams</title>
 <meta name="description" content="Plan this week's stage in minutes. Place the team and gear, patch every input and power it automatically, then print a clean stage plot, input list, monitor mixes and power sheet.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -13,10 +13,10 @@
 <meta name="theme-color" content="#0d1013" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Stageplot: stage plots for church teams">
+<meta property="og:title" content="Stagehand: stage plots for church teams">
 <meta property="og:description" content="Team in, stage built, inputs patched and powered, paperwork printed. Free, in your browser, nothing to install.">
 <meta name="twitter:card" content="summary">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='8' fill='%231b1e26'/%3E%3Cpath d='M8 22h16' stroke='%23f0b429' stroke-width='2.4' stroke-linecap='round' stroke-dasharray='4 2.5'/%3E%3Ccircle cx='12' cy='13' r='3' fill='%238b80ff'/%3E%3Ccircle cx='20' cy='13' r='3' fill='%23f5b544'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%23141821'/%3E%3Cg transform='rotate%28-5 60 64%29'%3E%3Crect x='24' y='22' width='68' height='88' rx='10' fill='%23f2f4f6'/%3E%3Crect x='42' y='14' width='32' height='16' rx='6' fill='%23f0b429'/%3E%3Crect x='33' y='42' width='50' height='36' rx='4' fill='%23d6dae3'/%3E%3Cpath d='M33 78 H83' stroke='%23f0b429' stroke-width='6' stroke-dasharray='8 4'/%3E%3Ccircle cx='42' cy='60' r='6' fill='%236d5efc'/%3E%3Ccircle cx='58' cy='57' r='6' fill='%23232838'/%3E%3Ccircle cx='74' cy='60' r='6' fill='%23f0b429'/%3E%3C/g%3E%3Cg transform='rotate%2830 100 74%29'%3E%3Crect x='94.5' y='51.0' width='11' height='46' rx='2' fill='%23f0b429'/%3E%3Cpath d='M94.5 97.0 L100 109.0 L105.5 97.0 Z' fill='%23f2f4f6'/%3E%3Cpath d='M97.5 104.0 L100 109.0 L102.5 104.0 Z' fill='%23141821'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -1594,13 +1594,13 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
 </style>
 </head>
 <body>
-<noscript><p style="padding:24px;font:16px system-ui,sans-serif">Stageplot runs in your browser and needs JavaScript turned on.</p></noscript>
+<noscript><p style="padding:24px;font:16px system-ui,sans-serif">Stagehand runs in your browser and needs JavaScript turned on.</p></noscript>
 
-<h1 class="sr-only">Stageplot: plan your stage, patch and power</h1>
+<h1 class="sr-only">Stagehand: plan your stage, patch and power</h1>
 <header class="top">
-  <button class="brand" id="brandHome" title="Home: library and settings" aria-label="Stageplot home">
-    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--deck)"/><path d="M8 22h16" stroke="var(--tape)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="var(--accent)"/><circle cx="20" cy="13" r="3" fill="#f5b544"/></svg>
-    <span>Stageplot</span><img class="brandlogo" id="brandLogo" alt="" hidden>
+  <button class="brand" id="brandHome" title="Home: library and settings" aria-label="Stagehand home">
+    <svg viewBox="0 0 128 128" aria-hidden="true"><rect width="128" height="128" rx="28" fill="#141821"/><g transform="rotate(-5 60 64)"><rect x="24" y="22" width="68" height="88" rx="10" fill="#f2f4f6"/><rect x="42" y="14" width="32" height="16" rx="6" fill="#f0b429"/><rect x="33" y="42" width="50" height="36" rx="4" fill="#d6dae3"/><path d="M33 78 H83" stroke="#f0b429" stroke-width="6" stroke-dasharray="8 4"/><circle cx="42" cy="60" r="6" fill="#6d5efc"/><circle cx="58" cy="57" r="6" fill="#232838"/><circle cx="74" cy="60" r="6" fill="#f0b429"/></g><g transform="rotate(30 100 74)"><rect x="94.5" y="51.0" width="11" height="46" rx="2" fill="#f0b429"/><path d="M94.5 97.0 L100 109.0 L105.5 97.0 Z" fill="#f2f4f6"/><path d="M97.5 104.0 L100 109.0 L102.5 104.0 Z" fill="#141821"/></g></svg>
+    <span>Stagehand</span><img class="brandlogo" id="brandLogo" alt="" hidden>
   </button>
   <div class="weeknav">
     <button class="iconbtn" id="prevWeek" aria-label="Previous week"></button>
@@ -1693,7 +1693,7 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
 <div class="overlay" id="welcomeDlg" hidden>
   <div class="modal welcome" role="dialog" aria-labelledby="welcomeTitle">
     <div class="art"><svg viewBox="0 0 120 50" width="260" aria-hidden="true"><path d="M10 8H110V34H76V44H44V34H10Z" fill="none" stroke="#f0b429" stroke-width="1.6" stroke-dasharray="4 2.4"/><circle cx="42" cy="22" r="4" fill="#f0b429"/><circle cx="60" cy="18" r="4" fill="#8f7cd4"/><circle cx="78" cy="22" r="4" fill="#f0b429"/></svg></div>
-    <div><div class="eyebrow">Welcome to Stageplot</div><h2 id="welcomeTitle" style="font-size:24px">Let’s start with your stage</h2></div>
+    <div><div class="eyebrow">Welcome to Stagehand</div><h2 id="welcomeTitle" style="font-size:24px">Let’s start with your stage</h2></div>
     <ol><li>Draw the shape of your stage, or pick a preset and set the size.</li><li>Add this week’s team, from Planning Center or by hand.</li><li>Build the stage, then check patching, power and paperwork.</li></ol>
     <div class="row"><button class="btn primary lg" id="welcomeDraw">Draw my stage</button><button class="btn lg" id="welcomeExample">Explore an example first</button></div>
     <p class="hint">Drawing your stage replaces the example week. You can change the shape any time from the Room tab.</p>
@@ -1729,12 +1729,12 @@ body.presenting .toast { display: none; }   /* nothing pops up over the plot on 
   <div class="modal about" role="dialog" aria-labelledby="aboutTitle">
     <div class="row" style="justify-content:space-between;align-items:flex-start">
       <div class="row" style="gap:12px;flex-wrap:nowrap"><svg viewBox="0 0 32 32" width="40" height="40" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#1b1e26"/><path d="M8 22h16" stroke="#f0b429" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 2.5"/><circle cx="12" cy="13" r="3" fill="#8b80ff"/><circle cx="20" cy="13" r="3" fill="#f5b544"/></svg>
-        <div><h2 id="aboutTitle">Stageplot</h2><p class="hint" id="aboutVer"></p></div></div>
+        <div><h2 id="aboutTitle">Stagehand</h2><p class="hint" id="aboutVer"></p></div></div>
       <button class="iconbtn" id="aboutClose" aria-label="Close"></button></div>
     <p style="font-size:15px;margin:0">Plan this week’s stage in minutes. Add the team, build the stage, and every input is patched and powered for you. Then print the stage plot, input list, monitor mixes, cable pull and power sheet.</p>
     <dl class="aboutkv">
       <dt>Your data</dt><dd>Weeks are saved <span class="savedWhere">in this browser</span> only. Nothing is uploaded. Use Backup &amp; restore to move them to another computer.</dd>
-      <dt>Planning Center</dt><dd>Optional and read-only: service types, plans and who’s scheduled. Stageplot never changes anything in Planning Center.</dd>
+      <dt>Planning Center</dt><dd>Optional and read-only: service types, plans and who’s scheduled. Stagehand never changes anything in Planning Center.</dd>
       <dt>Works on</dt><dd>Modern browsers on desktop, iPad and phone. Prints on A4 or Letter, or saves as PDF.</dd>
     </dl>
     <div class="row" style="gap:8px"><button class="btn" id="aboutKeys">Keyboard shortcuts</button><button class="btn" id="aboutData">Backup &amp; restore</button></div>
@@ -2190,10 +2190,10 @@ let glideNext = false;
 // a week that has happened opens read-only, so nobody changes last Sunday by mistake; Edit anyway unlocks it until the page is closed
 const unlockedWeeks = new Set();
 const localISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-let lockSeen = null;   // weeks that existed when Stageplot opened; one started or copied since stays editable until next time
+let lockSeen = null;   // weeks that existed when Stagehand opened; one started or copied since stays editable until next time
 const weekPast = () => { lockSeen ||= new Set(Object.keys(db?.plans || {})); return db?.defaults?.lockPast !== false && !!plan?.date && plan.date < localISO() && lockSeen.has(plan.id); };
 const weekLocked = () => weekPast() && !unlockedWeeks.has(plan.id);
-function unlockWeek() { unlockedWeeks.add(plan.id); renderAll(); toast('Unlocked until you close Stageplot'); }
+function unlockWeek() { unlockedWeeks.add(plan.id); renderAll(); toast('Unlocked until you close Stagehand'); }
 function lockedNote() { toast(`${longDate(plan.date)} has happened, so it’s locked`, { label: 'Edit anyway', fn: unlockWeek }); }
 // what each undo and redo step would do, kept beside the snapshots so the buttons can say it ("Undo: moved Casey Kit")
 let undoLab = [], redoLab = [];
@@ -2871,11 +2871,11 @@ function pcoErrText(e) {
     case 'approval_required': return 'Planning Center needs your approval. Try again and choose Allow.';
     case 'tool_error': return `Planning Center said: ${e.message || 'the request failed'}.`;
     case 'server_unavailable': case 'rate_limited': return 'Planning Center isn’t answering right now. Wait a moment and try again.';
-    case 'not_granted': case 'capability_disabled': case 'capability_removed': return 'Connectors aren’t available in this view. Open Stageplot on claude.ai (web or the Claude desktop app) and reload the page.';
-    case 'self_only': return 'Only the person who made this page can use their Planning Center here. Ask them for a copy of Stageplot of your own.';
+    case 'not_granted': case 'capability_disabled': case 'capability_removed': return 'Connectors aren’t available in this view. Open Stagehand on claude.ai (web or the Claude desktop app) and reload the page.';
+    case 'self_only': return 'Only the person who made this page can use their Planning Center here. Ask them for a copy of Stagehand of your own.';
     case 'upstream_error': return 'Planning Center didn’t answer properly. Try again in a moment; if it keeps failing, reconnect it in claude.ai Settings → Connectors.';
     case 'cancelled': return 'Stopped. Try again when you’re ready.';
-    case 'bad_request': case 'transform_error': return 'Stageplot sent Planning Center a request it didn’t accept. Try again; if it keeps happening, tell whoever looks after Stageplot.';
+    case 'bad_request': case 'transform_error': return 'Stagehand sent Planning Center a request it didn’t accept. Try again; if it keeps happening, tell whoever looks after Stagehand.';
     case 'user_changed': return 'You signed in as someone else. The page will reload.';
     default: return `Couldn’t reach Planning Center (${e?.message || 'unknown error'}).`;
   }
@@ -2934,7 +2934,7 @@ async function pcoFetch(typeId, planId, withDeclined = false) {
     const e = people.get(key) || { key, name: a.name || 'Unnamed', rows: [], photo: '' };
     const declined = /^d/i.test(a.status || '');
     e.rows.push({ team, pos, pk, unc: !!a.status && a.status !== 'confirmed' && !declined, declined });
-    if (!e.photo && /^https:\/\/[^/]*planningcenteronline\.com\/uploads\/person\//.test(a.photo_thumbnail || '')) e.photo = a.photo_thumbnail;   // a real photo; the initials placeholders are left out, Stageplot draws its own
+    if (!e.photo && /^https:\/\/[^/]*planningcenteronline\.com\/uploads\/person\//.test(a.photo_thumbnail || '')) e.photo = a.photo_thumbnail;   // a real photo; the initials placeholders are left out, Stagehand draws its own
     people.set(key, e);
   }
   const raw = [...people.values()], tc = new Map();
@@ -3043,7 +3043,7 @@ function pcoChangesHtml() {
 }
 // one click from this week to the next Planning Center plan: start (or open) that week with this stage, then pull its team and times
 async function nextFromPco() {
-  if (!pco.mcp) { toast('Planning Center works when Stageplot is open in Claude, with Planning Center connected'); return; }
+  if (!pco.mcp) { toast('Planning Center works when Stagehand is open in Claude, with Planning Center connected'); return; }
   const from = plan.date, want = plan.pco?.typeId;
   toast('Finding the next plan in Planning Center…');
   await pcoLoadTypes(); if (pco.err) { toast(pco.err); return; }
@@ -5056,7 +5056,7 @@ async function plotPicture() {
     g.drawImage(im, 0, head, W, H);
     const blob = await new Promise(ok => cv.toBlob(ok, 'image/png'));
     if (!blob) throw new Error('no image');
-    offerFile(`stageplot-${plan.date}${plan.name ? '-' + plan.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) : ''}.png`, blob, 'image/png');
+    offerFile(`stagehand-${plan.date}${plan.name ? '-' + plan.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) : ''}.png`, blob, 'image/png');
   } catch { toast('Couldn’t make the picture here. Print or PDF works instead'); }
   finally { URL.revokeObjectURL(url); }
 }
@@ -5169,7 +5169,7 @@ function riderHtml(ins) {
     <div class="riderplot">${riderPlot()}<div class="raud">AUDIENCE</div></div>
     <div class="rcols"><div><h3>Inputs</h3><div class="rins">${col(ins.slice(0, half))}${ins.length > half ? col(ins.slice(half)) : ''}</div></div>
       <div><h3>Legend</h3><ul class="rlegend">${legend}</ul>${plan.team.length ? `<h3>On stage</h3><p class="rteam">${plan.team.map(m => `<span><b>${esc(m.name)}</b> ${esc(m.role || '')}</span>`).join('')}</p>` : ''}</div></div>
-    <footer class="rfoot"><span>${esc(D.org ? D.org + ' · ' : '')}${esc(plan.name || '')} · r${plan.rev || 0}</span><span>Made with Stageplot</span></footer>
+    <footer class="rfoot"><span>${esc(D.org ? D.org + ' · ' : '')}${esc(plan.name || '')} · r${plan.rev || 0}</span><span>Made with Stagehand</span></footer>
   </div>`;
 }
 /* ---------- what changed since last week, what to borrow, and the load-in checklist ---------- */
@@ -5470,7 +5470,7 @@ function pcoHtml() {
   if (!window.claude?.use) return '';   // no connector here: the paste and add-person options below say it all
   if (pco.mcp === undefined) return `<div class="card soft">${head('Checking your connection…')}</div>`;
   if (!navigator.onLine) return `<div class="card soft">${head('You’re offline. Planning Center comes back when the internet does; adding people by hand or pasting a list works now.')}</div>`;
-  if (pco.mcp === null) return `<div class="card soft">${head('Planning Center can’t connect in this view. Open Stageplot on claude.ai (web or the Claude desktop app), check Planning Center is connected in Settings → Connectors, then reload. Or paste a list below.')}<button class="btn block" id="pcoReload">${ic('undo', 'sm')}Reload the page</button></div>`;
+  if (pco.mcp === null) return `<div class="card soft">${head('Planning Center can’t connect in this view. Open Stagehand on claude.ai (web or the Claude desktop app), check Planning Center is connected in Settings → Connectors, then reload. Or paste a list below.')}<button class="btn block" id="pcoReload">${ic('undo', 'sm')}Reload the page</button></div>`;
   const busy = pcoBusyHtml();
   const err = pco.err ? `<p class="err" role="alert">${esc(pco.err)}</p>${pco.types.length ? `<button class="btn quiet" id="pcoRetry">${ic('undo', 'sm')}Try again</button>` : ''}` : '';
   if (!pco.types.length) return `<div class="card soft">${head('Pull this week’s scheduled team straight from Services.')}
@@ -6158,7 +6158,7 @@ function renderMoreMenu() {
       <button data-mm="guide">${ic('check', 'sm')}${ui.guide ? 'Hide' : 'Show'} the setup guide</button>
       <button data-mm="help">${ic('keyboard', 'sm')}Keyboard shortcuts<span class="kbd">?</span></button>
       <button data-mm="tour">${ic('fit', 'sm')}Take the tour</button>
-      <button data-mm="about">${ic('sheet', 'sm')}About Stageplot</button>
+      <button data-mm="about">${ic('sheet', 'sm')}About Stagehand</button>
       <button data-mm="data">${ic('save', 'sm')}Backup &amp; restore</button>
     </div>`;
 }
@@ -6186,7 +6186,7 @@ document.addEventListener('click', e => { const sm = e.target.closest('details.m
 $('themeBtn').onclick = () => setTheme(themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system');
 $('helpBtn').onclick = () => { $('helpDlg').hidden = false; };
 const APP_VERSION = '1.0';
-// the installed Mac or Windows app (Stageplot desktop) says so through its preload; everything else is the same page
+// the installed Mac or Windows app (Stagehand desktop) says so through its preload; everything else is the same page
 // no internet: say so once, plainly, and that nothing is lost (everything saves on this device anyway)
 function showOnline() { const c = $('offChip'); if (!c) return; const off = !navigator.onLine; c.hidden = !off; if (off) c.innerHTML = `${ic('alert', 'sm')}<span>Offline · changes still save</span>`; }
 addEventListener('offline', () => { showOnline(); renderRail(); toast('You’re offline. Your changes still save on this device'); });
@@ -6479,7 +6479,7 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#loadinReset')) { plan.loadin = {}; save(); renderPaper(); toast('Ticks cleared'); return; }
   if (e.target.closest('#picBtn')) { plotPicture(); return; }
   if (e.target.closest('#summaryBtn')) { copyText(weekSummary(), $('copyFallback')); return; }
-  if (e.target.closest('#sheetsBtn')) { offerFile(`stageplot-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
+  if (e.target.closest('#sheetsBtn')) { offerFile(`stagehand-${plan.date}-sheets.html`, paperworkHtml(), 'text/html'); return; }
   const pt = e.target.closest('[data-ptab]'); if (pt) { paperTab = pt.dataset.ptab; renderPaper(); $('paperView').scrollTop = 0; }
   const go = e.target.closest('[data-goto]'); if (go) { view = 'plot'; railTab = go.dataset.goto; needFit = !zoom; togglePanel('rail', true); renderAll(); }
 });
@@ -6506,9 +6506,9 @@ async function offerFile(filename, text, mime) {
     return true;
   } catch { toast('Download blocked here. Use Copy instead'); return false; }
 }
-if ($('dlAll')) $('dlAll').onclick = () => { const s = backup(true); $('dataText').value = s; offerFile(`stageplot-${plan.date}.json`, s, 'application/json'); };
+if ($('dlAll')) $('dlAll').onclick = () => { const s = backup(true); $('dataText').value = s; offerFile(`stagehand-${plan.date}.json`, s, 'application/json'); };
 // every sheet as one self-contained page: opens and prints anywhere, no app needed
-/* Printing. Some places that embed Stageplot (the Claude preview among them) block the print dialog, and print() then
+/* Printing. Some places that embed Stagehand (the Claude preview among them) block the print dialog, and print() then
    does nothing. If the dialog doesn't open, offer the sheets as a file with its own Print button instead. */
 // what the paper copy says: kept with the week when it prints, so the paperwork can say what has changed since
 function markPrinted() { plan.printed = { at: Date.now(), team: plan.team.map(t => ({ name: t.name, role: t.role })), items: plan.items.map(i => ({ id: i.id, type: i.type, x: r2(i.x), y: r2(i.y) })), ins: inputList().length }; save(); }
@@ -6532,8 +6532,8 @@ function printNow(only = '', name = 'sheets') {
   addEventListener('beforeprint', mark);
   try { window.print(); } catch { /* blocked */ }
   setTimeout(() => { removeEventListener('beforeprint', mark); if (opened) return;
-    const file = `stageplot-${plan.date}-${name}.html`, canSave = !window.claude?.use || dlCap;
-    toast(canSave ? 'Printing is blocked in this view. Download the sheets, open the file, and print or save a PDF from there' : 'Printing is blocked in this view. Open Stageplot in its own browser tab to print',
+    const file = `stagehand-${plan.date}-${name}.html`, canSave = !window.claude?.use || dlCap;
+    toast(canSave ? 'Printing is blocked in this view. Download the sheets, open the file, and print or save a PDF from there' : 'Printing is blocked in this view. Open Stagehand in its own browser tab to print',
       canSave ? { label: 'Download', fn: () => { markPrinted(); offerFile(file, paperworkHtml(only), 'text/html'); } } : undefined); }, 600);
 }
 function paperworkHtml(only = '') {   // only: 'print-rider' or 'print-spots' makes a file of just that sheet
@@ -7863,7 +7863,7 @@ $('homeView').addEventListener('click', e => {
   if (t.dataset.mergeskip) { (db.nameSkip ||= []).push(t.dataset.mergeskip); save(); renderHome(); return; }
   if (t.id === 'gearWhereOn') { gearWhereOn = true; renderHome(); document.querySelector('[data-where]')?.focus(); return; }
   if (t.id === 'tidyGo') { tidyOldWeeks(); return; }
-  if (t.id === 'libBackup') { const s2 = backup(true); offerFile(`stageplot-backup-${new Date().toISOString().slice(0, 10)}.json`, s2, 'application/json'); return; }
+  if (t.id === 'libBackup') { const s2 = backup(true); offerFile(`stagehand-backup-${new Date().toISOString().slice(0, 10)}.json`, s2, 'application/json'); return; }
 });
 $('homeView').addEventListener('input', e => {
   if (e.target.id === 'libSearch') { lib.q = e.target.value; const pos = e.target.selectionStart; renderLibrary(); const i = $('libSearch'); i.focus(); i.setSelectionRange(pos, pos); }
@@ -7906,7 +7906,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 function renderHome() {
   if (view !== 'home') { countedKey = ''; return; }   // coming back to Home counts the figures up again
-  $('homeNav').innerHTML = `<div class="homehello">${db.defaults?.logo ? `<img class="hellologo" src="${db.defaults.logo}" alt="${esc(defaultsOf().org || 'Your logo')}">` : `<button class="addlogo" data-addlogo>${ic('plus', 'sm')}Add your church logo</button>`}<div class="eyebrow">${esc(defaultsOf().org || 'Stageplot')}</div><h1>Home</h1></div>` +
+  $('homeNav').innerHTML = `<div class="homehello">${db.defaults?.logo ? `<img class="hellologo" src="${db.defaults.logo}" alt="${esc(defaultsOf().org || 'Your logo')}">` : `<button class="addlogo" data-addlogo>${ic('plus', 'sm')}Add your church logo</button>`}<div class="eyebrow">${esc(defaultsOf().org || 'Stagehand')}</div><h1>Home</h1></div>` +
     HOME_TABS.map(([k, icon, label, sub]) => `<button class="hnav" data-home="${k}" aria-current="${k === homeTab ? 'page' : 'false'}">${ic(icon, 'sm')}<span><b>${label}</b><small>${sub}</small></span></button>`).join('');
   const body = { library: homeLibrary, venues: homeVenues, setups: homeSetups, stage: homeStage, gear: homeGear, pco: homePco, prefs: homePrefs, data: homeData }[homeTab]();
   const keep = document.activeElement?.id, pos = document.activeElement?.selectionStart;
@@ -8175,9 +8175,9 @@ function removeGear(t) {
 const pcoPrefs = () => (db.pcoPrefs ||= { typeId: '', typeName: '', replace: true, unconfirmed: true, usePlan: true, map: {}, seen: [] });
 function homePco() {
   const P = pcoPrefs(), avail = !!window.claude?.use, conn = pco.mcp;
-  const status = !avail ? ['off', 'Not available here', 'Importing works when Stageplot is opened inside Claude. Here, add people by hand or paste a list.']
+  const status = !avail ? ['off', 'Not available here', 'Importing works when Stagehand is opened inside Claude. Here, add people by hand or paste a list.']
     : conn === undefined ? ['wait', 'Checking…', 'Looking for your Planning Center connection.']
-    : conn === null ? ['off', 'Connectors are off in this view', 'Open Stageplot in Claude with Planning Center connected to import teams.']
+    : conn === null ? ['off', 'Connectors are off in this view', 'Open Stagehand in Claude with Planning Center connected to import teams.']
     : pco.err ? ['bad', 'Couldn’t reach Planning Center', pco.err]
     : pco.types.length ? ['ok', 'Connected', `${plural(pco.types.length, 'service type')} found.`] : ['ready', 'Ready to connect', 'Load your service types to check the connection and pick a default.'];
   const busy = pcoBusyHtml();
@@ -8187,7 +8187,7 @@ function homePco() {
   const seen = [...new Set([...(P.seen || []), ...Object.keys(P.map || {})])].sort((a, b) => a.localeCompare(b));
   return hsec('Connection', '', `<div class="pcostatus s-${status[0]}"><span class="dot"></span><div><b>${status[1]}</b><small>${esc(status[2])}</small></div>
       ${avail && conn ? `<button class="btn" id="hp-test" ${pco.busy ? 'disabled' : ''}>${ic('calendar', 'sm')}${pco.types.length ? 'Reload service types' : 'Load service types'}</button>` : ''}</div>${busy}
-      <p class="hint">Read-only: Stageplot only reads service types, plans and who’s scheduled. It never changes anything in Planning Center.</p>`) +
+      <p class="hint">Read-only: Stagehand only reads service types, plans and who’s scheduled. It never changes anything in Planning Center.</p>`) +
     hsec('Importing a team', '', `<div class="field"><label for="hp-type">Default service type</label>${typeSel}</div>
       ${hcheck('hp-replace', 'Replace the week’s team when importing', P.replace !== false, 'Off: imported people are added to whoever is already there')}
       ${hcheck('hp-unconf', 'Include people who haven’t confirmed yet', P.unconfirmed !== false, 'They are ticked in the roster and marked unconfirmed')}
@@ -8213,7 +8213,7 @@ function homePrefs() {
     hsec('Working on the plot', '', `<div class="hpref"><span><b>Snap gear to</b><small>Rounds positions as you move gear (hold Alt to move freely)</small></span><select id="hp-snap" aria-label="Snap gear to">${(() => { const o = snapOpts(), near = ui.snap ? o.filter(([v]) => v).reduce((a, b) => Math.abs(b[0] - ui.snap) < Math.abs(a[0] - ui.snap) ? b : a)[0] : 0; return [o[3], ...o.slice(0, 3)].map(([v, l]) => `<option value="${v}" ${near === v ? 'selected' : ''}>${l}</option>`).join(''); })()}</select></div>
       ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}
       ${hcheck('hp-lock', 'Lock weeks that have happened', db.defaults?.lockPast !== false, 'Past weeks open read-only; Edit anyway unlocks one')}`) +
-    hsec('Use it offline', '', DESKTOP ? `<div class="hpref"><span><b>Installed as a desktop app</b><small>Works with no signal. Your weeks are saved in this computer’s app data, separate from any browser: use Data &amp; backup to move them between the browser and the app.</small></span></div>` : `<div class="hpref"><span><b>${matchMedia('(display-mode: standalone)').matches ? 'Installed on this device' : 'Install Stageplot on this device'}</b><small>${swState.ok ? 'Works with no signal: the app is saved on this device, and your weeks always are.' : 'Your weeks are always saved on this device. Open Stageplot from its own web address to install it and use it with no signal.'}${/iPhone|iPad/.test(navigator.userAgent) && !installPrompt ? ' On iPhone or iPad: Share → Add to Home Screen.' : ''}</small></span>${installPrompt ? `<button class="btn primary" id="hp-install">${ic('save', 'sm')}Install</button>` : ''}</div>`);
+    hsec('Use it offline', '', DESKTOP ? `<div class="hpref"><span><b>Installed as a desktop app</b><small>Works with no signal. Your weeks are saved in this computer’s app data, separate from any browser: use Data &amp; backup to move them between the browser and the app.</small></span></div>` : `<div class="hpref"><span><b>${matchMedia('(display-mode: standalone)').matches ? 'Installed on this device' : 'Install Stagehand on this device'}</b><small>${swState.ok ? 'Works with no signal: the app is saved on this device, and your weeks always are.' : 'Your weeks are always saved on this device. Open Stagehand from its own web address to install it and use it with no signal.'}${/iPhone|iPad/.test(navigator.userAgent) && !installPrompt ? ' On iPhone or iPad: Share → Add to Home Screen.' : ''}</small></span>${installPrompt ? `<button class="btn primary" id="hp-install">${ic('save', 'sm')}Install</button>` : ''}</div>`);
 }
 
 /* ----- Data ----- */
@@ -8222,7 +8222,7 @@ const oldWeeks = months => { const d = new Date(); d.setMonth(d.getMonth() - mon
 let tidyMonths = 6;
 async function tidyOldWeeks() {
   const gone = oldWeeks(tidyMonths); if (!gone.length) return;
-  const ok = await offerFile(`stageplot-backup-before-tidy-${localISO()}.json`, backup(true), 'application/json');
+  const ok = await offerFile(`stagehand-backup-before-tidy-${localISO()}.json`, backup(true), 'application/json');
   if (!ok) { toast('Nothing removed: the backup wasn’t saved'); return; }   // never delete without a copy in hand
   for (const w of gone) { delete db.plans[w.id]; delete histLoad()[w.id]; }
   histSave(); save(); renderAll();
@@ -8365,7 +8365,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
   navigator.serviceWorker.register('sw.js').then(() => { swState.ok = true; renderHome(); }).catch(() => { /* blocked here: the app still works online */ });
 }
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; renderHome(); });
-window.addEventListener('appinstalled', () => { installPrompt = null; toast('Stageplot is installed'); renderHome(); });
+window.addEventListener('appinstalled', () => { installPrompt = null; toast('Stagehand is installed'); renderHome(); });
 if (window.claude?.use) window.claude.use('mcp').then(m => { pco.mcp = m; renderRail(); renderHome(); pcoCheck(); }, () => { pco.mcp = null; renderRail(); renderHome(); });
 </script>
 </body>
