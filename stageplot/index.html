@@ -1177,6 +1177,10 @@ tr.flag td { color: var(--bad); }
 .tour-acts { gap: 6px; margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { .tour-hole, .tour-card { transition: none; } }
 @media print { #tour { display: none !important; } }
+.tabmore { flex: none; border: 0; background: none; padding: 8px 10px; font: inherit; font-size: 13.5px; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.tabmore:hover { color: var(--ink); } @media print { .tabmore { display: none; } }
+.cfold > summary { cursor: pointer; font-weight: 600; font-size: 13.5px; padding: 4px 0 10px; color: var(--ink-2); }
+.printpop .pp-toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -4539,8 +4543,8 @@ function renderFloat() {
       ${ui.adv ? `<span class="zoomval" title="Zoom">${Math.round(scale / fitScale() * 100)}%</span>` : ''}
       <button class="iconbtn" id="zIn" aria-label="Zoom in" title="Zoom in (+)">${ic('plus')}</button>
       <button class="iconbtn" data-fit="${!zoom && fitMode === 'stage' ? 'room' : 'stage'}" aria-label="Fit" title="${!zoom && fitMode === 'stage' ? 'Show the whole room' : 'Fit the stage (0)'}">${ic('fit')}</button>
-      <button class="iconbtn" id="setupLock" aria-pressed="${!!plan.setupLock}" aria-label="${plan.setupLock ? 'Unlock the setup' : 'Lock the setup'}" title="${plan.setupLock ? 'Setup locked: risers, stage box, speakers and power stay put. Click to unlock' : 'Lock the setup: risers, stage box, speakers and power stay put while you move band gear'}">${ic(plan.setupLock ? 'lock' : 'unlock')}</button>
-      <button class="iconbtn" id="flipView" aria-pressed="${flipped}" aria-label="${flipped ? 'See it from the house' : 'See it from the stage'}" title="${flipped ? 'Back to the view from the house' : 'Turn the plot round: the band’s view, looking out at the audience'}">${ic('rotate')}</button>
+      ${ui.adv || plan.setupLock ? `<button class="iconbtn" id="setupLock" aria-pressed="${!!plan.setupLock}" aria-label="${plan.setupLock ? 'Unlock the setup' : 'Lock the setup'}" title="${plan.setupLock ? 'Setup locked: risers, stage box, speakers and power stay put. Click to unlock' : 'Lock the setup: risers, stage box, speakers and power stay put while you move band gear'}">${ic(plan.setupLock ? 'lock' : 'unlock')}</button>` : ''}
+      ${ui.adv || flipped ? `<button class="iconbtn" id="flipView" aria-pressed="${flipped}" aria-label="${flipped ? 'See it from the house' : 'See it from the stage'}" title="${flipped ? 'Back to the view from the house' : 'Turn the plot round: the band’s view, looking out at the audience'}">${ic('rotate')}</button>` : ''}
     </div>`;
   $('fzoom').innerHTML = mode === 'channel' ? `<div class="panel">${chDraft?.extend ? `<span class="chip accent">Extending ${esc(chans().find(x => x.id === chDraft.extend.id)?.name || '')}</span>` : Object.entries(CH_KINDS).map(([k, v]) => `<button class="ctype" data-chdraftkind="${k}" aria-pressed="${k === chDraftKind}">${v.level ? '↑ ' : ''}${esc(v.name)}</button>`).join('')}<span class="dock-sep"></span><span class="toolhint">${chDraft?.pts.length ? 'Click to add bends · click the last point again or press Enter to finish · Alt for angles' : 'Click where the channel starts'}</span>${chDraft?.pts.length >= 2 ? `<button class="btn primary" id="chFinish" style="padding:5px 10px">Finish</button>` : ''}<button class="btn quiet" data-mode="select" style="padding:5px 10px">Cancel</button></div>` : mode === 'cable' ? `<div class="panel">${`<button class="ctype" data-ctype="auto" aria-pressed="${cableType === 'auto'}" title="Pick the type from the two ends">${ic('wand', 'sm')}Auto</button>` + Object.keys(CABLES).map(k => `<button class="ctype" data-ctype="${k}" aria-pressed="${k === cableType}"><span class="sw bg-${k}"></span>${SHORT[k]}</button>`).join('')}
       <span class="dock-sep"></span><span class="toolhint">${pending ? `Click to pivot · click a channel to enter it · click gear to finish · <span class="kbd">⌫</span> undo pivot · <span class="kbd">Esc</span> cancel` : 'Click the gear where the cable starts'}</span></div>`
@@ -4629,7 +4633,7 @@ function renderWeekPop() {
       <button class="btn" id="newCopy" title="Copy everything, team included">${ic('copy', 'sm')}Copy this week</button>
       <button class="btn" id="newStage" title="Same stage and infrastructure, no team">${ic('room', 'sm')}Stage only</button>
       ${pco.mcp ? `<button class="btn primary" id="newPco" style="grid-column:1/-1" title="Start the next week with this stage and bring in its Planning Center plan: team and times">${ic('calendar', 'sm')}Next plan from Planning Center</button>` : ''}
-    </div><div class="row aheadrow" style="gap:6px;flex-wrap:nowrap;margin-top:6px"><label for="aheadN" class="hint" style="white-space:nowrap">Plan ahead</label><select id="aheadN" aria-label="How many weeks ahead">${[2, 3, 4, 6, 8].map(n => `<option value="${n}" ${n === 4 ? 'selected' : ''}>next ${n} weeks</option>`).join('')}</select><button class="btn" id="aheadGo" title="Copy this week, team included, to each of the following weeks that has nothing planned yet">${ic('calendar', 'sm')}Copy</button>
+    </div>${ui.adv ? `<div class="row aheadrow" style="gap:6px;flex-wrap:nowrap;margin-top:6px"><label for="aheadN" class="hint" style="white-space:nowrap">Plan ahead</label><select id="aheadN" aria-label="How many weeks ahead">${[2, 3, 4, 6, 8].map(n => `<option value="${n}" ${n === 4 ? 'selected' : ''}>next ${n} weeks</option>`).join('')}</select><button class="btn" id="aheadGo" title="Copy this week, team included, to each of the following weeks that has nothing planned yet">${ic('calendar', 'sm')}Copy</button></div>` : ''}<div>
     </div></div>
     <div class="field"><span>Clear this week <small class="hint" style="font-weight:400">Undo brings it back</small></span><div class="grid2">
       <button class="btn" id="clearKeepStage" title="Remove the team, gear, cables, channels and notes. The stage shape, size and colour stay">${ic('room', 'sm')}${clearArmed === 'keep' ? 'Click again to clear' : 'Keep the stage'}</button>
@@ -5279,7 +5283,12 @@ function chEditHtml(ins) {
 }
 // the sheet tabs: plain words in groups (the event, the audio, the day), the open one underlined; only Overview flags checks
 const DOC_GROUPS = [['overview', 'rider', 'spots'], ['inputs', 'linecheck', 'outputs', 'mixes', 'rf', 'cables', 'power', 'racks'], ['team', 'loadin', 'floor'], ['all']];
+const CORE_TABS = new Set(['overview', 'spots', 'inputs', 'linecheck', 'cables', 'loadin', 'all']);
+let moreTabs = false;
 function docTabs(list, checks) {
+  const clash = rfClashes().length > 0;   // a channel clash points to Wireless, so it stays in reach
+  const hidden = ui.adv || moreTabs ? [] : list.filter(t => !CORE_TABS.has(t[0]) && t[0] !== paperTab && !(clash && t[0] === 'rf'));   // Simple keeps the everyday sheets in the row; the open one always shows
+  list = list.filter(t => !hidden.includes(t));
   const by = new Map(list.map(t => [t[0], t]));
   return DOC_GROUPS.map(g => g.filter(id => by.has(id)).map(id => { const [, l] = by.get(id), warn = id === 'overview' && checks;
     return `<button role="tab" data-ptab="${id}" aria-selected="${paperTab === id}"${warn ? ` title="${plural(checks, 'thing')} to check"` : ''}>${l}${warn ? `<i class="dwarn" aria-hidden="true"></i><span class="sr-only">, ${plural(checks, 'thing')} to check</span>` : ''}</button>`; }).join('')).filter(Boolean).join('<span class="dsep" aria-hidden="true"></span>');
@@ -5323,6 +5332,9 @@ function printPopHtml() {
     <div class="row" style="gap:10px"><button class="tlink" data-pall="1">All</button><button class="tlink" data-pall="0">None</button></div>
     <h2>Stage plot size</h2><div class="pp-scale">${printScales().map(([v, l]) => `<label><input type="radio" name="pscale" value="${v}" ${o.scale === v ? 'checked' : ''}> ${l}</label>`).join('')}</div>
     ${o.scale ? `<p class="hint">${scaleFit(o.scale).note}</p>` : ''}
+    <h2>Also</h2>
+    <button class="btn block pp-toggle" id="inkBtn" aria-pressed="${inkSave}" title="Print in black and white: a white stage, grey lines, no dark header">${ic(inkSave ? 'check' : 'sheet', 'sm')}Ink saver: ${inkSave ? 'on' : 'off'}</button>
+    <button class="btn block" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets as a file</button>
     <button class="btn block" id="printBlank" title="The empty stage, grid and measurements, for sketching by hand">${ic('room', 'sm')}Print a blank stage sheet</button>
     <button class="btn primary block" id="printGo">${ic('sheet', 'sm')}Print ${o.skip.length ? plural(PRINT_SHEETS().filter(([k]) => !skip.has(k)).length, 'sheet') : 'every sheet'}</button></div>`;
 }
@@ -5397,8 +5409,8 @@ function renderPaper() {
     <header class="doc-head${inkSave ? ' ink' : ''}">${db.defaults?.logo ? `<img class="doclogo" src="${db.defaults.logo}" alt="">` : ''}<div class="eyebrow">${[defaultsOf().org, multiVenue() ? venueOf(plan)?.name : ''].filter(Boolean).map(esc).join(' · ')}${defaultsOf().org || multiVenue() ? ' · ' : ''}${esc(longDate(plan.date))}</div><h1>${esc(plan.name || 'Untitled service')}</h1>
       <div class="doc-meta"><span>Stage <b>${uDim(plan.stage.w, plan.stage.d)}</b></span><span>Team <b>${plan.team.length}</b></span><span>Inputs <b>${t.ins}</b></span><span>Cable <b>${fmtLen(t.cab, 0)}</b></span><span>Power <b>${(t.watts / 1000).toFixed(1)} kW</b></span></div>
       ${plan.notes ? `<p class="doc-notes">${esc(plan.notes)}</p>` : ''}</header>
-    <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav><span class="printbar"><span class="splitbtn"><button class="btn" id="printBtn" title="${printOpts().skip.length ? 'Print the sheets you picked' : 'Print every sheet'}, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button><button class="btn" id="printMore" aria-haspopup="dialog" aria-expanded="${!!printPop}" aria-label="Choose sheets and plot scale" title="Choose sheets and plot scale">${ic('chevD', 'sm')}</button></span>${printPop ? printPopHtml() : ''}</span></div>
-    <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="picBtn" data-needs-dl title="The stage plot as an image, for a group chat or email">${ic('plot', 'sm')}Save plot as picture</button><button class="btn quiet" id="summaryBtn" title="A short message for the team chat: date, times, who's on and what's different">${ic('copy', 'sm')}Copy summary</button><button class="btn quiet" id="inkBtn" aria-pressed="${inkSave}" title="Print in black and white: a white stage, grey lines, no dark header">${ic('sheet', 'sm')}Ink saver${inkSave ? ' on' : ''}</button><button class="btn quiet" id="sheetsBtn" data-needs-dl title="Every sheet in one file you can open, share and print anywhere"${dlCap === null ? ' hidden' : ''}>${ic('save', 'sm')}Download all sheets</button></div>
+    <div class="docnav"><nav role="tablist" aria-label="Sheets">${docTabs([...nav, ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['all', 'Everything']], w.length)}</nav>${ui.adv ? '' : `<button class="tabmore" id="tabMore" aria-expanded="${moreTabs}">${moreTabs ? 'Fewer sheets' : `More sheets ${ic('chevD', 'sm')}`}</button>`}<span class="printbar"><span class="splitbtn"><button class="btn" id="printBtn" title="${printOpts().skip.length ? 'Print the sheets you picked' : 'Print every sheet'}, or choose Save as PDF in the print dialog">${ic('sheet', 'sm')}Print or PDF</button><button class="btn" id="printMore" aria-haspopup="dialog" aria-expanded="${!!printPop}" aria-label="Choose sheets and plot scale" title="Choose sheets and plot scale">${ic('chevD', 'sm')}</button></span>${printPop ? printPopHtml() : ''}</span></div>
+    <div class="viewbar"><span class="vb-view"><span class="vb-l" id="vbLabel">View</span><span class="seg" role="group" aria-labelledby="vbLabel"><button data-pageview="1" aria-pressed="${pageView}" title="Each sheet as a white A4 page, the way it prints">${ic('sheet', 'sm')}Pages</button><button data-pageview="0" aria-pressed="${!pageView}" title="One continuous list of sheets">${ic('layers', 'sm')}Scroll</button></span></span><button class="btn quiet" id="picBtn" data-needs-dl title="The stage plot as an image, for a group chat or email">${ic('plot', 'sm')}Save plot as picture</button><button class="btn quiet" id="summaryBtn" title="A short message for the team chat: date, times, who's on and what's different">${ic('copy', 'sm')}Copy summary</button></div>
     <div class="sheetgrid${inkSave ? ' ink' : ''}" id="sheetGrid" data-tab="${paperTab}">
     <section class="sheet" id="sec-overview" data-sheet="overview">${head('Stage plot', '', `${plural(plan.items.filter(i => cat(i).shape !== 'person' && cat(i).shape !== 'platform').length, 'item')} · ${plural(plan.cables.length, 'cable run')}`)}<div class="snapwrap">${cropToStage(inkSave ? whiteDeckSnapshot() : plotSnapshot())}</div>${titleBlock()}${(() => { const foh = plan.items.find(i => i.type === 'foh'); return foh && foh.y > plan.stage.d + fromM(2.5) ? `<p class="hint snapnote">${ic('fit', 'sm')}FOH desk ${uLen(foh.y - plan.stage.d)} out from the front edge, ${foh.x < plan.stage.w / 3 ? 'house right' : foh.x > plan.stage.w * 2 / 3 ? 'house left' : 'centre'} (not shown). The full room is on the plot.</p>` : ''; })()}</section>
     ${w.length ? `<section class="sheet" id="sec-checks" data-sheet="overview">${head('Before load-in', '', `${plural(w.length, 'thing')} to check`)}<ul class="warnlist">${w.map(warnItem).join('')}</ul></section>` : ''}
@@ -5702,7 +5714,7 @@ svg.addEventListener('pointermove', e => {
   if (drag.kind === 'item') {
     const it = itemById(drag.id); if (!it) return;
     if (drag.locked) {
-      if (!drag.warned && Math.hypot(p.x - drag.ox - it.x, p.y - drag.oy - it.y) > .4) { drag.warned = true; toast(it.locked ? `${itemName(it)} is locked. Unlock it from the panel or right-click` : `The setup is locked, so ${itemName(it)} stays put. Unlock it with the padlock under the plot`); }
+      if (!drag.warned && Math.hypot(p.x - drag.ox - it.x, p.y - drag.oy - it.y) > .4) { drag.warned = true; toast(it.locked ? `${itemName(it)} is locked. Unlock it from the panel or right-click` : `The setup is locked, so ${itemName(it)} stays put. Unlock it with the padlock under the plot, or search “unlock”`); }
       return;
     }
     const grp = drag.others.length > 0;
@@ -6450,6 +6462,7 @@ $('paperInner').addEventListener('click', e => {
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
   if (e.target.closest('#printBtn') || e.target.closest('#printGo')) { printPop = false; renderPaper(); printNow(); return; }
+  if (e.target.closest('#tabMore')) { moreTabs = !moreTabs; renderPaper(); $('tabMore')?.focus(); return; }
   if (e.target.closest('#printBlank')) { printBlank(); return; }
   if (e.target.closest('#printMore')) { printPop = !printPop; renderPaper(); if (printPop) document.querySelector('.printpop input')?.focus(); return; }
   { const a = e.target.closest('[data-pall]'); if (a) { const o = printOpts(); o.skip = a.dataset.pall === '1' ? [] : PRINT_SHEETS().map(([k]) => k); setPrintOpts(o); renderPaper(); return; } }
@@ -7692,7 +7705,7 @@ const TOUR = [
   ['tTeam', 'team', 'Your team', 'Add this week’s people here, paste a list, or import from Planning Center. Everyone gets a spot on stage and their usual gear.'],
   ['tGear', 'gear', 'Gear', 'Tap something, then tap the stage to place it, or drag it on. What you added recently sits at the top.'],
   ['@canvas', 'team', 'The stage', 'Drag anything to move it, click it to see its details on the right. Right-click, or press and hold on a tablet, for more.'],
-  ['@dock', '', 'Tools', 'Run cables, measure, show or hide layers, zoom, lock the setup, or turn the plot round to the band’s view.'],
+  ['@dock', '', 'Tools', 'Run cables, measure, show or hide layers and zoom. Advanced (in the ⋯ menu) adds more, like locking the setup or seeing it from the stage.'],
   ['checksBtn', '', 'What to check', 'Anything that needs a look before Sunday: unpatched inputs, power, gear on top of other gear. Click it for the list.'],
   ['vPaper', '', 'Paperwork', 'Input list, rider, load-in, line check and My spot cards. Print, save a PDF, or copy a summary for the team chat.'],
   ['vHome', '', 'Home', 'Every week you’ve planned, your venues, setups, the gear you own and settings. On a service day it opens with Today.'],
@@ -7847,6 +7860,7 @@ $('homeView').addEventListener('click', e => {
     return; }
   if (t.dataset.merge) { mergeNames(t.dataset.merge); return; }
   if (t.dataset.mergeskip) { (db.nameSkip ||= []).push(t.dataset.mergeskip); save(); renderHome(); return; }
+  if (t.id === 'gearWhereOn') { gearWhereOn = true; renderHome(); document.querySelector('[data-where]')?.focus(); return; }
   if (t.id === 'tidyGo') { tidyOldWeeks(); return; }
   if (t.id === 'libBackup') { const s2 = backup(true); offerFile(`stageplot-backup-${new Date().toISOString().slice(0, 10)}.json`, s2, 'application/json'); return; }
 });
@@ -8074,13 +8088,13 @@ function homeStage() {
 const gearPrefs = () => (db.gear ||= { hidden: [], owned: {} });
 const gearHidden = t => (db?.gear?.hidden || []).includes(t);
 function homeGear() {
-  const g = gearPrefs(), counts = {};
+  const g = gearPrefs(), counts = {}, showWhere = ui.adv || Object.keys(g.where || {}).length > 0 || gearWhereOn;   // Simple: storage places appear once you start using them
   for (const i of plan.items) counts[i.type] = (counts[i.type] || 0) + 1;
   const weeksUsing = t => Object.values(db.plans).filter(p => p.items.some(i => i.type === t)).length;
   const row = t => {
     const own = g.owned[t], used = counts[t] || 0, over = own != null && used > own, mine = CAT[t].custom, n = mine ? weeksUsing(t) : 0;
     return `<div class="hgear">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}${mine ? ' <span class="chip">Yours</span>' : ''}</b><small>${used ? `${used} on this week’s plot` : 'Not on this week’s plot'}${mine ? ` · looks like ${esc(CAT[CAT[t].base].name)}${CAT[t].inputs ? ` · ${plural(CAT[t].inputs.length, 'input')}` : ''}${CAT[t].watts ? ` · ${CAT[t].watts} W` : ''}` : ''}${over ? ' · <span class="overown">more than you own</span>' : ''}</small></span>
-      <label class="own where" for="hw-${t}"><span>Kept in</span><input id="hw-${t}" type="text" maxlength="30" data-where="${t}" value="${esc(g.where?.[t] || '')}" placeholder="Kept in…" list="whereList" aria-label="Where ${esc(CAT[t].name)} is kept"></label>
+      ${showWhere ? `<label class="own where" for="hw-${t}"><span>Kept in</span><input id="hw-${t}" type="text" maxlength="30" data-where="${t}" value="${esc(g.where?.[t] || '')}" placeholder="Kept in…" list="whereList" aria-label="Where ${esc(CAT[t].name)} is kept"></label>` : ''}
       <label class="own" for="ho-${t}"><span>Own</span><input id="ho-${t}" type="number" min="0" max="999" step="1" inputmode="numeric" data-own="${t}" value="${own ?? ''}" placeholder="–" aria-label="How many ${esc(CAT[t].name)} you own"></label>
       <button class="iconbtn${gearDelArmed === t ? ' armed' : ''}" data-gearrm="${t}" aria-label="Remove ${esc(CAT[t].name)}" title="${mine ? 'Delete this gear' : 'Remove from your library'}">${gearDelArmed === t ? `<span class="armtxt">${n ? `Also remove from ${plural(n, 'week')}?` : 'Delete?'}</span>` : ic('trash', 'sm')}</button></div>`;
   };
@@ -8108,14 +8122,15 @@ function homeGear() {
   return hsec('Building from the team', '', hcheck('hd-teamgear', 'Add each person’s instruments and gear', ui.teamGear, 'Off: people are placed on stage and you add their gear yourself')) +
     hsec('Your gear', `${plural(GEAR_GROUPS.flatMap(([, ts]) => ts).length - removed.length, 'type')} in your library. Remove what you never use to keep Add gear short; enter how many you own and the checks warn when a week needs more.`,
       `${gearForm.open ? form : ''}<div class="hgear-tools row" style="gap:6px"><button class="btn quiet" id="homeGearUnused">Keep only what’s on this week</button><button class="btn quiet" id="homeOwnClear">Clear owned counts</button></div>${groups}`, gearForm.open ? '' : `<button class="btn primary" id="gf-open">${ic('plus', 'sm')}Add gear</button>`) +
+    (!gearWhereOn && !showWhere ? `<div class="row" style="margin:-4px 0 8px"><button class="tlink" id="gearWhereOn">Note where each kind of gear is kept</button></div>` : '') +
     hsec('Cables you own', `How many of each length you have. The cable pull list then shows what you own and warns when a week needs more; a longer spare covers a shorter run. Lengths in ${imperial() ? 'feet' : 'metres'}.`,
-      `<div class="cstock">${Object.entries(CABLES).map(([type, C]) => `<div class="cstock-row"><b>${esc(C.name)}</b><div class="cstock-lens">${(imperial() ? C.stockFt : C.stock).map(l => `<label><span>${fmtStock(l)}</span><input type="number" min="0" max="999" inputmode="numeric" data-cstock="${cableKey(type, l)}" value="${cableStock()[cableKey(type, l)] ?? ''}" placeholder="–" aria-label="How many ${esc(C.name)} ${fmtStock(l)} you own"></label>`).join('')}</div></div>`).join('')}</div>`) +
+      `<details class="cfold" ${ui.adv || Object.keys(cableStock()).length ? 'open' : ''}><summary>${Object.keys(cableStock()).length ? 'Cable counts' : 'Add your cable counts (optional)'}</summary><div class="cstock">${Object.entries(CABLES).map(([type, C]) => `<div class="cstock-row"><b>${esc(C.name)}</b><div class="cstock-lens">${(imperial() ? C.stockFt : C.stock).map(l => `<label><span>${fmtStock(l)}</span><input type="number" min="0" max="999" inputmode="numeric" data-cstock="${cableKey(type, l)}" value="${cableStock()[cableKey(type, l)] ?? ''}" placeholder="–" aria-label="How many ${esc(C.name)} ${fmtStock(l)} you own"></label>`).join('')}</div></div>`).join('')}</div></details>`) +
     `<datalist id="whereList">${[...new Set(Object.values(db.gear?.where || {}))].sort().map(w => `<option value="${esc(w)}">`).join('')}</datalist>` +
     (removed.length ? hsec('Removed from your library', 'Not in Add gear. Search still finds them, and weeks that use them are unaffected.',
       `<div class="hlist">${removed.map(t => `<div class="hlist-row">${glyph(t)}<span class="hmain"><b>${esc(CAT[t].name)}</b></span><button class="btn" data-gearback="${t}">${ic('undo', 'sm')}Restore</button></div>`).join('')}</div>
        <div class="row"><button class="btn quiet" id="homeGearAll">Restore all</button></div>`) : '');
 }
-let gearDelArmed = '';
+let gearDelArmed = '', gearWhereOn = false;
 const gearForm = { open: false, name: '', base: 'vox_mic', group: '', inputs: '', watts: '', img: '', w: '', d: '', imgErr: '' };
 function addCustomGear() {
   const name = gearForm.name.trim(); if (!name) return;
