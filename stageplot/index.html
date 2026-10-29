@@ -162,7 +162,7 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .pop-actions .btn { justify-content: flex-start; }
 
 /* ---------- workbench ---------- */
-.work { --railw: 336px; --inspw: 296px; display: grid; grid-template-columns: var(--railw) minmax(0,1fr) var(--inspw); flex: 1 1 0; min-height: 520px; transition: grid-template-columns .22s ease; }
+.work { --railw: calc(336px * var(--tz, 1)); --inspw: calc(296px * var(--tz, 1)); display: grid; grid-template-columns: var(--railw) minmax(0,1fr) var(--inspw); flex: 1 1 0; min-height: 520px; transition: grid-template-columns .22s ease; }
 .work.rail-collapsed { --railw: 56px; }
 .work.insp-collapsed { --inspw: 0px; }
 .insp-collapsed .inspector { visibility: hidden; border-left: 0; }
@@ -1125,6 +1125,24 @@ tr.flag td { color: var(--bad); }
 #plot.flipped text:not([transform]) { transform-box: fill-box; transform-origin: center; rotate: 180deg; }   /* side labels already turned sideways read fine either way */
 #plotView.flipview .canvas::after { content: 'Seen from the stage'; position: absolute; left: 50%; top: 12px; translate: -50% 0; padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 12px; font-weight: 650; pointer-events: none; z-index: 5; }
 #flipView[aria-pressed="true"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.selmore { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; }
+.libmain mark { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--ink); border-radius: 3px; padding: 0 2px; }
+.spots4 { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); margin-left: 10px; } .spots4 input { accent-color: var(--accent); }
+/* bigger text (Home → Preferences): the panels, menus and Home grow; the plot's own labels grow with it, the drawing itself stays to scale */
+@media screen {
+  :root[data-text="l"] { --tz: 1.15; } :root[data-text="xl"] { --tz: 1.3; }
+  :root[data-text] header.top, :root[data-text] .rail, :root[data-text] .inspector, :root[data-text] #homeView, :root[data-text] #paperView .paper-inner, :root[data-text] .float .panel, :root[data-text] .float .pres-title,
+  :root[data-text] .toast, :root[data-text] .modal { zoom: var(--tz); }   /* menus inside the header grow with it; the right-click menu and hover card sit at the pointer, so they keep their size */
+}
+.todaycard { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 20px; padding: 22px 24px; border-radius: var(--r-lg); background: var(--deck); color: #f2f4f6; margin-bottom: 16px; }
+.todaycard .eyebrow { color: rgba(255,255,255,.65); } .todaycard h2 { margin: 2px 0 0; font-size: clamp(22px, 3vw, 30px); line-height: 1.15; }
+.td-next { margin: 8px 0 0; font-size: 19px; font-weight: 650; color: #fff; }
+.td-clock { font-size: clamp(36px, 5vw, 56px); font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; align-self: start; }
+.td-load { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 13.5px; color: rgba(255,255,255,.8); } .td-load .lbar { flex: 1; max-width: 260px; background: rgba(255,255,255,.14); } .td-load b { color: #fff; }
+.td-chg { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 13.5px; color: #ffd98a; }
+.td-acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.todaycard .btn:not(.primary) { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.18); } .todaycard .btn:not(.primary):hover { background: rgba(255,255,255,.18); }
+@media (max-width: 600px) { .todaycard { grid-template-columns: 1fr; } .td-clock { order: -1; font-size: 40px; } }
 .storelist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 16px; }
 .storelist li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .storelist b { font-variant-numeric: tabular-nums; }
@@ -1176,7 +1194,7 @@ tr.flag .ch { background: var(--bad-soft); color: var(--bad); }
 @keyframes rise { from { transform: translate(-50%, 8px); opacity: 0; } }
 
 @media (max-width: 1180px) {
-  .work { grid-template-columns: 320px minmax(0,1fr); flex: none; }
+  .work { grid-template-columns: calc(320px * var(--tz, 1)) minmax(0,1fr); flex: none; }
   .canvas { height: 74vh; min-height: 480px; }
   .inspector { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
   .rail { max-height: 74vh; min-height: 480px; }
@@ -1287,6 +1305,9 @@ td.spare { color: var(--muted); font-style: italic; }
   body.print-spots .doc-head, body.print-spots .sheetgrid > :not(#sec-spots), body.print-spots .sheets2 { display: none !important; }
   body.print-spots #sec-spots { display: block !important; break-before: auto !important; } body.print-spots #sec-spots > header, body.print-spots .spotpick, body.print-spots [data-spotcopy] { display: none !important; }
   body.print-spots .spotcard { break-after: page; break-inside: avoid; border: 0; max-width: none; padding: 0; gap: 8px; } body.print-spots .spotcard:last-child { break-after: auto; }
+  body.print-spots.spots4 .spotlist { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm 6mm; }
+  body.print-spots.spots4 .spotcard { zoom: .5; break-after: auto; border: .6mm solid #bbb; border-radius: 3mm; padding: 4mm; }
+  body.print-spots.spots4 .spotcard:nth-child(4n):not(:last-child) { break-after: page; }
   body.print-spots .spotplot .snap { max-height: 100mm; } body.print-spots .spotsec.many { grid-column: 1 / -1; } body.print-spots .spotsec.many ul { grid-template-columns: repeat(3, 1fr); } body.print-spots .spotcard * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 .f-foh { right: 14px; bottom: 78px; display: inline-flex; gap: 6px; align-items: center; padding: 7px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-2, 0 4px 14px rgba(0,0,0,.18)); font: 500 13px/1 var(--f-ui); cursor: pointer; flex-wrap: nowrap; }
@@ -1968,6 +1989,7 @@ let sel = null;                 // {kind:'item'|'cable', id}
 // so anything that selects something else drops the group without having to know about it.
 let group = null;               // {anchor, ids:Set}
 const selIds = () => sel?.kind === 'item' ? (group && group.anchor === sel.id ? [...group.ids].filter(itemById) : [sel.id].filter(itemById)) : [];   // a person removed from the team takes their gear, and the selection with it
+const manyOf = n => { const w = /^[A-Z0-9 ]+$/.test(n) ? n : n.toLowerCase(); return /s$/i.test(w) ? w : w + 's'; };   // "wedges", "IEMs", "DIs"
 function setGroup(ids) {
   ids = [...new Set(ids)].filter(itemById);
   sel = ids.length ? { kind: 'item', id: ids[0] } : null;
@@ -2133,7 +2155,30 @@ function lockedNote() { toast(`${longDate(plan.date)} has happened, so it’s lo
 let undoLab = [], redoLab = [];
 const labSync = () => { if (undoLab.length !== history.length) undoLab = history.map(() => ''); if (redoLab.length !== future.length) redoLab = future.map(() => ''); };
 const stepLabel = (msg, before) => { const l = (msg && String(msg).split(' · ')[0].replace(/\s*Undo$/, '')) || describeChange(before) || ''; return l.length > 60 ? l.slice(0, 57) + '…' : l; };
-function pushUndo(before, label) { labSync(); history.push(before); undoLab.push(label); if (history.length > 80) { history.shift(); undoLab.shift(); } future = []; redoLab = []; }
+function pushUndo(before, label) { labSync(); history.push(before); undoLab.push(label); if (history.length > 80) { history.shift(); undoLab.shift(); } future = []; redoLab = []; keepUndo(); }
+// undo outlives a reload or a closed tab: the open week's last steps are kept beside the saves, and only used again if the week is exactly as they left it
+const UNDO_KEY = 'stageplot.undo';
+let undoTimer = 0;
+function keepUndo() {
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => {
+    labSync();
+    for (const n of [30, 15, 6, 0]) {
+      try {
+        if (!n) { localStorage.removeItem(UNDO_KEY); return; }
+        localStorage.setItem(UNDO_KEY, JSON.stringify({ week: plan.id, cur: snapState(), h: history.slice(-n), hl: undoLab.slice(-n), f: future.slice(-n), fl: redoLab.slice(-n) }));
+        return;
+      } catch { /* too big for storage: keep fewer steps */ }
+    }
+  }, 300);
+}
+function restoreUndo() {
+  try {
+    const u = JSON.parse(localStorage.getItem(UNDO_KEY) || 'null');
+    if (!u || u.week !== plan.id || u.cur !== snapState() || !Array.isArray(u.h)) return;
+    history = u.h; undoLab = u.hl || []; future = u.f || []; redoLab = u.fl || [];
+  } catch { /* nothing to bring back */ }
+}
 function mutate(fn, msg) {
   if (weekLocked()) { renderAll(); lockedNote(); return; }   // put back whatever the field showed
   glideNext = true;
@@ -2145,12 +2190,12 @@ function mutate(fn, msg) {
 }
 function undo() {
   labSync(); const prev = history.pop(), lab = undoLab.pop() || ''; if (!prev) { toast('Nothing to undo'); return; }
-  future.push(snapState()); redoLab.push(lab);
+  future.push(snapState()); redoLab.push(lab); keepUndo();
   glideNext = true; plan = loadState(prev); sel = null; pending = null; save(); renderAll();
 }
 function redo() {
   labSync(); const next = future.pop(), lab = redoLab.pop() || ''; if (!next) { toast('Nothing to redo'); return; }
-  history.push(snapState()); undoLab.push(lab);
+  history.push(snapState()); undoLab.push(lab); keepUndo();
   glideNext = true; plan = loadState(next); sel = null; pending = null; save(); renderAll();
 }
 /* Version history: a timeline of every change to a week, kept beside the weeks (not in them), so any point can be restored.
@@ -2680,6 +2725,25 @@ function pullList() {
   return [...map.entries()].map(([k, n]) => { const [type, len, label] = k.split('|'); return { type, len: Number(len), n, label }; })
     .sort((a, b) => Object.keys(CABLES).indexOf(a.type) - Object.keys(CABLES).indexOf(b.type) || (a.label || '').localeCompare(b.label || '') || a.len - b.len);
 }
+// gear standing on other gear, or band gear left off the deck: easy to do by accident when dragging, easy to miss on a busy plot
+const SOLID_SHAPES = new Set(['kit', 'wedge', 'rack', 'desk', 'speaker']), SOLID_TYPES = new Set(['gtr_amp', 'bass_amp', 'keys', 'midi_keys', 'edrums', 'upright_piano', 'grand_piano', 'pulpit', 'conf_mon', 'pedalboard']);
+const FLOWN = new Set(['la_main', 'la_sub']);
+function placementIssues() {
+  const out = [], solid = plan.items.filter(i => (SOLID_SHAPES.has(cat(i).shape) || SOLID_TYPES.has(i.type)) && !FLOWN.has(i.type) && !i.chan);
+  const box = i => { const [hw, hd] = halfExt(i); return [i.x - hw, i.y - hd, i.x + hw, i.y + hd]; };
+  let n = 0;
+  for (let a = 0; a < solid.length && n < 5; a++) for (let b = a + 1; b < solid.length && n < 5; b++) {
+    const A = box(solid[a]), B = box(solid[b]), w = Math.min(A[2], B[2]) - Math.max(A[0], B[0]), h = Math.min(A[3], B[3]) - Math.max(A[1], B[1]);
+    if (w <= 0 || h <= 0) continue;
+    const small = Math.min((A[2] - A[0]) * (A[3] - A[1]), (B[2] - B[0]) * (B[3] - B[1]));
+    if (w * h >= .25 * small) { n++; out.push({ lvl: 'warn', id: solid[b].id, msg: `${itemName(solid[a])} overlaps ${itemName(solid[b])}. Move one so both fit on the floor.` }); }
+  }
+  const poly = stagePoly(), belongs = i => { const C = cat(i); return C.cat === 'inst' || C.shape === 'kit' || C.shape === 'wedge' || ['vox_mic', 'inst_mic'].includes(i.type); };
+  const off = plan.items.filter(i => belongs(i) && !inPoly(i.x, i.y, poly));
+  for (const i of off.slice(0, 4)) out.push({ lvl: 'warn', id: i.id, msg: `${itemName(i)} is off the stage. Drag it back on, or leave it if that’s where it goes.` });
+  if (off.length > 4) out.push({ lvl: 'warn', id: off[4].id, msg: `${plural(off.length - 4, 'more item')} off the stage.` });
+  return out;
+}
 function warnings() {
   const out = [];
   for (const { w, c } of walkwayCrossings()) out.push({ lvl: 'warn', id: w.id, msg: `${CABLES[c.type].name} from ${itemName(itemById(c.from))} to ${itemName(itemById(c.to))} crosses ${itemName(w)}: a trip hazard. Reroute it, fly it or tape it down.` });
@@ -2717,6 +2781,7 @@ function warnings() {
   for (const p of plan.team) if (!ROLES[p.role]) out.push({ lvl: 'warn', pid: p.id, fix: 'role', msg: `${p.name || 'A team member'} has no position.` });
   for (const l of rfClashes()) out.push({ lvl: 'bad', id: l[1].id, msg: `${l.map(itemName).join(' and ')} are all on ${rfOf(l[0]).trim()}. Give each wireless pack its own channel (Paperwork → Wireless).` });
   for (const x of cableShort()) out.push({ lvl: 'warn', id: null, msg: `${x.short} more ${CABLES[x.type].name} ${fmtStock(x.len)} needed than you own (need ${x.need}, own ${x.own}). Borrow some or change the runs.` });
+  for (const x of placementIssues()) out.push(x);
   return out;
 }
 
@@ -4061,7 +4126,7 @@ function renderPlot() {
   $('scroller').classList.toggle('placing', !!placing);
   const { w, d, house } = plan.stage;
   const showSmall = scale >= (presenting ? 22 : 34), showBig = scale >= 11;
-  const LK = presenting ? 1.7 : 1; svg.style.setProperty('--lab', `${f3(10.5 * LK / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 * LK / scale)}px`); svg.style.setProperty('--labs', `${f3(3 * LK / scale)}px`);
+  const LK = presenting ? 1.7 : textScale(); svg.style.setProperty('--lab', `${f3(10.5 * LK / scale)}px`); svg.style.setProperty('--labp', `${f3(11.5 * LK / scale)}px`); svg.style.setProperty('--labs', `${f3(3 * LK / scale)}px`);
   applyDeckColor(svg);
   // cable weights are set in screen pixels, so runs stay fine and crisp at any zoom; the caps keep them inside their lanes when zoomed out
   const W = (px, cap) => `${f3(Math.min(px / scale, cap))}px`;
@@ -4770,7 +4835,9 @@ function renderInspector() {
       ${basic}
       <section class="isec"><div class="field"><label for="iNote">Note <small class="hint" style="font-weight:400">shows on the plot and the paperwork</small></label><textarea id="iNote" rows="2" placeholder="${C.shape === 'person' ? 'e.g. Bring a 9V battery, uses the left IEM pack' : 'e.g. Borrowed from youth room, needs fresh strings'}">${esc(it.note || '')}</textarea></div></section>
       ${plan.cables.some(x => touches(x, it.id) && ['inst', 'xlr', 'usb', 'cat6'].includes(x.type)) ? `<section class="isec"><button class="btn block" id="iTrace" aria-pressed="${tracing === it.id}" title="Follow this signal from the stage to the desk and back to the monitors">${ic('zap', 'sm')}${tracing === it.id ? 'Stop tracing' : 'Trace the signal'}</button></section>` : ''}
-      <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div></section>
+      <section class="isec"><div class="actions actions4"><button class="btn" id="iRotate" title="Rotate 90° (R)">${ic('rotate', 'sm')}Rotate</button><button class="btn" id="iLock" aria-pressed="${!!it.locked}" title="${it.locked ? 'Locked: can’t be moved by accident (L)' : 'Lock in place (L)'}">${ic(it.locked ? 'lock' : 'unlock', 'sm')}${it.locked ? 'Locked' : 'Lock'}</button><button class="btn" id="iDup" title="Duplicate (D)">${ic('copy', 'sm')}Duplicate</button><button class="btn danger" id="iDel" title="Delete (Del)">${ic('trash', 'sm')}Delete</button></div>
+      ${(() => { const same = plan.items.filter(i => i.type === it.type).length, own = it.personId ? plan.items.filter(i => i.personId === it.personId).length : 0, who = personById(it.personId);   // a way into "several at once"
+        return same > 1 || own > 1 ? `<div class="selmore">${same > 1 ? `<button class="tlink" data-selall="type">Select all ${same} ${esc(manyOf(CAT[it.type].short || CAT[it.type].name))}</button>` : ''}${own > 1 ? `<button class="tlink" data-selall="person">Select all of ${esc(firstName(who?.name) || 'their')}’s gear (${own})</button>` : ''}</div>` : ''; })()}</section>
       ${C.shape === 'person' && !conns.length ? '' : `<section class="isec"><h3>Connections <span>${conns.length}</span></h3>${conns.length ? `<ul class="conns">${conns.slice(0, showAllConns === it.id ? conns.length : 4).map(x => `<li><button data-selc="${x.id}"><span class="dot bg-${x.type}"></span><span>${esc(itemName(other(x, it.id)) || '?')}<small>${esc(CABLES[x.type].name)}${x.type === 'power' ? ` · circuit ${x.circuit || 1}` : ''}</small></span><span class="len">${fmtLen(cableLen(x))}</span></button></li>`).join('')}</ul>${conns.length > 4 && showAllConns !== it.id ? `<button class="btn quiet" data-allconns="${it.id}">Show all ${conns.length}</button>` : ''}` : `<p class="hint">Not connected yet.</p><button class="btn" data-ctx-cable="${it.id}">${ic('cable', 'sm')}Run a cable from here</button>`}</section>`}
       ${moreFold(adv, moreWhat)}
     </div>`;
@@ -5132,6 +5199,7 @@ function centreTab() {   // on a phone the tab row scrolls: keep the open sheet'
 // every printed page says which week it belongs to, and which page of how many it is (page margin boxes; browsers without them just leave the footer off)
 // print options: which sheets go to paper, and whether the stage plot prints to a true scale (per browser)
 let printPop = false;
+let spots4 = (() => { try { return localStorage.getItem('stageplot.spots4') === '1'; } catch { return false; } })();   // My spot cards four to a page, to save paper
 function printOpts() { let o; try { o = JSON.parse(localStorage.getItem('stageplot.printOpts') || '{}'); } catch { o = {}; } return { skip: Array.isArray(o.skip) ? o.skip : [], scale: Number(o.scale) || 0 }; }
 function setPrintOpts(o) { try { localStorage.setItem('stageplot.printOpts', JSON.stringify(o)); } catch { /* memory only */ } applyPrintPick(); }
 const PRINT_SHEETS = () => [['overview', 'Stage plot'], ['inputs', 'Inputs'], ['outputs', 'Outputs'], ['mixes', 'Monitor mixes'], ...(plan.items.some(i => cat(i).wireless) ? [['rf', 'Wireless']] : []), ['cables', 'Cable pull list'], ['power', 'Power'], ['team', 'Team'], ...(plan.items.some(i => i.type === 'rack') ? [['racks', 'Racks']] : []), ['floor', 'Floor marks'], ['loadin', 'Load-in']];
@@ -5226,7 +5294,7 @@ function renderPaper() {
       return `<section class="sheet" id="sec-changes" data-sheet="overview">${head(`What’s different from ${esc(longDate(old.date))}`, '', li.length ? 'Read this before load-in' : '')}${li.length ? `<ul class="changelist">${li.join('')}</ul>` : `<p class="hint">Same team and gear as ${esc(longDate(old.date))}.</p>`}</section>`; })()}
     ${(() => { const sh = shortages(); return sh.length ? `<section class="sheet" id="sec-borrow" data-sheet="overview">${head('To borrow', '', 'More than you own (Home → Gear)')}<div class="tablewrap"><table><thead><tr><th>Gear</th><th style="text-align:right">Needed</th><th style="text-align:right">Own</th><th style="text-align:right">Borrow</th></tr></thead><tbody>${sh.map(x => `<tr><td>${esc(CAT[x.t].name)}</td><td class="num">${x.need}</td><td class="num">${x.own}</td><td class="num"><b>${x.short}</b></td></tr>`).join('')}</tbody></table></div></section>` : ''; })()}
     ${(() => { const nt = plan.items.filter(i => i.note); return nt.length ? `<section class="sheet" id="sec-notes" data-sheet="overview">${head('Notes', '', 'Pinned to people and gear on the plot')}<ul class="notelist">${nt.map(i => `<li><b>${esc(itemName(i))}</b><span>${esc(i.note)}</span></li>`).join('')}</ul></section>` : ''; })()}
-    ${paperTab === 'spots' ? `<section class="sheet" id="sec-spots" data-sheet="spots"><header><div><h2>My spot</h2><p class="hint">A card for each person: where they stand, their channels, monitor, power and notes. Copy it into a message, or print one per page.</p></div><button class="btn primary" id="printSpots">${ic('sheet', 'sm')}Print every card</button></header>${spotsHtml()}</section>` : ''}
+    ${paperTab === 'spots' ? `<section class="sheet" id="sec-spots" data-sheet="spots"><header><div><h2>My spot</h2><p class="hint">A card for each person: where they stand, their channels, monitor, power and notes. Copy it into a message, or print one per page.</p></div><button class="btn primary" id="printSpots">${ic('sheet', 'sm')}Print every card</button><label class="spots4" for="spots4"><input type="checkbox" id="spots4" ${spots4 ? 'checked' : ''}> 4 to a page</label></header>${spotsHtml()}</section>` : ''}
     ${paperTab === 'rider' ? `<section class="sheet" id="sec-rider" data-sheet="rider"><header><div><h2>Rider</h2><p class="hint">One black-and-white page for the venue: plot, scale, legend and inputs.</p></div><button class="btn primary" id="printRider">${ic('sheet', 'sm')}Print the rider</button></header>${riderHtml(ins)}</section>` : ''}
     <section class="sheet" id="sec-inputs" data-sheet="inputs">${head('Input list', '', `${plural(ins.length, 'channel')}. ${chans_().fixed !== false ? 'Channel numbers stay the same every week' + (spareChannels(ins).length ? `; ${plural(spareChannels(ins).length, 'spare channel')} this week` : '') : 'Numbered in band order'}. ${ins.filter(r => r.p48).length} need phantom power.`).replace('</header>', `<div class="row" style="gap:6px"><button class="btn${chEdit ? ' primary' : ''}" id="chEditBtn" aria-pressed="${chEdit}">${ic('pen', 'sm')}${chEdit ? 'Done' : 'Edit channels'}</button><button class="btn" data-copy="inputs">${ic('copy', 'sm')}Copy</button><button class="btn" data-exp="inputs" data-needs-dl>${ic('save', 'sm')}CSV</button><button class="btn" data-exp="names" data-needs-dl title="Channel, short name, colour and phantom for your desk's scribble strips">${ic('save', 'sm')}Desk names</button></div></header>`)}${chEdit ? chEditHtml(ins) : table([...ins, ...spareChannels(ins).map(x => ({ ch: x.ch, name: 'Spare', mic: x.usual ? `usually ${x.usual}` : '', stand: '', spare: true }))].sort((a, b) => a.ch - b.ch), inCols, 'flag', emptyBox('mic', 'No inputs yet', 'Mics, DIs and anything else that needs a channel shows up here.', 'team', 'Build from the team'))}${chEdit ? '' : boxKey(ins)}</section>
     <div class="sheets2">
@@ -5830,7 +5898,7 @@ function openPaper(anchor) {
   if (anchor) requestAnimationFrame(() => $(anchor)?.scrollIntoView({ block: 'start' }));
   else $('paperView').scrollTop = 0;
 }
-function switchWeek(id) { if (!db.plans[id]) return; pco.changes = null; setTimeout(() => pcoCheck(), 50); if (!$('rackDlg').hidden) closeRack(); compare = null; plan = db.plans[id]; history = []; future = []; sel = null; pending = null; delArmed = false; needFit = true; save(); renderAll(); }
+function switchWeek(id) { if (!db.plans[id]) return; pco.changes = null; setTimeout(() => pcoCheck(), 50); if (!$('rackDlg').hidden) closeRack(); compare = null; plan = db.plans[id]; history = []; future = []; restoreUndo(); sel = null; pending = null; delArmed = false; needFit = true; save(); renderAll(); }
 /* empty the open week: everything, or everything but the stage (shape, size, colour, house) and the room settings */
 function clearWeek(all) {
   mutate(() => {
@@ -6186,6 +6254,7 @@ $('inspector').addEventListener('change', e => {
   });
 });
 $('inspector').addEventListener('click', e => {
+  { const sa = e.target.closest('[data-selall]'); if (sa && sel?.kind === 'item') { const it = itemById(sel.id); setGroup(plan.items.filter(i => sa.dataset.selall === 'type' ? i.type === it.type : i.personId && i.personId === it.personId).map(i => i.id)); renderPlot(); renderInspector(); return; } }
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.selitem) { if (itemById(t.dataset.selitem)) { sel = { kind: 'item', id: t.dataset.selitem }; group = null; focusItem(t.dataset.selitem); renderPlot(); renderInspector(); } return; }
   if (t.dataset.selc) { sel = { kind: 'cable', id: t.dataset.selc }; renderPlot(); renderInspector(); return; }
@@ -6250,7 +6319,7 @@ $('paperInner').addEventListener('click', e => {
   const ex = e.target.closest('[data-exp]'); if (ex) { exportInputs(ex.dataset.exp); return; }
   const sp = e.target.closest('[data-spot]'); if (sp) { spotSel = sp.dataset.spot; renderPaper(); return; }
   const sc = e.target.closest('[data-spotcopy]'); if (sc) { const p = plan.team.find(t => t.id === sc.dataset.spotcopy); if (p) copyText(spotText(spotData(p)), $('copyFallback')); return; }
-  if (e.target.closest('#printSpots')) { const was = spotSel; spotSel = 'all'; renderPaper(); document.body.classList.add('print-spots'); const done = () => { document.body.classList.remove('print-spots'); removeEventListener('afterprint', done); spotSel = was; renderPaper(); }; addEventListener('afterprint', done); printNow('print-spots', 'my-spot-cards'); setTimeout(done, 1500); return; }
+  if (e.target.closest('#printSpots')) { const was = spotSel; spotSel = 'all'; renderPaper(); document.body.classList.add('print-spots'); document.body.classList.toggle('spots4', spots4); const done = () => { document.body.classList.remove('print-spots', 'spots4'); removeEventListener('afterprint', done); spotSel = was; renderPaper(); }; addEventListener('afterprint', done); printNow('print-spots', 'my-spot-cards'); setTimeout(done, 1500); return; }
   if (e.target.closest('#chEditBtn')) { chEdit = !chEdit; renderPaper(); return; }
   if (e.target.closest('#chRenumber')) { renumberChannels(); return; }
   const j = e.target.closest('[data-jump]'); if (j) $(j.dataset.jump)?.scrollIntoView({ block: 'start' });
@@ -6325,7 +6394,7 @@ function paperworkHtml(only = '') {   // only: 'print-rider' or 'print-spots' ma
   const keep = paperTab; paperTab = only === 'print-rider' ? 'rider' : only === 'print-spots' ? 'spots' : 'all'; renderPaper();
   const body = `<svg aria-hidden="true" style="position:absolute;width:0;height:0"><defs>${ART_DEFS}</defs></svg>` + $('paperInner').innerHTML; paperTab = keep; renderPaper();   // the drawings' gradients travel with the file
   const css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n');
-  return `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(plan.name || 'Stage plot')} · ${esc(plan.date)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap"><style>${css}</style><style>.docnav,.viewbar,[data-copy],.printbar{display:none!important}html,body{height:auto;display:block}.fileprint{position:fixed;top:14px;right:14px;z-index:9;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:10px;background:#6d5efc;color:#fff;font:600 14px Archivo,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.18)}@media print{.fileprint{display:none!important}}</style></head><body${only ? ` class="${only}"` : ''}><button class="fileprint" onclick="print()">Print or save as PDF</button><main class="paper" style="overflow:visible"><div class="paper-inner">${body}</div></main></body></html>`;
+  return `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(plan.name || 'Stage plot')} · ${esc(plan.date)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap"><style>${css}</style><style>.docnav,.viewbar,[data-copy],.printbar{display:none!important}html,body{height:auto;display:block}.fileprint{position:fixed;top:14px;right:14px;z-index:9;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:10px;background:#6d5efc;color:#fff;font:600 14px Archivo,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.18)}@media print{.fileprint{display:none!important}}</style></head><body${only ? ` class="${only}${only === 'print-spots' && spots4 ? ' spots4' : ''}"` : ''}><button class="fileprint" onclick="print()">Print or save as PDF</button><main class="paper" style="overflow:visible"><div class="paper-inner">${body}</div></main></body></html>`;
 }
 function importJson(text) {
   let d; try { d = JSON.parse(text); } catch { toast('That isn’t valid JSON. Check you copied all of it.'); return; }
@@ -6769,13 +6838,14 @@ let presenting = false, presPid = null, clockTimer = null;
 function tickClock() {
   const t = $('presTime'), n = $('presNext'); if (!t) return;
   const now = new Date(); t.textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  let next = '';
-  if (plan.date === localISO(now)) {
-    const mins = now.getHours() * 60 + now.getMinutes();
-    const up = TIME_KINDS.filter(([k]) => plan.times?.[k]).map(([k, l]) => { const [h, m] = plan.times[k].split(':').map(Number); return { l, d: h * 60 + m - mins }; }).filter(x => x.d > -1).sort((a, b) => a.d - b.d)[0];
-    if (up) next = up.d <= 0 ? `${up.l} now` : `${up.l} in ${up.d < 60 ? `${up.d} min` : `${Math.floor(up.d / 60)} h ${up.d % 60 ? `${up.d % 60} min` : ''}`.trim()}`;
-  } else if (timesLine()) next = timesLine();
+  const next = plan.date === localISO(now) ? nextUp(plan, now) : timesLine();
   n.textContent = next; n.hidden = !next;
+}
+// on the day: what's next of arrive, soundcheck and service ("Service in 25 min"), or '' once they've all started
+function nextUp(w, now = new Date()) {
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const up = TIME_KINDS.filter(([k]) => w.times?.[k]).map(([k, l]) => { const [h, m] = w.times[k].split(':').map(Number); return { l, d: h * 60 + m - mins }; }).filter(x => x.d > -1).sort((a, b) => a.d - b.d)[0];
+  return !up ? '' : up.d <= 0 ? `${up.l} now` : `${up.l} in ${up.d < 60 ? `${up.d} min` : `${Math.floor(up.d / 60)} h ${up.d % 60 ? `${up.d % 60} min` : ''}`.trim()}`;
 }
 // show mode: one big card for the person tapped, readable from a music stand
 function presCard() {
@@ -7505,7 +7575,10 @@ function calStrip() {
 function renderLibrary() {
   const today = new Date().toISOString().slice(0, 10), q = lib.q.trim().toLowerCase();
   if (lib.venue && !venues()[lib.venue]) lib.venue = '';
-  const ids = sortedWeekIds().reverse().filter(id => (!lib.venue || db.plans[id].venueId === lib.venue) && (!q || `${db.plans[id].name} ${db.plans[id].date} ${longDate(db.plans[id].date)} ${venueOf(db.plans[id])?.name || ''}`.toLowerCase().includes(q)));
+  // a search can be a week (name, date, venue) or a person: "taylor" finds every week Taylor served, and on what
+  const who = p => q ? p.team.filter(t => (t.name || '').toLowerCase().includes(q)) : [];
+  const ids = sortedWeekIds().reverse().filter(id => (!lib.venue || db.plans[id].venueId === lib.venue) && (!q || who(db.plans[id]).length || `${db.plans[id].name} ${db.plans[id].date} ${longDate(db.plans[id].date)} ${venueOf(db.plans[id])?.name || ''}`.toLowerCase().includes(q)));
+  const byPerson = q && ids.length && ids.every(id => who(db.plans[id]).length) ? ids.length : 0;
   const months = new Map();
   for (const id of ids) { const d = db.plans[id].date; const k = d.slice(0, 7); if (!months.has(k)) months.set(k, []); months.get(k).push(id); }
   const monthName = k => new Date(k + '-01T12:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
@@ -7518,7 +7591,7 @@ function renderLibrary() {
     const state = !p.items.length || !st.team ? 'empty' : st.bad ? 'bad' : st.checks ? 'warn' : 'ok';
     return `<div class="librow st-${state}${cur ? ' cur' : ''}${past ? ' past' : ''}">
       <button class="libopen" data-libopen="${id}" title="Open this week"><span class="libdate"><b>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { day: 'numeric' }))}</b><small>${esc(new Date(p.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' }))}</small></span>
-        <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}${cur ? ' · open now' : ''}</small></span>${multiVenue() && !lib.venue ? `<span class="vtag">${esc(venueOf(p)?.name)}</span>` : ''}${libTrend(venueWeekIds(p.venueId), stats, id)}${chip}</button>
+        <span class="libmain"><b>${esc(p.name || 'Untitled service')}</b><small>${who(p).length ? `${who(p).map(t => `<mark>${esc(t.name)}</mark>${t.role ? ` · ${esc(t.role)}` : ''}`).join(', ')}` : `${plural(st.team, 'person', 'people')} · ${plural(st.gear, 'item')} · ${plural(st.ins, 'input')} · ${plural(st.cables, 'cable')}`}${cur ? ' · open now' : ''}</small></span>${multiVenue() && !lib.venue ? `<span class="vtag">${esc(venueOf(p)?.name)}</span>` : ''}${libTrend(venueWeekIds(p.venueId), stats, id)}${chip}</button>
       <button class="iconbtn" data-libedit="${id}" aria-label="Rename or move ${esc(longDate(p.date))}" title="Rename or move to another date">${ic('pen', 'sm')}</button>
       <button class="iconbtn" data-libdup="${id}" aria-label="Copy to the following week" title="Copy to the following week">${ic('copy', 'sm')}</button>
       <button class="iconbtn" data-libdel="${id}" aria-label="Delete ${esc(longDate(p.date))}" title="Delete this week">${ic('trash', 'sm')}</button></div>`;
@@ -7528,7 +7601,8 @@ function renderLibrary() {
   el.innerHTML = `
     ${calStrip()}
     ${multiVenue() ? `<div class="vchips" role="group" aria-label="Venue">${[['', 'All venues', Object.keys(db.plans).length], ...venueList().map(v => [v.id, v.name, venueWeekIds(v.id).length])].map(([id, n, c]) => `<button class="vchip" data-libvenue="${id}" aria-pressed="${lib.venue === id}">${esc(n)}<span>${c}</span></button>`).join('')}</div>` : ''}
-    <div class="search">${ic('search', 'sm')}<input id="libSearch" type="search" placeholder="Find a week by name or date" value="${esc(lib.q)}" aria-label="Find a week"></div>
+    <div class="search">${ic('search', 'sm')}<input id="libSearch" type="search" placeholder="Find a week, or a person’s weeks" value="${esc(lib.q)}" aria-label="Find a week by name, date or person"></div>
+    ${byPerson ? `<p class="hint libwho">${(() => { const names = [...new Set(ids.flatMap(id => who(db.plans[id]).map(t => t.name)))]; return `${esc(names.length === 1 ? names[0] : `${names.length} people`)}: ${plural(byPerson, 'week')}`; })()}</p>` : ''}
     <div class="liblist">${rows || (lib.q ? `<p class="hint">No weeks match “${esc(lib.q)}”.</p>` : `<div class="empty-state">${ic('calendar')}<strong>No weeks at ${esc(venues()[lib.venue]?.name || 'this venue')} yet</strong><button class="btn primary" data-vnew="${esc(lib.venue)}">${ic('plus', 'sm')}Start the first one</button></div>`)}</div>
     ${su.length ? `<details class="more"><summary>${ic('room', 'sm')}<span><b>Setups</b><small>${plural(su.length, 'saved layout')}</small></span>${ic('chevD', 'sm')}</summary><div class="liblist" style="padding:0 10px 10px">${su.sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([id, x]) => `<div class="librow"><span class="libmain" style="padding:6px 8px"><b>${esc(x.name)}</b><small>${plural(x.items.filter(i => cat(i).shape !== 'person').length, 'item')} · saved ${esc(x.saved || '')}</small></span><button class="iconbtn" data-libsetupdel="${id}" aria-label="Delete setup ${esc(x.name)}" title="Delete setup">${ic('trash', 'sm')}</button></div>`).join('')}</div></details>` : ''}
 `;
@@ -7590,6 +7664,9 @@ $('homeView').addEventListener('click', e => {
   if (t.id === 'libResetCancel') { lib.resetArmed = false; renderHome(); return; }
   if (t.id === 'libResetGo') { resetAll(); return; }
   if (t.id === 'libRestore') { restoreBeforeReset(); return; }
+  if (t.dataset.today) { const id = t.dataset.week; if (id !== plan.id) switchWeek(id); const k = t.dataset.today;
+    if (k === 'show') { view = 'plot'; renderAll(); setPresent(true); } else if (k === 'loadin') { view = 'paper'; paperTab = 'loadin'; renderAll(); } else { view = 'plot'; if (k === 'team') railTab = 'team'; renderAll(); }
+    return; }
   if (t.id === 'tidyGo') { tidyOldWeeks(); return; }
   if (t.id === 'libBackup') { const s2 = backup(true); offerFile(`stageplot-backup-${new Date().toISOString().slice(0, 10)}.json`, s2, 'application/json'); return; }
 });
@@ -7602,6 +7679,7 @@ $('homeView').addEventListener('keydown', e => { if (e.target.id === 'libType' &
 // load-in ticks: saved with the week straight away (not an undo step), progress updates as you go
 $('paperView').addEventListener('change', e => {
   const t0 = e.target;
+  if (t0.id === 'spots4') { spots4 = t0.checked; try { localStorage.setItem('stageplot.spots4', spots4 ? '1' : '0'); } catch { /* memory only */ } return; }
   if (t0.dataset.psheet) { const o = printOpts(), sk = new Set(o.skip); if (t0.checked) sk.delete(t0.dataset.psheet); else sk.add(t0.dataset.psheet); o.skip = [...sk]; setPrintOpts(o); renderPaper(); document.querySelector(`[data-psheet="${t0.dataset.psheet}"]`)?.focus(); return; }
   if (t0.name === 'pscale') { const o = printOpts(); o.scale = Number(t0.value) || 0; setPrintOpts(o); renderPaper(); document.querySelector(`input[name="pscale"][value="${o.scale}"]`)?.focus(); return; }
   if (t0.id === 'chFixed') { const on = t0.checked; mutate(() => { chans_().fixed = on; }, on ? 'Channel numbers fixed' : 'Channels numbered in band order each week'); return; }
@@ -7667,6 +7745,22 @@ function heroPicture(p) {   // the week's stage, drawn the way the paperwork dra
     html = plotSnapshot(320 / vb[3]).replace(/viewBox="[^"]*"/, `viewBox="${vb.map(f3).join(' ')}"`); } catch { html = ''; } finally { plan = keep; if (view !== 'plot') svg.innerHTML = ''; }   // it borrows the plot canvas to draw; leave that empty while it's hidden
   heroCache = { key, html }; return html;
 }
+// service day: Home leads with today's week, a clock, what's next, load-in progress and the things you reach for on the day
+function todayWeek() { const t = localISO(), list = Object.values(db.plans).filter(w => w.date === t); return list.find(w => w.id === plan.id) || list[0] || null; }
+function todayCard() {
+  const w = todayWeek(); if (!w) return '';
+  const keep = plan; let g = { done: 0, total: 0 }; try { plan = w; g = loadinProgress(); } finally { plan = keep; }
+  const now = new Date(), nx = nextUp(w, now), chg = pco.changes && pco.changes.week === w.id ? pco.changes.gone.length + pco.changes.added.length + (pco.changes.moved?.length || 0) : 0, pct = g.total ? Math.round(g.done / g.total * 100) : 0;
+  return `<section class="todaycard" aria-label="Today">
+    <div class="td-main"><div class="eyebrow">Today${multiVenue() ? ` · ${esc(venueOf(w)?.name || '')}` : ''}</div><h2>${esc(w.name || 'Service')}</h2>
+      <p class="td-next" id="todayNext">${esc(nx || (w.times && Object.keys(w.times).length ? 'Under way' : 'No times set for today'))}</p>
+      ${g.total ? `<div class="td-load"><div class="lbar"><span style="width:${pct}%"></span></div><span>Load-in <b>${g.done} of ${g.total}</b></span></div>` : ''}
+      ${chg ? `<p class="td-chg">${ic('calendar', 'sm')}${plural(chg, 'change')} from Planning Center to look at</p>` : ''}</div>
+    <div class="td-clock" id="todayClock" aria-hidden="true">${esc(now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</div>
+    <div class="td-acts"><button class="btn primary" data-today="show" data-week="${w.id}">${ic('fit', 'sm')}Show mode</button><button class="btn" data-today="loadin" data-week="${w.id}">${ic('check', 'sm')}Load-in checklist</button><button class="btn" data-today="plot" data-week="${w.id}">${ic('plot', 'sm')}Open the plot</button>${chg ? `<button class="btn" data-today="team" data-week="${w.id}">${ic('users', 'sm')}See the changes</button>` : ''}</div>
+  </section>`;
+}
+setInterval(() => { const c = $('todayClock'); if (!c) return; const w = todayWeek(); c.textContent = new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); const n = $('todayNext'); if (n && w) n.textContent = nextUp(w) || n.textContent; }, 20000);
 function homeLibrary() {
   const today = new Date().toISOString().slice(0, 10), ids = venues()[lib.venue] ? venueWeekIds(lib.venue) : sortedWeekIds();
   const next = ids.map(id => db.plans[id]).find(p => p.date >= today) || db.plans[ids[ids.length - 1]];
@@ -7685,7 +7779,8 @@ function homeLibrary() {
           <div class="herosub"><button class="btn" data-libpaper="${next.id}">${ic('sheet', 'sm')}Paperwork</button><button class="btn" data-libprint="${next.id}" title="Print every sheet, or save them as a PDF">${ic('save', 'sm')}Print</button><button class="btn" data-libloadin="${next.id}" title="Tick things off on the day">${st.load.total ? loadRing(st.load.done, st.load.total) : ic('check', 'sm')}Load-in${st.load.total ? ` <span class="herocount">${st.load.done}/${st.load.total}</span>` : ''}</button></div></div>
       </div>
     </section>` : '';
-  return firstRunCard() + hero + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved ${SAVED_WHERE}`, '<div id="libBody"></div>',
+  const tc = todayCard();
+  return firstRunCard() + (tc && todayWeek()?.id === next?.id ? tc : tc + hero) + hsec('Library', `${plural(Object.keys(db.plans).length, 'week')} saved ${SAVED_WHERE}`, '<div id="libBody"></div>',
     `<div class="row" style="gap:6px"><button class="btn" id="homeNewCopy" title="Copy the latest week to the next free ${esc(DAYS[defaultsOf().day])}">${ic('copy', 'sm')}Copy latest</button><button class="btn primary" id="homeNewBlank" title="A fresh week from your stage defaults">${ic('plus', 'sm')}New week</button></div>`);
 }
 function nextFreeDate(from, vid) { let d = from || nextServiceDay(); while (Object.values(db.plans).some(p => p.date === d && (!vid || p.venueId === vid))) d = addDays(d, 7); return d; }
@@ -7879,10 +7974,15 @@ const autoRole = pos => matchRole(pos.split(' · ')[0]) || matchRole(pos.split('
 function posRole(pos, team) { const m = db?.pcoPrefs?.map || {}, k = [pos, team].filter(Boolean).join(' · '); if (m[k] === '-' ) return ''; if (m[k]) return m[k]; return null; }
 
 /* ----- Preferences ----- */
+let textSize = (() => { try { const v = localStorage.getItem('stageplot.text'); return v === 'l' || v === 'xl' ? v : ''; } catch { return ''; } })();
+const textScale = () => textSize === 'xl' ? 1.3 : textSize === 'l' ? 1.15 : 1;
+function setTextSize(v) { textSize = v === 'l' || v === 'xl' ? v : ''; if (textSize) document.documentElement.dataset.text = textSize; else delete document.documentElement.dataset.text; try { localStorage.setItem('stageplot.text', textSize); } catch { /* memory only */ } needFit = true; renderAll(); }
+if (textSize) document.documentElement.dataset.text = textSize;
 function homePrefs() {
   const seg = (name, cur, opts) => `<div class="seg hseg" role="group" aria-label="${name}">${opts.map(([v, l]) => `<button data-pref="${name}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div>`;
   return hsec('Look', '', `<div class="hpref"><span><b>Theme</b><small>Match your device, or always light or dark</small></span>${seg('theme', themePref, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark']])}</div>
       <div class="hpref"><span><b>Detail</b><small>Simple shows everyday controls; Advanced shows every setting and tool</small></span>${seg('detail', ui.adv ? 'adv' : 'simple', [['simple', 'Simple'], ['adv', 'Advanced']])}</div>
+      <div class="hpref"><span><b>Text size</b><small>Bigger words in the panels, menus and plot labels, on this device</small></span>${seg('textsize', textSize || 'n', [['n', 'Normal'], ['l', 'Large'], ['xl', 'Extra large']])}</div>
       <div class="hpref"><span><b>Units</b><small>Sizes, distances and cable lengths on the plot and the paperwork</small></span>${seg('units', imperial() ? 'ft' : 'm', [['m', 'Metres'], ['ft', 'Feet & inches']])}</div>`) +
     hsec('Working on the plot', '', `<div class="hpref"><span><b>Snap gear to</b><small>Rounds positions as you move gear (hold Alt to move freely)</small></span><select id="hp-snap" aria-label="Snap gear to">${(() => { const o = snapOpts(), near = ui.snap ? o.filter(([v]) => v).reduce((a, b) => Math.abs(b[0] - ui.snap) < Math.abs(a[0] - ui.snap) ? b : a)[0] : 0; return [o[3], ...o.slice(0, 3)].map(([v, l]) => `<option value="${v}" ${near === v ? 'selected' : ''}>${l}</option>`).join(''); })()}</select></div>
       ${hcheck('hp-guide', 'Show the setup guide on the plot', ui.guide)}
@@ -7947,6 +8047,7 @@ $('homeView').addEventListener('click', e => {
   if (t.id === 'homeOwnClear') { gearPrefs().owned = {}; save(); renderHome(); return; }
   if (t.id === 'hp-test') { pcoLoadTypes(); return; }
   if (t.id === 'hp-install' && installPrompt) { installPrompt.prompt(); installPrompt.userChoice.finally(() => { installPrompt = null; renderHome(); }); return; }
+  if (t.dataset.pref === 'textsize') { setTextSize(t.dataset.v === 'n' ? '' : t.dataset.v); renderHome(); return; }
   if (t.dataset.pref === 'theme') { setTheme(t.dataset.v); renderHome(); return; }
   if (t.dataset.pref === 'detail') { setDetail(t.dataset.v === 'adv'); renderHome(); return; }
   if (t.dataset.pref === 'units') { setDefault('units', t.dataset.v === 'ft' ? 'ft' : ''); ui.snap = snapOpts().find(([v]) => v)[0]; try { localStorage.setItem('stageplot.snap', String(ui.snap)); } catch { /* memory only */ } heroCache.key = ''; renderAll(); toast(imperial() ? 'Showing feet and inches' : 'Showing metres'); return; }
@@ -8023,6 +8124,7 @@ view = 'home'; homeTab = 'library';   // the app always opens on the library
 db = load();
 if (db) { ensureVenues(); plan = db.plans[db.currentId] || db.plans[Object.keys(db.plans)[0]]; }
 else { db = seed(); ensureVenues(); plan = db.plans[db.currentId]; if (!unreadable) save(); $('welcomeDlg').hidden = !!unreadable; }
+restoreUndo();
 renderAll();
 try {
   if (sessionStorage.getItem('stageplot.justReset')) { sessionStorage.removeItem('stageplot.justReset'); setTimeout(() => toast('Reset to default. Your old library is kept', { label: 'Restore', fn: restoreBeforeReset }), 300); }
